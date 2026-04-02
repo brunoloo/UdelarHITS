@@ -35,7 +35,7 @@ De cada reacción interesa saber el tipo de reacción, autor y tema o comentario
      El contenido previo a su inactivación permanecerá visible. 
    • La descripción de una categoría podrá ser editada por su moderador máximo una vez cada 72 horas.
    • La descripción de una categoría tendrá un historial de ediciones visible.
-   • Cada categoría muestra un contador visible de comentarios publicados (incluyendo respuestas).
+   • Cada categoría muestra un contador visible de temas publicados.
 
 2. [Tema]
    • Solo el autor puede eliminar su propio tema, el cual pasará a estado [inactivo].
