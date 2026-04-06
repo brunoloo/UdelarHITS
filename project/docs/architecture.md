@@ -1,3 +1,10 @@
-fronted: HTML5, CSS, JavaScript
-backend: NodeJS + express
-base de datos: PostgresSQL
+# backend #
+•  NodeJS + express
+
+# fronted #
+•  HTML5 
+•  CSS
+•  JavaScript
+
+# base de datos #
+•  PostgresSQL
