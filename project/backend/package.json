@@ -12,13 +12,14 @@
     "db:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits;\"",
     "db:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits OWNER brunoloo;\"",
     "db:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/schema.sql",
-    "db:reset": "npm run db:drop && npm run db:create && npm run db:schema" 
+    "db:reset": "npm run db:drop && npm run db:create && npm run db:schema"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.4.0",
     "express": "^5.2.1",
     "pg": "^8.20.0"
