@@ -18,14 +18,4 @@ router.get('/', async (_req, res) => {
   }
 });
 
-// Esto es solo un ejemplo para verificar la conexión a la base de datos
-router.get('/db', async (_req, res) => {
-  try {
-    const result = await pool.query('SELECT NOW() AS now');
-    res.json({ ok: true, dbTime: result.rows[0].now });
-  } catch (error) {
-    res.status(500).json({ ok: false, error: error.message });
-  }
-});
-
 export default router;

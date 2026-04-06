@@ -6,8 +6,11 @@ import index from './routes/index.js';
 
 const app = express();
 
-// routes
+// Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// routes
 app.use("/api", API);
 app.use("/", index);
 
