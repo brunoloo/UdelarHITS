@@ -26,7 +26,7 @@ const loginUser = async (req, res) => {
     return res.status(200).json({ ok: true, user: result.user });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
-    if (error.code === 'INVALID_CREDENTIALS') return res.status(401).json({ ok: false, message: 'Credenciales inválidas' });
+    if (error.code === 'INVALID_CREDENTIALS') return res.status(401).json({ ok: false, message: 'El nombre o la contraseña no son correctas' });
     if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: 'Usuario baneado' });
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }
