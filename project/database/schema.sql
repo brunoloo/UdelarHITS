@@ -30,12 +30,12 @@ CREATE TYPE etiqueta AS ENUM (
 -- -----------------------------
 -- USUARIO
 -- -----------------------------
-CREATE TABLE usuario (
+CREATE TABLE usuario ( -- Revisado y completo. No modificar
   id                BIGSERIAL PRIMARY KEY,
   nickname          VARCHAR(50)  NOT NULL UNIQUE,
   nombre            VARCHAR(120) NOT NULL,
   email             VARCHAR(255) NOT NULL UNIQUE,
-  contrasena_hash   TEXT         NOT NULL,
+  password_hash     TEXT         NOT NULL,
   biografia         TEXT,
   url_imagen        TEXT,
   estado            estado_usr   NOT NULL DEFAULT 'activo',
@@ -43,7 +43,7 @@ CREATE TABLE usuario (
 );
 
 -- Relación usuario sigue usuario (N:N)
-CREATE TABLE usuario_seguidor (
+CREATE TABLE usuario_seguidor ( -- Revisar
   seguidor_id       BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
   seguido_id        BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
   fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -59,8 +59,9 @@ CREATE TABLE categoria (
   titulo                      VARCHAR(150) NOT NULL UNIQUE,
   descripcion                 TEXT NOT NULL,
   autor_id                    BIGINT NOT NULL REFERENCES usuario(id) ON DELETE RESTRICT,
-  estado                      estado_cat NOT NULL DEFAULT 'activa',
   contador_temas              INTEGER NOT NULL DEFAULT 0 CHECK (contador_temas >= 0),
+  estado                      estado_cat NOT NULL DEFAULT 'activa',
+  etiqueta                    etiqueta NOT NULL DEFAULT 'Lifestyle',
   fecha_creacion              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
