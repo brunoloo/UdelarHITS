@@ -8,7 +8,11 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "db:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits;\"",
+    "db:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits OWNER brunoloo;\"",
+    "db:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/schema.sql",
+    "db:reset": "npm run db:drop && npm run db:create && npm run db:schema" 
   },
   "keywords": [],
   "author": "",
