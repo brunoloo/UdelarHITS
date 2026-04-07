@@ -24,7 +24,7 @@ CREATE TYPE etiqueta AS ENUM (
   'Web development','Science','Philosophy','History','Psychology','Politics',
   'Economics','Math','Engineering','Pets','Hobbies','Home & DIY','Cars & motors',
   'Sports','Nature','Environment','Gardening','Memes','News','Reviews',
-  'Tutorials','Q&A','Stories','Events','Feedback'
+  'Tutorials','Q&A','Stories','Events','Feedback', 'Other'
 );
 
 -- -----------------------------
@@ -32,6 +32,8 @@ CREATE TYPE etiqueta AS ENUM (
 -- -----------------------------
 CREATE TABLE usuario ( -- Revisado y completo. No modificar
   id                BIGSERIAL PRIMARY KEY,
+  rol               VARCHAR(20) NOT NULL DEFAULT 'user',
+
   nickname          VARCHAR(50)  NOT NULL UNIQUE,
   nombre            VARCHAR(120) NOT NULL,
   email             VARCHAR(255) NOT NULL UNIQUE,
@@ -54,7 +56,7 @@ CREATE TABLE usuario_seguidor ( -- Revisar
 -- -----------------------------
 -- CATEGORIA
 -- -----------------------------
-CREATE TABLE categoria (
+CREATE TABLE categoria ( -- Revisado y completo. No modificar
   id                          BIGSERIAL PRIMARY KEY,
   titulo                      VARCHAR(150) NOT NULL UNIQUE,
   descripcion                 TEXT NOT NULL,
@@ -104,7 +106,7 @@ CREATE TABLE contenido (
 -- -----------------------------
 -- TEMA (subtipo de contenido)
 -- -----------------------------
-CREATE TABLE tema (
+CREATE TABLE tema ( 
   contenido_id      BIGINT PRIMARY KEY REFERENCES contenido(id) ON DELETE CASCADE,
   categoria_id      BIGINT NOT NULL REFERENCES categoria(id) ON DELETE RESTRICT,
   titulo            VARCHAR(200) NOT NULL,
