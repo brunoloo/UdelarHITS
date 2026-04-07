@@ -8,6 +8,19 @@ npm run dev
 # dropea, crea db y ejecuta schema.sql  (estar parado en backend) #
 npm run db:reset 
 
+# Cargar usuario admin en la db
+npm run seed:admin
+
+-------------------------------------------------------------------
+
+# Entrar desde la red local #
+Ejecutar como administrador en powerShell
+netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=5001
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=5001 connectaddress=172.25.10.143 connectport=5001
+
+apagar cuando se termine
+netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=5001
+netsh advfirewall firewall delete rule name="WSL 5001"
 -------------------------------------------------------------------
 
 # Comandos de github #
