@@ -8,8 +8,6 @@ const server = app.listen(PORT,'0.0.0.0', () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-
-
 // Manejo de señales para cierre (no dar mucha bola por ahora)
 
 let isShuttingDown = false;
