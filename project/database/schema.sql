@@ -183,6 +183,8 @@ CREATE INDEX idx_apelacion_estado ON apelacion(estado);
 -- -----------------------------
 -- ÍNDICES ÚTILES
 -- -----------------------------
+CREATE UNIQUE INDEX usuario_nickname_lower_idx ON usuario (LOWER(nickname));
+CREATE UNIQUE INDEX usuario_email_lower_idx ON usuario (LOWER(email));
 CREATE INDEX idx_contenido_autor ON contenido(autor_id);
 CREATE INDEX idx_tema_categoria ON tema(categoria_id);
 CREATE INDEX idx_tema_estado ON tema(estado);
