@@ -2,13 +2,16 @@ import pool from '../config/db.js';
 
 const findByEmailOrNickname = async ({ nickname, email }) => {
   const q = `
-    SELECT id, nickname, email
+    SELECT nickname, email
     FROM usuario
-    WHERE nickname = $1 OR email = $2
-    LIMIT 1
+    WHERE LOWER(nickname) = LOWER($1) OR LOWER(email) = LOWER($2)
   `;
   const { rows } = await pool.query(q, [nickname, email]);
-  return rows[0] || null;
+
+  return {
+    nicknameTaken: rows.some((r) => r.nickname.toLowerCase() === nickname.toLowerCase()),
+    emailTaken: rows.some((r) => r.email.toLowerCase() === email.toLowerCase()),
+  };
 };
 
 const findByEmailOrNicknameForLogin = async ({ nickname, email }) => {
@@ -19,13 +22,13 @@ const findByEmailOrNicknameForLogin = async ({ nickname, email }) => {
   const values = [];
 
   if (nickname && email) {
-    q += ` WHERE nickname = $1 OR email = $2 LIMIT 1`;
+    q += ` WHERE LOWER(nickname) = LOWER($1) OR LOWER(email) = LOWER($2) LIMIT 1`;
     values.push(nickname, email);
   } else if (nickname) {
-    q += ` WHERE nickname = $1 LIMIT 1`;
+    q += ` WHERE LOWER(nickname) = LOWER($1) LIMIT 1`;
     values.push(nickname);
   } else {
-    q += ` WHERE email = $1 LIMIT 1`;
+    q += ` WHERE LOWER(email) = LOWER($1) LIMIT 1`;
     values.push(email);
   }
 
@@ -57,7 +60,7 @@ const getUserByNickname = async (nickname) => {
   const q = `
     SELECT id, rol, nickname, nombre, email, biografia, url_imagen
     FROM usuario
-    WHERE nickname = $1
+    WHERE LOWER(nickname) = LOWER($1)
     LIMIT 1
   `;
   const { rows } = await pool.query(q, [nickname]);

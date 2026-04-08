@@ -32,7 +32,7 @@ curl -i -c cookies-admin.txt -X POST http://localhost:5001/api/auth/login \
 # Login (por email) información reducida #
 curl -s -c cookies-user.txt -X POST http://localhost:5001/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"bruno@gmail.com","password":"MiPass123!"}'
+  -d '{"nickname":"brunoloo","password":"vegetta77"}'
 
 # Ver cookie guardada #
 cat cookies-admin.txt o cat cookies-user.txt
@@ -44,3 +44,8 @@ curl -s -b cookies-user.txt http://localhost:5001/api/users/me // si no estoy lo
 # Logout enviando cookie guardada #
 curl -i -b cookies-admin.txt -c cookies.txt -X POST http://localhost:5001/api/auth/logout // si sos admin
 curl -i -b cookies-user.txt -c cookies.txt -X POST http://localhost:5001/api/auth/logout // si sos user
+
+# Obtener usuarios #
+curl -i -X GET http://localhost:5001/api/users/ \
+  -H "Content-Type: application/json" \
+  --cookie "jwt=TOKEN_DE_ADMINISTRADOR"
