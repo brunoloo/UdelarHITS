@@ -1,37 +1,55 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>UdelarHITS</title>
-  <link rel="stylesheet" href="css/style.css">
-  <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      text-align: center;
-    }
-    h1 {
-      font-size: 3.5rem;
-      margin-bottom: 1rem;
-    }
-    p {
-      font-size: 1.2rem;
-      margin-bottom: 2rem;
-    }
-    img {
-      max-width: 300px;
-      border-radius: 10px;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home - API Tester</title>
+  <link rel="stylesheet" href="css/main.css" />
 </head>
 <body>
-  <h1>Plataforma en proceso 🚧</h1>
-  <p>Estamos trabajando para traerte la mejor experiencia</p>
-  <img src="/gifs/working.gif" alt="Gente trabajando" />
+  <main>
+
+    <div class="card">
+      <div class="card-info">
+        <h2>Backend test</h2>
+        <p>Comprobar conexión con backend</p>
+      </div>
+      <a class="btn btn-test" href="../html/backend.html">Test</a>
+    </div>
+
+    <div class="card">
+      <div class="card-info">
+        <h2>Registrar usuario</h2>
+        <p>Crea una nueva cuenta en el sistema</p>
+      </div>
+      <a class="btn btn-register" href="../html/register.html">Registrar usuario</a>
+    </div>
+
+    <div class="card">
+      <div class="card-info">
+        <h2>Login usuario</h2>
+        <p>Iniciá sesión con tu cuenta existente</p>
+      </div>
+      <a class="btn btn-login" href="../html/login.html">Login usuario</a>
+    </div>
+
+    <div class="card">
+      <div class="card-info">
+        <h2>Logout usuario</h2>
+        <p>Cerrá la sesión activa</p>
+      </div>
+      <a class="btn btn-logout" href="../html/logout.html">Logout usuario</a>
+    </div>
+
+    <div class="card">
+      <div class="card-info">
+        <h2>Obtener usuarios del sistema</h2>
+        <p>(únicamente administradores)</p>
+      </div>
+      <a class="btn btn-logout" href="../html/users.html">Obtener usuarios</a>
+    </div>
+
+  </main>
+  <script src="../js/header.js"></script>
 </body>
 </html>

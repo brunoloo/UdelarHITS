@@ -5,18 +5,54 @@ import {
 import {generateToken} from '../utils/generateToken.js'
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
+
+  const normalizedNickname = nickname?.trim().toLowerCase();
+  const normalizedEmail = email?.trim().toLowerCase();
+  const normalizedNombre = nombre?.trim().toLowerCase();
+
   // Validaciones mínimas
-  if (!nickname || !nombre || !email || !password) {
+  if (!normalizedNickname || !normalizedNombre || !normalizedEmail || !password) {
     const err = new Error('Faltan campos obligatorios');
     err.code = 'BAD_REQUEST';
     throw err;
   }
 
+  // Chequeo de password > 8 caracteres
+  if(password.length < 8){
+    const err = new Error('La contraseña debe tener al menos 8 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  // Chequeo de formato para correo electrónico (usamos una expresión regular: guiño a TeoLen)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(normalizedEmail)) {
+    const err = new Error('Email inválido');
+    err.code = "BAD_REQUEST";
+    throw err;
+  }
+
   // Chequeo de existencia
-  const existingUser = await findByEmailOrNickname({ nickname, email });
-  if (existingUser) {
-    const err = new Error('Ya existe un usuario con ese nickname o email');
-    err.code = 'USER_EXISTS';
+  const existing = await findByEmailOrNickname({ 
+    nickname: normalizedNickname, 
+    email: normalizedEmail 
+  });
+
+  if (existing.nicknameTaken && existing.emailTaken) {
+  const err = new Error('El nickname y el email ya están en uso');
+  err.code = 'USER_EXISTS';
+  throw err;
+  }
+
+  if (existing.nicknameTaken) {
+    const err = new Error('El nickname ya está en uso');
+    err.code = 'NICKNAME_EXISTS';
+    throw err;
+  }
+
+  if (existing.emailTaken) {
+    const err = new Error('El email ya está en uso');
+    err.code = 'EMAIL_EXISTS';
     throw err;
   }
 
@@ -29,9 +65,9 @@ const registerUserService = async ({ nickname, nombre, email, password}) => {
   // Crear usuario
   const user = await createUser({
     rol,
-    nickname,
-    nombre,
-    email,
+    nickname: normalizedNickname,
+    nombre: normalizedNombre,
+    email: normalizedEmail,
     passwordHash,
   });
 
@@ -40,31 +76,37 @@ const registerUserService = async ({ nickname, nombre, email, password}) => {
 
 // Crear usuario admin
 export const createUserByAdminService = async ({ nickname, nombre, email, password, rol }) => {
-  if (!nickname || !nombre || !email || !password) {
+  const normalizedNickname = nickname?.trim().toLowerCase();
+  const normalizedEmail = email?.trim().toLowerCase();
+  const normalizedNombre = nombre?.trim().toLowerCase();
+
+  if (!normalizedNickname || !normalizedNombre || !normalizedEmail || !password) {
     const err = new Error('Faltan campos obligatorios');
     err.code = 'BAD_REQUEST';
     throw err;
   }
 
-  const existingUser = await findByEmailOrNickname({ nickname, email });
-  if (existingUser) {
+  const existing = await findByEmailOrNickname({ 
+    nickname: normalizedNickname, 
+    email: normalizedEmail 
+  });
+
+  if (existing.nicknameTaken || existing.emailTaken) {
     const err = new Error('Ya existe un administrador con ese nickname o email');
     err.code = 'ADMIN_EXISTS';
     throw err;
   }
 
-  // default seguro
   const safeRole = rol === 'admin' ? 'admin' : 'user';
 
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(password, salt);
 
-  // Crear administrador
   const user = await createUser({
     rol: safeRole,
-    nickname,
-    nombre,
-    email,
+    nickname: normalizedNickname,
+    nombre: normalizedNombre,
+    email: normalizedEmail,
     passwordHash,
   });
 
@@ -72,14 +114,21 @@ export const createUserByAdminService = async ({ nickname, nombre, email, passwo
 };
 
 const loginUserService =  async ({nickname ,email, password}) => {
-    if ( (!nickname && !email) || !password){
-        const err = new Error('Faltan campos obligatorios');
-        err.code = 'BAD_REQUEST';
-        throw err;
+    const normalizedNickname = nickname ? nickname.trim().toLowerCase() : null;
+    const normalizedEmail = email ? email.trim().toLowerCase() : null;
+
+    if ((!normalizedNickname && !normalizedEmail) || !password) {
+      const err = new Error('Faltan campos obligatorios');
+      err.code = 'BAD_REQUEST';
+      throw err;
     }
 
+    const existingUser = await findByEmailOrNicknameForLogin({ 
+      nickname: normalizedNickname, 
+      email: normalizedEmail 
+    });
+    
     // Chequeo de existencia
-    const existingUser = await findByEmailOrNicknameForLogin({ nickname, email });
     if (!existingUser) {
         const err = new Error('El nombre o la contraseña no son correctas');
         err.code = 'INVALID_CREDENTIALS';
@@ -121,13 +170,15 @@ const getUsersService = async () => {
 };
 
 const getUserProfileService = async (nickname) => {
-  if (!nickname) {
+  const normalizedNickname = nickname?.trim().toLowerCase();
+
+  if (!normalizedNickname) {
     const err = new Error('Falta nickname');
     err.code = 'BAD_REQUEST';
     throw err;
   }
 
-  const user = await getUserByNickname(nickname);
+  const user = await getUserByNickname(normalizedNickname);
   if (!user) {
     const err = new Error('Usuario no encontrado');
     err.code = 'NOT_FOUND';
