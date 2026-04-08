@@ -36,7 +36,10 @@ if (loginForm) {
 
     const result = await apiPost("/auth/login", body);
     alert(JSON.stringify(result));
-    window.location.href = "/";
+    loginForm.reset()
+    if (result.ok) {
+      window.location.href = "/";
+    } 
   });
 }
 

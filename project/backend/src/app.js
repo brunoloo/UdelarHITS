@@ -15,8 +15,6 @@ app.use(cors({
   credentials: true
 }));
 
-//endpoint API
-app.use("/api", API);
 
 // Cookie
 app.use(cookieParser());
@@ -26,6 +24,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // routes
+app.use("/api", API);
 app.use("/", index);
 
 export default app;
