@@ -9,12 +9,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/server.js",
-
     "db:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits;\"",
     "db:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits OWNER brunoloo;\"",
     "db:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/schema.sql",
     "db:reset": "npm run db:drop && npm run db:create && npm run db:schema",
-
     "seed:admin": "node src/seeds/seedAdmin.js"
   },
   "keywords": [],
@@ -24,6 +22,7 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.0",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",

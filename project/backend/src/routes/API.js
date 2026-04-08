@@ -11,6 +11,7 @@ const router = Router();
 router.use('/auth', AuthRoutes); 
 router.use('/users', UserRoutes);
 
+
 router.get('/', (_req, res) => {
   res.json({ message: 'API OK' });
 });

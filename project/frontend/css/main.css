@@ -1,0 +1,83 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: sans-serif;
+  background: #f4f4f4;
+  min-height: 100vh;
+}
+
+header {
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  padding: 16px 32px;
+}
+
+header h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111;
+}
+
+main {
+  max-width: 700px;
+  margin: 48px auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+form {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.card-info h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 4px;
+}
+
+.card-info p {
+  font-size: 13px;
+  color: #666;
+}
+
+header a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+  text-align: center;
+  width: 160px;
+}
+
+.btn-register { background: #000000; color: #fff; }
+.btn-login    { background: #000000; color: #fff; }
+.btn-logout   { background: #000000; color: #fff; }
+.btn-test     { background: #000000; color: #fff; }
+
+.btn:hover { opacity: 0.88; }
