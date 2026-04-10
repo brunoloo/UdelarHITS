@@ -1,0 +1,29 @@
+/* css/index.css */
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  text-align: center;
+}
+
+.coming-soon img {
+  width: 180px;
+  margin-bottom: 1.5rem;
+}
+
+.coming-soon h1 {
+ font-size: clamp(1.5rem, 4vw, 2.5rem);
+ white-space: nowrap;
+}
+
+.coming-soon p {
+  font-size: 1.1rem;
+  color: #666;
+}

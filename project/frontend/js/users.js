@@ -5,22 +5,21 @@ async function loadUsers() {
 
   if (!result.ok) {
     alert(result.message || "No autorizado");
-    window.location.href = "/";
+    window.location.href = "/testing/user-testing.html"; 
     return;
   }
 
   tableBody.innerHTML = "";
 
-  
   result.data.forEach(u => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
     <td>${u.id}</td>
-    <td><a href="/html/user.html#nickname=${encodeURIComponent(u.nickname)}">${u.nickname}</a></td>
+    <td><a href="/html/user.html?nickname=${encodeURIComponent(u.nickname)}">${u.nickname}</a></td>
     <td>${u.email}</td>
-    `;
-    tableBody.appendChild(tr);
-  });
+  `;
+  tableBody.appendChild(tr);
+});
 }
 
 loadUsers();

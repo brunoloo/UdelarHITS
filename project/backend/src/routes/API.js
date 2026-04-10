@@ -13,7 +13,9 @@ router.use('/users', UserRoutes);
 
 
 router.get('/', (_req, res) => {
-  res.json({ message: 'API OK' });
+  res.json({ 
+    ok: true,
+    message: 'API OK' });
 });
 
 // Esto es solo un ejemplo para verificar la conexión a la base de datos

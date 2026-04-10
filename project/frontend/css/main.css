@@ -4,6 +4,7 @@ body {
   font-family: sans-serif;
   background: #f4f4f4;
   min-height: 100vh;
+  font-family: 'Inter', sans-serif;
 }
 
 header {
@@ -73,6 +74,25 @@ header a {
   white-space: nowrap;
   text-align: center;
   width: 160px;
+}
+
+.center {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ping-container {
+  display: flex;
+  justify-content: center;   /* centra horizontal */
+  margin-top: 120px;         /* lo sube (ajustá este valor) */
+}
+
+#pingBtn {
+  width: 220px;              /* más grande */
+  padding: 14px 28px;        /* más alto */
+  font-size: 16px;           /* texto más grande */
 }
 
 .btn-register { background: #000000; color: #fff; }
