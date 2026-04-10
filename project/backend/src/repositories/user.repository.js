@@ -67,6 +67,17 @@ const getUserByNickname = async (nickname) => {
   return rows[0] || null;
 };
 
+const getUserIdByNickname = async (nickname) => {
+  const q = `
+    SELECT id
+    FROM usuario
+    WHERE LOWER(nickname) = LOWER($1)
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [nickname]);
+  return rows[0].id || null;
+};
+
 const getCategoriesByUserId = async (userId) => {
   const q = `
     SELECT id, titulo, descripcion, etiqueta, fecha_creacion
@@ -102,5 +113,49 @@ const getFollowingByUserId = async (userId) => {
   return rows;
 };
 
+const updateUserById = async (id, { nombre, biografia, url_imagen }) => {
+  const fields = [];
+  const values = [];
+  let idx = 1;
+
+  if (nombre !== undefined) {
+    fields.push(`nombre = $${idx++}`);
+    values.push(nombre);
+  }
+  if (biografia !== undefined) {
+    fields.push(`biografia = $${idx++}`);
+    values.push(biografia);
+  }
+  if (url_imagen !== undefined) {
+    fields.push(`url_imagen = $${idx++}`);
+    values.push(url_imagen);
+  }
+
+  if (fields.length === 0) return null;
+
+  values.push(id);
+  const q = `
+    UPDATE usuario
+    SET ${fields.join(', ')}
+    WHERE id = $${idx}
+    RETURNING id, nickname, nombre, email, biografia, url_imagen
+  `;
+  const { rows } = await pool.query(q, values);
+  return rows[0] || null;
+};
+
+const getUserAvatarUrlById = async (id) => {
+  const q = `
+    SELECT url_imagen
+    FROM usuario
+    WHERE id = $1
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [id]);
+  if (rows.length === 0) return undefined; // no existe
+  return rows[0].url_imagen; // puede ser null
+};
+
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
-  getUserByNickname, getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId };
+  getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
+  getFollowingByUserId, updateUserById, getUserAvatarUrlById };

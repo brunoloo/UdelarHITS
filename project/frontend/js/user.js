@@ -1,14 +1,5 @@
-console.log("HREF:", window.location.href);
-console.log("SEARCH RAW:", window.location.search);
-
 const params = new URLSearchParams(window.location.search);
-
-for (const [key, value] of params.entries()) {
-  console.log("PARAM:", key, value);
-}
-
-const nickname = window.location.hash.replace("#nickname=", "");
-console.log("NICKNAME:", nickname);
+const nickname = params.get("nickname");
 
 const userTableBody = document.querySelector("#userTable tbody");
 const categoriesBody = document.querySelector("#categoriesTable tbody");

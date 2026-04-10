@@ -1,6 +1,4 @@
 # Comandos UBUNTU #
-# conectarse a la base de datos udelarhits # 
-psql -h localhost -p 5432 -U brunoloo -d udelarhits  
 
 # ejecutar servidor con reinicio automático (estar parado en backend) # 
 npm run dev 
@@ -73,6 +71,15 @@ Nunca guardar password plano (usar bcrypt).
 Estructura endpoint
 Más estándar: POST /api/auth/...
 
+
+Método	    Qué hace	            Ejemplo
+
+GET	        Obtener datos	        ver usuarios
+POST	    Crear datos	            registrar usuario
+PUT	        Reemplazar datos	    actualizar usuario completo
+PATCH	    Modificar parcialmente	cambiar solo el nombre
+DELETE	    Eliminar datos	        borrar usuario
+
 # Flujo #
 • Controller
 Recibe HTTP (req/res), delega, obtiene información y decide status (400, 409, 201, 500). 
@@ -89,3 +96,5 @@ Ejecuta SQL contra la DB (buscar/insertar).
 • DB
 Guarda usuario con password_hash (nunca password plana).
 
+# Importante #
+En funciones que manipulen la cookie como login o logout debo siempre verificar secure: process.env.NODE_ENV === "production", ya que eso va a proteger la cookie. 
