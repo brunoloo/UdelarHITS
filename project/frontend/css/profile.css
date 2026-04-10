@@ -1,0 +1,39 @@
+.profile-card { 
+  margin-top: 20px;
+  display:flex; 
+  flex-direction:column; 
+  align-items:center; 
+  gap:16px; 
+}
+
+.avatar img { 
+  width:120px; 
+  height:120px; 
+  border-radius:50%; 
+  object-fit:cover; 
+}
+
+.card { 
+  padding:16px; 
+  border:1px solid #ddd; 
+  border-radius:8px; 
+  width:320px; 
+}
+
+.card div { 
+  margin:6px 0; 
+}
+
+.card-info p {
+  word-break: break-word;      /* Permite cortar palabras largas */
+  max-height: 100px;           /* Ajusta el alto máximo como prefieras */
+  overflow-y: auto;            /* Habilita scroll si es muy grande */
+  margin: 0;                   /* Opcional: limpia el margen */
+}
+
+#profileBio {
+  word-break: break-word;
+  max-height: 100px;
+  overflow-y: auto;
+  margin: 0;
+}

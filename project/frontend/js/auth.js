@@ -50,9 +50,12 @@ if (logoutForm) {
     const result = await apiPost("/auth/logout", {});
     if (result.ok) {
       alert(JSON.stringify(result));
-      window.location.href = "/";
+      window.location.href = "/testing/user-testing.html";
+    } else if(!result.ok){
+      alert(result.message);
+      window.location.href = "/testing/user-testing.html";
     } else {
-      alert(result.message || "Error al cerrar sesión");
+      alert("Error al cerrar sesión");
     }
   });
 }

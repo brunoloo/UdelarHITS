@@ -1,13 +1,20 @@
 import { registerUserService, loginUserService, getUsersService, createUserByAdminService,
-    getUserProfileService
- } from '../services/user.service.js';
+    getUserProfileService, showMeService, updateMeService, 
+    getUserAvatarService } from '../services/user.service.js';
 
-const getMe = async (req, res) => {
-  console.log('req.user =>', req.user);
-  return res.status(200).json({
-    ok: true,
-    data: { user: { id: req.user.id } }
-  });
+const showMe = async (req, res) => {
+  try {
+    const result = await showMeService(req.user.nickname);
+    return res.status(200).json({ ok: true, data: result });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') {
+      return res.status(404).json({ ok: false, message: error.message });
+    }
+    if (error.code === 'BAD_REQUEST') {
+      return res.status(400).json({ ok: false, message: error.message });
+    }
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
 };
 
 const registerUser = async (req, res) => {
@@ -121,9 +128,33 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-const updateUserProfile = async (req, res) => {}
+
+
+const updateMe = async (req, res) => {
+  try {
+    const updated = await updateMeService(req.user.id, req.body);
+    return res.status(200).json({ ok: true, data: updated });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const getUserAvatar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const url = await getUserAvatarService(id);
+
+    const fallback = '/assets/default-user.jpg';
+    return res.redirect(url || fallback);
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 
 const changeUserPassword = async (req, res) => {}
 
-export { getMe, registerUser, loginUser, logoutUser, getUsers, getUserProfile, 
-    updateUserProfile, changeUserPassword }
+export { showMe, registerUser, loginUser, logoutUser, getUsers, getUserProfile, updateMe, getUserAvatar, changeUserPassword }
