@@ -7,7 +7,7 @@ const router = Router();
 // Auth pública
 router.post('/register', registerUser);
 router.post('/login', loginUser);
-router.post('/logout', logoutUser);
+router.post('/logout', protect, logoutUser);
 
 // Crear usuario por admin
 router.post('/admin/register', protect, isAdmin, createUserByAdmin);

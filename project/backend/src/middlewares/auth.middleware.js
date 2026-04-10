@@ -11,7 +11,7 @@ export const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const { rows } = await pool.query(
-      'SELECT id, rol FROM usuario WHERE id = $1',
+      'SELECT id, rol, nickname FROM usuario WHERE id = $1',
       [decoded.id]
     );
 
@@ -19,7 +19,7 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ ok: false, message: 'Usuario no válido' });
     }
 
-    req.user = { id: rows[0].id, rol: rows[0].rol };
+    req.user = { id: rows[0].id, rol: rows[0].rol, nickname: rows[0].nickname };
     next();
   } catch (error) {
     return res.status(401).json({ ok: false, message: 'Token inválido o expirado' });

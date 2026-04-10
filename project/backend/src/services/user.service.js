@@ -1,7 +1,7 @@
 import bcrypt  from 'bcrypt';
 import { 
-  findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserByNickname,
-  getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId } from '../repositories/user.repository.js';
+  findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
+  getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, getUserAvatarUrlById } from '../repositories/user.repository.js';
 import {generateToken} from '../utils/generateToken.js'
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
@@ -177,21 +177,82 @@ const getUserProfileService = async (nickname) => {
     err.code = 'BAD_REQUEST';
     throw err;
   }
-
+  
   const user = await getUserByNickname(normalizedNickname);
   if (!user) {
     const err = new Error('Usuario no encontrado');
     err.code = 'NOT_FOUND';
     throw err;
   }
-
   const categories = await getCategoriesByUserId(user.id);
   const followers = await getFollowersByUserId(user.id);
   const following = await getFollowingByUserId(user.id);
 
-  return { user, categories, followers, following };
+  return { user , categories, followers, following };
 };
 
-export { registerUserService, loginUserService, getUsersService, getUserProfileService };
+const showMeService = async (nickname) => {
+  const { user, categories, followers, following } = await getUserProfileService(nickname);
+
+  const safeUser = {
+    id: user.id,
+    nickname: user.nickname,
+    nombre: user.nombre,
+    email: user.email,
+    biografia: user.biografia,
+    url_imagen: user.url_imagen  // si luego querés manejarlo
+  };
+
+  return { user: safeUser, categories, followers, following };
+};
+
+const updateMeService = async (userId, { nombre, biografia, url_imagen }) => {
+  if (!nombre && !biografia && !url_imagen) {
+    const err = new Error('No hay campos para actualizar');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (biografia?.length > 500) {
+    const err = new Error('La biografía superó el máximo de caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const updated = await updateUserById(userId, {
+    nombre,
+    biografia,
+    url_imagen
+  });
+
+  if (!updated) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  return {
+    user: {
+      nickname: updated.nickname,
+      nombre: updated.nombre,
+      email: updated.email,
+      biografia: updated.biografia,
+      url_imagen: updated.url_imagen
+    }
+  };
+};
+
+const getUserAvatarService = async (userId) => {
+  const url = await getUserAvatarUrlById(userId);
+  if (url === undefined) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  return url; // puede ser null
+};
+
+export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
+  updateMeService, getUserAvatarService };
 
 
