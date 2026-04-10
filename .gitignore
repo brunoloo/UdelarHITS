@@ -14,6 +14,9 @@ coverage/
 .env.*
 !.env.example
 
+# Cookies 
+*cookies*.txt 
+
 # Editor / OS
 .vscode/
 .idea/
@@ -29,4 +32,4 @@ Thumbs.db
 *:Zone.Identifier
 
 # Local notes
-project/docs/commands.md
+project/docs/
