@@ -16,7 +16,7 @@ UdelarHITS es una plataforma de foro pensada para la comunidad de Udelar. La ide
 
 ## ¿Por qué existe?
 
-La información en la universidad vive dispersa: grupos de WhatsApp que se pierden, mails que nadie lee, PDFs sin contexto. UdelarHITS apunta a centralizar eso en un lugar accesible, ordenado y que con el tiempo se vuelva más útil a medida que crece el contenido.
+La información en la universidad vive dispersa: grupos de WhatsApp que se pierden, mails que nadie lee, PDFs sin contexto. UdelarHITS apunta a centralizar eso en un lugar accesible y ordenado, que con el tiempo se vuelva más útil a medida que crece el contenido.
 
 ---
 
