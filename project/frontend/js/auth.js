@@ -12,7 +12,7 @@ if(registerForm){
 
         const result = await apiPost("/auth/register", data);
         if (result.ok) {
-            alert("Usuario creado correctamente");
+            alert(JSON.stringify(result.message));
             registerForm.reset()
         } else {
             alert(result.message || 'Error desconocido');
@@ -35,7 +35,7 @@ if (loginForm) {
     };
 
     const result = await apiPost("/auth/login", body);
-    alert(JSON.stringify(result));
+    alert(JSON.stringify(result.message));
     loginForm.reset()
     if (result.ok) {
       window.location.href = "/";

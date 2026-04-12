@@ -1,6 +1,6 @@
 import { registerUserService, loginUserService, getUsersService, createUserByAdminService,
     getUserProfileService, showMeService, updateMeService, 
-    getUserAvatarService } from '../services/user.service.js';
+    getUserAvatarService, banUserService, activeUserService, deleteUserService } from '../services/user.service.js';
 
 const showMe = async (req, res) => {
   try {
@@ -22,6 +22,7 @@ const registerUser = async (req, res) => {
     const result = await registerUserService(req.body);
     return res.status(201).json({
         ok: true,
+        message: 'Usuario registrado correctamente',
         data: {
             id: result.id,
             nickname: result.nickname,
@@ -128,8 +129,6 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-
-
 const updateMe = async (req, res) => {
   try {
     const updated = await updateMeService(req.user.id, req.body);
@@ -154,7 +153,44 @@ const getUserAvatar = async (req, res) => {
   }
 };
 
+const banUser = async (req, res) => {
+  try {
+    const { nickname } = req.params;
+    const updated = await banUserService(nickname);
+    return res.status(200).json({ ok: true, data: updated });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
 
-const changeUserPassword = async (req, res) => {}
+const activeUser = async (req, res) => {
+  try {
+    const { nickname } = req.params;
+    const updated = await activeUserService(nickname);
+    return res.status(200).json({ ok: true, data: updated });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
 
-export { showMe, registerUser, loginUser, logoutUser, getUsers, getUserProfile, updateMe, getUserAvatar, changeUserPassword }
+const deleteUser = async (req, res) => {
+  try {
+    const { nickname } = req.params;
+    const deleted = await deleteUserService(nickname);
+    return res.status(200).json({ 
+      ok: true, 
+      message: 'Usuario eliminado correctamente',
+      data: deleted });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const changeUserPassword = async (req, res) => {} // TODO
+
+export { showMe, registerUser, loginUser, logoutUser, getUsers, 
+  getUserProfile, updateMe, getUserAvatar, changeUserPassword, banUser, 
+  activeUser, deleteUser }
