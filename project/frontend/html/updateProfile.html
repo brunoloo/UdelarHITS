@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Perfil de usuario</title>
+  <title>Modificar perfil</title>
   <link rel="stylesheet" href="../css/main.css" />
   <link rel="stylesheet" href="../css/profile.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -12,7 +12,11 @@
   <div class="profile-card">
 
     <div class="avatar">
-      <img id="profileAvatar" src="" alt="Avatar" title="foto de perfil">
+      <div class="avatar-wrapper">
+        <img id="profileAvatar" src="" alt="Avatar" title="foto de perfil">
+        <button class="avatar-edit-btn" id="avatarEditBtn" title="Cambiar foto">✏️</button>
+      </div>
+      <input type="text" id="avatarInput" placeholder="URL de imagen" class="edit-input" style="display:none; margin-top: 8px;" />
     </div>
 
     <div class="card">
@@ -25,7 +29,11 @@
     <div class="card">
       <div class="card-info">
         <h2>Nombre</h2>
-        <p id="profileNombre"></p>
+        <div class="edit-row">
+          <p id="profileNombre"></p>
+          <button class="edit-btn" data-field="nombre" title="Editar nombre">✏️</button>
+        </div>
+        <input type="text" id="inputNombre" class="edit-input" style="display:none;" />
       </div>
     </div>
 
@@ -39,20 +47,24 @@
     <div class="card">
       <div class="card-info">
         <h2>Biografía</h2>
-        <p id="profileBio"></p>
+        <div class="edit-row">
+          <p id="profileBio"></p>
+          <button class="edit-btn" data-field="biografia" title="Editar biografía">✏️</button>
+        </div>
+        <textarea id="inputBiografia" class="edit-input" style="display:none;"></textarea>
       </div>
     </div>
 
-    
     <div class="button-container">
       <a class="btn btn-register cancel" href="profile.html">Cancelar</a>
-      <a class="btn btn-register confirm" href="profile.html">Confirmar</a>
+      <button class="btn btn-register confirm" id="confirmBtn">Confirmar</button>
     </div>
-    
 
   </div>
+
+  <script src="../js/transitions.js"></script>
   <script src="../js/header.js"></script>
   <script src="/js/api.js"></script>
-  <script src="../js/profile.js"></script>
+  <script src="../js/updateProfile.js"></script>
 </body>
 </html>

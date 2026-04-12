@@ -156,6 +156,27 @@ const getUserAvatarUrlById = async (id) => {
   return rows[0].url_imagen; // puede ser null
 };
 
+const updateUserEstado = async (nickname, estado) => {
+  const q = `
+    UPDATE usuario
+    SET estado = $1
+    WHERE LOWER(nickname) = LOWER($2)
+    RETURNING id, nickname, estado
+  `;
+  const { rows } = await pool.query(q, [estado, nickname]);
+  return rows[0] || null;
+};
+
+const deleteUserByNickname = async (nickname) => {
+  const q = `
+    DELETE FROM usuario
+    WHERE LOWER(nickname) = LOWER($1)
+    RETURNING id, nickname
+  `;
+  const { rows } = await pool.query(q, [nickname]);
+  return rows[0] || null;
+};
+
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
-  getFollowingByUserId, updateUserById, getUserAvatarUrlById };
+  getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, deleteUserByNickname };

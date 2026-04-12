@@ -1,7 +1,8 @@
 import bcrypt  from 'bcrypt';
 import { 
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
-  getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, getUserAvatarUrlById } from '../repositories/user.repository.js';
+  getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
+  getUserAvatarUrlById, updateUserEstado, deleteUserByNickname } from '../repositories/user.repository.js';
 import {generateToken} from '../utils/generateToken.js'
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
@@ -252,7 +253,37 @@ const getUserAvatarService = async (userId) => {
   return url; // puede ser null
 };
 
+const banUserService = async (nickname) => {
+  const updated = await updateUserEstado(nickname, 'ban');
+  if (!updated) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  return updated;
+};
+
+const activeUserService = async (nickname) => {
+  const updated = await updateUserEstado(nickname, 'activo');
+  if (!updated) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  return updated;
+};
+
+const deleteUserService = async (nickname) => {
+  const deleted = await deleteUserByNickname(nickname);
+  if (!deleted) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  return deleted;
+};
+
 export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
-  updateMeService, getUserAvatarService };
+  updateMeService, getUserAvatarService, banUserService, activeUserService, deleteUserService };
 
 
