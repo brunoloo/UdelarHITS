@@ -5,7 +5,7 @@ async function loadUsers() {
 
   if (!result.ok) {
     alert(result.message || "No autorizado");
-    window.location.href = "/testing/user-testing.html"; 
+    window.location.href = "../../testing/user-testing.html"; 
     return;
   }
 
@@ -15,7 +15,7 @@ async function loadUsers() {
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td>${u.id}</td>
-    <td><a href="/html/user.html?nickname=${encodeURIComponent(u.nickname)}">${u.nickname}</a></td>
+    <td><a href="user.html?nickname=${encodeURIComponent(u.nickname)}">${u.nickname}</a></td>
     <td>${u.email}</td>
     <td>
     <button class="delete-btn" data-nickname="${u.nickname}">

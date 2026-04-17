@@ -6,7 +6,7 @@ async function loadCategory() {
 
   if (!id) {
     alert("No se especificó una categoría");
-    window.location.href = "/html/myCategories.html";
+    window.location.href = "../../testing/category-testing.html";
     return;
   }
 
@@ -14,7 +14,7 @@ const result = await apiGet(`/categories/${id}`);
 
   if (!result.ok) {
     alert(result.message || "Error al cargar la categoría");
-    window.location.href = "/html/myCategories.html";
+    window.location.href = "../../testing/category-testing.html";
     return;
   }
 
@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (result.ok) {
       alert("Categoría actualizada correctamente");
-      window.location.href = "/html/myCategories.html";
+      window.location.href = "myCategories.html";
     } else {
       alert(result.message || "Error al actualizar");
     }
@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const id = params.get("id");
     if (!id) {
         alert("No se especificó una categoría");
-        window.location.href = "/html/myCategories.html";
+        window.location.href = "myCategories.html";
         return;
     }
 
@@ -104,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const result = await apiPatch(`/categories/${id}/delete`);
     if(result.ok){
       alert("Categoría eliminada correctamente");
-      window.location.href = "/html/myCategories.html";
+      window.location.href = "myCategories.html";
     }else {
        alert(result.message || "Error al eliminar"); 
     }

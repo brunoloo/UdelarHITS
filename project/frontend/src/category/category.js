@@ -4,7 +4,7 @@ async function loadCategory() {
 
   if (!id) {
     alert("No se especificó una categoría");
-    window.location.href = "/html/categories.html";
+    window.location.href = "../../testing/category-testing.html";
     return;
   }
 
@@ -15,7 +15,7 @@ async function loadCategory() {
 
   if (!categoryResult.ok) {
     alert(categoryResult.message || "Error al cargar la categoría");
-    window.location.href = "/html/categories.html";
+    window.location.href = "../../testing/category-testing.html";
     return;
   }
 
