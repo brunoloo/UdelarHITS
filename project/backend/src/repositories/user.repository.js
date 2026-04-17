@@ -80,10 +80,13 @@ const getUserIdByNickname = async (nickname) => {
 
 const getCategoriesByUserId = async (userId) => {
   const q = `
-    SELECT id, titulo, descripcion, etiqueta, fecha_creacion
-    FROM categoria
-    WHERE autor_id = $1
-    ORDER BY fecha_creacion DESC
+    SELECT c.id, c.titulo, c.descripcion, c.fecha_creacion,
+      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+    FROM categoria c
+    LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    WHERE c.autor_id = $1
+    GROUP BY c.id
+    ORDER BY c.fecha_creacion DESC
   `;
   const { rows } = await pool.query(q, [userId]);
   return rows;

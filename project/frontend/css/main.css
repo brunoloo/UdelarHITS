@@ -28,10 +28,36 @@ main {
   gap: 24px;
 }
 
+fieldset {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+form input, form textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+form input[type="checkbox"] {
+  width: auto;
+}
+
+#etiquetasContainer label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
 form {
   display: flex;
+  flex-direction: column;
   gap: 16px;
   margin-top: 16px;
+  max-width: 500px;
 }
 
 .card {
@@ -100,5 +126,6 @@ header a {
 .btn-login    { background: #000000; color: #fff; }
 .btn-logout   { background: #000000; color: #fff; }
 .btn-test     { background: #000000; color: #fff; }
+.btn-delete { background: #5c0909; color: #000000; }
 
 .btn:hover { opacity: 0.88; }

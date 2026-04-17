@@ -49,7 +49,7 @@ if (logoutForm) {
   logoutForm.addEventListener("click", async () => {
     const result = await apiPost("/auth/logout", {});
     if (result.ok) {
-      alert(JSON.stringify(result));
+      alert(JSON.stringify(result.message));
       window.location.href = "/testing/user-testing.html";
     } else if(!result.ok){
       alert(result.message);

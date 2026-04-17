@@ -63,7 +63,6 @@ CREATE TABLE categoria ( -- Revisado y completo. No modificar
   autor_id                    BIGINT NOT NULL REFERENCES usuario(id) ON DELETE RESTRICT,
   contador_temas              INTEGER NOT NULL DEFAULT 0 CHECK (contador_temas >= 0),
   estado                      estado_cat NOT NULL DEFAULT 'activa',
-  etiqueta                    etiqueta NOT NULL DEFAULT 'Lifestyle',
   fecha_creacion              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

@@ -197,6 +197,7 @@ const showMeService = async (nickname) => {
 
   const safeUser = {
     id: user.id,
+    rol: user.rol,
     nickname: user.nickname,
     nombre: user.nombre,
     email: user.email,
@@ -274,12 +275,23 @@ const activeUserService = async (nickname) => {
 };
 
 const deleteUserService = async (nickname) => {
-  const deleted = await deleteUserByNickname(nickname);
-  if (!deleted) {
+  const user = await getUserByNickname(nickname);
+
+  if (!user) {
     const err = new Error('Usuario no encontrado');
     err.code = 'NOT_FOUND';
     throw err;
   }
+
+  const categorias = await getCategoriesByUserId(user.id);
+
+  if (categorias.length > 0) {
+    const err = new Error('No se puede eliminar el usuario porque tiene categorías creadas');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const deleted = await deleteUserByNickname(nickname);
   return deleted;
 };
 
