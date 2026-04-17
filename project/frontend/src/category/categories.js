@@ -5,7 +5,7 @@ async function loadCategories() {
 
   if (!result.ok) {
     alert(result.message || "No autorizado");
-    window.location.href = "/testing/category-testing.html";
+    window.location.href = "../../testing/category-testing.html";
     return;
   }
 
@@ -16,7 +16,7 @@ async function loadCategories() {
     tr.innerHTML = `
       <td>${c.id}</td>
       <td>${c.autor_nickname}</td>
-      <td><a href="/html/category.html?id=${c.id}">${c.titulo}</a></td>
+      <td><a href="category.html?id=${c.id}">${c.titulo}</a></td>
       <td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td>
       <td>${c.estado}</td>
       <td><button class="btn-eliminar" data-id="${c.id}" data-titulo="${c.titulo}">Eliminar</button></td>

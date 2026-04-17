@@ -5,7 +5,7 @@ async function loadMyCategories() {
 
   if (!result.ok) {
     alert(result.message || "No autorizado");
-    window.location.href = "/testing/category-testing.html";
+    window.location.href = "../../testing/category-testing.html";
     return;
   }
 
@@ -20,13 +20,13 @@ async function loadMyCategories() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${c.id}</td>
-      <td><a href="/html/category.html?id=${c.id}">${c.titulo}</a></td>
+      <td><a href="category.html?id=${c.id}">${c.titulo}</a></td>
       <td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td>
       <td>${c.estado}</td>
       <td>
   ${
       c.estado === "activa"
-      ? `<a class="btn-eliminar" href="/html/updateCategory.html?id=${c.id}">Editar</a>`
+      ? `<a class="btn-eliminar" href="updateCategory.html?id=${c.id}">Editar</a>`
       : `<span style="color: gray;">No podés editar categorías eliminadas</span>`
   }
 </td>
