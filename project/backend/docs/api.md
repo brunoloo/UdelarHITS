@@ -22,9 +22,11 @@ La plataforma permite que los usuarios expresen su opinión sobre los contenidos
 [Categoría] 
 • Los usuarios autores de categorías obtendrán el rol de moderador de la categoría creada. 
 • Los usuarios que participen (creando temas o comentarios), obtendrán el rol de participante. 
+• Los usuarios pueden reportar una categoría por spam o incitación al odio. 
+• Si una categoría supera un umbral de reportes, pasará a estado [inactiva]. 
+• Las categorías en estado [inactiva] no permitirán la publicación de contenido. El contenido previo a su inactivación  permanecerá visible. 
 • Los moderadores pueden acceder a la lista de participantes de su categoría. 
 • Los moderadores pueden eliminar su categoría, la cual pasará a estado [inactiva]. 
-• Las categorías en estado [inactiva] no permitirán la publicación de contenido. El contenido previo a su inactivación  permanecerá visible. 
 • La descripción de una categoría podrá ser editada por su moderador máximo una vez cada 72 horas. 
 • La descripción de una categoría tendrá un historial de ediciones visible. 
 • Cada categoría muestra un contador visible de temas publicados.
@@ -36,8 +38,10 @@ La plataforma permite que los usuarios expresen su opinión sobre los contenidos
 • Los temas en estado [inactivo] no permitirán la publicación de contenido. El contenido previo a su inactivación permanecerá visible.
 
 [Comentarios] 
+• Los comentarios se pueden publicar tanto en categorías como temas 
 • Los comentarios se publicarán de forma inmediata en estado [visible]. 
-• Solo el autor puede eliminar su propio comentario. • Los usuarios pueden reportar un comentario por spam o incitación al odio. 
+• Solo el autor puede eliminar su propio comentario. 
+• Los usuarios pueden reportar un comentario por spam o incitación al odio. 
 • Si un comentario supera un umbral de reportes, pasará a estado [oculto]. 
 • El autor puede editar su comentario, manteniendo un historial de ediciones visible.
 
@@ -59,10 +63,10 @@ La plataforma permite que los usuarios expresen su opinión sobre los contenidos
 [Usuario] 
 Caso de uso: Registrar usuario 
 Actores: Usuario
-Descripción: El caso de uso comienza cuando el usuario desea registrarse en el sistema. El sistema solicita nickname, nombre, email, contraseña, confirmación de contraseña. El sistema verifica que nickname y email sean únicos, que la contraseña contenga al menos 8 caracteres y que coincida con la confirmación de contraseña. En caso de éxito, se crea el usuario; de lo contrario, el usuario puede reingresar los datos o cancelar el caso de uso. [DONE] [a_menos_de_confirmación_de_contraseña]    
+Descripción: El caso de uso comienza cuando el usuario desea registrarse en el sistema. El sistema solicita nickname, nombre, email, contraseña, confirmación de contraseña. El sistema verifica que nickname y email sean únicos, que la contraseña contenga al menos 8 caracteres y que coincida con la confirmación de contraseña. En caso de éxito, se crea el usuario; de lo contrario, el usuario puede reingresar los datos o cancelar el caso de uso. [DONE] [a_menos_de_confirmación_de_contraseña][a_menos_de_historial_de_edición]     
 
 Caso de uso: Consulta de usuarios 
-Actores: Administrador 
+Actores: Administrador del sistema  
 Descripción: El caso de uso comienza cuando el administrador desea consultar el perfil de un usuario. El sistema lista todos los usuarios y el administrador selecciona uno, el sistema muestra sus datos personales, junto con la lista de: categorías creadas, seguidores y seguidos. [DONE]
 
 Caso de uso: Mostrar perfil de usuario
@@ -74,31 +78,47 @@ Actores: Usuario
 Descripción: El caso de uso comienza cuando el usuario desea modificar su perfil. Para ello selecciona su perfil y edita el dato deseado, el sistema permite editar su nombre, biografía y foto de perfil. Cuando termina la edición el sistema guarda los cambios. (El nickname y email no se modifican por integridad). [DONE] [a_menos_de_poder_editar_su_foto_de_perfil_sin_necesidad_de_url]   
 
 Caso de uso: Eliminar usuario 
-Actores: Usuario 
-Descripción: El caso de uso comienza cuando el usuario desdea eliminar un usuario. El sistema lista los usuarios y el usuario selecciona uno, el sistema pide confirmación del usuario a eliminar. Al aceptar, el usuario y toda su información vinculada se eliminan del sistema, en caso de cancelar, finaliza el caso de uso. [TODO]
+Actores: Administrador del sistema 
+Descripción: El caso de uso comienza cuando el administrador desdea eliminar un usuario. El sistema lista los usuarios y el administrador selecciona uno. El usuario y toda su información vinculada se eliminan del sistema. [DONE]
+
+Caso de uso: Modificar estado de usuario
+Actores: Administrador del sistema 
+Descripción: El caso de uso comienza cuando el administrador desea modificar el estado de un usuario. El sistema lista los usuarios y el administrador selecciona uno, el sistema indica el estado actual del usuario y despliega una lista de estados a cambiar; el administrador selecciona uno y el sistema modifica el estado del usuario. [TODO]
 
 [Categoría] 
-Caso de uso: Registrar categoría 
+Caso de uso: Crear categoría 
 Actores: Usuario 
-Descripción: El caso de uso comienza cuando el usuario desea crear una nueva categoría. El sistema solicita título, descripción y etiqueta (una o varias de las existentes). El sistema verifica que el título sea único, que se haya proporcionado descripción y al menos una de las etiquetas. En caso de éxito se crea la categoría en estado activa, de lo contrario, el usuario puede reingresar los datos o cancelar el caso de uso. [TODO]
+Descripción: El caso de uso comienza cuando el usuario desea crear una nueva categoría. El sistema solicita título, descripción y etiqueta (una o varias de las existentes). El sistema verifica que el título sea único, que se haya proporcionado descripción y al menos una de las etiquetas. En caso de éxito se crea la categoría en estado activa, de lo contrario, el usuario puede reingresar los datos o cancelar el caso de uso. [DONE]
 
 Caso de uso: Consulta de categorías 
-Actores: usuario del sistema 
-Descripción: El caso de uso comienza cuando el usuario desea consultar una categoría. El sistema lista todas las categorías y el usuario selecciona una, el sistema devuelve todos sus datos (título, descripción, etiquetas, contador de comentarios, estado y fecha de creación), junto con las lista de temas y usuarios que han participado mediante temas o comentarios. [TODO]
+Actores: Administrador del sistema 
+Descripción: El caso de uso comienza cuando el administrador desea consultar una categoría. El sistema lista todas las categorías y el administrador selecciona una, el sistema devuelve todos sus datos (título, descripción, etiquetas, contador de temas, estado y fecha de creación), junto con la lista de temas que posee la categoría. [DONE]
+
+Caso de uso: Consulta de categorías 
+Actores: Usuario
+Descripción: El caso de uso comienza cuando el usuario desea consultar sus categorías. El sistema lista todas las categorías creadas por el usuario. [DONE]
 
 Caso de uso: Modificar categoría 
 Actores: Usuario 
-Descripción: El caso de uso comienza cuando el usuario desea modificar una categoría. El sistema lista todas las categorías y el usuario selecciona una, el sistema permite editar su descripción y etiquetas. Cuando termina la edición, el sistema guarda los cambios. (El título y estado no se modifican por integridad) [TODO]
+Descripción: El caso de uso comienza cuando el usuario desea modificar una categoría. El sistema lista todas las categorías creadas por el usuario y el usuario selecciona una, el sistema permite editar su descripción y etiquetas. Cuando termina la edición, el sistema guarda los cambios. (El título no se modifica por integridad) [DONE] [a_menos_de_restricción_horaria]
 
-Caso de uso: Eliminar categoría 
+Caso de uso: Desactivar categoría 
 Actores: Usuario 
-Descripción: El caso de uso comienza cuando el usuario desdea eliminar una categoría. El sistema lista las categorías y el usuario selecciona una, el sistema pide confirmación de la categoría a eliminar. Al aceptar, la categoría y toda su información vinculada se eliminan del sistema, en caso de cancelar, finaliza el caso de uso.[TODO]
+Descripción: El caso de uso comienza cuando el usuario desdea eliminar una categoría. El sistema lista las categorías y el usuario selecciona una, el sistema pide confirmación de la categoría a eliminar. Al aceptar, la categoría pasa a estado inactiva pero contiene toda la información vinculada, en caso de cancelar, finaliza el caso de uso.[DONE]
 
-Caso de uso: Modificar estado de categoría 
+Caso de uso: Activar categoría 
 Actores: Usuario 
-Descripción: El caso de uso comienza cuando el usuario desea modificar el estado de una categoría. El sistema lista las categorías y el usuario selecciona una, el sistema indica el estado actual de la categoría y despliega una lista de estados a cambiar; el usuario selecciona uno y el sistema modifica el estado de la categoría. [TODO]
+Descripción: El caso de uso comienza cuando el usuario desdea activar su categoría eliminada. El sistema lista las categorías creadas por el usuario, el usuario selecciona una, y la categoría pasa a estado activa [DONE]
+
+Caso de uso: Mostrar participantes de categoría
+Actores: Usuario
+Descripción: El caso de uso comienza cuando el usuario moderador de su categoría desdea obtener los usuarios que participan. El sistema lista la lista de usuarios participantes. [TODO]
 
 [Tema] 
+Caso de uso: Crear tema 
+Actores: Usuario 
+Descripción: El caso de uso comienza cuando el usuario desea crear un nuevo tema dentro de una categoría. El sistema solicita título, descripción y etiqueta (una o varias de las existentes). El sistema verifica que el título sea único, que se haya proporcionado descripción y al menos una de las etiquetas. En caso de éxito se crea la categoría en estado activa, de lo contrario, el usuario puede reingresar los datos o cancelar el caso de uso. [DONE]
+
 Caso de uso: Consulta de temas 
 Actores: usuario del sistema 
 Descripción: El caso de uso comienza cuando el usuario desea consultar un tema. El sistema lista todos los temas y el usuario selecciona uno, el sistema devuelve todos sus datos (título, contenido, estado y fecha de creación), junto con la lista de comentarios y usuarios que han participado mediante comentarios. [TODO]

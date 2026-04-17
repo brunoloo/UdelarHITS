@@ -10,10 +10,10 @@ SELECT id, rol, nickname, nombre, email, LEFT(password_hash, 10), LEFT(biografia
 curl -X POST http://localhost:5001/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "nickname": "brunoloo",
-    "nombre": "Bruno",
-    "email": "bruno@gmail.com",
-    "password": "12345678!"
+    "nickname": "nicoAlberro",
+    "nombre": "nico",
+    "email": "nico@gmail.com",
+    "password": "12345678"
   }'
 
 # Agregar administrador siendo admin, de no serlo esto debería fallar #
@@ -56,9 +56,9 @@ curl -i -X GET http://localhost:5001/api/users/ \
   --cookie "jwt=TOKEN_DE_ADMINISTRADOR"
 
 # Obtener usuario #
-curl -i -X GET http://localhost:5001/api/users/brunoloo \
+curl -i -X GET http://localhost:5001/api/users/admin \
   -H "Content-Type: application/json" \
-  --cookie "jwt=TOKEN_DE_ADMINISTRADOR"  
+  --cookie "jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjIiLCJpYXQiOjE3NzU5NzY2NDQsImV4cCI6MTc3NjU4MTQ0NH0.j28WEhxO35Xn4KuQW59Okoz-53puKt9C1oCrOHfH1Dk"  
 
 # Modificar usuario #
 curl -X PATCH "http://localhost:5001/api/users/me" \
@@ -71,7 +71,6 @@ curl -I http://localhost:5001/api/users/1/avatar
 
 # Suspender usuario #
 curl -X PATCH "http://localhost:5001/api/users/brunoloo/ban" -H "Cookie: jwt=TOKEN_DE_ADMINISTRADOR"
-
 
 # Activar usuario #
 curl -X PATCH "http://localhost:5001/api/users/brunoloo/active" -H "Cookie: jwt=TOKEN_DE_ADMINISTRADOR"

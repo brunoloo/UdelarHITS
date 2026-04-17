@@ -31,38 +31,50 @@ async function loadUser() {
   `;
 
   categoriesBody.innerHTML = "";
-  categories.forEach(c => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${c.id}</td>
-      <td>${c.titulo}</td>
-      <td>${c.etiqueta}</td>
-      <td>${new Date(c.fecha_creacion).toLocaleString()}</td>
-    `;
-    categoriesBody.appendChild(tr);
-  });
+  if (!categories || categories.length === 0) {
+    categoriesBody.innerHTML = `<tr><td colspan="4">Sin categorías aún</td></tr>`;
+  } else {
+    categories.forEach(c => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${c.id}</td>
+        <td>${c.titulo}</td>
+        <td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td>
+        <td>${new Date(c.fecha_creacion).toLocaleString()}</td>
+      `;
+      categoriesBody.appendChild(tr);
+    });
+  }
 
   followersBody.innerHTML = "";
-  followers.forEach(f => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${f.id}</td>
-      <td>${f.nickname}</td>
-      <td>${f.nombre}</td>
-    `;
-    followersBody.appendChild(tr);
-  });
+  if (!followers || followers.length === 0) {
+    followersBody.innerHTML = `<tr><td colspan="3">Sin seguidores aún</td></tr>`;
+  } else {
+    followers.forEach(f => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${f.id}</td>
+        <td>${f.nickname}</td>
+        <td>${f.nombre}</td>
+      `;
+      followersBody.appendChild(tr);
+    });
+  }
 
   followingBody.innerHTML = "";
-  following.forEach(f => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${f.id}</td>
-      <td>${f.nickname}</td>
-      <td>${f.nombre}</td>
-    `;
-    followingBody.appendChild(tr);
-  });
+  if (!following || following.length === 0) {
+    followingBody.innerHTML = `<tr><td colspan="3">Sin seguidos aún</td></tr>`;
+  } else {
+    following.forEach(f => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${f.id}</td>
+        <td>${f.nickname}</td>
+        <td>${f.nombre}</td>
+      `;
+      followingBody.appendChild(tr);
+    });
+  }
 }
 
 loadUser();
