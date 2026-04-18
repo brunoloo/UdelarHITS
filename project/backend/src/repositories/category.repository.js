@@ -173,6 +173,7 @@ const assignParticipantRole = async (userId, categoriaId) => {
   await pool.query(q, [userId, categoriaId]);
 };
 
+
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
   updateCategoryById, assignParticipantRole };

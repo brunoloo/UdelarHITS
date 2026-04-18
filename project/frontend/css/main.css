@@ -128,7 +128,7 @@ header a {
 .btn-login    { background: #000000; color: #fff; }
 .btn-logout   { background: #000000; color: #fff; }
 .btn-test     { background: #000000; color: #fff; }
-.btn-delete { background: #5c0909; color: #000000; }
-.btn-volver     { background: #000000; color: #fff; }
+.btn-delete   { background: #5c0909; color: #000000; }
+.btn-volver   { background: #000000; color: #fff; }
 
 .btn:hover { opacity: 0.88; }
