@@ -5,6 +5,7 @@ import pool from '../config/db.js';
 import UserRoutes from './user.routes.js';
 import AuthRoutes from './auth.routes.js'
 import CategoryRoutes from './category.routes.js'
+import TopicRoutes from './topic.routes.js'
 
 const router = Router();
 
@@ -12,7 +13,7 @@ const router = Router();
 router.use('/auth', AuthRoutes); 
 router.use('/users', UserRoutes);
 router.use('/categories', CategoryRoutes);
-
+router.use('/topics', TopicRoutes);
 
 router.get('/', (_req, res) => {
   res.json({ 

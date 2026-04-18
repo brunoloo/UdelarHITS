@@ -116,6 +116,8 @@ header a {
 }
 
 #pingBtn {
+  display: block;
+  margin: 20px auto;
   width: 220px;              /* más grande */
   padding: 14px 28px;        /* más alto */
   font-size: 16px;           /* texto más grande */
@@ -127,5 +129,6 @@ header a {
 .btn-logout   { background: #000000; color: #fff; }
 .btn-test     { background: #000000; color: #fff; }
 .btn-delete { background: #5c0909; color: #000000; }
+.btn-volver     { background: #000000; color: #fff; }
 
 .btn:hover { opacity: 0.88; }

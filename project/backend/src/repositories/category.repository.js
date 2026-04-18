@@ -164,5 +164,15 @@ const updateCategoryById = async (id, { descripcion, etiquetas }) => {
   }
 };
 
+const assignParticipantRole = async (userId, categoriaId) => {
+  const q = `
+    INSERT INTO participacion_categoria (usuario_id, categoria_id, rol)
+    VALUES ($1, $2, 'participante')
+    ON CONFLICT (usuario_id, categoria_id) DO NOTHING
+  `;
+  await pool.query(q, [userId, categoriaId]);
+};
+
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
-  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, updateCategoryById };
+  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
+  updateCategoryById, assignParticipantRole };
