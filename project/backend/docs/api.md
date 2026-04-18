@@ -104,7 +104,7 @@ Descripción: El caso de uso comienza cuando el usuario desea modificar una cate
 
 Caso de uso: Desactivar categoría 
 Actores: Usuario 
-Descripción: El caso de uso comienza cuando el usuario desdea eliminar una categoría. El sistema lista las categorías y el usuario selecciona una, el sistema pide confirmación de la categoría a eliminar. Al aceptar, la categoría pasa a estado inactiva pero contiene toda la información vinculada, en caso de cancelar, finaliza el caso de uso.[DONE]
+Descripción: El caso de uso comienza cuando el usuario desdea eliminar una categoría. El sistema lista las categorías y el usuario selecciona una, el sistema pide confirmación de la categoría a eliminar. Al aceptar, la categoría pasa a estado inactiva pero contiene toda la información vinculada, en caso de cancelar, finaliza el caso de uso. [DONE]
 
 Caso de uso: Activar categoría 
 Actores: Usuario 
@@ -117,7 +117,7 @@ Descripción: El caso de uso comienza cuando el usuario moderador de su categor�
 [Tema] 
 Caso de uso: Crear tema 
 Actores: Usuario 
-Descripción: El caso de uso comienza cuando el usuario desea crear un nuevo tema dentro de una categoría. El sistema solicita título, descripción y etiqueta (una o varias de las existentes). El sistema verifica que el título sea único, que se haya proporcionado descripción y al menos una de las etiquetas. En caso de éxito se crea la categoría en estado activa, de lo contrario, el usuario puede reingresar los datos o cancelar el caso de uso. [DONE]
+Descripción: El caso de uso comienza cuando el usuario desea crear un nuevo tema dentro de una categoría. El sistema solicita título y contenido. El sistema verifica que el título sea único dentro de la categoría y que se haya proporcionado contenido. En caso de éxito se crea el tema en estado activa, de lo contrario, el usuario puede reingresar los datos o cancelar el caso de uso. [DONE]
 
 Caso de uso: Consulta de temas 
 Actores: usuario del sistema 
@@ -154,8 +154,8 @@ Descripción: El caso de uso comienza cuando el usuario desea consultar los come
 
 [Apelaciones] 
 Caso de uso: Resolver apelación 
-Actores: Usuario 
-Descripción: El caso de uso comienza cuando el usuario desea resolver una apelación. El sistema lista las apelaciones en estado pendiente y el usuario selecciona una. El sistema muestra su justificación junto con el comentario o tema que fue reportado, con la opción de aceptar o rechazar. En caso de aceptar, se modifica el estado de la apelación a aceptada y se modifica el estado del comentario o tema del cuál se apeló a visible o activo respectivamente. En caso de rechazar, se modifica el estado de la apelación a rechazada y finaliza el caso de uso. [TODO]
+Actores: Administrador del sistema 
+Descripción: El caso de uso comienza cuando el administrador desea resolver una apelación. El sistema lista las apelaciones en estado pendiente y el usuario selecciona una. El sistema muestra su justificación junto con el comentario o tema que fue reportado, con la opción de aceptar o rechazar. En caso de aceptar, se modifica el estado de la apelación a aceptada y se modifica el estado del comentario o tema del cuál se apeló a visible o activo respectivamente. En caso de rechazar, se modifica el estado de la apelación a rechazada y finaliza el caso de uso. [TODO]
 
 ---------------------------------------------------------------------------------------------------------------------------
 

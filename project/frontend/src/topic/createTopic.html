@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crear tema</title>
+  <link rel="stylesheet" href="../../css/main.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <h1>Crear tema</h1>
+
+  <form id="createTopicForm">
+    <input name="titulo" placeholder="Título del tema" required />
+    <textarea name="cuerpo" placeholder="Contenido del tema" required></textarea>
+    <select name="categoria_id" required>
+      <option value="" disabled selected>Seleccioná una categoría</option>
+    </select>
+    <button>Crear tema</button>
+  </form>
+
+  <script src="../../shared/transitions.js"></script>
+  <script src="../../shared/header.js"></script>
+  <script src="../../shared/api.js"></script>
+  <script src="createTopic.js"></script>
+</body>
+</html>
