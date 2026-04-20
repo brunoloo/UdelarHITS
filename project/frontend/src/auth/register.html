@@ -8,15 +8,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>Registro</h1>
+  <main>
+    <h1>Registro</h1>
+    <form id="registerForm">
+      <input name="nickname" placeholder="Nickname" />
+      <input name="nombre" placeholder="Nombre" required />
+      <input name="email" type="email" placeholder="Email" required />
+      <input name="password" type="password" placeholder="Password" required />
+      <button>Registrarse</button>
+    </form>
+  </main>
 
-  <form id="registerForm">
-    <input name="nickname" placeholder="Nickname" />
-    <input name="nombre" placeholder="Nombre" required />
-    <input name="email" type="email" placeholder="Email" required />
-    <input name="password" type="password" placeholder="Password" required />
-    <button>Registrarse</button>
-  </form>
   
   <script src="../../shared/transitions.js"></script>
   <script src="../../shared/header.js"></script>

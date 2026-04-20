@@ -59,7 +59,8 @@ const getCategories = async () => {
 
 const getCategoryById = async (id) => {
   const q = `
-    SELECT c.id, c.titulo, c.descripcion, c.autor_id, c.estado, c.contador_temas, c.fecha_creacion,
+    SELECT c.id, c.titulo, c.descripcion, c.autor_id, c.estado, c.fecha_creacion,
+      (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
     FROM categoria c
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
@@ -90,7 +91,7 @@ const getTopicsByCategoryId = async (categoryId) => {
     SELECT t.contenido_id, t.titulo, t.estado, c.fecha_creacion
     FROM tema t
     JOIN contenido c ON c.id = t.contenido_id
-    WHERE t.categoria_id = $1
+    WHERE t.categoria_id = $1 AND t.estado = 'activo'
     ORDER BY c.fecha_creacion DESC
   `;
   const { rows } = await pool.query(q, [categoryId]);
@@ -172,7 +173,6 @@ const assignParticipantRole = async (userId, categoriaId) => {
   `;
   await pool.query(q, [userId, categoriaId]);
 };
-
 
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 

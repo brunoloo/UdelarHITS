@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modificar tema</title>
+  <link rel="stylesheet" href="../../css/main.css" />
+  <link rel="stylesheet" href="../../css/profile.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet"></link>
+</head>
+<body>
+  <main>
+    <div class="profile-card">
+  
+      <div class="card">
+        <div class="card-info">
+          <h2>Título</h2>
+          <p id="topicTitulo"></p>
+        </div>
+      </div>
+  
+      <div class="card">
+        <div class="card-info">
+          <h2>Pertenece a categoría</h2>
+          <p id="topicCategoria"></p>
+        </div>
+      </div>
+  
+      <div class="card">
+        <div class="card-info">
+          <h2>Contenido</h2>
+          <div class="edit-row">
+            <p id="topicCuerpo"></p>
+            <button class="edit-btn" data-field="cuerpo" title="Editar contenido">✏️</button>
+          </div>
+          <textarea id="inputCuerpo" class="edit-input" style="display:none;"></textarea>
+        </div>
+      </div>
+  
+      <div class="card">
+        <div class="card-info">
+          <h2>Eliminar categoría</h2>
+          <button class="btn btn-delete confirm" id="eliminarBtn">eliminar</button>
+          <textarea id="inputDescripcion" class="edit-input" style="display:none;"></textarea>
+        </div>
+      </div>
+
+      <div class="button-container">
+        <a class="btn btn-register cancel" href="/src/topic/myTopics.html">Cancelar</a>
+        <button class="btn btn-register confirm" id="confirmBtn">Confirmar</button>
+      </div>
+  
+    </div>
+  </main>
+
+  <script src="../../shared/transitions.js"></script>
+  <script src="../../shared/header.js"></script>
+  <script src="../../shared/api.js"></script>
+  <script src="updateTopic.js"></script>
+</body>
+</html>

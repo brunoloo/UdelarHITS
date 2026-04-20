@@ -84,7 +84,7 @@ const getCategoriesByUserId = async (userId) => {
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
     FROM categoria c
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
-    WHERE c.autor_id = $1
+    WHERE c.autor_id = $1 AND c.estado = 'activa'
     GROUP BY c.id
     ORDER BY c.fecha_creacion DESC
   `;

@@ -4,7 +4,7 @@ import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.get('/', protect, isAdmin, getCategories);        // Listar categorías (solo admin)
+router.get('/', protect, getCategories);                 // Listar categorías 
 router.post('/create', protect, createCategory);         // Crear categoría
 router.get('/me', protect, getMyCategories);             // Ver mis categorías
 

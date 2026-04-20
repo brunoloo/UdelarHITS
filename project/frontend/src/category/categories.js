@@ -15,7 +15,7 @@ async function loadCategories() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${c.id}</td>
-      <td>${c.autor_nickname}</td>
+      <td><a href="/src/user/user.html?nickname=${encodeURIComponent(c.autor_nickname)}">${c.autor_nickname}</a></td>
       <td><a href="category.html?id=${c.id}">${c.titulo}</a></td>
       <td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td>
       <td>${c.estado}</td>
