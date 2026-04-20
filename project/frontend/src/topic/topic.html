@@ -2,29 +2,37 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Usuarios</title>
+  <title>Tema</title>
   <link rel="stylesheet" href="../../css/main.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <main>
-    <h1>Usuarios del sistema</h1>
-    <table id="usersTable" border="1" cellpadding="8" cellspacing="0">
+    <h1>Detalle de tema</h1>
+  
+    <h2>Datos</h2>
+    <table id="topicTable" border="1" cellpadding="8" cellspacing="0">
+      <tbody></tbody>
+    </table>
+  
+    <h2>Comentarios</h2>
+    <table id="commentsTable" border="1" cellpadding="8" cellspacing="0">
       <thead>
         <tr>
           <th>ID</th>
-          <th>Nickname</th>
-          <th>Email</th>
+          <th>Autor</th>
+          <th>Contenido</th>
+          <th>Estado</th>
+          <th>Fecha</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </main>
 
-
   <script src="../../shared/transitions.js"></script>
   <script src="../../shared/header.js"></script>
   <script src="../../shared/api.js"></script>
-  <script src="users.js"></script>
+  <script src="topic.js"></script>
 </body>
 </html>

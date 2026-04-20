@@ -8,16 +8,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>Crear tema</h1>
-
-  <form id="createTopicForm">
-    <input name="titulo" placeholder="Título del tema" required />
-    <textarea name="cuerpo" placeholder="Contenido del tema" required></textarea>
-    <select name="categoria_id" required>
-      <option value="" disabled selected>Seleccioná una categoría</option>
-    </select>
-    <button>Crear tema</button>
-  </form>
+  <main>
+    <h1>Crear tema</h1>
+  
+    <form id="createTopicForm">
+      <input name="titulo" placeholder="Título del tema" required />
+      <textarea name="cuerpo" placeholder="Contenido del tema" required></textarea>
+      <select name="categoria_id" required>
+        <option value="" disabled selected>Seleccioná una categoría</option>
+      </select>
+      <button>Crear tema</button>
+    </form>
+  </main>
 
   <script src="../../shared/transitions.js"></script>
   <script src="../../shared/header.js"></script>
