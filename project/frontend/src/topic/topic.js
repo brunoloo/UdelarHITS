@@ -26,29 +26,29 @@ async function loadTopic() {
   topicBody.innerHTML = `
     ${isAdmin ? `<tr><th>ID</th><td>${t.id}</td></tr>` : ''}
     <tr><th>Título</th><td>${t.titulo}</td></tr>
-    <tr><th>Autor</th><td>${t.autor_nickname}</td></tr>
-    <tr><th>Contenido</th><td>${t.cuerpo}</td></tr>
+    <tr><th>Autor</th><td><a href="../user/user.html?nickname=${encodeURIComponent(t.autor_nickname)}">${t.autor_nickname}</a></td></tr>
+    <tr><th>Descripción</th><td>${t.cuerpo}</td></tr>
     <tr><th>Estado</th><td>${t.estado}</td></tr>
     <tr><th>Fecha de creación</th><td>${new Date(t.fecha_creacion).toLocaleString()}</td></tr>
   `;
 
+  // Comentarios
   const commentsBody = document.querySelector("#commentsTable tbody");
-  if (!t.comments || t.comments.length === 0) {
-    commentsBody.innerHTML = `<tr><td colspan="5">Sin comentarios aún</td></tr>`;
-    return;
-  }
+  const repliesResult = await apiGet(`/replies/topic/${id}`);
 
-  t.comments.forEach(c => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${c.id}</td>
-      <td>${c.autor_nickname}</td>
-      <td>${c.cuerpo}</td>
-      <td>${c.estado}</td>
-      <td>${new Date(c.fecha_creacion).toLocaleString()}</td>
-    `;
-    commentsBody.appendChild(tr);
-  });
+  if (!repliesResult.ok || repliesResult.data.length === 0) {
+    commentsBody.innerHTML = `<tr><td colspan="5">Sin comentarios aún</td></tr>`;
+  } else {
+    repliesResult.data.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.id}</td>
+        <td><a href="../user/user.html?nickname=${encodeURIComponent(r.autor_nickname)}">${r.autor_nickname}</a></td>
+        <td>${r.cuerpo}</td>
+      `;
+      commentsBody.appendChild(tr);
+    });
+  }
 }
 
 loadTopic();

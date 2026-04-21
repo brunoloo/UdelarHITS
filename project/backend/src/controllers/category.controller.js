@@ -1,5 +1,6 @@
 import { createCategoryService, getCategoriesService, getCategoryByIdService, 
-  deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService } from '../services/category.service.js';
+  deleteCategoryService, activeCategoryService, getMyCategoriesService, 
+  updateCategoryService, getActiveCategoriesService } from '../services/category.service.js';
 
 const createCategory = async (req, res) => {
   try {
@@ -90,4 +91,14 @@ const updateCategory = async (req, res) => {
   }
 };
 
-export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory, getMyCategories, updateCategory};
+const getActiveCategories = async (req, res) => {
+  try {
+    const categories = await getActiveCategoriesService();
+    return res.status(200).json({ ok: true, data: categories });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory, 
+  getMyCategories, updateCategory, getActiveCategories };

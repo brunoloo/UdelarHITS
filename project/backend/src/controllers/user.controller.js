@@ -56,10 +56,10 @@ export const createUserByAdmin = async (req, res) => {
       ok: true,
       data: {
         id: result.id,
+        rol: result.rol,
         nickname: result.nickname,
         nombre: result.nombre,
-        email: result.email,
-        rol: result.rol
+        email: result.email
       }
     });
   } catch (error) {

@@ -174,6 +174,17 @@ const assignParticipantRole = async (userId, categoriaId) => {
   await pool.query(q, [userId, categoriaId]);
 };
 
+const getActiveCategories = async () => {
+  const q = `
+    SELECT id, titulo
+    FROM categoria
+    WHERE estado = 'activa'
+    ORDER BY titulo ASC
+  `;
+  const { rows } = await pool.query(q);
+  return rows;
+};
+
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
-  updateCategoryById, assignParticipantRole };
+  updateCategoryById, assignParticipantRole, getActiveCategories };

@@ -35,19 +35,36 @@ async function loadCategory() {
   // Temas
   const topicsBody = document.querySelector("#topicsTable tbody");
   if (!c.topics || c.topics.length === 0) {
-    topicsBody.innerHTML = `<tr><td colspan="4">Sin temas aún</td></tr>`;
-    return;
+    topicsBody.innerHTML = `<tr><td colspan="3">Sin temas aún</td></tr>`;
+  } else {
+    c.topics.forEach(t => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${t.contenido_id}</td>
+        <td><a href="/src/topic/topic.html?id=${t.contenido_id}">${t.titulo}</a></td>
+        <td>${new Date(t.fecha_creacion).toLocaleString()}</td>
+      `;
+      topicsBody.appendChild(tr);
+    });
   }
 
-  c.topics.forEach(t => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${t.contenido_id}</td>
-      <td>${t.titulo}</td>
-      <td>${new Date(t.fecha_creacion).toLocaleString()}</td>
-    `;
-    topicsBody.appendChild(tr);
-  });
+  // Comentarios
+  const repliesBody = document.querySelector("#repliesTable tbody");
+  const repliesResult = await apiGet(`/replies/category/${id}`);
+
+  if (!repliesResult.ok || repliesResult.data.length === 0) {
+    repliesBody.innerHTML = `<tr><td colspan="3">Sin comentarios aún</td></tr>`;
+  } else {
+    repliesResult.data.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.id}</td>
+        <td><a href="../user/user.html?nickname=${encodeURIComponent(r.autor_nickname)}">${r.autor_nickname}</a></td>
+        <td>${r.cuerpo}</td>
+      `;
+      repliesBody.appendChild(tr);
+    });
+  }
 }
 
 loadCategory();

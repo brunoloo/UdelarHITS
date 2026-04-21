@@ -1,6 +1,8 @@
+import { getCategoryById, assignParticipantRole, getTopicsByCategoryId } from '../repositories/category.repository.js';
+
 import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
-  getTopicsByAuthorId, updateTopicById, updateTopicEstado, decrementTopicCount, incrementTopicCount } from '../repositories/topic.repository.js';
-import { getCategoryById, assignParticipantRole } from '../repositories/category.repository.js';
+  getTopicsByAuthorId, updateTopicById, updateTopicEstado, decrementTopicCount, 
+  incrementTopicCount, getTopicsByUserId } from '../repositories/topic.repository.js';
 
 const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => {
   if (!categoria_id || !titulo?.trim() || !cuerpo?.trim()) {
@@ -133,5 +135,13 @@ const activeTopicService = async (userId, userRol, topicId) => {
   return await updateTopicEstado(topicId, 'activo');
 };
 
+const getTopicsByCategoryIdService = async (categoriaId) => {
+  return await getTopicsByCategoryId(categoriaId);
+};
+
+const getTopicsByUserIdService = async (userId) => {
+  return await getTopicsByUserId(userId);
+};
+
 export { createTopicService, getTopicsService ,getTopicByIdService, getMyTopicsService, 
-  updateTopicService, activeTopicService, deleteTopicService };
+  updateTopicService, activeTopicService, deleteTopicService, getTopicsByCategoryIdService, getTopicsByUserIdService };

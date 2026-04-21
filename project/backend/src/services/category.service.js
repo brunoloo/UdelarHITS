@@ -1,5 +1,6 @@
 import { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
-  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, updateCategoryById } from '../repositories/category.repository.js';
+  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
+  updateCategoryById, getActiveCategories } from '../repositories/category.repository.js';
 
 const ETIQUETAS_VALIDAS = [
   'Lifestyle','Daily life','Relationships','Education','Work & career','Travel',
@@ -146,5 +147,9 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
   return await updateCategoryById(categoryId, { descripcion, etiquetas });
 };
 
+const getActiveCategoriesService = async () => {
+  return await getActiveCategories();
+};
+
 export { createCategoryService, getCategoriesService, getCategoryByIdService, deactivateCategoryById, 
-  deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService };
+  deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService, getActiveCategoriesService };

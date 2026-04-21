@@ -30,6 +30,7 @@ async function loadMyCategories() {
       : `<span style="color: gray;">No podés editar categorías eliminadas</span>`
   }
 </td>
+      </td><a class="btn-eliminar" href="">Ver</a></td>
     `;
     tableBody.appendChild(tr);
   });

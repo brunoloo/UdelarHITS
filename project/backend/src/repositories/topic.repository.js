@@ -131,5 +131,19 @@ const decrementTopicCount = async (categoriaId) => {
   `, [categoriaId]);
 };
 
+const getTopicsByUserId = async (userId) => {
+  const q = `
+    SELECT t.contenido_id AS id, t.titulo, t.estado, t.categoria_id,
+      c.titulo AS categoria_titulo, con.fecha_creacion
+    FROM tema t
+    JOIN contenido con ON con.id = t.contenido_id
+    JOIN categoria c ON c.id = t.categoria_id
+    WHERE con.autor_id = $1 AND t.estado = 'activo'
+    ORDER BY con.fecha_creacion DESC
+  `;
+  const { rows } = await pool.query(q, [userId]);
+  return rows;
+};
+
 export { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById, getTopicsByAuthorId, 
-  updateTopicById, updateTopicEstado, incrementTopicCount, decrementTopicCount };
+  updateTopicById, updateTopicEstado, incrementTopicCount, decrementTopicCount, getTopicsByUserId };
