@@ -119,9 +119,14 @@ CREATE TABLE tema (
 -- -----------------------------
 CREATE TABLE comentario (
   contenido_id            BIGINT PRIMARY KEY REFERENCES contenido(id) ON DELETE CASCADE,
-  tema_id                 BIGINT NOT NULL REFERENCES tema(contenido_id) ON DELETE CASCADE,
+  tema_id                 BIGINT NULL REFERENCES tema(contenido_id) ON DELETE CASCADE,
+  categoria_id            BIGINT NULL REFERENCES categoria(id) ON DELETE CASCADE,
   comentario_padre_id     BIGINT NULL REFERENCES comentario(contenido_id) ON DELETE CASCADE,
-  estado                  estado_com NOT NULL DEFAULT 'visible'
+  estado                  estado_com NOT NULL DEFAULT 'visible',
+  CONSTRAINT comentario_target_check CHECK (
+    (tema_id IS NOT NULL AND categoria_id IS NULL) OR
+    (tema_id IS NULL AND categoria_id IS NOT NULL)
+  )
 );
 
 -- Índices para jerarquía de comentarios

@@ -25,7 +25,7 @@ async function loadMyTopics() {
       <td>${t.estado}</td>
       <td>${t.estado === 'activo'
         ? `<a href="/src/topic/updateTopic.html?id=${t.id}">Editar</a>`
-        : `<span style="color: gray;">Tema inactivo</span>`
+        : `<span style="color: gray;">No podés editar temas eliminados</span>`
       }</td>
     `;
     tableBody.appendChild(tr);

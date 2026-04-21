@@ -1,18 +1,16 @@
 const createTopicForm = document.getElementById("createTopicForm");
 
 async function loadCategories() {
-  const result = await apiGet("/categories/");
+  const result = await apiGet("/categories/active");
   if (!result.ok) return;
 
   const select = createTopicForm.querySelector('[name="categoria_id"]');
-  result.data
-    .filter(c => c.estado === 'activa')
-    .forEach(c => {
-      const option = document.createElement("option");
-      option.value = c.id;
-      option.textContent = c.titulo;
-      select.appendChild(option);
-    });
+  result.data.forEach(c => {
+    const option = document.createElement("option");
+    option.value = c.id;
+    option.textContent = c.titulo;
+    select.appendChild(option);
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {

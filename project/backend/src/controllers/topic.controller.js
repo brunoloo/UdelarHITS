@@ -1,5 +1,6 @@
 import { createTopicService, getTopicsService, getTopicByIdService, getMyTopicsService, 
-  updateTopicService, deleteTopicService, activeTopicService } from '../services/topic.service.js';
+  updateTopicService, deleteTopicService, activeTopicService, 
+  getTopicsByCategoryIdService, getTopicsByUserIdService } from '../services/topic.service.js';
 
 const createTopic = async (req, res) => {
   try {
@@ -83,4 +84,25 @@ const activeTopic = async (req, res) => {
   }
 };
 
-export { createTopic, getTopics, getTopicById, getMyTopics, updateTopic, deleteTopic, activeTopic };
+const getTopicsByCategory = async (req, res) => {
+  try {
+    const { categoriaId } = req.params;
+    const topics = await getTopicsByCategoryIdService(categoriaId);
+    return res.status(200).json({ ok: true, data: topics });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const getTopicsByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const topics = await getTopicsByUserIdService(userId);
+    return res.status(200).json({ ok: true, data: topics });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+export { createTopic, getTopics, getTopicById, getMyTopics, updateTopic, deleteTopic, 
+  activeTopic, getTopicsByCategory, getTopicsByUser };

@@ -29,6 +29,7 @@ if (createCategoryForm) {
       alert("Categoría creada correctamente");
       createCategoryForm.reset();
     } else {
+      createCategoryForm.reset();
       alert(result.message || "Error desconocido");
     }
   });
