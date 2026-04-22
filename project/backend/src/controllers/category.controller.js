@@ -1,6 +1,6 @@
 import { createCategoryService, getCategoriesService, getCategoryByIdService, 
   deleteCategoryService, activeCategoryService, getMyCategoriesService, 
-  updateCategoryService, getActiveCategoriesService } from '../services/category.service.js';
+  updateCategoryService, getActiveCategoriesService, getParticipantsByCategoryIdService } from '../services/category.service.js';
 
 const createCategory = async (req, res) => {
   try {
@@ -100,5 +100,18 @@ const getActiveCategories = async (req, res) => {
   }
 };
 
+const getParticipantsByCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const participants = await getParticipantsByCategoryIdService(req.user.id, id);
+    return res.status(200).json({ ok: true, data: participants });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+
 export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory, 
-  getMyCategories, updateCategory, getActiveCategories };
+  getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory };

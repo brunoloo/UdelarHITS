@@ -52,5 +52,4 @@ tableBody.addEventListener('click', async (e) => {
   }
 });
 
-// 🚀 init
 loadMyReplies();

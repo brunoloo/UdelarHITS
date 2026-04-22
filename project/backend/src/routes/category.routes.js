@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory, 
-    getMyCategories, updateCategory, getActiveCategories } from '../controllers/category.controller.js';
+    getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory } from '../controllers/category.controller.js';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 
 const router = Router();
@@ -12,6 +12,8 @@ router.get('/me', protect, getMyCategories);             // Ver mis categorías
 
 router.patch('/:id', protect, updateCategory);           // Actualizar categoría
 router.get('/:id', protect , getCategoryById);           // Ver categoría por id
+
+router.get('/:id/participants', protect, getParticipantsByCategory); // Obtener los participantes de mi categoría
 
 router.patch('/:id/delete', protect, deleteCategory)     // Desactiva la categoría
 router.patch('/:id/activar', protect, activeCategory)    // Activa la categoría 

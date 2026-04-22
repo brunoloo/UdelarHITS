@@ -72,6 +72,16 @@ const getRepliesByTopicIdService = async (topicId) => {
   return await getRepliesByTopicId(topicId);
 };
 
+const getReplyByIdService = async (id) => {
+  const reply = await getReplyById(id);
+  if (!reply) {
+    const err = new Error('Comentario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  return reply;
+};
+
 const deleteReplyService = async (userId, userRol, replyId) => {
   const reply = await getReplyById(replyId);
   if (!reply) {
@@ -120,4 +130,4 @@ const updateReplyService = async (userId, userRol, replyId, { cuerpo }) => {
 
 
 export { createReplyService, getRepliesByCategoryIdService, getRepliesByTopicIdService, 
-  deleteReplyService, getMyRepliesService, getRepliesByUserIdService, updateReplyService };
+  deleteReplyService, getMyRepliesService, getRepliesByUserIdService, updateReplyService, getReplyByIdService };

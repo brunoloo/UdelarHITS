@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply, 
-    getMyReplies, getRepliesByUser, updateReply } from '../controllers/reply.controller.js';
+    getMyReplies, getRepliesByUser, updateReply, getReplyById } from '../controllers/reply.controller.js';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 
 const router = Router();
@@ -8,6 +8,8 @@ const router = Router();
 router.post('/create', protect, createReply);                        // Publicar comentario
 
 router.get('/me', protect, getMyReplies);                            // Listar mis comentarios
+
+router.get('/:id', protect, getReplyById);                           // Listar comentarios dado un id              
 
 router.get('/user/:userId', protect, getRepliesByUser);         
 
