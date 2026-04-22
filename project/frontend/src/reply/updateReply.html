@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editar comentario</title>
+  <link rel="stylesheet" href="../../css/main.css" />
+  <link rel="stylesheet" href="../../css/profile.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    .edit-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .edit-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: #888;
+      padding: 0;
+      line-height: 1;
+    }
+    .edit-btn:hover { color: #4f46e5; }
+    .edit-input {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 14px;
+      width: 100%;
+    }
+    textarea.edit-input {
+      resize: vertical;
+      min-height: 80px;
+    }
+  </style>
+</head>
+<body>
+    <main>
+        <div class="profile-card">
+      
+          <div class="card">
+            <div class="card-info">
+              <h2>Publicado en</h2>
+              <p id="replyDestino"></p>
+            </div>
+          </div>
+      
+          <div class="card">
+            <div class="card-info">
+              <h2>Contenido</h2>
+              <div class="edit-row">
+                <p id="replyCuerpo"></p>
+                <button class="edit-btn" data-field="cuerpo" title="Editar contenido">✏️</button>
+              </div>
+              <textarea id="inputCuerpo" class="edit-input" style="display:none;"></textarea>
+            </div>
+          </div>
+      
+          <div class="button-container">
+            <a class="btn btn-register cancel" href="/src/reply/myReplies.html">Cancelar</a>
+            <button class="btn btn-register confirm" id="confirmBtn">Confirmar</button>
+          </div>
+      
+        </div>
+    </main>
+
+  <script src="../../shared/transitions.js"></script>
+  <script src="../../shared/header.js"></script>
+  <script src="../../shared/api.js"></script>
+  <script src="updateReply.js"></script>
+</body>
+</html>

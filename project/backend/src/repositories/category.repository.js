@@ -185,6 +185,18 @@ const getActiveCategories = async () => {
   return rows;
 };
 
+const getParticipantsByCategoryId = async (categoriaId) => {
+  const q = `
+    SELECT u.id, u.nickname, u.nombre, pc.rol
+    FROM participacion_categoria pc
+    JOIN usuario u ON u.id = pc.usuario_id
+    WHERE pc.categoria_id = $1 AND pc.rol = 'participante'
+    ORDER BY u.nickname ASC
+  `;
+  const { rows } = await pool.query(q, [categoriaId]);
+  return rows;
+};
+
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
-  updateCategoryById, assignParticipantRole, getActiveCategories };
+  updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId };

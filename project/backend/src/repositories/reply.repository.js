@@ -67,9 +67,16 @@ const deleteReplyById = async (id) => {
 
 const getReplyById = async (id) => {
   const q = `
-    SELECT com.contenido_id AS id, con.autor_id, com.estado
+    SELECT com.contenido_id AS id, con.autor_id, con.cuerpo, com.estado,
+      COALESCE(t.titulo, cat.titulo) AS destino_titulo,
+      CASE
+        WHEN com.tema_id IS NOT NULL THEN 'tema'
+        ELSE 'categoria'
+      END AS tipo
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
+    LEFT JOIN tema t ON t.contenido_id = com.tema_id
+    LEFT JOIN categoria cat ON cat.id = com.categoria_id
     WHERE com.contenido_id = $1
     LIMIT 1
   `;
