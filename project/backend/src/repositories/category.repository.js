@@ -176,10 +176,28 @@ const assignParticipantRole = async (userId, categoriaId) => {
 
 const getActiveCategories = async () => {
   const q = `
-    SELECT id, titulo
-    FROM categoria
-    WHERE estado = 'activa'
-    ORDER BY titulo ASC
+    SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
+      c.fecha_creacion, u.nickname AS autor_nickname,
+      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas,
+      (
+        SELECT json_build_object(
+          'titulo', t.titulo,
+          'autor', u2.nickname,
+          'fecha', con.fecha_creacion
+        )
+        FROM tema t
+        JOIN contenido con ON con.id = t.contenido_id
+        JOIN usuario u2 ON u2.id = con.autor_id
+        WHERE t.categoria_id = c.id AND t.estado = 'activo'
+        ORDER BY con.fecha_creacion DESC
+        LIMIT 1
+      ) AS ultimo_tema
+    FROM categoria c
+    JOIN usuario u ON u.id = c.autor_id
+    LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    WHERE c.estado = 'activa'
+    GROUP BY c.id, u.nickname
+    ORDER BY c.titulo ASC
   `;
   const { rows } = await pool.query(q);
   return rows;

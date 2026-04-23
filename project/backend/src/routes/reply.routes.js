@@ -17,8 +17,8 @@ router.patch('/update/:id', protect, updateReply);                   // Editar c
 
 router.delete('/delete/:id', protect, deleteReply);                  // Eliminar comentario
 
-router.get('/category/:categoriaId', protect, getRepliesByCategory); // Obtener los comentarios de una categoría
-router.get('/topic/:topicId', protect, getRepliesByTopic);           // Obtener los comentarios de un tema dentro de una categoría
+router.get('/category/:categoriaId', getRepliesByCategory); // Obtener los comentarios de una categoría
+router.get('/topic/:topicId', getRepliesByTopic);           // Obtener los comentarios de un tema dentro de una categoría
 
 
 export default router;

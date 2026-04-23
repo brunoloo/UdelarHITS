@@ -4,17 +4,82 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>UdelarHITS</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/main.css" />
   <link rel="stylesheet" href="css/index.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <script src="shared/header.js"></script>  
+  <nav class="left-nav"> <!-- Columna izquierda -->
+    <a href="/" class="nav-item active" id="nav-inicio">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Inicio
+    </a>
 
-  <main class="coming-soon">
-    <img src="assets/gif/One_Piece_Hat_Sticker.gif" alt="Sombrero de Luffy" title="¡Soy Monkey D. Luffy!" />
-    <h1>Estamos trabajando para traerte la mejor experiencia</h1>
-    <p></p>
-  </main>
+    <a href="#" class="nav-item" id="nav-explorar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Explorar
+    </a>
+
+    <a href="#" class="nav-item" id="nav-populares">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Populares
+    </a>
+
+    <a href="#" class="nav-item" id="nav-recientes">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Recientes
+    </a>
+  </nav>
+  
+  <div class="page">
+    <main> <!-- Columna central -->
+      <div class="feed-header">
+        <h1 class="feed-title">Explora las categorías</h1>
+      </div>
+      <div id="categoriesFeed">
+        <div class="skeleton-card">
+          <div class="skeleton" style="height:11px; width:28%; margin-bottom:10px;"></div>
+          <div class="skeleton" style="height:17px; width:65%; margin-bottom:8px;"></div>
+          <div class="skeleton" style="height:12px; width:90%; margin-bottom:4px;"></div>
+          <div class="skeleton" style="height:12px; width:55%;"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton" style="height:11px; width:22%; margin-bottom:10px;"></div>
+          <div class="skeleton" style="height:17px; width:50%; margin-bottom:8px;"></div>
+          <div class="skeleton" style="height:12px; width:80%; margin-bottom:4px;"></div>
+          <div class="skeleton" style="height:12px; width:45%;"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton" style="height:11px; width:32%; margin-bottom:10px;"></div>
+          <div class="skeleton" style="height:17px; width:60%; margin-bottom:8px;"></div>
+          <div class="skeleton" style="height:12px; width:75%; margin-bottom:4px;"></div>
+          <div class="skeleton" style="height:12px; width:40%;"></div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="sidebar"> <!-- Columna derecha -->
+        <div class="join-banner" id="joinBanner" style="display:none">
+          <h3>Únete a UdelarHITS</h3>
+          <p>Participa en la comunidad universitaria. Crea temas, comenta y conecta con otros estudiantes.</p>
+          <a href="/src/auth/register.html" class="btn-white">Crear cuenta</a>
+          <a href="/src/auth/login.html" class="btn-outline-white">Iniciar sesión</a>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="sidebar-card-header">Comunidad</div>
+          <div class="sidebar-card-body">
+            <div class="stat-row">
+              <span class="stat-row-label">Categorías activas</span>
+              <span class="stat-row-value" id="statCategories">—</span>
+            </div>
+          </div>
+        </div>
+    </aside>
+
+  </div>
+  <script src="shared/api.js"></script>
+  <script src="shared/header.js"></script>
+  <script src="index.js"></script>
 </body>
 </html>
