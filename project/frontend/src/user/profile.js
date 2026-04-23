@@ -5,7 +5,7 @@ async function loadProfile() {
 
   if (!result.ok) {
     alert(result.message || "No autorizado");
-    window.location.href = "../../testing/user-testing.html";
+    window.location.href = "/";
     return;
   }
 

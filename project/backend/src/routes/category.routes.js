@@ -6,12 +6,12 @@ import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 const router = Router();
 
 router.get('/', protect, isAdmin, getCategories);        // Listar categorías  
-router.get('/active', protect, getActiveCategories);     // Listar categorías  
+router.get('/active', getActiveCategories);     // Listar categorías  
 router.post('/create', protect, createCategory);         // Crear categoría
 router.get('/me', protect, getMyCategories);             // Ver mis categorías
 
 router.patch('/:id', protect, updateCategory);           // Actualizar categoría
-router.get('/:id', protect , getCategoryById);           // Ver categoría por id
+router.get('/:id', getCategoryById);           // Ver categoría por id
 
 router.get('/:id/participants', protect, getParticipantsByCategory); // Obtener los participantes de mi categoría
 

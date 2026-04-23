@@ -10,11 +10,11 @@ router.post('/create', protect, createTopic);        // Crear un tema
 router.get('/me', protect, getMyTopics);             // Ver mis temas
 
 router.patch('/:id', protect, updateTopic);          // Actualizar tema
-router.get('/:id', protect , getTopicById);          // Ver temas por id
+router.get('/:id', getTopicById);          // Ver temas por id
 
 router.get('/user/:userId', protect, getTopicsByUser);
 
-router.get('/category/:categoriaId', protect, getTopicsByCategory);
+router.get('/category/:categoriaId', getTopicsByCategory);
 
 router.patch('/:id/delete', protect, deleteTopic);    // Desactivar tema
 router.patch('/:id/active', protect, activeTopic);    // Activar tema

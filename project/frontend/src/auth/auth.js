@@ -14,6 +14,7 @@ if(registerForm){
         if (result.ok) {
             alert(JSON.stringify(result.message));
             registerForm.reset()
+            window.location.href = "/";
         } else {
             alert(result.message || 'Error desconocido');
         }
@@ -50,10 +51,10 @@ if (logoutForm) {
     const result = await apiPost("/auth/logout", {});
     if (result.ok) {
       alert(JSON.stringify(result.message));
-      window.location.href = "../../testing/user-testing.html";
+      window.location.href = "/";
     } else if(!result.ok){
       alert(result.message);
-      window.location.href = "../../testing/user-testing.html";
+      window.location.href = "/";
     } else {
       alert("Error al cerrar sesión");
     }
