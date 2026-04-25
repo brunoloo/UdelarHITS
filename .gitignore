@@ -34,3 +34,6 @@ Thumbs.db
 # Local notes
 project/backend/docs/
 
+# Seeds
+project/backend/src/seeds
+
