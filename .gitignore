@@ -36,4 +36,5 @@ project/backend/docs/
 
 # Seeds
 project/backend/src/seeds
+**/seeds/
 
