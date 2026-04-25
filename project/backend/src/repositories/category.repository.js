@@ -60,12 +60,14 @@ const getCategories = async () => {
 const getCategoryById = async (id) => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.autor_id, c.estado, c.fecha_creacion,
+      u.nickname AS autor_nickname,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
     FROM categoria c
+    JOIN usuario u ON u.id = c.autor_id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
     WHERE c.id = $1
-    GROUP BY c.id
+    GROUP BY c.id, u.nickname
     LIMIT 1
   `;
   const { rows } = await pool.query(q, [id]);
@@ -75,6 +77,7 @@ const getCategoryById = async (id) => {
 const getCategoriesByAuthorId = async (autorId) => {
   const q = `
     SELECT c.id, c.titulo, c.estado, c.fecha_creacion,
+      (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
     FROM categoria c
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id

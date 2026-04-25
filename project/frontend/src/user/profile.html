@@ -3,57 +3,94 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Perfil de usuario</title>
+  <title>Mi perfil — UdelarHITS</title>
+  <link rel="icon" href="../../favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../css/main.css" />
   <link rel="stylesheet" href="../../css/profile.css" />
 </head>
 <body>
-  <div class="profile-card">
 
-    <div class="avatar">
-      <img id="profileAvatar" src="" alt="Avatar" title="foto de perfil">
-    </div>
+  <div class="profile-page">
+    <div class="profile-card" id="profileCard">
+      <!-- Banner y avatar -->
+      <div class="profile-banner-wrap">
+        <div class="profile-banner">
+          <span class="banner-placeholder">Acá iría el banner</span>
+        </div>
+        <div class="profile-avatar-wrap">
+          <img id="profileAvatar" class="profile-avatar" src="" alt="Avatar" />
+          <div class="profile-avatar-fallback" id="profileAvatarFallback" style="display:none"></div>
+        </div>
 
-    <div class="card">
-      <div class="card-info">
-        <h2>Nickname</h2>
-        <p id="profileNickname"></p>
+      </div>
+
+      <!-- Botón editar (derecha, mismo nivel visual que el avatar) -->
+      <div class="profile-actions">
+        <a href="updateProfile.html" class="btn-ghost profile-edit-btn">Editar perfil</a>
+      </div>
+
+      <!-- Info del usuario -->
+      <div class="profile-info">
+        <p class="profile-name"  id="profileNombre"></p>
+        <div class="profile-handle-row">
+          <p class="profile-handle" id="profileNickname"></p>
+        </div>
+        <p class="profile-bio"   id="profileBio"></p>
+        <p class="profile-fecha" id="profileFecha"></p>
+        <div class="profile-social-row">
+          <button class="profile-social-btn" id="btnSeguidores">
+            <strong id="profileSeguidores">0</strong> <span id="labelSeguidores">Seguidores</span>
+          </button>
+          <button class="profile-social-btn" id="btnSeguidos">
+            <strong id="profileSeguidos">0</strong> <span id="labelSeguidos">Seguidos</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal avatar -->
+      <div class="avatar-modal" id="avatarModal">
+        <button class="avatar-modal-close" id="avatarModalClose">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        <img class="avatar-modal-img" id="avatarModalImg" src="" alt="Avatar" />
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-info">
-        <h2>Nombre</h2>
-        <p id="profileNombre"></p>
-      </div>
-    </div>
+    <!-- Tabs de actividad -->
+    <nav class="section-tabs" role="tablist">
+      <button class="tab active" role="tab" data-tab="categorias">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        Categorías <span class="count" id="countCategorias">0</span>
+      </button>
+      <button class="tab" role="tab" data-tab="temas">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        Temas <span class="count" id="countTemas">0</span>
+      </button>
+      <button class="tab" role="tab" data-tab="comentarios">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Comentarios <span class="count" id="countComentarios">0</span>
+      </button>
+    </nav>
 
-    <div class="card">
-      <div class="card-info">
-        <h2>Email</h2>
-        <p id="profileEmail"></p>
-      </div>
-    </div>
+    <section class="section-panel active" data-panel="categorias">
+      <div class="cat-grid" id="panelCategorias"></div>
+    </section>
 
-    <div class="card">
-      <div class="card-info">
-        <h2>Biografía</h2>
-        <p id="profileBio"></p>
-      </div>
-    </div>
+    <section class="section-panel" data-panel="temas">
+      <div class="list" id="panelTemas"></div>
+    </section>
 
-    
-    <div class="card-info"></div>
-    <div class="button-container">
-      <a class="btn btn-register cancel" href="/">Volver</a>
-      <a class="btn btn-register confirm" href="updateProfile.html">Modificar perfil</a>
-    </div>
-    
-
+    <section class="section-panel" data-panel="comentarios">
+      <div class="list" id="panelComentarios"></div>
+    </section>
   </div>
-  <script src="../../shared/transitions.js"></script>
-  <script src="../../shared/header.js"></script>
+
   <script src="../../shared/api.js"></script>
+  <script src="../../shared/header.js"></script>
+  <script src="../../shared/leftnav.js"></script>
   <script src="profile.js"></script>
 </body>
 </html>

@@ -63,7 +63,7 @@ tableBody.addEventListener("click", async (e) => {
   } else {
     result.data.forEach(p => {
       const li = document.createElement("li");
-      li.innerHTML = `<a href="/src/user/user.html?nickname=${encodeURIComponent(p.nickname)}">${p.nickname}</a>`;
+      li.innerHTML = `<a href="/src/user/profile.html?nickname=${encodeURIComponent(p.nickname)}">${p.nickname}</a>`;
       li.style.padding = "4px 0";
       list.appendChild(li);
     });

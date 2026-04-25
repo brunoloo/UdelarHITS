@@ -27,6 +27,7 @@ async function loadCategory() {
     ${isAdmin ? `<tr><th>ID</th><td>${c.id}</td></tr>` : ''}
     <tr><th>Título</th><td>${c.titulo}</td></tr>
     <tr><th>Descripción</th><td>${c.descripcion}</td></tr>
+    <tr><th>Autor</th><td><a href="/src/user/profile.html?nickname=${encodeURIComponent(c.autor_nickname)}">${c.autor_nickname}</a></td></tr>
     <tr><th>Etiquetas</th><td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td></tr>
     <tr><th>Temas</th><td>${c.contador_temas}</td></tr>
     <tr><th>Fecha de creación</th><td>${new Date(c.fecha_creacion).toLocaleString()}</td></tr>
@@ -59,7 +60,7 @@ async function loadCategory() {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${r.id}</td>
-        <td><a href="../user/user.html?nickname=${encodeURIComponent(r.autor_nickname)}">${r.autor_nickname}</a></td>
+        <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(r.autor_nickname)}">${r.autor_nickname}</a></td>
         <td>${r.cuerpo}</td>
       `;
       repliesBody.appendChild(tr);

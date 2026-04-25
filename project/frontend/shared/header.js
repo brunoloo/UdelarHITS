@@ -68,3 +68,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
   }
 });
+
+const toast = document.createElement("div");
+toast.id = "globalToast";
+toast.style.cssText = `
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: none;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+`;
+document.body.appendChild(toast);
+
+window.showToast = (msg, type = "error") => {
+  toast.textContent = msg;
+  toast.style.display = "block";
+  setTimeout(() => { toast.style.display = "none"; }, 4000);
+};

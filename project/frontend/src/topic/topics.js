@@ -20,7 +20,7 @@ async function loadTopics() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${t.id}</td>
-      <td><a href="/src/user/user.html?nickname=${encodeURIComponent(t.autor_nickname)}">${t.autor_nickname}</a></td>
+      <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(t.autor_nickname)}">${t.autor_nickname}</a></td>
       <td><a href="/src/topic/topic.html?id=${t.id}">${t.titulo}</a></td>
       <td>${t.estado}</td>
       <td><button class="btn-eliminar" data-id="${t.id}" data-titulo="${t.titulo}">Eliminar</button></td>

@@ -2,7 +2,7 @@ import bcrypt  from 'bcrypt';
 import { 
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
-  getUserAvatarUrlById, updateUserEstado, deleteUserByNickname } from '../repositories/user.repository.js';
+  getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser, isFollowing } from '../repositories/user.repository.js';
 import {generateToken} from '../utils/generateToken.js'
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
@@ -202,7 +202,8 @@ const showMeService = async (nickname) => {
     nombre: user.nombre,
     email: user.email,
     biografia: user.biografia,
-    url_imagen: user.url_imagen  // si luego querés manejarlo
+    url_imagen: user.url_imagen,
+    fecha_creacion: user.fecha_creacion
   };
 
   return { user: safeUser, categories, followers, following };
@@ -215,7 +216,7 @@ const updateMeService = async (userId, { nombre, biografia, url_imagen }) => {
     throw err;
   }
 
-  if (biografia?.length > 500) {
+  if (biografia?.length > 160) {
     const err = new Error('La biografía superó el máximo de caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
@@ -295,7 +296,44 @@ const deleteUserService = async (nickname) => {
   return deleted;
 };
 
+const followUserService = async (seguidorId, seguidoNickname) => {
+  const seguido = await getUserByNickname(seguidoNickname);
+  if (!seguido) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  if (seguidorId === seguido.id) {
+    const err = new Error('No podés seguirte a vos mismo');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  await followUser(seguidorId, seguido.id);
+  const followers = await getFollowersByUserId(seguido.id);
+  return { seguidores: followers.length };
+};
+
+const unfollowUserService = async (seguidorId, seguidoNickname) => {
+  const seguido = await getUserByNickname(seguidoNickname);
+  if (!seguido) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  await unfollowUser(seguidorId, seguido.id);
+  const followers = await getFollowersByUserId(seguido.id);
+  return { seguidores: followers.length };
+};
+
+const isFollowingService = async (seguidorId, seguidoNickname) => {
+  const seguido = await getUserByNickname(seguidoNickname);
+  if (!seguido) return false;
+  return await isFollowing(seguidorId, seguido.id);
+};
+
+
 export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
-  updateMeService, getUserAvatarService, banUserService, activeUserService, deleteUserService };
+  updateMeService, getUserAvatarService, banUserService, activeUserService, 
+  deleteUserService, followUserService, unfollowUserService, isFollowingService };
 
 
