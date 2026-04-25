@@ -1,6 +1,7 @@
 import { registerUserService, loginUserService, getUsersService, createUserByAdminService,
     getUserProfileService, showMeService, updateMeService, 
-    getUserAvatarService, banUserService, activeUserService, deleteUserService } from '../services/user.service.js';
+    getUserAvatarService, banUserService, activeUserService, deleteUserService,
+  followUserService, unfollowUserService, isFollowingService } from '../services/user.service.js';
 
 const showMe = async (req, res) => {
   try {
@@ -192,6 +193,39 @@ const deleteUser = async (req, res) => {
 
 const changeUserPassword = async (req, res) => {} // TODO
 
+const followUser = async (req, res) => {
+  try {
+    const { nickname } = req.params;
+    await followUserService(req.user.id, nickname);
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const unfollowUser = async (req, res) => {
+  try {
+    const { nickname } = req.params;
+    await unfollowUserService(req.user.id, nickname);
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const checkFollowing = async (req, res) => {
+  try {
+    const { nickname } = req.params;
+    const following = await isFollowingService(req.user.id, nickname);
+    return res.status(200).json({ ok: true, data: { following } });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 export { showMe, registerUser, loginUser, logoutUser, getUsers, 
   getUserProfile, updateMe, getUserAvatar, changeUserPassword, banUser, 
-  activeUser, deleteUser }
+  activeUser, deleteUser, followUser, unfollowUser, checkFollowing }

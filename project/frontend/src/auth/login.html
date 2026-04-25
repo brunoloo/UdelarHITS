@@ -1,24 +1,61 @@
-<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iniciar sesión — UdelarHITS</title>
   <link rel="icon" href="../../favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../css/main.css" />
+  <link rel="stylesheet" href="../../css/auth.css" />
 </head>
 <body>
-  <main>
-    <h1>Login</h1>
-  
-    <form id="loginForm">
-      <input name="identifier" placeholder="Email o nickname" required />
-      <input name="password" type="password" placeholder="Password" required />
-      <button>Ingresar</button>
-    </form>
-  </main>
-
-  <script src="../../shared/transitions.js"></script>
-  <script src="../../shared/header.js"></script>
+  <div class="auth-page">
+    <div class="auth-card">
+      <a href="/" class="auth-brand">Udelar<span>HITS</span></a>
+      <h1 class="auth-title">Bienvenido de vuelta</h1>
+      <p class="auth-subtitle">Ingresá con tu email o nickname</p>
+      <form class="auth-form" id="loginForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="identifier">Email o nickname</label>
+          <input
+            class="form-input"
+            id="identifier"
+            name="identifier"
+            type="text"
+            placeholder="Tu email o nickname"
+            autocomplete="username"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Contraseña</label>
+          <div class="input-wrapper">
+            <input
+              class="form-input"
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Tu contraseña"
+              autocomplete="current-password"
+              required
+            />
+            <button type="button" class="input-toggle" aria-label="Mostrar contraseña">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="auth-message" id="authMessage"></div>
+        <button type="submit" class="auth-btn">Iniciar sesión</button>
+      </form>
+      <hr class="auth-divider" />
+      <p class="auth-footer">
+        ¿No tenés cuenta? <a href="register.html">Registrarse</a>
+      </p>
+    </div>
+  </div>
   <script src="../../shared/api.js"></script>
   <script src="auth.js"></script>
 </body>

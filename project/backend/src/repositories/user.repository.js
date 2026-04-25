@@ -58,7 +58,7 @@ const getUsers = async () => {
 
 const getUserByNickname = async (nickname) => {
   const q = `
-    SELECT id, rol, nickname, nombre, email, biografia, url_imagen
+    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, fecha_creacion
     FROM usuario
     WHERE LOWER(nickname) = LOWER($1)
     LIMIT 1
@@ -81,6 +81,7 @@ const getUserIdByNickname = async (nickname) => {
 const getCategoriesByUserId = async (userId) => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.fecha_creacion,
+      (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
     FROM categoria c
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
@@ -180,6 +181,38 @@ const deleteUserByNickname = async (nickname) => {
   return rows[0] || null;
 };
 
+const followUser = async (seguidorId, seguidoId) => {
+  const q = `
+    INSERT INTO usuario_seguidor (seguidor_id, seguido_id)
+    VALUES ($1, $2)
+    ON CONFLICT DO NOTHING
+    RETURNING seguidor_id, seguido_id
+  `;
+  const { rows } = await pool.query(q, [seguidorId, seguidoId]);
+  return rows[0] || null;
+};
+
+const unfollowUser = async (seguidorId, seguidoId) => {
+  const q = `
+    DELETE FROM usuario_seguidor
+    WHERE seguidor_id = $1 AND seguido_id = $2
+    RETURNING seguidor_id, seguido_id
+  `;
+  const { rows } = await pool.query(q, [seguidorId, seguidoId]);
+  return rows[0] || null;
+};
+
+const isFollowing = async (seguidorId, seguidoId) => {
+  const q = `
+    SELECT 1 FROM usuario_seguidor
+    WHERE seguidor_id = $1 AND seguido_id = $2
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [seguidorId, seguidoId]);
+  return rows.length > 0;
+};
+
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
-  getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, deleteUserByNickname };
+  getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, 
+  deleteUserByNickname, followUser, unfollowUser, isFollowing };

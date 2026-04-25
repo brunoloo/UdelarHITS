@@ -15,7 +15,7 @@ async function loadUsers() {
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td>${u.id}</td>
-    <td><a href="user.html?nickname=${encodeURIComponent(u.nickname)}">${u.nickname}</a></td>
+    <td><a href="profile.html?nickname=${encodeURIComponent(u.nickname)}">${u.nickname}</a></td>
     <td>${u.email}</td>
   `;
   tableBody.appendChild(tr);
