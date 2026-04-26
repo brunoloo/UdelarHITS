@@ -38,3 +38,6 @@ project/backend/docs/
 project/backend/src/seeds
 **/seeds/
 
+# Patch
+*.patch
+
