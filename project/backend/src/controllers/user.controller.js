@@ -1,7 +1,7 @@
 import { registerUserService, loginUserService, getUsersService, createUserByAdminService,
     getUserProfileService, showMeService, updateMeService, 
     getUserAvatarService, banUserService, activeUserService, deleteUserService,
-  followUserService, unfollowUserService, isFollowingService } from '../services/user.service.js';
+  followUserService, unfollowUserService, isFollowingService, updateAvatarService } from '../services/user.service.js';
 
 const showMe = async (req, res) => {
   try {
@@ -226,6 +226,19 @@ const checkFollowing = async (req, res) => {
   }
 };
 
+const updateAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ ok: false, message: 'No se proporcionó ninguna imagen' });
+    }
+    const updated = await updateAvatarService(req.user.id, req.file.buffer, req.file.mimetype);
+    return res.status(200).json({ ok: true, data: updated });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 export { showMe, registerUser, loginUser, logoutUser, getUsers, 
   getUserProfile, updateMe, getUserAvatar, changeUserPassword, banUser, 
-  activeUser, deleteUser, followUser, unfollowUser, checkFollowing }
+  activeUser, deleteUser, followUser, unfollowUser, checkFollowing, updateAvatar }
