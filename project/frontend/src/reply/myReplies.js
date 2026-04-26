@@ -21,15 +21,15 @@ async function loadMyReplies() {
 
     const destinoLink =
       r.tipo === 'tema'
-        ? `<a href="../topic/topic.html?id=${r.destino_id}">${r.destino_titulo}</a>`
-        : `<a href="../category/category.html?id=${r.destino_id}">${r.destino_titulo}</a>`;
+        ? `<a href="../topic/topic.html?id=${encodeURIComponent(r.destino_id)}">${escapeHtml(r.destino_titulo)}</a>`
+        : `<a href="../category/category.html?id=${encodeURIComponent(r.destino_id)}">${escapeHtml(r.destino_titulo)}</a>`;
     tr.innerHTML = `
-      <td>${r.cuerpo}</td>
+      <td>${escapeHtml(r.cuerpo)}</td>
       <td>${destinoLink}</td>
-      <td>${r.tipo}</td>
-      <td>${new Date(r.fecha_creacion).toLocaleString()}</td>
-      <td><a href="../reply/updateReply.html?id=${r.id}">Editar</a></td>
-      <td><button class="btn-eliminar" data-id="${r.id}">Eliminar</button></td>
+      <td>${escapeHtml(r.tipo)}</td>
+      <td>${escapeHtml(new Date(r.fecha_creacion).toLocaleString())}</td>
+      <td><a href="../reply/updateReply.html?id=${encodeURIComponent(r.id)}">Editar</a></td>
+      <td><button class="btn-eliminar" data-id="${escapeAttr(r.id)}">Eliminar</button></td>
     `;
 
     tableBody.appendChild(tr);

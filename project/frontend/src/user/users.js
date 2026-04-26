@@ -14,9 +14,9 @@ async function loadUsers() {
   result.data.forEach(u => {
   const tr = document.createElement("tr");
   tr.innerHTML = `
-    <td>${u.id}</td>
-    <td><a href="profile.html?nickname=${encodeURIComponent(u.nickname)}">${u.nickname}</a></td>
-    <td>${u.email}</td>
+    <td>${escapeHtml(u.id)}</td>
+    <td><a href="profile.html?nickname=${encodeURIComponent(u.nickname)}">${escapeHtml(u.nickname)}</a></td>
+    <td>${escapeHtml(u.email)}</td>
   `;
   tableBody.appendChild(tr);
 });

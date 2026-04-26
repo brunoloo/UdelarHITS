@@ -13,7 +13,7 @@ router.get('/', async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       ok: false,
-      error: error.message
+      message: 'Internal server error'
     });
   }
 });

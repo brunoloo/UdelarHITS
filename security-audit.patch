@@ -1,0 +1,1186 @@
+From c07e14e49ad71005f6a72738f62fc28593c48a19 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 26 Apr 2026 22:19:45 +0000
+Subject: [PATCH] seguridad: parche XSS frontend, helmet/rate-limit/CORS
+ estricto en backend
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Frontend
+- Nuevo shared/escape.js (helper escapeHtml/escapeAttr) cargado en todos los HTMLs
+- Reemplazo de interpolaciones inseguras dentro de innerHTML en JS de
+  topic, category, profile, user, users, deleteUser, myCategories,
+  categories, myTopics, topics, myReplies, header e index
+
+Backend
+- helmet() para headers de seguridad (CSP, X-Frame-Options, etc.)
+- express-rate-limit: 10/15min en /api/auth/login y /register, 120/min global
+- CORS con allowlist explícita desde URL (separado por coma)
+- express.static apuntando a __dirname (no depende del cwd)
+- express.json/urlencoded con limit 100kb
+- updateMeService deja de aceptar url_imagen (solo via /me/avatar)
+- Validación numérica de :userId en getTopicsByUser y getRepliesByUser
+- Fix crash en getUserIdByNickname cuando el nickname no existe
+- /api ya no filtra error.message en respuestas 500
+- Quitado console.log del request body en createReply
+- .env.example con JWT_SECRET no-placeholder y URL en formato lista
+
+https://claude.ai/code/session_01XWUscFXD86VjTqh5WVnqq3
+---
+ project/backend/.env.example                  | 12 ++--
+ project/backend/package-lock.json             | 27 ++++++++-
+ project/backend/package.json                  |  2 +
+ project/backend/src/app.js                    | 48 +++++++++++++---
+ .../src/controllers/reply.controller.js       |  4 +-
+ .../src/controllers/topic.controller.js       |  3 +
+ .../src/repositories/user.repository.js       |  8 +--
+ project/backend/src/routes/index.js           |  2 +-
+ project/backend/src/services/user.service.js  | 14 +++--
+ project/frontend/index.html                   |  1 +
+ project/frontend/index.js                     | 19 ++++---
+ project/frontend/shared/escape.js             | 19 +++++++
+ project/frontend/shared/header.js             |  6 +-
+ project/frontend/src/auth/login.html          |  1 +
+ project/frontend/src/auth/logout.html         |  1 +
+ project/frontend/src/auth/register.html       |  1 +
+ project/frontend/src/category/categories.html |  1 +
+ project/frontend/src/category/categories.js   | 15 ++---
+ project/frontend/src/category/category.html   |  1 +
+ project/frontend/src/category/category.js     | 27 ++++-----
+ .../frontend/src/category/createCategory.html |  1 +
+ .../frontend/src/category/myCategories.html   |  1 +
+ project/frontend/src/category/myCategories.js | 21 +++----
+ .../frontend/src/category/updateCategory.html |  1 +
+ project/frontend/src/reply/createReply.html   |  1 +
+ project/frontend/src/reply/myReplies.html     |  1 +
+ project/frontend/src/reply/myReplies.js       | 14 ++---
+ project/frontend/src/reply/updateReply.html   |  1 +
+ project/frontend/src/topic/createTopic.html   |  1 +
+ project/frontend/src/topic/myTopics.html      |  1 +
+ project/frontend/src/topic/myTopics.js        | 16 +++---
+ project/frontend/src/topic/topic.html         |  1 +
+ project/frontend/src/topic/topic.js           | 18 +++---
+ project/frontend/src/topic/topics.html        |  1 +
+ project/frontend/src/topic/topics.js          | 12 ++--
+ project/frontend/src/topic/updateTopic.html   |  1 +
+ project/frontend/src/user/deleteUser.html     |  1 +
+ project/frontend/src/user/deleteUser.js       | 10 ++--
+ project/frontend/src/user/profile.html        |  1 +
+ project/frontend/src/user/profile.js          | 32 +++++++----
+ project/frontend/src/user/updateProfile.html  |  1 +
+ project/frontend/src/user/user.html           |  1 +
+ project/frontend/src/user/user.js             | 55 ++++++++++---------
+ project/frontend/src/user/users.html          |  1 +
+ project/frontend/src/user/users.js            |  6 +-
+ 45 files changed, 265 insertions(+), 147 deletions(-)
+ create mode 100644 project/frontend/shared/escape.js
+
+diff --git a/project/backend/.env.example b/project/backend/.env.example
+index b2c35c0..d20f7f5 100644
+--- a/project/backend/.env.example
++++ b/project/backend/.env.example
+@@ -8,17 +8,17 @@ DB_PASSWORD=your_password
+ #PORT
+ PORT=5001
+ 
+-#CORS
+-URL=http://localhost:3000
++#CORS - Orígenes permitidos separados por coma (sin espacios)
++URL=http://localhost:3000,http://localhost:5001
+ 
+ #NODE
+-NODE_ENV="development"
++NODE_ENV=development
+ 
+ #CLOUDINARY
+ CLOUDINARY_CLOUD_NAME=tu_cloud_name
+ CLOUDINARY_API_KEY=tu_api_key
+ CLOUDINARY_API_SECRET=tu_api_secret
+ 
+-#JWT token
+-JWT_SECRET="..."
+-JWT_EXPIRES_IN="7d"
+\ No newline at end of file
++#JWT token (generar con: openssl rand -hex 32)
++JWT_SECRET=reemplaza_por_un_secreto_largo_aleatorio
++JWT_EXPIRES_IN=7d
+\ No newline at end of file
+diff --git a/project/backend/package-lock.json b/project/backend/package-lock.json
+index 1266749..b6e6a04 100644
+--- a/project/backend/package-lock.json
++++ b/project/backend/package-lock.json
+@@ -15,6 +15,8 @@
+         "cors": "^2.8.6",
+         "dotenv": "^17.4.0",
+         "express": "^5.2.1",
++        "express-rate-limit": "^7.5.1",
++        "helmet": "^8.1.0",
+         "jsonwebtoken": "^9.0.3",
+         "multer": "^2.1.1",
+         "pg": "^8.20.0"
+@@ -496,6 +498,21 @@
+         "url": "https://opencollective.com/express"
+       }
+     },
++    "node_modules/express-rate-limit": {
++      "version": "7.5.1",
++      "resolved": "https://registry.npmjs.org/express-rate-limit/-/express-rate-limit-7.5.1.tgz",
++      "integrity": "sha512-7iN8iPMDzOMHPUYllBEsQdWVB6fPDMPqwjBaFrgr4Jgr/+okjvzAy+UHlYYL/Vs0OsOrMkwS6PJDkFlJwoxUnw==",
++      "license": "MIT",
++      "engines": {
++        "node": ">= 16"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/express-rate-limit"
++      },
++      "peerDependencies": {
++        "express": ">= 4.11"
++      }
++    },
+     "node_modules/fill-range": {
+       "version": "7.1.1",
+       "resolved": "https://registry.npmjs.org/fill-range/-/fill-range-7.1.1.tgz",
+@@ -668,6 +685,15 @@
+         "node": ">= 0.4"
+       }
+     },
++    "node_modules/helmet": {
++      "version": "8.1.0",
++      "resolved": "https://registry.npmjs.org/helmet/-/helmet-8.1.0.tgz",
++      "integrity": "sha512-jOiHyAZsmnr8LqoPGmCjYAaiuWwjAPLgY8ZX2XrmHawt99/u1y6RgrZMTeoPfpUbV96HOalYgz1qzkRbw54Pmg==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=18.0.0"
++      }
++    },
+     "node_modules/http-errors": {
+       "version": "2.0.1",
+       "resolved": "https://registry.npmjs.org/http-errors/-/http-errors-2.0.1.tgz",
+@@ -1142,7 +1168,6 @@
+       "resolved": "https://registry.npmjs.org/pg/-/pg-8.20.0.tgz",
+       "integrity": "sha512-ldhMxz2r8fl/6QkXnBD3CR9/xg694oT6DZQ2s6c/RI28OjtSOpxnPrUCGOBJ46RCUxcWdx3p6kw/xnDHjKvaRA==",
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "pg-connection-string": "^2.12.0",
+         "pg-pool": "^3.13.0",
+diff --git a/project/backend/package.json b/project/backend/package.json
+index 4c60bd6..d4c0d72 100644
+--- a/project/backend/package.json
++++ b/project/backend/package.json
+@@ -27,6 +27,8 @@
+     "cors": "^2.8.6",
+     "dotenv": "^17.4.0",
+     "express": "^5.2.1",
++    "express-rate-limit": "^7.5.1",
++    "helmet": "^8.1.0",
+     "jsonwebtoken": "^9.0.3",
+     "multer": "^2.1.1",
+     "pg": "^8.20.0"
+diff --git a/project/backend/src/app.js b/project/backend/src/app.js
+index d685432..e34b448 100644
+--- a/project/backend/src/app.js
++++ b/project/backend/src/app.js
+@@ -1,6 +1,8 @@
+ import express from 'express';
+ import cors from 'cors';
++import helmet from 'helmet';
+ import cookieParser from 'cookie-parser';
++import rateLimit from 'express-rate-limit';
+ import path from 'path';
+ import { fileURLToPath } from 'url';
+ 
+@@ -13,25 +15,53 @@ const app = express();
+ const __filename = fileURLToPath(import.meta.url);
+ const __dirname = path.dirname(__filename);
+ 
+-app.use('/assets', express.static(path.join(__dirname, 'assets'))); // default img
+-
++// Security headers (CSP, X-Frame-Options, X-Content-Type-Options, etc.)
++app.use(helmet({
++  crossOriginResourcePolicy: { policy: 'cross-origin' }
++}));
+ 
+-// Cors
++// Allowlist de orígenes para CORS (separados por coma en .env)
++const allowedOrigins = (process.env.URL || '').split(',').map(s => s.trim()).filter(Boolean);
+ app.use(cors({
+-  origin: process.env.URL,
++  origin: (origin, cb) => {
++    if (!origin) return cb(null, true); // peticiones server-to-server / curl
++    if (allowedOrigins.includes(origin)) return cb(null, true);
++    return cb(new Error('Origen no permitido'));
++  },
+   credentials: true
+ }));
+ 
++app.use('/assets', express.static(path.join(__dirname, 'assets'))); // default img
+ 
+ // Cookie
+ app.use(cookieParser());
+ 
+-// Middleware
+-app.use(express.json());
+-app.use(express.urlencoded({ extended: true }));
++// Body parsers con límite explícito
++app.use(express.json({ limit: '100kb' }));
++app.use(express.urlencoded({ extended: true, limit: '100kb' }));
++
++// Rate limit estricto en endpoints de auth para frenar brute-force
++const authLimiter = rateLimit({
++  windowMs: 15 * 60 * 1000,
++  max: 10,
++  standardHeaders: true,
++  legacyHeaders: false,
++  message: { ok: false, message: 'Demasiados intentos. Intentá de nuevo en unos minutos.' }
++});
++app.use('/api/auth/login', authLimiter);
++app.use('/api/auth/register', authLimiter);
++
++// Rate limit general para toda la API
++const apiLimiter = rateLimit({
++  windowMs: 60 * 1000,
++  max: 120,
++  standardHeaders: true,
++  legacyHeaders: false
++});
++app.use('/api', apiLimiter);
+ 
+-//index (usamos el index que aparece en frontend)
+-app.use(express.static(path.join(process.cwd(), "../frontend/"))); 
++//index (usamos el index que aparece en frontend) — path estable, no depende del cwd
++app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
+ 
+ // routes
+ app.use("/api", API);
+diff --git a/project/backend/src/controllers/reply.controller.js b/project/backend/src/controllers/reply.controller.js
+index 1b6e8f6..3a22bdf 100644
+--- a/project/backend/src/controllers/reply.controller.js
++++ b/project/backend/src/controllers/reply.controller.js
+@@ -4,7 +4,6 @@ import { createReplyService, getRepliesByCategoryIdService,
+ 
+ const createReply = async (req, res) => {
+   try {
+-    console.log('body:', req.body);
+     const reply = await createReplyService(req.user.id, req.body);
+     return res.status(201).json({ ok: true, data: reply });
+   } catch (error) {
+@@ -59,6 +58,9 @@ const getMyReplies = async (req, res) => {
+ const getRepliesByUser = async (req, res) => {
+   try {
+     const { userId } = req.params;
++    if (!/^\d+$/.test(userId)) {
++      return res.status(400).json({ ok: false, message: 'userId inválido' });
++    }
+     const replies = await getRepliesByUserIdService(userId);
+     return res.status(200).json({ ok: true, data: replies });
+   } catch (error) {
+diff --git a/project/backend/src/controllers/topic.controller.js b/project/backend/src/controllers/topic.controller.js
+index 4d1637e..8fd72aa 100644
+--- a/project/backend/src/controllers/topic.controller.js
++++ b/project/backend/src/controllers/topic.controller.js
+@@ -97,6 +97,9 @@ const getTopicsByCategory = async (req, res) => {
+ const getTopicsByUser = async (req, res) => {
+   try {
+     const { userId } = req.params;
++    if (!/^\d+$/.test(userId)) {
++      return res.status(400).json({ ok: false, message: 'userId inválido' });
++    }
+     const topics = await getTopicsByUserIdService(userId);
+     return res.status(200).json({ ok: true, data: topics });
+   } catch (error) {
+diff --git a/project/backend/src/repositories/user.repository.js b/project/backend/src/repositories/user.repository.js
+index e868f82..1411200 100644
+--- a/project/backend/src/repositories/user.repository.js
++++ b/project/backend/src/repositories/user.repository.js
+@@ -75,7 +75,7 @@ const getUserIdByNickname = async (nickname) => {
+     LIMIT 1
+   `;
+   const { rows } = await pool.query(q, [nickname]);
+-  return rows[0].id || null;
++  return rows[0]?.id || null;
+ };
+ 
+ const getCategoriesByUserId = async (userId) => {
+@@ -117,7 +117,7 @@ const getFollowingByUserId = async (userId) => {
+   return rows;
+ };
+ 
+-const updateUserById = async (id, { nombre, biografia, url_imagen }) => {
++const updateUserById = async (id, { nombre, biografia }) => {
+   const fields = [];
+   const values = [];
+   let idx = 1;
+@@ -130,10 +130,6 @@ const updateUserById = async (id, { nombre, biografia, url_imagen }) => {
+     fields.push(`biografia = $${idx++}`);
+     values.push(biografia);
+   }
+-  if (url_imagen !== undefined) {
+-    fields.push(`url_imagen = $${idx++}`);
+-    values.push(url_imagen);
+-  }
+ 
+   if (fields.length === 0) return null;
+ 
+diff --git a/project/backend/src/routes/index.js b/project/backend/src/routes/index.js
+index 2205653..2f93bea 100644
+--- a/project/backend/src/routes/index.js
++++ b/project/backend/src/routes/index.js
+@@ -13,7 +13,7 @@ router.get('/', async (_req, res) => {
+   } catch (error) {
+     res.status(500).json({
+       ok: false,
+-      error: error.message
++      message: 'Internal server error'
+     });
+   }
+ });
+diff --git a/project/backend/src/services/user.service.js b/project/backend/src/services/user.service.js
+index 92daac0..304902b 100644
+--- a/project/backend/src/services/user.service.js
++++ b/project/backend/src/services/user.service.js
+@@ -211,13 +211,20 @@ const showMeService = async (nickname) => {
+   return { user: safeUser, categories, followers, following };
+ };
+ 
+-const updateMeService = async (userId, { nombre, biografia, url_imagen }) => {
+-  if (!nombre && !biografia && !url_imagen) {
++const updateMeService = async (userId, { nombre, biografia }) => {
++  // url_imagen no se acepta acá: se actualiza solo vía /me/avatar (upload a Cloudinary)
++  if (nombre === undefined && biografia === undefined) {
+     const err = new Error('No hay campos para actualizar');
+     err.code = 'BAD_REQUEST';
+     throw err;
+   }
+ 
++  if (typeof nombre === 'string' && nombre.length > 120) {
++    const err = new Error('El nombre superó el máximo de caracteres');
++    err.code = 'BAD_REQUEST';
++    throw err;
++  }
++
+   if (biografia?.length > 160) {
+     const err = new Error('La biografía superó el máximo de caracteres');
+     err.code = 'BAD_REQUEST';
+@@ -226,8 +233,7 @@ const updateMeService = async (userId, { nombre, biografia, url_imagen }) => {
+ 
+   const updated = await updateUserById(userId, {
+     nombre,
+-    biografia,
+-    url_imagen
++    biografia
+   });
+ 
+   if (!updated) {
+diff --git a/project/frontend/index.html b/project/frontend/index.html
+index 6e4c2c6..b59dd11 100644
+--- a/project/frontend/index.html
++++ b/project/frontend/index.html
+@@ -53,6 +53,7 @@
+     </aside>
+ 
+   </div>
++  <script src="shared/escape.js"></script>
+   <script src="shared/api.js"></script>
+   <script src="shared/header.js"></script>
+   <script src="shared/leftnav.js"></script>
+diff --git a/project/frontend/index.js b/project/frontend/index.js
+index 9fbefb7..f1161a4 100644
+--- a/project/frontend/index.js
++++ b/project/frontend/index.js
+@@ -18,10 +18,10 @@ async function loadHeader() {
+     actions.innerHTML = `
+       <a class="user-chip" href="/src/user/profile.html">
+         <img class="user-avatar"
+-          src="${API_BASE}/users/${user.id}/avatar"
+-          alt="${user.nickname}"
++          src="${API_BASE}/users/${encodeURIComponent(user.id)}/avatar"
++          alt="${escapeHtml(user.nickname)}"
+           onerror="this.style.display='none'" />
+-        ${user.nickname}
++        ${escapeHtml(user.nickname)}
+       </a>
+     `;
+   } else {
+@@ -50,22 +50,23 @@ function renderCategories(list) {
+ 
+   feed.innerHTML = list.map(c => {
+   const etiquetas = parseEtiquetas(c.etiquetas);
+-  const tagsHTML = etiquetas.slice(0, 3).map(e => `<span class="tag">${e}</span>`).join('');
++  const tagsHTML = etiquetas.slice(0, 3).map(e => `<span class="tag">${escapeHtml(e)}</span>`).join('');
+ 
+   const ultimoTema = c.ultimo_tema
+     ? `<div class="last-activity">
+         <span class="last-activity-label">Último tema:</span>
+-        <span class="last-activity-title">${c.ultimo_tema.titulo}</span>
+-        <span class="last-activity-meta">por ${c.ultimo_tema.autor} · ${new Date(c.ultimo_tema.fecha).toLocaleDateString()}</span>
++        <span class="last-activity-title">${escapeHtml(c.ultimo_tema.titulo)}</span>
++        <span class="last-activity-meta">por ${escapeHtml(c.ultimo_tema.autor)} · ${escapeHtml(new Date(c.ultimo_tema.fecha).toLocaleDateString())}</span>
+       </div>`
+     : `<div class="last-activity no-activity">Todavía no hay temas publicados</div>`;
+ 
++  const count = Number(c.contador_temas) || 0;
+   return `
+-    <a class="category-card" href="/src/category/category.html?id=${c.id}">
++    <a class="category-card" href="/src/category/category.html?id=${encodeURIComponent(c.id)}">
+       <div class="category-body">
+         <div class="category-header-row">
+-          <div class="category-title">${c.titulo}</div>
+-          <div class="category-stats">${c.contador_temas ?? 0} ${c.contador_temas === 1 ? 'tema' : 'temas'}</div>
++          <div class="category-title">${escapeHtml(c.titulo)}</div>
++          <div class="category-stats">${count} ${count === 1 ? 'tema' : 'temas'}</div>
+         </div>
+         <div class="category-footer">${tagsHTML}</div>
+         ${ultimoTema}
+diff --git a/project/frontend/shared/escape.js b/project/frontend/shared/escape.js
+new file mode 100644
+index 0000000..010777f
+--- /dev/null
++++ b/project/frontend/shared/escape.js
+@@ -0,0 +1,19 @@
++function escapeHtml(value) {
++  if (value === null || value === undefined) return '';
++  return String(value).replace(/[&<>"'`/]/g, (c) => ({
++    '&': '&amp;',
++    '<': '&lt;',
++    '>': '&gt;',
++    '"': '&quot;',
++    "'": '&#39;',
++    '`': '&#96;',
++    '/': '&#47;'
++  })[c]);
++}
++
++function escapeAttr(value) {
++  return escapeHtml(value);
++}
++
++window.escapeHtml = escapeHtml;
++window.escapeAttr = escapeAttr;
+diff --git a/project/frontend/shared/header.js b/project/frontend/shared/header.js
+index 4d3610a..65d8bd1 100644
+--- a/project/frontend/shared/header.js
++++ b/project/frontend/shared/header.js
+@@ -28,10 +28,10 @@ document.addEventListener('DOMContentLoaded', async () => {
+       <div class="user-menu-wrapper">
+         <button class="user-chip" id="userMenuBtn">
+           <img class="user-avatar"
+-            src="${API_BASE}/users/${user.id}/avatar"
+-            alt="${user.nickname}"
++            src="${API_BASE}/users/${encodeURIComponent(user.id)}/avatar"
++            alt="${escapeHtml(user.nickname)}"
+             onerror="this.style.display='none'" />
+-          ${user.nickname}
++          ${escapeHtml(user.nickname)}
+         </button>
+         <div class="user-menu" id="userMenu" style="display:none;">
+           <a href="/src/user/profile.html" class="user-menu-item">Ver perfil</a>
+diff --git a/project/frontend/src/auth/login.html b/project/frontend/src/auth/login.html
+index 61b250d..97df276 100644
+--- a/project/frontend/src/auth/login.html
++++ b/project/frontend/src/auth/login.html
+@@ -56,6 +56,7 @@
+       </p>
+     </div>
+   </div>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="auth.js"></script>
+ </body>
+diff --git a/project/frontend/src/auth/logout.html b/project/frontend/src/auth/logout.html
+index 58abf3f..69c5cd7 100644
+--- a/project/frontend/src/auth/logout.html
++++ b/project/frontend/src/auth/logout.html
+@@ -14,6 +14,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="auth.js"></script>
+ </body>
+diff --git a/project/frontend/src/auth/register.html b/project/frontend/src/auth/register.html
+index de9f653..1fd41d2 100644
+--- a/project/frontend/src/auth/register.html
++++ b/project/frontend/src/auth/register.html
+@@ -80,6 +80,7 @@
+       </p>
+     </div>
+   </div>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="auth.js"></script>
+ </body>
+diff --git a/project/frontend/src/category/categories.html b/project/frontend/src/category/categories.html
+index 7bc95e4..449a841 100644
+--- a/project/frontend/src/category/categories.html
++++ b/project/frontend/src/category/categories.html
+@@ -27,6 +27,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="categories.js"></script>
+ </body>
+diff --git a/project/frontend/src/category/categories.js b/project/frontend/src/category/categories.js
+index 51bea92..b22a11d 100644
+--- a/project/frontend/src/category/categories.js
++++ b/project/frontend/src/category/categories.js
+@@ -13,14 +13,15 @@ async function loadCategories() {
+ 
+   result.data.forEach(c => {
+     const tr = document.createElement("tr");
++    const etiquetasTxt = Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : (c.etiquetas || '-');
+     tr.innerHTML = `
+-      <td>${c.id}</td>
+-      <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(c.autor_nickname)}">${c.autor_nickname}</a></td>
+-      <td><a href="category.html?id=${c.id}">${c.titulo}</a></td>
+-      <td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td>
+-      <td>${c.estado}</td>
+-      <td><button class="btn-eliminar" data-id="${c.id}" data-titulo="${c.titulo}">Eliminar</button></td>
+-      <td><button class="btn-activar" data-id="${c.id}" data-titulo="${c.titulo}">Activar</button></td>
++      <td>${escapeHtml(c.id)}</td>
++      <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(c.autor_nickname)}">${escapeHtml(c.autor_nickname)}</a></td>
++      <td><a href="category.html?id=${encodeURIComponent(c.id)}">${escapeHtml(c.titulo)}</a></td>
++      <td>${escapeHtml(etiquetasTxt)}</td>
++      <td>${escapeHtml(c.estado)}</td>
++      <td><button class="btn-eliminar" data-id="${escapeAttr(c.id)}" data-titulo="${escapeAttr(c.titulo)}">Eliminar</button></td>
++      <td><button class="btn-activar" data-id="${escapeAttr(c.id)}" data-titulo="${escapeAttr(c.titulo)}">Activar</button></td>
+     `;
+     tableBody.appendChild(tr);
+   });
+diff --git a/project/frontend/src/category/category.html b/project/frontend/src/category/category.html
+index b020bfd..991a521 100644
+--- a/project/frontend/src/category/category.html
++++ b/project/frontend/src/category/category.html
+@@ -41,6 +41,7 @@
+ 
+ 
+   <script src="../../shared/transitions.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="../../shared/header.js"></script>
+   <script src="category.js"></script>
+diff --git a/project/frontend/src/category/category.js b/project/frontend/src/category/category.js
+index 2b9dc83..0a90366 100644
+--- a/project/frontend/src/category/category.js
++++ b/project/frontend/src/category/category.js
+@@ -23,14 +23,15 @@ async function loadCategory() {
+   const isAdmin = meResult.ok && meResult.data.user?.rol === 'admin';
+ 
+   const categoryBody = document.querySelector("#categoryTable tbody");
++  const etiquetasTxt = Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : (c.etiquetas || '-');
+   categoryBody.innerHTML = `
+-    ${isAdmin ? `<tr><th>ID</th><td>${c.id}</td></tr>` : ''}
+-    <tr><th>Título</th><td>${c.titulo}</td></tr>
+-    <tr><th>Descripción</th><td>${c.descripcion}</td></tr>
+-    <tr><th>Autor</th><td><a href="/src/user/profile.html?nickname=${encodeURIComponent(c.autor_nickname)}">${c.autor_nickname}</a></td></tr>
+-    <tr><th>Etiquetas</th><td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td></tr>
+-    <tr><th>Temas</th><td>${c.contador_temas}</td></tr>
+-    <tr><th>Fecha de creación</th><td>${new Date(c.fecha_creacion).toLocaleString()}</td></tr>
++    ${isAdmin ? `<tr><th>ID</th><td>${escapeHtml(c.id)}</td></tr>` : ''}
++    <tr><th>Título</th><td>${escapeHtml(c.titulo)}</td></tr>
++    <tr><th>Descripción</th><td>${escapeHtml(c.descripcion)}</td></tr>
++    <tr><th>Autor</th><td><a href="/src/user/profile.html?nickname=${encodeURIComponent(c.autor_nickname)}">${escapeHtml(c.autor_nickname)}</a></td></tr>
++    <tr><th>Etiquetas</th><td>${escapeHtml(etiquetasTxt)}</td></tr>
++    <tr><th>Temas</th><td>${escapeHtml(c.contador_temas)}</td></tr>
++    <tr><th>Fecha de creación</th><td>${escapeHtml(new Date(c.fecha_creacion).toLocaleString())}</td></tr>
+   `;
+ 
+   // Temas
+@@ -41,9 +42,9 @@ async function loadCategory() {
+     c.topics.forEach(t => {
+       const tr = document.createElement("tr");
+       tr.innerHTML = `
+-        <td>${t.contenido_id}</td>
+-        <td><a href="/src/topic/topic.html?id=${t.contenido_id}">${t.titulo}</a></td>
+-        <td>${new Date(t.fecha_creacion).toLocaleString()}</td>
++        <td>${escapeHtml(t.contenido_id)}</td>
++        <td><a href="/src/topic/topic.html?id=${encodeURIComponent(t.contenido_id)}">${escapeHtml(t.titulo)}</a></td>
++        <td>${escapeHtml(new Date(t.fecha_creacion).toLocaleString())}</td>
+       `;
+       topicsBody.appendChild(tr);
+     });
+@@ -59,9 +60,9 @@ async function loadCategory() {
+     repliesResult.data.forEach(r => {
+       const tr = document.createElement("tr");
+       tr.innerHTML = `
+-        <td>${r.id}</td>
+-        <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(r.autor_nickname)}">${r.autor_nickname}</a></td>
+-        <td>${r.cuerpo}</td>
++        <td>${escapeHtml(r.id)}</td>
++        <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(r.autor_nickname)}">${escapeHtml(r.autor_nickname)}</a></td>
++        <td>${escapeHtml(r.cuerpo)}</td>
+       `;
+       repliesBody.appendChild(tr);
+     });
+diff --git a/project/frontend/src/category/createCategory.html b/project/frontend/src/category/createCategory.html
+index 2e4ae57..855d0d1 100644
+--- a/project/frontend/src/category/createCategory.html
++++ b/project/frontend/src/category/createCategory.html
+@@ -79,6 +79,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="createCategory.js"></script>
+ </body>
+diff --git a/project/frontend/src/category/myCategories.html b/project/frontend/src/category/myCategories.html
+index 17c5dd8..c50eb30 100644
+--- a/project/frontend/src/category/myCategories.html
++++ b/project/frontend/src/category/myCategories.html
+@@ -26,6 +26,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="myCategories.js"></script>
+ </body>
+diff --git a/project/frontend/src/category/myCategories.js b/project/frontend/src/category/myCategories.js
+index 3b6f4cb..73de4d2 100644
+--- a/project/frontend/src/category/myCategories.js
++++ b/project/frontend/src/category/myCategories.js
+@@ -18,16 +18,17 @@ async function loadMyCategories() {
+ 
+   result.data.forEach(c => {
+     const tr = document.createElement("tr");
++    const etiquetasTxt = Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : (c.etiquetas || '-');
++    const editCell = c.estado === "activa"
++      ? `<a href="updateCategory.html?id=${encodeURIComponent(c.id)}">Editar</a>`
++      : `<span style="color: gray;">No podés editar categorías eliminadas</span>`;
+     tr.innerHTML = `
+-      <td>${c.id}</td>
+-      <td><a href="category.html?id=${c.id}">${c.titulo}</a></td>
+-      <td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td>
+-      <td>${c.estado}</td>
+-      <td>${c.estado === "activa"
+-        ? `<a href="updateCategory.html?id=${c.id}">Editar</a>`
+-        : `<span style="color: gray;">No podés editar categorías eliminadas</span>`
+-      }</td>
+-      <td><button class="btn-participantes" data-id="${c.id}">Ver</button></td>
++      <td>${escapeHtml(c.id)}</td>
++      <td><a href="category.html?id=${encodeURIComponent(c.id)}">${escapeHtml(c.titulo)}</a></td>
++      <td>${escapeHtml(etiquetasTxt)}</td>
++      <td>${escapeHtml(c.estado)}</td>
++      <td>${editCell}</td>
++      <td><button class="btn-participantes" data-id="${escapeAttr(c.id)}">Ver</button></td>
+     `;
+     tableBody.appendChild(tr);
+   });
+@@ -63,7 +64,7 @@ tableBody.addEventListener("click", async (e) => {
+   } else {
+     result.data.forEach(p => {
+       const li = document.createElement("li");
+-      li.innerHTML = `<a href="/src/user/profile.html?nickname=${encodeURIComponent(p.nickname)}">${p.nickname}</a>`;
++      li.innerHTML = `<a href="/src/user/profile.html?nickname=${encodeURIComponent(p.nickname)}">${escapeHtml(p.nickname)}</a>`;
+       li.style.padding = "4px 0";
+       list.appendChild(li);
+     });
+diff --git a/project/frontend/src/category/updateCategory.html b/project/frontend/src/category/updateCategory.html
+index 865c7d8..ae499b2 100644
+--- a/project/frontend/src/category/updateCategory.html
++++ b/project/frontend/src/category/updateCategory.html
+@@ -105,6 +105,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="updateCategory.js"></script>
+ </body>
+diff --git a/project/frontend/src/reply/createReply.html b/project/frontend/src/reply/createReply.html
+index 53a198b..077c51e 100644
+--- a/project/frontend/src/reply/createReply.html
++++ b/project/frontend/src/reply/createReply.html
+@@ -27,6 +27,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="createReply.js"></script>
+ </body>
+diff --git a/project/frontend/src/reply/myReplies.html b/project/frontend/src/reply/myReplies.html
+index a4b5a99..840fb26 100644
+--- a/project/frontend/src/reply/myReplies.html
++++ b/project/frontend/src/reply/myReplies.html
+@@ -26,6 +26,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="myReplies.js"></script>
+ </body>
+diff --git a/project/frontend/src/reply/myReplies.js b/project/frontend/src/reply/myReplies.js
+index e76d868..f748f10 100644
+--- a/project/frontend/src/reply/myReplies.js
++++ b/project/frontend/src/reply/myReplies.js
+@@ -21,15 +21,15 @@ async function loadMyReplies() {
+ 
+     const destinoLink =
+       r.tipo === 'tema'
+-        ? `<a href="../topic/topic.html?id=${r.destino_id}">${r.destino_titulo}</a>`
+-        : `<a href="../category/category.html?id=${r.destino_id}">${r.destino_titulo}</a>`;
++        ? `<a href="../topic/topic.html?id=${encodeURIComponent(r.destino_id)}">${escapeHtml(r.destino_titulo)}</a>`
++        : `<a href="../category/category.html?id=${encodeURIComponent(r.destino_id)}">${escapeHtml(r.destino_titulo)}</a>`;
+     tr.innerHTML = `
+-      <td>${r.cuerpo}</td>
++      <td>${escapeHtml(r.cuerpo)}</td>
+       <td>${destinoLink}</td>
+-      <td>${r.tipo}</td>
+-      <td>${new Date(r.fecha_creacion).toLocaleString()}</td>
+-      <td><a href="../reply/updateReply.html?id=${r.id}">Editar</a></td>
+-      <td><button class="btn-eliminar" data-id="${r.id}">Eliminar</button></td>
++      <td>${escapeHtml(r.tipo)}</td>
++      <td>${escapeHtml(new Date(r.fecha_creacion).toLocaleString())}</td>
++      <td><a href="../reply/updateReply.html?id=${encodeURIComponent(r.id)}">Editar</a></td>
++      <td><button class="btn-eliminar" data-id="${escapeAttr(r.id)}">Eliminar</button></td>
+     `;
+ 
+     tableBody.appendChild(tr);
+diff --git a/project/frontend/src/reply/updateReply.html b/project/frontend/src/reply/updateReply.html
+index c9043a2..4434afa 100644
+--- a/project/frontend/src/reply/updateReply.html
++++ b/project/frontend/src/reply/updateReply.html
+@@ -67,6 +67,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="updateReply.js"></script>
+ </body>
+diff --git a/project/frontend/src/topic/createTopic.html b/project/frontend/src/topic/createTopic.html
+index 5a32609..6377cc7 100644
+--- a/project/frontend/src/topic/createTopic.html
++++ b/project/frontend/src/topic/createTopic.html
+@@ -22,6 +22,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="createTopic.js"></script>
+ </body>
+diff --git a/project/frontend/src/topic/myTopics.html b/project/frontend/src/topic/myTopics.html
+index 3e488d6..3a50e3c 100644
+--- a/project/frontend/src/topic/myTopics.html
++++ b/project/frontend/src/topic/myTopics.html
+@@ -25,6 +25,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="myTopics.js"></script>
+ </body>
+diff --git a/project/frontend/src/topic/myTopics.js b/project/frontend/src/topic/myTopics.js
+index 4d3f777..f850f76 100644
+--- a/project/frontend/src/topic/myTopics.js
++++ b/project/frontend/src/topic/myTopics.js
+@@ -18,15 +18,15 @@ async function loadMyTopics() {
+ 
+   result.data.forEach(t => {
+     const tr = document.createElement("tr");
++    const editCell = t.estado === 'activo'
++      ? `<a href="/src/topic/updateTopic.html?id=${encodeURIComponent(t.id)}">Editar</a>`
++      : `<span style="color: gray;">No podés editar temas eliminados</span>`;
+     tr.innerHTML = `
+-      <td>${t.id}</td>
+-      <td><a href="/src/topic/topic.html?id=${t.id}">${t.titulo}</a></td>
+-      <td>${t.categoria_titulo}</td>
+-      <td>${t.estado}</td>
+-      <td>${t.estado === 'activo'
+-        ? `<a href="/src/topic/updateTopic.html?id=${t.id}">Editar</a>`
+-        : `<span style="color: gray;">No podés editar temas eliminados</span>`
+-      }</td>
++      <td>${escapeHtml(t.id)}</td>
++      <td><a href="/src/topic/topic.html?id=${encodeURIComponent(t.id)}">${escapeHtml(t.titulo)}</a></td>
++      <td>${escapeHtml(t.categoria_titulo)}</td>
++      <td>${escapeHtml(t.estado)}</td>
++      <td>${editCell}</td>
+     `;
+     tableBody.appendChild(tr);
+   });
+diff --git a/project/frontend/src/topic/topic.html b/project/frontend/src/topic/topic.html
+index fa9256b..f6f51cb 100644
+--- a/project/frontend/src/topic/topic.html
++++ b/project/frontend/src/topic/topic.html
+@@ -29,6 +29,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="topic.js"></script>
+ </body>
+diff --git a/project/frontend/src/topic/topic.js b/project/frontend/src/topic/topic.js
+index feef555..d3d13f5 100644
+--- a/project/frontend/src/topic/topic.js
++++ b/project/frontend/src/topic/topic.js
+@@ -24,12 +24,12 @@ async function loadTopic() {
+ 
+   const topicBody = document.querySelector("#topicTable tbody");
+   topicBody.innerHTML = `
+-    ${isAdmin ? `<tr><th>ID</th><td>${t.id}</td></tr>` : ''}
+-    <tr><th>Título</th><td>${t.titulo}</td></tr>
+-    <tr><th>Autor</th><td><a href="../user/profile.html?nickname=${encodeURIComponent(t.autor_nickname)}">${t.autor_nickname}</a></td></tr>
+-    <tr><th>Descripción</th><td>${t.cuerpo}</td></tr>
+-    <tr><th>Estado</th><td>${t.estado}</td></tr>
+-    <tr><th>Fecha de creación</th><td>${new Date(t.fecha_creacion).toLocaleString()}</td></tr>
++    ${isAdmin ? `<tr><th>ID</th><td>${escapeHtml(t.id)}</td></tr>` : ''}
++    <tr><th>Título</th><td>${escapeHtml(t.titulo)}</td></tr>
++    <tr><th>Autor</th><td><a href="../user/profile.html?nickname=${encodeURIComponent(t.autor_nickname)}">${escapeHtml(t.autor_nickname)}</a></td></tr>
++    <tr><th>Descripción</th><td>${escapeHtml(t.cuerpo)}</td></tr>
++    <tr><th>Estado</th><td>${escapeHtml(t.estado)}</td></tr>
++    <tr><th>Fecha de creación</th><td>${escapeHtml(new Date(t.fecha_creacion).toLocaleString())}</td></tr>
+   `;
+ 
+   // Comentarios
+@@ -42,9 +42,9 @@ async function loadTopic() {
+     repliesResult.data.forEach(r => {
+       const tr = document.createElement("tr");
+       tr.innerHTML = `
+-        <td>${r.id}</td>
+-        <td><a href="../user/profile.html?nickname=${encodeURIComponent(r.autor_nickname)}">${r.autor_nickname}</a></td>
+-        <td>${r.cuerpo}</td>
++        <td>${escapeHtml(r.id)}</td>
++        <td><a href="../user/profile.html?nickname=${encodeURIComponent(r.autor_nickname)}">${escapeHtml(r.autor_nickname)}</a></td>
++        <td>${escapeHtml(r.cuerpo)}</td>
+       `;
+       commentsBody.appendChild(tr);
+     });
+diff --git a/project/frontend/src/topic/topics.html b/project/frontend/src/topic/topics.html
+index 01dbce6..b3d0cfc 100644
+--- a/project/frontend/src/topic/topics.html
++++ b/project/frontend/src/topic/topics.html
+@@ -26,6 +26,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="topics.js"></script>
+ </body>
+diff --git a/project/frontend/src/topic/topics.js b/project/frontend/src/topic/topics.js
+index 169ec47..4a9bd3a 100644
+--- a/project/frontend/src/topic/topics.js
++++ b/project/frontend/src/topic/topics.js
+@@ -19,12 +19,12 @@ async function loadTopics() {
+   result.data.forEach(t => {
+     const tr = document.createElement("tr");
+     tr.innerHTML = `
+-      <td>${t.id}</td>
+-      <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(t.autor_nickname)}">${t.autor_nickname}</a></td>
+-      <td><a href="/src/topic/topic.html?id=${t.id}">${t.titulo}</a></td>
+-      <td>${t.estado}</td>
+-      <td><button class="btn-eliminar" data-id="${t.id}" data-titulo="${t.titulo}">Eliminar</button></td>
+-      <td><button class="btn-activar" data-id="${t.id}" data-titulo="${t.titulo}">Activar</button></td>
++      <td>${escapeHtml(t.id)}</td>
++      <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(t.autor_nickname)}">${escapeHtml(t.autor_nickname)}</a></td>
++      <td><a href="/src/topic/topic.html?id=${encodeURIComponent(t.id)}">${escapeHtml(t.titulo)}</a></td>
++      <td>${escapeHtml(t.estado)}</td>
++      <td><button class="btn-eliminar" data-id="${escapeAttr(t.id)}" data-titulo="${escapeAttr(t.titulo)}">Eliminar</button></td>
++      <td><button class="btn-activar" data-id="${escapeAttr(t.id)}" data-titulo="${escapeAttr(t.titulo)}">Activar</button></td>
+     `;
+     tableBody.appendChild(tr);
+   });
+diff --git a/project/frontend/src/topic/updateTopic.html b/project/frontend/src/topic/updateTopic.html
+index 88c3723..9f42917 100644
+--- a/project/frontend/src/topic/updateTopic.html
++++ b/project/frontend/src/topic/updateTopic.html
+@@ -55,6 +55,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="updateTopic.js"></script>
+ </body>
+diff --git a/project/frontend/src/user/deleteUser.html b/project/frontend/src/user/deleteUser.html
+index be8d23e..1eec8a2 100644
+--- a/project/frontend/src/user/deleteUser.html
++++ b/project/frontend/src/user/deleteUser.html
+@@ -24,6 +24,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="deleteUser.js"></script>
+ </body>
+diff --git a/project/frontend/src/user/deleteUser.js b/project/frontend/src/user/deleteUser.js
+index 1af2983..ca76608 100644
+--- a/project/frontend/src/user/deleteUser.js
++++ b/project/frontend/src/user/deleteUser.js
+@@ -14,11 +14,11 @@ async function loadUsers() {
+   result.data.forEach(u => {
+   const tr = document.createElement("tr");
+   tr.innerHTML = `
+-    <td>${u.id}</td>
+-    <td><a href="user.html?nickname=${encodeURIComponent(u.nickname)}">${u.nickname}</a></td>
+-    <td>${u.email}</td>
++    <td>${escapeHtml(u.id)}</td>
++    <td><a href="user.html?nickname=${encodeURIComponent(u.nickname)}">${escapeHtml(u.nickname)}</a></td>
++    <td>${escapeHtml(u.email)}</td>
+     <td>
+-    <button class="delete-btn" data-nickname="${u.nickname}">
++    <button class="delete-btn" data-nickname="${escapeAttr(u.nickname)}">
+         Eliminar
+     </button>
+     </td>
+@@ -33,7 +33,7 @@ async function loadUsers() {
+         const confirmDelete = confirm(`¿Eliminar usuario: ${nickname}?`);
+         if (!confirmDelete) return;
+ 
+-        const result = await apiDelete(`/users/${nickname}/delete`);
++        const result = await apiDelete(`/users/${encodeURIComponent(nickname)}/delete`);
+ 
+         if (result.ok) {
+         alert("Usuario eliminado correctamente");
+diff --git a/project/frontend/src/user/profile.html b/project/frontend/src/user/profile.html
+index d3dee38..8d1add8 100644
+--- a/project/frontend/src/user/profile.html
++++ b/project/frontend/src/user/profile.html
+@@ -143,6 +143,7 @@
+ 
+ 
+ 
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="../../shared/header.js"></script>
+   <script src="../../shared/leftnav.js"></script>
+diff --git a/project/frontend/src/user/profile.js b/project/frontend/src/user/profile.js
+index 9f5663a..9f57cc0 100644
+--- a/project/frontend/src/user/profile.js
++++ b/project/frontend/src/user/profile.js
+@@ -26,17 +26,20 @@ async function loadTabs(userId, categories) {
+   if (!categories || categories.length === 0) {
+     catGrid.innerHTML = `<div class="empty-panel" style="grid-column:1/-1">Sin categorías aún</div>`;
+   } else {
+-    catGrid.innerHTML = categories.map(c => `
+-      <a class="cat" href="/src/category/category.html?id=${c.id}">
++    catGrid.innerHTML = categories.map(c => {
++      const n = parseInt(c.contador_temas) || 0;
++      return `
++      <a class="cat" href="/src/category/category.html?id=${encodeURIComponent(c.id)}">
+         <div class="cat-icon">
+           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12l4 4v12H4z"/><path d="M16 4v4h4"/></svg>
+         </div>
+         <div class="cat-text">
+-          <div class="t">${c.titulo}</div>
+-          <div class="s">${parseInt(c.contador_temas) || 0} ${parseInt(c.contador_temas) === 1 ? 'tema' : 'temas'}</div>
++          <div class="t">${escapeHtml(c.titulo)}</div>
++          <div class="s">${n} ${n === 1 ? 'tema' : 'temas'}</div>
+         </div>
+       </a>
+-    `).join('');
++    `;
++    }).join('');
+   }
+ 
+   // Temas
+@@ -52,10 +55,10 @@ async function loadTabs(userId, categories) {
+       <article class="item">
+         <div class="item-head">
+           <span>en</span>
+-          <a href="/src/category/category.html?id=${t.categoria_id}">${t.categoria_titulo}</a>
++          <a href="/src/category/category.html?id=${encodeURIComponent(t.categoria_id)}">${escapeHtml(t.categoria_titulo)}</a>
+         </div>
+-        <h3 class="item-title"><a href="/src/topic/topic.html?id=${t.id}" style="text-decoration:none;color:inherit;">${t.titulo}</a></h3>
+-        <p class="item-body">${t.cuerpo || ''}</p>
++        <h3 class="item-title"><a href="/src/topic/topic.html?id=${encodeURIComponent(t.id)}" style="text-decoration:none;color:inherit;">${escapeHtml(t.titulo)}</a></h3>
++        <p class="item-body">${escapeHtml(t.cuerpo || '')}</p>
+       </article>
+     `).join('');
+   }
+@@ -69,15 +72,20 @@ async function loadTabs(userId, categories) {
+   if (comentarios.length === 0) {
+     comentariosList.innerHTML = `<div class="empty-panel">Sin comentarios aún</div>`;
+   } else {
+-    comentariosList.innerHTML = comentarios.map(r => `
++    comentariosList.innerHTML = comentarios.map(r => {
++      const href = r.tipo === 'tema'
++        ? `/src/topic/topic.html?id=${encodeURIComponent(r.destino_id)}`
++        : `/src/category/category.html?id=${encodeURIComponent(r.destino_id)}`;
++      return `
+       <article class="item">
+         <div class="item-head">
+           <span>en</span>
+-          <a href="${r.tipo === 'tema' ? `/src/topic/topic.html?id=${r.destino_id}` : `/src/category/category.html?id=${r.destino_id}`}">${r.destino_titulo}</a>
++          <a href="${href}">${escapeHtml(r.destino_titulo)}</a>
+         </div>
+-        <p class="item-body">${r.cuerpo}</p>
++        <p class="item-body">${escapeHtml(r.cuerpo)}</p>
+       </article>
+-    `).join('');
++    `;
++    }).join('');
+   }
+ }
+ 
+diff --git a/project/frontend/src/user/updateProfile.html b/project/frontend/src/user/updateProfile.html
+index 9b6c5e5..b36fb4c 100644
+--- a/project/frontend/src/user/updateProfile.html
++++ b/project/frontend/src/user/updateProfile.html
+@@ -63,6 +63,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="updateProfile.js"></script>
+ </body>
+diff --git a/project/frontend/src/user/user.html b/project/frontend/src/user/user.html
+index 19268ee..69e9f51 100644
+--- a/project/frontend/src/user/user.html
++++ b/project/frontend/src/user/user.html
+@@ -81,6 +81,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="user.js"></script>
+ </body>
+diff --git a/project/frontend/src/user/user.js b/project/frontend/src/user/user.js
+index 89ecfb8..69c165b 100644
+--- a/project/frontend/src/user/user.js
++++ b/project/frontend/src/user/user.js
+@@ -25,12 +25,12 @@ async function loadUser() {
+   const { user, categories, followers, following } = result.data;
+ 
+   userTableBody.innerHTML = `
+-    <tr><td>ID</td><td>${user.id}</td></tr>
+-    <tr><td>Nickname</td><td>${user.nickname}</td></tr>
+-    <tr><td>Nombre</td><td>${user.nombre}</td></tr>
+-    <tr><td>Email</td><td>${user.email}</td></tr>
+-    <tr><td>Rol</td><td>${user.rol}</td></tr>
+-    <tr><td>Biografía</td><td>${user.biografia || ""}</td></tr>
++    <tr><td>ID</td><td>${escapeHtml(user.id)}</td></tr>
++    <tr><td>Nickname</td><td>${escapeHtml(user.nickname)}</td></tr>
++    <tr><td>Nombre</td><td>${escapeHtml(user.nombre)}</td></tr>
++    <tr><td>Email</td><td>${escapeHtml(user.email)}</td></tr>
++    <tr><td>Rol</td><td>${escapeHtml(user.rol)}</td></tr>
++    <tr><td>Biografía</td><td>${escapeHtml(user.biografia || "")}</td></tr>
+   `;
+ 
+   // Categorías
+@@ -40,11 +40,12 @@ async function loadUser() {
+   } else {
+     categories.forEach(c => {
+       const tr = document.createElement("tr");
++      const etiquetasTxt = Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : (c.etiquetas || '-');
+       tr.innerHTML = `
+-        <td>${c.id}</td>
+-        <td><a href="../category/category.html?id=${c.id}">${c.titulo}</a></td>
+-        <td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td>
+-        <td>${new Date(c.fecha_creacion).toLocaleString()}</td>
++        <td>${escapeHtml(c.id)}</td>
++        <td><a href="../category/category.html?id=${encodeURIComponent(c.id)}">${escapeHtml(c.titulo)}</a></td>
++        <td>${escapeHtml(etiquetasTxt)}</td>
++        <td>${escapeHtml(new Date(c.fecha_creacion).toLocaleString())}</td>
+       `;
+       categoriesBody.appendChild(tr);
+     });
+@@ -59,10 +60,10 @@ async function loadUser() {
+     topicsResult.data.forEach(t => {
+       const tr = document.createElement("tr");
+       tr.innerHTML = `
+-        <td>${t.id}</td>
+-        <td><a href="../topic/topic.html?id=${t.id}">${t.titulo}</a></td>
+-        <td><a href="../category/category.html?id=${t.categoria_id}">${t.categoria_titulo}</a></td>
+-        <td>${new Date(t.fecha_creacion).toLocaleString()}</td>
++        <td>${escapeHtml(t.id)}</td>
++        <td><a href="../topic/topic.html?id=${encodeURIComponent(t.id)}">${escapeHtml(t.titulo)}</a></td>
++        <td><a href="../category/category.html?id=${encodeURIComponent(t.categoria_id)}">${escapeHtml(t.categoria_titulo)}</a></td>
++        <td>${escapeHtml(new Date(t.fecha_creacion).toLocaleString())}</td>
+       `;
+       topicsBody.appendChild(tr);
+     });
+@@ -76,16 +77,16 @@ async function loadUser() {
+   } else {
+     repliesResult.data.forEach(r => {
+       const tr = document.createElement("tr");
+-      
++
+       const destinoLink = r.tipo === 'tema'
+-        ? `<a href="../topic/topic.html?id=${r.destino_id}">${r.destino_titulo}</a>`
+-        : `<a href="../category/category.html?id=${r.destino_id}">${r.destino_titulo}</a>`;
++        ? `<a href="../topic/topic.html?id=${encodeURIComponent(r.destino_id)}">${escapeHtml(r.destino_titulo)}</a>`
++        : `<a href="../category/category.html?id=${encodeURIComponent(r.destino_id)}">${escapeHtml(r.destino_titulo)}</a>`;
+       tr.innerHTML = `
+-        <td>${r.id}</td>
+-        <td>${r.cuerpo}</td>
++        <td>${escapeHtml(r.id)}</td>
++        <td>${escapeHtml(r.cuerpo)}</td>
+         <td>${destinoLink}</td>
+-        <td>${r.tipo}</td>
+-        <td>${new Date(r.fecha_creacion).toLocaleString()}</td>
++        <td>${escapeHtml(r.tipo)}</td>
++        <td>${escapeHtml(new Date(r.fecha_creacion).toLocaleString())}</td>
+       `;
+       repliesBody.appendChild(tr);
+     });
+@@ -99,9 +100,9 @@ async function loadUser() {
+     followers.forEach(f => {
+       const tr = document.createElement("tr");
+       tr.innerHTML = `
+-        <td>${f.id}</td>
+-        <td>${f.nickname}</td>
+-        <td>${f.nombre}</td>
++        <td>${escapeHtml(f.id)}</td>
++        <td>${escapeHtml(f.nickname)}</td>
++        <td>${escapeHtml(f.nombre)}</td>
+       `;
+       followersBody.appendChild(tr);
+     });
+@@ -115,9 +116,9 @@ async function loadUser() {
+     following.forEach(f => {
+       const tr = document.createElement("tr");
+       tr.innerHTML = `
+-        <td>${f.id}</td>
+-        <td>${f.nickname}</td>
+-        <td>${f.nombre}</td>
++        <td>${escapeHtml(f.id)}</td>
++        <td>${escapeHtml(f.nickname)}</td>
++        <td>${escapeHtml(f.nombre)}</td>
+       `;
+       followingBody.appendChild(tr);
+     });
+diff --git a/project/frontend/src/user/users.html b/project/frontend/src/user/users.html
+index 487cbd9..87a7553 100644
+--- a/project/frontend/src/user/users.html
++++ b/project/frontend/src/user/users.html
+@@ -23,6 +23,7 @@
+ 
+   <script src="../../shared/transitions.js"></script>
+   <script src="../../shared/header.js"></script>
++  <script src="../../shared/escape.js"></script>
+   <script src="../../shared/api.js"></script>
+   <script src="users.js"></script>
+ </body>
+diff --git a/project/frontend/src/user/users.js b/project/frontend/src/user/users.js
+index fe3ec29..6cc152c 100644
+--- a/project/frontend/src/user/users.js
++++ b/project/frontend/src/user/users.js
+@@ -14,9 +14,9 @@ async function loadUsers() {
+   result.data.forEach(u => {
+   const tr = document.createElement("tr");
+   tr.innerHTML = `
+-    <td>${u.id}</td>
+-    <td><a href="profile.html?nickname=${encodeURIComponent(u.nickname)}">${u.nickname}</a></td>
+-    <td>${u.email}</td>
++    <td>${escapeHtml(u.id)}</td>
++    <td><a href="profile.html?nickname=${encodeURIComponent(u.nickname)}">${escapeHtml(u.nickname)}</a></td>
++    <td>${escapeHtml(u.email)}</td>
+   `;
+   tableBody.appendChild(tr);
+ });
+-- 
+2.43.0

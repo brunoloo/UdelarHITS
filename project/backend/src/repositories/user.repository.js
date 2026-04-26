@@ -75,7 +75,7 @@ const getUserIdByNickname = async (nickname) => {
     LIMIT 1
   `;
   const { rows } = await pool.query(q, [nickname]);
-  return rows[0].id || null;
+  return rows[0]?.id || null;
 };
 
 const getCategoriesByUserId = async (userId) => {
@@ -117,7 +117,7 @@ const getFollowingByUserId = async (userId) => {
   return rows;
 };
 
-const updateUserById = async (id, { nombre, biografia, url_imagen }) => {
+const updateUserById = async (id, { nombre, biografia }) => {
   const fields = [];
   const values = [];
   let idx = 1;
@@ -129,10 +129,6 @@ const updateUserById = async (id, { nombre, biografia, url_imagen }) => {
   if (biografia !== undefined) {
     fields.push(`biografia = $${idx++}`);
     values.push(biografia);
-  }
-  if (url_imagen !== undefined) {
-    fields.push(`url_imagen = $${idx++}`);
-    values.push(url_imagen);
   }
 
   if (fields.length === 0) return null;

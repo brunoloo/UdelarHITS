@@ -26,17 +26,20 @@ async function loadTabs(userId, categories) {
   if (!categories || categories.length === 0) {
     catGrid.innerHTML = `<div class="empty-panel" style="grid-column:1/-1">Sin categorías aún</div>`;
   } else {
-    catGrid.innerHTML = categories.map(c => `
-      <a class="cat" href="/src/category/category.html?id=${c.id}">
+    catGrid.innerHTML = categories.map(c => {
+      const n = parseInt(c.contador_temas) || 0;
+      return `
+      <a class="cat" href="/src/category/category.html?id=${encodeURIComponent(c.id)}">
         <div class="cat-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h12l4 4v12H4z"/><path d="M16 4v4h4"/></svg>
         </div>
         <div class="cat-text">
-          <div class="t">${c.titulo}</div>
-          <div class="s">${parseInt(c.contador_temas) || 0} ${parseInt(c.contador_temas) === 1 ? 'tema' : 'temas'}</div>
+          <div class="t">${escapeHtml(c.titulo)}</div>
+          <div class="s">${n} ${n === 1 ? 'tema' : 'temas'}</div>
         </div>
       </a>
-    `).join('');
+    `;
+    }).join('');
   }
 
   // Temas
@@ -52,10 +55,10 @@ async function loadTabs(userId, categories) {
       <article class="item">
         <div class="item-head">
           <span>en</span>
-          <a href="/src/category/category.html?id=${t.categoria_id}">${t.categoria_titulo}</a>
+          <a href="/src/category/category.html?id=${encodeURIComponent(t.categoria_id)}">${escapeHtml(t.categoria_titulo)}</a>
         </div>
-        <h3 class="item-title"><a href="/src/topic/topic.html?id=${t.id}" style="text-decoration:none;color:inherit;">${t.titulo}</a></h3>
-        <p class="item-body">${t.cuerpo || ''}</p>
+        <h3 class="item-title"><a href="/src/topic/topic.html?id=${encodeURIComponent(t.id)}" style="text-decoration:none;color:inherit;">${escapeHtml(t.titulo)}</a></h3>
+        <p class="item-body">${escapeHtml(t.cuerpo || '')}</p>
       </article>
     `).join('');
   }
@@ -69,15 +72,20 @@ async function loadTabs(userId, categories) {
   if (comentarios.length === 0) {
     comentariosList.innerHTML = `<div class="empty-panel">Sin comentarios aún</div>`;
   } else {
-    comentariosList.innerHTML = comentarios.map(r => `
+    comentariosList.innerHTML = comentarios.map(r => {
+      const href = r.tipo === 'tema'
+        ? `/src/topic/topic.html?id=${encodeURIComponent(r.destino_id)}`
+        : `/src/category/category.html?id=${encodeURIComponent(r.destino_id)}`;
+      return `
       <article class="item">
         <div class="item-head">
           <span>en</span>
-          <a href="${r.tipo === 'tema' ? `/src/topic/topic.html?id=${r.destino_id}` : `/src/category/category.html?id=${r.destino_id}`}">${r.destino_titulo}</a>
+          <a href="${href}">${escapeHtml(r.destino_titulo)}</a>
         </div>
-        <p class="item-body">${r.cuerpo}</p>
+        <p class="item-body">${escapeHtml(r.cuerpo)}</p>
       </article>
-    `).join('');
+    `;
+    }).join('');
   }
 }
 

@@ -23,14 +23,15 @@ async function loadCategory() {
   const isAdmin = meResult.ok && meResult.data.user?.rol === 'admin';
 
   const categoryBody = document.querySelector("#categoryTable tbody");
+  const etiquetasTxt = Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : (c.etiquetas || '-');
   categoryBody.innerHTML = `
-    ${isAdmin ? `<tr><th>ID</th><td>${c.id}</td></tr>` : ''}
-    <tr><th>Título</th><td>${c.titulo}</td></tr>
-    <tr><th>Descripción</th><td>${c.descripcion}</td></tr>
-    <tr><th>Autor</th><td><a href="/src/user/profile.html?nickname=${encodeURIComponent(c.autor_nickname)}">${c.autor_nickname}</a></td></tr>
-    <tr><th>Etiquetas</th><td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td></tr>
-    <tr><th>Temas</th><td>${c.contador_temas}</td></tr>
-    <tr><th>Fecha de creación</th><td>${new Date(c.fecha_creacion).toLocaleString()}</td></tr>
+    ${isAdmin ? `<tr><th>ID</th><td>${escapeHtml(c.id)}</td></tr>` : ''}
+    <tr><th>Título</th><td>${escapeHtml(c.titulo)}</td></tr>
+    <tr><th>Descripción</th><td>${escapeHtml(c.descripcion)}</td></tr>
+    <tr><th>Autor</th><td><a href="/src/user/profile.html?nickname=${encodeURIComponent(c.autor_nickname)}">${escapeHtml(c.autor_nickname)}</a></td></tr>
+    <tr><th>Etiquetas</th><td>${escapeHtml(etiquetasTxt)}</td></tr>
+    <tr><th>Temas</th><td>${escapeHtml(c.contador_temas)}</td></tr>
+    <tr><th>Fecha de creación</th><td>${escapeHtml(new Date(c.fecha_creacion).toLocaleString())}</td></tr>
   `;
 
   // Temas
@@ -41,9 +42,9 @@ async function loadCategory() {
     c.topics.forEach(t => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${t.contenido_id}</td>
-        <td><a href="/src/topic/topic.html?id=${t.contenido_id}">${t.titulo}</a></td>
-        <td>${new Date(t.fecha_creacion).toLocaleString()}</td>
+        <td>${escapeHtml(t.contenido_id)}</td>
+        <td><a href="/src/topic/topic.html?id=${encodeURIComponent(t.contenido_id)}">${escapeHtml(t.titulo)}</a></td>
+        <td>${escapeHtml(new Date(t.fecha_creacion).toLocaleString())}</td>
       `;
       topicsBody.appendChild(tr);
     });
@@ -59,9 +60,9 @@ async function loadCategory() {
     repliesResult.data.forEach(r => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${r.id}</td>
-        <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(r.autor_nickname)}">${r.autor_nickname}</a></td>
-        <td>${r.cuerpo}</td>
+        <td>${escapeHtml(r.id)}</td>
+        <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(r.autor_nickname)}">${escapeHtml(r.autor_nickname)}</a></td>
+        <td>${escapeHtml(r.cuerpo)}</td>
       `;
       repliesBody.appendChild(tr);
     });

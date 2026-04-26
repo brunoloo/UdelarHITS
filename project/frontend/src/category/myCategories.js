@@ -18,16 +18,17 @@ async function loadMyCategories() {
 
   result.data.forEach(c => {
     const tr = document.createElement("tr");
+    const etiquetasTxt = Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : (c.etiquetas || '-');
+    const editCell = c.estado === "activa"
+      ? `<a href="updateCategory.html?id=${encodeURIComponent(c.id)}">Editar</a>`
+      : `<span style="color: gray;">No podés editar categorías eliminadas</span>`;
     tr.innerHTML = `
-      <td>${c.id}</td>
-      <td><a href="category.html?id=${c.id}">${c.titulo}</a></td>
-      <td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td>
-      <td>${c.estado}</td>
-      <td>${c.estado === "activa"
-        ? `<a href="updateCategory.html?id=${c.id}">Editar</a>`
-        : `<span style="color: gray;">No podés editar categorías eliminadas</span>`
-      }</td>
-      <td><button class="btn-participantes" data-id="${c.id}">Ver</button></td>
+      <td>${escapeHtml(c.id)}</td>
+      <td><a href="category.html?id=${encodeURIComponent(c.id)}">${escapeHtml(c.titulo)}</a></td>
+      <td>${escapeHtml(etiquetasTxt)}</td>
+      <td>${escapeHtml(c.estado)}</td>
+      <td>${editCell}</td>
+      <td><button class="btn-participantes" data-id="${escapeAttr(c.id)}">Ver</button></td>
     `;
     tableBody.appendChild(tr);
   });
@@ -63,7 +64,7 @@ tableBody.addEventListener("click", async (e) => {
   } else {
     result.data.forEach(p => {
       const li = document.createElement("li");
-      li.innerHTML = `<a href="/src/user/profile.html?nickname=${encodeURIComponent(p.nickname)}">${p.nickname}</a>`;
+      li.innerHTML = `<a href="/src/user/profile.html?nickname=${encodeURIComponent(p.nickname)}">${escapeHtml(p.nickname)}</a>`;
       li.style.padding = "4px 0";
       list.appendChild(li);
     });

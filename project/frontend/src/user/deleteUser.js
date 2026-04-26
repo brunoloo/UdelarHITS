@@ -14,11 +14,11 @@ async function loadUsers() {
   result.data.forEach(u => {
   const tr = document.createElement("tr");
   tr.innerHTML = `
-    <td>${u.id}</td>
-    <td><a href="user.html?nickname=${encodeURIComponent(u.nickname)}">${u.nickname}</a></td>
-    <td>${u.email}</td>
+    <td>${escapeHtml(u.id)}</td>
+    <td><a href="user.html?nickname=${encodeURIComponent(u.nickname)}">${escapeHtml(u.nickname)}</a></td>
+    <td>${escapeHtml(u.email)}</td>
     <td>
-    <button class="delete-btn" data-nickname="${u.nickname}">
+    <button class="delete-btn" data-nickname="${escapeAttr(u.nickname)}">
         Eliminar
     </button>
     </td>
@@ -33,7 +33,7 @@ async function loadUsers() {
         const confirmDelete = confirm(`¿Eliminar usuario: ${nickname}?`);
         if (!confirmDelete) return;
 
-        const result = await apiDelete(`/users/${nickname}/delete`);
+        const result = await apiDelete(`/users/${encodeURIComponent(nickname)}/delete`);
 
         if (result.ok) {
         alert("Usuario eliminado correctamente");

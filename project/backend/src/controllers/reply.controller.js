@@ -4,7 +4,6 @@ import { createReplyService, getRepliesByCategoryIdService,
 
 const createReply = async (req, res) => {
   try {
-    console.log('body:', req.body);
     const reply = await createReplyService(req.user.id, req.body);
     return res.status(201).json({ ok: true, data: reply });
   } catch (error) {
@@ -59,6 +58,9 @@ const getMyReplies = async (req, res) => {
 const getRepliesByUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    if (!/^\d+$/.test(userId)) {
+      return res.status(400).json({ ok: false, message: 'userId inválido' });
+    }
     const replies = await getRepliesByUserIdService(userId);
     return res.status(200).json({ ok: true, data: replies });
   } catch (error) {

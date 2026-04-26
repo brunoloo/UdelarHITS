@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -13,25 +15,53 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use('/assets', express.static(path.join(__dirname, 'assets'))); // default img
+// Security headers (CSP, X-Frame-Options, X-Content-Type-Options, etc.)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 
-
-// Cors
+// Allowlist de orígenes para CORS (separados por coma en .env)
+const allowedOrigins = (process.env.URL || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({
-  origin: process.env.URL,
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); // peticiones server-to-server / curl
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    return cb(new Error('Origen no permitido'));
+  },
   credentials: true
 }));
 
+app.use('/assets', express.static(path.join(__dirname, 'assets'))); // default img
 
 // Cookie
 app.use(cookieParser());
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsers con límite explícito
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
-//index (usamos el index que aparece en frontend)
-app.use(express.static(path.join(process.cwd(), "../frontend/"))); 
+// Rate limit estricto en endpoints de auth para frenar brute-force
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: 'Demasiados intentos. Intentá de nuevo en unos minutos.' }
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+// Rate limit general para toda la API
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+app.use('/api', apiLimiter);
+
+//index (usamos el index que aparece en frontend) — path estable, no depende del cwd
+app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
 
 // routes
 app.use("/api", API);

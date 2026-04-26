@@ -24,12 +24,12 @@ async function loadTopic() {
 
   const topicBody = document.querySelector("#topicTable tbody");
   topicBody.innerHTML = `
-    ${isAdmin ? `<tr><th>ID</th><td>${t.id}</td></tr>` : ''}
-    <tr><th>Título</th><td>${t.titulo}</td></tr>
-    <tr><th>Autor</th><td><a href="../user/profile.html?nickname=${encodeURIComponent(t.autor_nickname)}">${t.autor_nickname}</a></td></tr>
-    <tr><th>Descripción</th><td>${t.cuerpo}</td></tr>
-    <tr><th>Estado</th><td>${t.estado}</td></tr>
-    <tr><th>Fecha de creación</th><td>${new Date(t.fecha_creacion).toLocaleString()}</td></tr>
+    ${isAdmin ? `<tr><th>ID</th><td>${escapeHtml(t.id)}</td></tr>` : ''}
+    <tr><th>Título</th><td>${escapeHtml(t.titulo)}</td></tr>
+    <tr><th>Autor</th><td><a href="../user/profile.html?nickname=${encodeURIComponent(t.autor_nickname)}">${escapeHtml(t.autor_nickname)}</a></td></tr>
+    <tr><th>Descripción</th><td>${escapeHtml(t.cuerpo)}</td></tr>
+    <tr><th>Estado</th><td>${escapeHtml(t.estado)}</td></tr>
+    <tr><th>Fecha de creación</th><td>${escapeHtml(new Date(t.fecha_creacion).toLocaleString())}</td></tr>
   `;
 
   // Comentarios
@@ -42,9 +42,9 @@ async function loadTopic() {
     repliesResult.data.forEach(r => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${r.id}</td>
-        <td><a href="../user/profile.html?nickname=${encodeURIComponent(r.autor_nickname)}">${r.autor_nickname}</a></td>
-        <td>${r.cuerpo}</td>
+        <td>${escapeHtml(r.id)}</td>
+        <td><a href="../user/profile.html?nickname=${encodeURIComponent(r.autor_nickname)}">${escapeHtml(r.autor_nickname)}</a></td>
+        <td>${escapeHtml(r.cuerpo)}</td>
       `;
       commentsBody.appendChild(tr);
     });

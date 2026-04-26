@@ -97,6 +97,9 @@ const getTopicsByCategory = async (req, res) => {
 const getTopicsByUser = async (req, res) => {
   try {
     const { userId } = req.params;
+    if (!/^\d+$/.test(userId)) {
+      return res.status(400).json({ ok: false, message: 'userId inválido' });
+    }
     const topics = await getTopicsByUserIdService(userId);
     return res.status(200).json({ ok: true, data: topics });
   } catch (error) {
