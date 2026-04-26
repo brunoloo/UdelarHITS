@@ -18,15 +18,15 @@ async function loadMyTopics() {
 
   result.data.forEach(t => {
     const tr = document.createElement("tr");
+    const editCell = t.estado === 'activo'
+      ? `<a href="/src/topic/updateTopic.html?id=${encodeURIComponent(t.id)}">Editar</a>`
+      : `<span style="color: gray;">No podés editar temas eliminados</span>`;
     tr.innerHTML = `
-      <td>${t.id}</td>
-      <td><a href="/src/topic/topic.html?id=${t.id}">${t.titulo}</a></td>
-      <td>${t.categoria_titulo}</td>
-      <td>${t.estado}</td>
-      <td>${t.estado === 'activo'
-        ? `<a href="/src/topic/updateTopic.html?id=${t.id}">Editar</a>`
-        : `<span style="color: gray;">No podés editar temas eliminados</span>`
-      }</td>
+      <td>${escapeHtml(t.id)}</td>
+      <td><a href="/src/topic/topic.html?id=${encodeURIComponent(t.id)}">${escapeHtml(t.titulo)}</a></td>
+      <td>${escapeHtml(t.categoria_titulo)}</td>
+      <td>${escapeHtml(t.estado)}</td>
+      <td>${editCell}</td>
     `;
     tableBody.appendChild(tr);
   });

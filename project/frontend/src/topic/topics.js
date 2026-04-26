@@ -19,12 +19,12 @@ async function loadTopics() {
   result.data.forEach(t => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${t.id}</td>
-      <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(t.autor_nickname)}">${t.autor_nickname}</a></td>
-      <td><a href="/src/topic/topic.html?id=${t.id}">${t.titulo}</a></td>
-      <td>${t.estado}</td>
-      <td><button class="btn-eliminar" data-id="${t.id}" data-titulo="${t.titulo}">Eliminar</button></td>
-      <td><button class="btn-activar" data-id="${t.id}" data-titulo="${t.titulo}">Activar</button></td>
+      <td>${escapeHtml(t.id)}</td>
+      <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(t.autor_nickname)}">${escapeHtml(t.autor_nickname)}</a></td>
+      <td><a href="/src/topic/topic.html?id=${encodeURIComponent(t.id)}">${escapeHtml(t.titulo)}</a></td>
+      <td>${escapeHtml(t.estado)}</td>
+      <td><button class="btn-eliminar" data-id="${escapeAttr(t.id)}" data-titulo="${escapeAttr(t.titulo)}">Eliminar</button></td>
+      <td><button class="btn-activar" data-id="${escapeAttr(t.id)}" data-titulo="${escapeAttr(t.titulo)}">Activar</button></td>
     `;
     tableBody.appendChild(tr);
   });

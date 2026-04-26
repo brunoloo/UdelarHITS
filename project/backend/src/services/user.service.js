@@ -211,9 +211,16 @@ const showMeService = async (nickname) => {
   return { user: safeUser, categories, followers, following };
 };
 
-const updateMeService = async (userId, { nombre, biografia, url_imagen }) => {
-  if (!nombre && !biografia && !url_imagen) {
+const updateMeService = async (userId, { nombre, biografia }) => {
+  // url_imagen no se acepta acá: se actualiza solo vía /me/avatar (upload a Cloudinary)
+  if (nombre === undefined && biografia === undefined) {
     const err = new Error('No hay campos para actualizar');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (typeof nombre === 'string' && nombre.length > 120) {
+    const err = new Error('El nombre superó el máximo de caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
   }
@@ -226,8 +233,7 @@ const updateMeService = async (userId, { nombre, biografia, url_imagen }) => {
 
   const updated = await updateUserById(userId, {
     nombre,
-    biografia,
-    url_imagen
+    biografia
   });
 
   if (!updated) {

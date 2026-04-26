@@ -18,10 +18,10 @@ async function loadHeader() {
     actions.innerHTML = `
       <a class="user-chip" href="/src/user/profile.html">
         <img class="user-avatar"
-          src="${API_BASE}/users/${user.id}/avatar"
-          alt="${user.nickname}"
+          src="${API_BASE}/users/${encodeURIComponent(user.id)}/avatar"
+          alt="${escapeHtml(user.nickname)}"
           onerror="this.style.display='none'" />
-        ${user.nickname}
+        ${escapeHtml(user.nickname)}
       </a>
     `;
   } else {
@@ -50,22 +50,23 @@ function renderCategories(list) {
 
   feed.innerHTML = list.map(c => {
   const etiquetas = parseEtiquetas(c.etiquetas);
-  const tagsHTML = etiquetas.slice(0, 3).map(e => `<span class="tag">${e}</span>`).join('');
+  const tagsHTML = etiquetas.slice(0, 3).map(e => `<span class="tag">${escapeHtml(e)}</span>`).join('');
 
   const ultimoTema = c.ultimo_tema
     ? `<div class="last-activity">
         <span class="last-activity-label">Último tema:</span>
-        <span class="last-activity-title">${c.ultimo_tema.titulo}</span>
-        <span class="last-activity-meta">por ${c.ultimo_tema.autor} · ${new Date(c.ultimo_tema.fecha).toLocaleDateString()}</span>
+        <span class="last-activity-title">${escapeHtml(c.ultimo_tema.titulo)}</span>
+        <span class="last-activity-meta">por ${escapeHtml(c.ultimo_tema.autor)} · ${escapeHtml(new Date(c.ultimo_tema.fecha).toLocaleDateString())}</span>
       </div>`
     : `<div class="last-activity no-activity">Todavía no hay temas publicados</div>`;
 
+  const count = Number(c.contador_temas) || 0;
   return `
-    <a class="category-card" href="/src/category/category.html?id=${c.id}">
+    <a class="category-card" href="/src/category/category.html?id=${encodeURIComponent(c.id)}">
       <div class="category-body">
         <div class="category-header-row">
-          <div class="category-title">${c.titulo}</div>
-          <div class="category-stats">${c.contador_temas ?? 0} ${c.contador_temas === 1 ? 'tema' : 'temas'}</div>
+          <div class="category-title">${escapeHtml(c.titulo)}</div>
+          <div class="category-stats">${count} ${count === 1 ? 'tema' : 'temas'}</div>
         </div>
         <div class="category-footer">${tagsHTML}</div>
         ${ultimoTema}

@@ -28,10 +28,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="user-menu-wrapper">
         <button class="user-chip" id="userMenuBtn">
           <img class="user-avatar"
-            src="${API_BASE}/users/${user.id}/avatar"
-            alt="${user.nickname}"
+            src="${API_BASE}/users/${encodeURIComponent(user.id)}/avatar"
+            alt="${escapeHtml(user.nickname)}"
             onerror="this.style.display='none'" />
-          ${user.nickname}
+          ${escapeHtml(user.nickname)}
         </button>
         <div class="user-menu" id="userMenu" style="display:none;">
           <a href="/src/user/profile.html" class="user-menu-item">Ver perfil</a>

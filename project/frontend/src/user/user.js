@@ -25,12 +25,12 @@ async function loadUser() {
   const { user, categories, followers, following } = result.data;
 
   userTableBody.innerHTML = `
-    <tr><td>ID</td><td>${user.id}</td></tr>
-    <tr><td>Nickname</td><td>${user.nickname}</td></tr>
-    <tr><td>Nombre</td><td>${user.nombre}</td></tr>
-    <tr><td>Email</td><td>${user.email}</td></tr>
-    <tr><td>Rol</td><td>${user.rol}</td></tr>
-    <tr><td>Biografía</td><td>${user.biografia || ""}</td></tr>
+    <tr><td>ID</td><td>${escapeHtml(user.id)}</td></tr>
+    <tr><td>Nickname</td><td>${escapeHtml(user.nickname)}</td></tr>
+    <tr><td>Nombre</td><td>${escapeHtml(user.nombre)}</td></tr>
+    <tr><td>Email</td><td>${escapeHtml(user.email)}</td></tr>
+    <tr><td>Rol</td><td>${escapeHtml(user.rol)}</td></tr>
+    <tr><td>Biografía</td><td>${escapeHtml(user.biografia || "")}</td></tr>
   `;
 
   // Categorías
@@ -40,11 +40,12 @@ async function loadUser() {
   } else {
     categories.forEach(c => {
       const tr = document.createElement("tr");
+      const etiquetasTxt = Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : (c.etiquetas || '-');
       tr.innerHTML = `
-        <td>${c.id}</td>
-        <td><a href="../category/category.html?id=${c.id}">${c.titulo}</a></td>
-        <td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td>
-        <td>${new Date(c.fecha_creacion).toLocaleString()}</td>
+        <td>${escapeHtml(c.id)}</td>
+        <td><a href="../category/category.html?id=${encodeURIComponent(c.id)}">${escapeHtml(c.titulo)}</a></td>
+        <td>${escapeHtml(etiquetasTxt)}</td>
+        <td>${escapeHtml(new Date(c.fecha_creacion).toLocaleString())}</td>
       `;
       categoriesBody.appendChild(tr);
     });
@@ -59,10 +60,10 @@ async function loadUser() {
     topicsResult.data.forEach(t => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${t.id}</td>
-        <td><a href="../topic/topic.html?id=${t.id}">${t.titulo}</a></td>
-        <td><a href="../category/category.html?id=${t.categoria_id}">${t.categoria_titulo}</a></td>
-        <td>${new Date(t.fecha_creacion).toLocaleString()}</td>
+        <td>${escapeHtml(t.id)}</td>
+        <td><a href="../topic/topic.html?id=${encodeURIComponent(t.id)}">${escapeHtml(t.titulo)}</a></td>
+        <td><a href="../category/category.html?id=${encodeURIComponent(t.categoria_id)}">${escapeHtml(t.categoria_titulo)}</a></td>
+        <td>${escapeHtml(new Date(t.fecha_creacion).toLocaleString())}</td>
       `;
       topicsBody.appendChild(tr);
     });
@@ -76,16 +77,16 @@ async function loadUser() {
   } else {
     repliesResult.data.forEach(r => {
       const tr = document.createElement("tr");
-      
+
       const destinoLink = r.tipo === 'tema'
-        ? `<a href="../topic/topic.html?id=${r.destino_id}">${r.destino_titulo}</a>`
-        : `<a href="../category/category.html?id=${r.destino_id}">${r.destino_titulo}</a>`;
+        ? `<a href="../topic/topic.html?id=${encodeURIComponent(r.destino_id)}">${escapeHtml(r.destino_titulo)}</a>`
+        : `<a href="../category/category.html?id=${encodeURIComponent(r.destino_id)}">${escapeHtml(r.destino_titulo)}</a>`;
       tr.innerHTML = `
-        <td>${r.id}</td>
-        <td>${r.cuerpo}</td>
+        <td>${escapeHtml(r.id)}</td>
+        <td>${escapeHtml(r.cuerpo)}</td>
         <td>${destinoLink}</td>
-        <td>${r.tipo}</td>
-        <td>${new Date(r.fecha_creacion).toLocaleString()}</td>
+        <td>${escapeHtml(r.tipo)}</td>
+        <td>${escapeHtml(new Date(r.fecha_creacion).toLocaleString())}</td>
       `;
       repliesBody.appendChild(tr);
     });
@@ -99,9 +100,9 @@ async function loadUser() {
     followers.forEach(f => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${f.id}</td>
-        <td>${f.nickname}</td>
-        <td>${f.nombre}</td>
+        <td>${escapeHtml(f.id)}</td>
+        <td>${escapeHtml(f.nickname)}</td>
+        <td>${escapeHtml(f.nombre)}</td>
       `;
       followersBody.appendChild(tr);
     });
@@ -115,9 +116,9 @@ async function loadUser() {
     following.forEach(f => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${f.id}</td>
-        <td>${f.nickname}</td>
-        <td>${f.nombre}</td>
+        <td>${escapeHtml(f.id)}</td>
+        <td>${escapeHtml(f.nickname)}</td>
+        <td>${escapeHtml(f.nombre)}</td>
       `;
       followingBody.appendChild(tr);
     });

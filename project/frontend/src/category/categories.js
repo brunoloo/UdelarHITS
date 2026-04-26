@@ -13,14 +13,15 @@ async function loadCategories() {
 
   result.data.forEach(c => {
     const tr = document.createElement("tr");
+    const etiquetasTxt = Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : (c.etiquetas || '-');
     tr.innerHTML = `
-      <td>${c.id}</td>
-      <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(c.autor_nickname)}">${c.autor_nickname}</a></td>
-      <td><a href="category.html?id=${c.id}">${c.titulo}</a></td>
-      <td>${Array.isArray(c.etiquetas) ? c.etiquetas.join(', ') : c.etiquetas || '-'}</td>
-      <td>${c.estado}</td>
-      <td><button class="btn-eliminar" data-id="${c.id}" data-titulo="${c.titulo}">Eliminar</button></td>
-      <td><button class="btn-activar" data-id="${c.id}" data-titulo="${c.titulo}">Activar</button></td>
+      <td>${escapeHtml(c.id)}</td>
+      <td><a href="/src/user/profile.html?nickname=${encodeURIComponent(c.autor_nickname)}">${escapeHtml(c.autor_nickname)}</a></td>
+      <td><a href="category.html?id=${encodeURIComponent(c.id)}">${escapeHtml(c.titulo)}</a></td>
+      <td>${escapeHtml(etiquetasTxt)}</td>
+      <td>${escapeHtml(c.estado)}</td>
+      <td><button class="btn-eliminar" data-id="${escapeAttr(c.id)}" data-titulo="${escapeAttr(c.titulo)}">Eliminar</button></td>
+      <td><button class="btn-activar" data-id="${escapeAttr(c.id)}" data-titulo="${escapeAttr(c.titulo)}">Activar</button></td>
     `;
     tableBody.appendChild(tr);
   });
