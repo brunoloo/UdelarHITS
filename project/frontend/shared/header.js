@@ -90,6 +90,9 @@ document.body.appendChild(toast);
 
 window.showToast = (msg, type = "error") => {
   toast.textContent = msg;
+  toast.style.background = type === "success" ? "#f0fdf4" : "#fef2f2";
+  toast.style.border = `1px solid ${type === "success" ? "#bbf7d0" : "#fecaca"}`;
+  toast.style.color = type === "success" ? "#166534" : "#dc2626";
   toast.style.display = "block";
   setTimeout(() => { toast.style.display = "none"; }, 4000);
 };

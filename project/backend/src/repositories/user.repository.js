@@ -160,6 +160,17 @@ const getUserAvatarUrlById = async (id) => {
   return rows[0].url_imagen; // puede ser null
 };
 
+const updateAvatarById = async (id, url_imagen) => {
+  const q = `
+    UPDATE usuario SET url_imagen = $1
+    WHERE id = $2
+    RETURNING id, url_imagen
+  `;
+  const { rows } = await pool.query(q, [url_imagen, id]);
+  return rows[0] || null;
+};
+
+
 const updateUserEstado = async (nickname, estado) => {
   const q = `
     UPDATE usuario
@@ -215,4 +226,4 @@ const isFollowing = async (seguidorId, seguidoId) => {
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, 
-  deleteUserByNickname, followUser, unfollowUser, isFollowing };
+  deleteUserByNickname, followUser, unfollowUser, isFollowing, updateAvatarById };

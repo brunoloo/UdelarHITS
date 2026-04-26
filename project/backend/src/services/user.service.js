@@ -1,9 +1,11 @@
 import bcrypt  from 'bcrypt';
+import uploadToCloudinary from '../utils/uploadToCloudinary.js';
+import {generateToken} from '../utils/generateToken.js'
 import { 
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
-  getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser, isFollowing } from '../repositories/user.repository.js';
-import {generateToken} from '../utils/generateToken.js'
+  getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser, 
+  isFollowing, updateAvatarById } from '../repositories/user.repository.js';
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
 
@@ -331,9 +333,19 @@ const isFollowingService = async (seguidorId, seguidoNickname) => {
   return await isFollowing(seguidorId, seguido.id);
 };
 
+const updateAvatarService = async (userId, fileBuffer, mimetype) => {
+  if (!fileBuffer) {
+    const err = new Error('No se proporcionó ninguna imagen');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  const url = await uploadToCloudinary(fileBuffer, 'avatars', `avatar_${userId}`);
+  const updated = await updateAvatarById(userId, url);
+  return updated;
+};
 
 export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
   updateMeService, getUserAvatarService, banUserService, activeUserService, 
-  deleteUserService, followUserService, unfollowUserService, isFollowingService };
+  deleteUserService, followUserService, unfollowUserService, isFollowingService, updateAvatarService };
 
 

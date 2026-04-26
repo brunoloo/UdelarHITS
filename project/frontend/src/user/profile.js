@@ -81,6 +81,109 @@ async function loadTabs(userId, categories) {
   }
 }
 
+function initEditModal(user) {
+  const modal = document.getElementById("editModal");
+  const editBtn = document.querySelector(".profile-edit-btn");
+  const closeBtn = document.getElementById("closeModal");
+  const saveBtn = document.getElementById("saveBtn");
+  const fName = document.getElementById("fName");
+  const fBio = document.getElementById("fBio");
+  const nameCounter = document.getElementById("nameCounter");
+  const bioCounter = document.getElementById("bioCounter");
+  const avatarPreview = document.getElementById("editAvatarPreview");
+  const avatarFileInput = document.getElementById("avatarFileInput");
+  const changeAvatarBtn = document.getElementById("changeAvatarBtn");
+
+  let pendingAvatarFile = null;
+
+  function openModal() {
+    fName.value = document.getElementById("profileNombre").textContent;
+    fBio.value = document.getElementById("profileBio").textContent;
+    avatarPreview.src = document.getElementById("profileAvatar").src;
+    pendingAvatarFile = null;
+    syncCounters();
+    modal.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal() {
+    modal.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  function syncCounters() {
+    nameCounter.textContent = `${fName.value.length} / 50`;
+    bioCounter.textContent = `${fBio.value.length} / 160`;
+    nameCounter.classList.toggle("limit", fName.value.length >= 50);
+    bioCounter.classList.toggle("limit", fBio.value.length >= 160);
+  }
+
+  editBtn?.addEventListener("click", openModal);
+  closeBtn.addEventListener("click", closeModal);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+  fName.addEventListener("input", syncCounters);
+  fBio.addEventListener("input", syncCounters);
+
+  changeAvatarBtn.addEventListener("click", () => avatarFileInput.click());
+
+  avatarFileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingAvatarFile = file;
+    avatarPreview.src = URL.createObjectURL(file);
+  });
+
+  
+  saveBtn.addEventListener("click", async () => {
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Guardando...";
+    
+  if (!fName.value.trim()) {
+    window.showToast && window.showToast("El nombre no puede estar vacío", "error");
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Guardar";
+    return;
+  }
+
+  try {
+    // Subir avatar si hay uno nuevo
+    if (pendingAvatarFile) {
+      const formData = new FormData();
+      formData.append("avatar", pendingAvatarFile);
+      const avatarRes = await fetch("http://localhost:5001/api/users/me/avatar", {
+        method: "PATCH",
+        credentials: "include",
+        body: formData
+      });
+      const avatarData = await avatarRes.json();
+      if (avatarData.ok) {
+        document.getElementById("profileAvatar").src = avatarData.data.url_imagen;
+      }
+    }
+
+    // Actualizar nombre y bio
+    const body = {};
+    if (fName.value.trim()) body.nombre = fName.value.trim();
+    body.biografia = fBio.value.trim();
+
+    const res = await apiPatch("/users/me", body);
+    if (res.ok) {
+      document.getElementById("profileNombre").textContent = res.data.user.nombre;
+      document.getElementById("profileBio").textContent = res.data.user.biografia || "";
+      closeModal();
+      window.showToast && window.showToast("Perfil actualizado", "success");
+    } else {
+      window.showToast && window.showToast(res.message || "Error al guardar", "error");
+    }
+  } catch (err) {
+      window.showToast && window.showToast("Error al guardar", "error");
+  } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Guardar";
+    }
+  });
+}
+
 
 async function loadProfile() {
   const params = new URLSearchParams(window.location.search);
@@ -106,6 +209,7 @@ async function loadProfile() {
   } else {
     const res = await apiGet(`/users/${encodeURIComponent(nicknameParam)}`);
     if (!res.ok) {
+      alert('Ocurrió un error inesperado');
       window.location.href = "/";
       return;
     }
@@ -207,6 +311,9 @@ async function loadProfile() {
   // Cargar tabs
   await loadTabs(user.id, categories);
 
+  // Editar perfil
+  if (isOwnProfile) initEditModal(user);
+
   // Lógica de tabs
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -221,6 +328,7 @@ async function loadProfile() {
   const modal = document.getElementById("avatarModal");
   const modalImg = document.getElementById("avatarModalImg");
 
+  // Lógica de avatar
   avatar.addEventListener("click", () => {
     if (!avatar.naturalWidth) return;
     modalImg.src = avatar.src;

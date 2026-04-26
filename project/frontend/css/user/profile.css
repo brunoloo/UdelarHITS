@@ -1,3 +1,5 @@
+@import url('update-profile.css');
+
 .profile-page {
   max-width: 860px;
   margin: calc(var(--header-h) + 32px) auto 40px;
@@ -133,6 +135,9 @@
   color: var(--text-primary);
   line-height: 1.5;
   margin-bottom: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .profile-email {
