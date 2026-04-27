@@ -17,7 +17,14 @@ const __dirname = path.dirname(__filename);
 
 // Security headers (CSP, X-Frame-Options, X-Content-Type-Options, etc.)
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      'img-src': ["'self'", 'data:', 'blob:', 'https:'],
+      'script-src-attr': ["'none'"]
+    }
+  }
 }));
 
 // Allowlist de orígenes para CORS (separados por coma en .env)

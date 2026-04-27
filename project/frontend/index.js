@@ -19,11 +19,13 @@ async function loadHeader() {
       <a class="user-chip" href="/src/user/profile.html">
         <img class="user-avatar"
           src="${API_BASE}/users/${encodeURIComponent(user.id)}/avatar"
-          alt="${escapeHtml(user.nickname)}"
-          onerror="this.style.display='none'" />
+          alt="${escapeHtml(user.nickname)}" />
         ${escapeHtml(user.nickname)}
       </a>
     `;
+    actions.querySelector('img.user-avatar')?.addEventListener('error', (ev) => {
+      ev.currentTarget.style.display = 'none';
+    });
   } else {
   const banner = document.getElementById("joinBanner");
   if (banner) banner.style.display = "block";
