@@ -39,6 +39,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
       </div>
     `;
+    actions.querySelector('img.user-avatar')?.addEventListener('error', (ev) => {
+      ev.currentTarget.style.display = 'none';
+    });
 
     document.getElementById("userMenuBtn").addEventListener("click", () => {
       const menu = document.getElementById("userMenu");
