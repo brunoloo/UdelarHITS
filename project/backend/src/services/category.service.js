@@ -1,21 +1,38 @@
 import { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
-  updateCategoryById, getActiveCategories, getParticipantsByCategoryId } from '../repositories/category.repository.js';
+  updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas } from '../repositories/category.repository.js';
 
 const ETIQUETAS_VALIDAS = [
-  'Lifestyle','Daily life','Relationships','Education','Work & career','Travel',
-  'Culture','Food & cooking','Health & fitness','Art','Design','Photography',
-  'Film & TV','Writing','Music','Crafts','Animation','Fashion','Tech',
-  'Programming','Gadgets','Machine Learning','Cybersecurity','Software','Gaming',
-  'Web development','Science','Philosophy','History','Psychology','Politics',
-  'Economics','Math','Engineering','Pets','Hobbies','Home & DIY','Cars & motors',
-  'Sports','Nature','Environment','Gardening','Memes','News','Reviews',
-  'Tutorials','Q&A','Stories','Events','Feedback','Other'
+  'Facultades','Parciales y exámenes','Becas y trámites','Residencias','Pasantías',
+  'Educación','Ciencia','Matemática','Ingeniería','Filosofía',
+  'Historia','Psicología','Economía','Política','Derecho','Medicina',
+  'Programación','Desarrollo web','Software','Ciberseguridad',
+  'Inteligencia artificial','Gadgets','Gaming',
+  'Arte','Diseño','Fotografía','Cine y TV','Música',
+  'Escritura','Animación','Manualidades','Moda',
+  'Vida diaria','Relaciones','Cocina','Salud y fitness',
+  'Trabajo y carrera','Hogar','Mascotas','Hobbies',
+  'Cultura','Viajes','Deportes','Naturaleza',
+  'Medio ambiente','Noticias','Eventos',
+  'Memes','Tutoriales','Preguntas','Historias',
+  'Reseñas','Feedback','Autos y motos','Jardinería','Otro'
 ];
 
 const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }) => {
-  if (!titulo?.trim() || !descripcion?.trim() || !etiquetas?.length) {
-    const err = new Error('Faltan campos obligatorios');
+  if (!titulo?.trim()) {
+    const err = new Error('El título es obligatorio');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (!descripcion?.trim()) {
+    const err = new Error('La descripción es obligatoria');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (!etiquetas?.length) {
+    const err = new Error('Debes seleccionar al menos una etiqueta');
     err.code = 'BAD_REQUEST';
     throw err;
   }
@@ -25,6 +42,18 @@ const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }
   const invalidas = etiquetasArray.filter(e => !ETIQUETAS_VALIDAS.includes(e));
   if (invalidas.length > 0) {
     const err = new Error(`Etiquetas inválidas: ${invalidas.join(', ')}`);
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (descripcion?.length > 200) {
+    const err = new Error('La descripción superó el máximo de caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (titulo?.length > 60) {
+    const err = new Error('El título superó el máximo de caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
   }
@@ -135,6 +164,12 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
     throw err;
   }
 
+  if (descripcion?.length > 200) {
+    const err = new Error('La descripción superó el máximo de caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
   if (etiquetas) {
     const invalidas = etiquetas.filter(e => !ETIQUETAS_VALIDAS.includes(e));
     if (invalidas.length > 0) {
@@ -166,6 +201,10 @@ const getParticipantsByCategoryIdService = async (userId, categoriaId) => {
   return await getParticipantsByCategoryId(categoriaId);
 };
 
+const getEtiquetasService = async () => {
+  return await getEtiquetas();
+};
+
 export { createCategoryService, getCategoriesService, getCategoryByIdService, deactivateCategoryById, 
   deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService, 
-  getActiveCategoriesService, getParticipantsByCategoryIdService };
+  getActiveCategoriesService, getParticipantsByCategoryIdService, getEtiquetasService };

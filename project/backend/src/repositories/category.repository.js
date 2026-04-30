@@ -218,6 +218,12 @@ const getParticipantsByCategoryId = async (categoriaId) => {
   return rows;
 };
 
+const getEtiquetas = async () => {
+  const q = `SELECT unnest(enum_range(NULL::etiqueta))::text AS valor ORDER BY valor`;
+  const { rows } = await pool.query(q);
+  return rows.map(r => r.valor);
+};
+
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
-  updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId };
+  updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId, getEtiquetas };

@@ -166,7 +166,6 @@ const updateAvatarById = async (id, url_imagen) => {
   return rows[0] || null;
 };
 
-
 const updateUserEstado = async (nickname, estado) => {
   const q = `
     UPDATE usuario
@@ -219,7 +218,22 @@ const isFollowing = async (seguidorId, seguidoId) => {
   return rows.length > 0;
 };
 
+const searchUsers = async (query) => {
+  const q = `
+    SELECT id, nickname, nombre, url_imagen
+    FROM usuario
+    WHERE estado = 'activo'
+      AND (nickname ILIKE $1 OR nombre ILIKE $1)
+    ORDER BY 
+      CASE WHEN nickname ILIKE $2 THEN 0 ELSE 1 END,
+      nickname ASC
+    LIMIT 5
+  `;
+  const { rows } = await pool.query(q, [`%${query}%`, `${query}%`]);
+  return rows;
+};
+
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, 
-  deleteUserByNickname, followUser, unfollowUser, isFollowing, updateAvatarById };
+  deleteUserByNickname, followUser, unfollowUser, isFollowing, updateAvatarById, searchUsers };

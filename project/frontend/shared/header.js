@@ -1,4 +1,5 @@
 const API_BASE = "http://localhost:5001/api";
+const SERVER_BASE = "http://localhost:5001";
 
 document.addEventListener('DOMContentLoaded', async () => {
   const isTesting = window.location.pathname.includes('/testing');
@@ -12,6 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
       </svg>
       <input type="text" id="searchInput" placeholder="Busca lo que quieras..." autocomplete="off" />
+      <div class="search-dropdown" id="searchDropdown"></div>
     </div>
     <div class="header-actions" id="headerActions"></div>
   `;
@@ -29,8 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <button class="user-chip" id="userMenuBtn">
           <img class="user-avatar"
             src="${API_BASE}/users/${encodeURIComponent(user.id)}/avatar"
-            alt="${escapeHtml(user.nickname)}"
-            onerror="this.style.display='none'" />
+            alt="${escapeHtml(user.nickname)}" />
           ${escapeHtml(user.nickname)}
         </button>
         <div class="user-menu" id="userMenu" style="display:none;">

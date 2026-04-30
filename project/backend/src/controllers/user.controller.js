@@ -1,7 +1,8 @@
 import { registerUserService, loginUserService, getUsersService, createUserByAdminService,
     getUserProfileService, showMeService, updateMeService, 
     getUserAvatarService, banUserService, activeUserService, deleteUserService,
-  followUserService, unfollowUserService, isFollowingService, updateAvatarService } from '../services/user.service.js';
+  followUserService, unfollowUserService, isFollowingService, updateAvatarService, 
+  searchUsersService } from '../services/user.service.js';
 
 const showMe = async (req, res) => {
   try {
@@ -239,6 +240,16 @@ const updateAvatar = async (req, res) => {
   }
 };
 
+const searchUsers = async (req, res) => {
+  try {
+    const { q } = req.query;
+    const users = await searchUsersService(q);
+    return res.status(200).json({ ok: true, data: users });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 export { showMe, registerUser, loginUser, logoutUser, getUsers, 
   getUserProfile, updateMe, getUserAvatar, changeUserPassword, banUser, 
-  activeUser, deleteUser, followUser, unfollowUser, checkFollowing, updateAvatar }
+  activeUser, deleteUser, followUser, unfollowUser, checkFollowing, updateAvatar, searchUsers }
