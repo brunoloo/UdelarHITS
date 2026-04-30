@@ -11,6 +11,56 @@
 <body>
   <div class="page">
     <main> <!-- Columna central -->
+
+      <!-- Crear categoría -->
+      <section class="create-cat" aria-label="Crear nueva categoría">
+      <button class="create-cat-trigger" id="openCreateCat" type="button">
+        <span class="cc-avatar" aria-hidden="true">
+          <img src="http://localhost:5001/assets/default-user.jpg" 
+              style="width:100%;height:100%;object-fit:cover;border-radius:50%;" 
+              alt="" />
+        </span>
+        <span class="cc-placeholder">Crear una nueva categoría…</span>
+        <span class="cc-cta">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Nueva
+        </span>
+      </button>
+
+      <div class="create-cat-panel" id="createCatPanel">
+        <div class="create-cat-panel-body">
+          <!-- el avatar se mueve acá con JS -->
+          <div class="edit-body">
+            <div class="edit-field">
+              <div class="edit-field-label">
+                <span>Título (*)</span>
+                <span class="edit-field-counter" id="catTitleCounter">0 / 60</span>
+              </div>
+              <input id="catTitle" type="text" maxlength="60" placeholder="Ej: Tips para aprobar cálculo" />
+            </div>
+            <div class="edit-field">
+              <div class="edit-field-label">
+                <span>Descripción (*)</span>
+                <span class="edit-field-counter" id="catDescCounter">0 / 200</span>
+              </div>
+              <textarea id="catDesc" maxlength="200" rows="3" placeholder="¿De qué va esta categoría?"></textarea>
+            </div>
+            <div class="edit-field">
+              <div class="edit-field-label">
+                <span>Etiquetas (*)</span>
+                <span class="edit-field-counter" id="catTagsCounter">0 / 10</span>
+              </div>
+              <div class="tags-selector" id="tagsSelector"></div>
+            </div>
+          </div>
+        </div>
+        <div class="create-cat-panel-footer">
+          <button class="cc-cancel" id="closeCreateCat">Cancelar</button>
+          <button class="save-btn" id="submitCreateCat" disabled>Crear</button>
+        </div>
+      </div>
+    </section>
+
       <div id="categoriesFeed">
         <div class="skeleton-card">
           <div class="skeleton" style="height:11px; width:28%; margin-bottom:10px;"></div>
@@ -53,6 +103,7 @@
     </aside>
 
   </div>
+
   <script src="shared/escape.js"></script>
   <script src="shared/api.js"></script>
   <script src="shared/header.js"></script>

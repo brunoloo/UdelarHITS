@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
       Chat
     </a>
     
-    <div class="nav-divider"></div> <!-- separación entre categorías -->
+    <div class="nav-divider"></div>
 
     <a href="#" class="nav-item" id="nav-populares">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -34,6 +34,11 @@ document.addEventListener('DOMContentLoaded', () => {
     <a href="#" class="nav-item" id="nav-recientes">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       Recientes
+    </a>
+
+    <a href="src/about/about.html" class="nav-item" id="nav-about">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Quienes somos
     </a>
 
   `;

@@ -1,7 +1,7 @@
 /* ── LAYOUT ── */
 .page {
   margin-left: 200px;
-  padding: calc(var(--header-h) + 24px) 210px 40px 30px;
+  padding: calc(var(--header-h) + 24px) 210px 05px 30px;
   display: flex;
   gap: 24px;
 }
@@ -10,7 +10,9 @@
   width: 1200px;
   max-width: 100%;
   min-width: 0;
-  margin: 0 auto;
+  display: block;        /* ← agregar: cancela el flex del main genérico */
+  padding: 0;            /* ← agregar: cancela el padding: 0 24px del genérico */
+  margin-top: 0;         /* ← agregar: cancela el margin-top del genérico */
 }
 
 @media (max-width: 900px) {
@@ -290,3 +292,183 @@ border-radius: var(--radius);
 padding: 16px;
 margin-bottom: 10px;
 }
+
+/* Crear categoría — barra trigger */
+.create-cat {
+  margin: 0 0 8px 0;
+}
+
+.create-cat-trigger {
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, box-shadow .12s;
+  text-align: left;
+}
+.create-cat-trigger:hover {
+  background: #fafafa;
+  border-color: #d6d8de;
+  box-shadow: 0 1px 2px rgba(20,22,30,0.04);
+}
+.cc-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#2b3a67,#5a6896);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.cc-placeholder {
+  flex: 1;
+  color: #8a8f9c;
+  font-size: 14px;
+}
+.cc-cta {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+/* Panel expandido */
+.create-cat-panel {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  flex-direction: column;
+}
+.create-cat-panel.open {
+  display: flex;
+  animation: pop .18s ease;
+}
+.create-cat-panel-body {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px 0;
+}
+.create-cat-panel-body .edit-body {
+  flex: 1;
+  padding: 0;
+}
+.create-cat-panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+}
+.cc-cancel {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background .12s;
+}
+.cc-cancel:hover { background: var(--bg); }
+
+.tags-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0;
+}
+.tag-option {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all .12s;
+}
+.tag-option:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tag-option.selected {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Botón "Crear" / "Guardar" del header */
+.save-btn {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s, opacity .12s;
+}
+.save-btn:hover { background: #1f2c52; }
+.save-btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+/* ───── Cuerpo del modal ───── */
+.edit-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+ 
+.edit-field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.edit-field-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+.edit-field:focus-within .edit-field-label { color: var(--accent); }
+
+.edit-field input,
+.edit-field textarea {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text);
+  padding: 0;
+  resize: none;
+}
+.edit-field textarea {
+  min-height: 70px;
+  line-height: 1.45;
+}
+
+/* Contador "0 / 60" */
+.edit-field-counter {
+  font-size: 12px;
+  color: var(--muted);
+}
+.edit-field-counter.limit { color: var(--danger); }

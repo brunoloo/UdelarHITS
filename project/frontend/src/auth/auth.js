@@ -47,9 +47,12 @@ if (registerForm) {
 }
 // Login
 const params = new URLSearchParams(window.location.search);
-if (params.get("msg") === "debes-iniciar-sesion") {
+if (params.get("msg") === "ver-usuarios") {
   showMessage("error", "Debés iniciar sesión para ver el perfil de otros usuarios");
+} else if (params.get("msg") === "crear-categoria") {
+  showMessage("error", "Debés iniciar sesión para crear una categoría");
 }
+
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
   const btn = loginForm.querySelector('.auth-btn');
@@ -65,6 +68,7 @@ if (loginForm) {
       window.location.href = '/';
     } else {
       showMessage('error', result.message || 'Credenciales incorrectas.');
+      loginForm.reset();
     }
   });
 }

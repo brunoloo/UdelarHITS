@@ -3,11 +3,12 @@ import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 import upload from '../config/multer.js';
 import { showMe, updateMe, getUsers, getUserProfile, changeUserPassword, 
     getUserAvatar, banUser, activeUser, deleteUser, followUser, unfollowUser, 
-    checkFollowing, updateAvatar } from '../controllers/user.controller.js';
+    checkFollowing, updateAvatar, searchUsers } from '../controllers/user.controller.js';
 
 const router = Router();
 
 router.get('/', protect, isAdmin, getUsers);                     // Obtener lista de usuarios
+router.get('/search', searchUsers);                              // Búsqueda de usuarios
 router.get('/me', protect, showMe);                              // Obtener perfil de usuario
 router.patch('/me', protect, updateMe);                          // Modificar datos personales
 router.patch('/me/avatar', protect, upload.single('avatar'), updateAvatar); //Modifica el avatar del usuario

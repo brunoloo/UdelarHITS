@@ -5,7 +5,7 @@ import {
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser, 
-  isFollowing, updateAvatarById } from '../repositories/user.repository.js';
+  isFollowing, updateAvatarById, searchUsers } from '../repositories/user.repository.js';
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
 
@@ -212,7 +212,6 @@ const showMeService = async (nickname) => {
 };
 
 const updateMeService = async (userId, { nombre, biografia }) => {
-  // url_imagen no se acepta acá: se actualiza solo vía /me/avatar (upload a Cloudinary)
   if (nombre === undefined && biografia === undefined) {
     const err = new Error('No hay campos para actualizar');
     err.code = 'BAD_REQUEST';
@@ -350,8 +349,16 @@ const updateAvatarService = async (userId, fileBuffer, mimetype) => {
   return updated;
 };
 
+const searchUsersService = async (query) => {
+  if (!query || query.trim().length < 2) {
+    return [];
+  }
+  return await searchUsers(query.trim());
+};
+
 export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
   updateMeService, getUserAvatarService, banUserService, activeUserService, 
-  deleteUserService, followUserService, unfollowUserService, isFollowingService, updateAvatarService };
+  deleteUserService, followUserService, unfollowUserService, isFollowingService, 
+  updateAvatarService, searchUsersService };
 
 

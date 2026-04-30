@@ -1,0 +1,142 @@
+/* ───── Backdrop ───── */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(15, 17, 24, 0.65);
+  backdrop-filter: blur(3px);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 100;
+  padding: 48px 24px;
+  overflow-y: auto;
+}
+.modal-backdrop.open {
+  display: flex;
+  animation: fade .15s ease;
+}
+
+/* ───── Card ───── */
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  max-width: 100%;
+  box-shadow: 0 24px 60px rgba(15,17,24,0.35),
+              0 4px 12px rgba(15,17,24,0.15);
+  overflow: hidden;
+  animation: pop .18s ease;
+}
+
+/* ───── Header ───── */
+.modal-head {
+  padding: 12px 16px 12px 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky; top: 0;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  z-index: 2;
+}
+.modal-head h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  flex: 1;
+  letter-spacing: -0.01em;
+}
+
+/* ───── Botón cerrar ───── */
+.modal-close {
+  background: transparent;
+  border: 0;
+  color: var(--text-primary);
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background .12s;
+}
+.modal-close:hover { background: var(--bg); }
+
+/* ───── Botón guardar/crear ───── */
+.save-btn {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s, opacity .12s;
+}
+.save-btn:hover { opacity: 0.88; }
+.save-btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+/* ───── Cuerpo ───── */
+.edit-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ───── Campos ───── */
+.edit-field {
+  border: 1px solid #ccd0d5;
+  border-radius: 6px;
+  padding: 8px 10px 6px;
+  background: #fff;
+  transition: border-color .12s, box-shadow .12s;
+}
+.edit-field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.edit-field-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.edit-field:focus-within .edit-field-label {
+  color: var(--accent);
+}
+.edit-field input,
+.edit-field textarea {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: var(--text-primary);
+  padding: 0;
+  resize: none;
+}
+.edit-field textarea {
+  min-height: 70px;
+  line-height: 1.45;
+}
+.edit-field-counter {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.edit-field-counter.limit { color: var(--danger); }
+
+/* ───── Animaciones ───── */
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pop {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}

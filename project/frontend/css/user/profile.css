@@ -56,7 +56,7 @@
 .avatar-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(15, 17, 24, 0.65);
   z-index: 1000;
   display: none;
   align-items: center;
@@ -127,6 +127,7 @@
 }
 
 .profile-handle {
+  color: var(--text-secondary);
   margin-bottom: 0;
 }
 

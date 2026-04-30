@@ -17,14 +17,32 @@ CREATE TYPE motivo_reporte AS ENUM ('spam', 'incitacionOdio');
 CREATE TYPE estado_apelacion AS ENUM ('pendiente', 'aceptada', 'rechazada');
 
 CREATE TYPE etiqueta AS ENUM (
-  'Lifestyle','Daily life','Relationships','Education','Work & career','Travel',
-  'Culture','Food & cooking','Health & fitness','Art','Design','Photography',
-  'Film & TV','Writing','Music','Crafts','Animation','Fashion','Tech',
-  'Programming','Gadgets','Machine Learning','Cybersecurity','Software','Gaming',
-  'Web development','Science','Philosophy','History','Psychology','Politics',
-  'Economics','Math','Engineering','Pets','Hobbies','Home & DIY','Cars & motors',
-  'Sports','Nature','Environment','Gardening','Memes','News','Reviews',
-  'Tutorials','Q&A','Stories','Events','Feedback', 'Other'
+  -- Vida universitaria
+  'Facultades', 'Parciales y exámenes', 'Becas y trámites', 'Residencias', 'Pasantías',
+  
+  -- Académico
+  'Educación', 'Ciencia', 'Matemática', 'Ingeniería', 'Filosofía',
+  'Historia', 'Psicología', 'Economía', 'Política', 'Derecho', 'Medicina',
+  
+  -- Tecnología
+  'Programación', 'Desarrollo web', 'Software', 'Ciberseguridad',
+  'Inteligencia artificial', 'Gadgets', 'Gaming',
+  
+  -- Creatividad
+  'Arte', 'Diseño', 'Fotografía', 'Cine y TV', 'Música',
+  'Escritura', 'Animación', 'Manualidades', 'Moda',
+  
+  -- Vida cotidiana
+  'Vida diaria', 'Relaciones', 'Cocina', 'Salud y fitness',
+  'Trabajo y carrera', 'Hogar', 'Mascotas', 'Hobbies',
+  
+  -- Sociedad
+  'Cultura', 'Viajes', 'Deportes', 'Naturaleza',
+  'Medio ambiente', 'Noticias', 'Eventos',
+  
+  -- Comunidad
+  'Memes', 'Tutoriales', 'Preguntas', 'Historias',
+  'Reseñas', 'Feedback', 'Autos y motos', 'Jardinería', 'Otro'
 );
 
 -- -----------------------------

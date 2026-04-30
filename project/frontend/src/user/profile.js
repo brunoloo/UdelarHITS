@@ -201,7 +201,7 @@ async function loadProfile() {
   const isLoggedIn = meRes?.ok;
 
   if (!isLoggedIn) {
-    window.location.replace(`/src/auth/login.html?msg=debes-iniciar-sesion`);
+    window.location.replace(`/src/auth/login.html?msg=ver-usuarios`);
     return;
   }
 
