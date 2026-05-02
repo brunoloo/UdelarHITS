@@ -58,7 +58,7 @@ const getUsers = async () => {
 
 const getUserByNickname = async (nickname) => {
   const q = `
-    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, fecha_creacion
+    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion
     FROM usuario
     WHERE LOWER(nickname) = LOWER($1)
     LIMIT 1
@@ -233,7 +233,50 @@ const searchUsers = async (query) => {
   return rows;
 };
 
+const getUserBannerUrlById = async (id) => {
+  const q = `
+    SELECT url_banner
+    FROM usuario
+    WHERE id = $1
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [id]);
+  if (rows.length === 0) return undefined;
+  return rows[0].url_banner;
+};
+
+const updateBannerById = async (id, url_banner) => {
+  const q = `
+    UPDATE usuario SET url_banner = $1
+    WHERE id = $2
+    RETURNING id, url_banner
+  `;
+  const { rows } = await pool.query(q, [url_banner, id]);
+  return rows[0] || null;
+};
+
+const deleteBannerById = async (id) => {
+  const q = `
+    UPDATE usuario SET url_banner = NULL
+    WHERE id = $1
+    RETURNING id
+  `;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0] || null;
+};
+
+const deleteAvatarById = async (id) => {
+  const q = `
+    UPDATE usuario SET url_imagen = NULL
+    WHERE id = $1
+    RETURNING id
+  `;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0] || null;
+};
+
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, 
-  deleteUserByNickname, followUser, unfollowUser, isFollowing, updateAvatarById, searchUsers };
+  deleteUserByNickname, followUser, unfollowUser, isFollowing, updateAvatarById, 
+  searchUsers, getUserBannerUrlById, updateBannerById, deleteBannerById, deleteAvatarById };

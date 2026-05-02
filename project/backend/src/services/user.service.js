@@ -5,7 +5,8 @@ import {
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser, 
-  isFollowing, updateAvatarById, searchUsers } from '../repositories/user.repository.js';
+  isFollowing, updateAvatarById, searchUsers, getUserBannerUrlById, updateBannerById, 
+  deleteBannerById, deleteAvatarById } from '../repositories/user.repository.js';
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
 
@@ -205,6 +206,7 @@ const showMeService = async (nickname) => {
     email: user.email,
     biografia: user.biografia,
     url_imagen: user.url_imagen,
+    url_banner: user.url_banner,
     fecha_creacion: user.fecha_creacion
   };
 
@@ -356,9 +358,33 @@ const searchUsersService = async (query) => {
   return await searchUsers(query.trim());
 };
 
+const updateBannerService = async (userId, fileBuffer, mimetype) => {
+  if (!fileBuffer) {
+    const err = new Error('No se proporcionó ninguna imagen');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  const url = await uploadToCloudinary(fileBuffer, 'banners', `banner_${userId}`);
+  const updated = await updateBannerById(userId, url);
+  return updated;
+};
+
+const deleteBannerService = async (userId) => {
+  return await deleteBannerById(userId);
+};
+
+const getUserBannerService = async (id) => {
+  return await getUserBannerUrlById(id);
+};
+
+const deleteAvatarService = async (userId) => {
+  return await deleteAvatarById(userId);
+};
+
 export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
   updateMeService, getUserAvatarService, banUserService, activeUserService, 
   deleteUserService, followUserService, unfollowUserService, isFollowingService, 
-  updateAvatarService, searchUsersService };
+  updateAvatarService, searchUsersService, updateBannerService, deleteBannerService, 
+  getUserBannerService, deleteAvatarService };
 
 

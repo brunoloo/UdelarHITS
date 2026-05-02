@@ -1,5 +1,7 @@
 let currentUser = {};
 
+// ESTE JS SOLO ESTÁ EN ALCANCE DE TESTING
+
 async function loadProfile() {
   const result = await apiGet("/users/me");
 

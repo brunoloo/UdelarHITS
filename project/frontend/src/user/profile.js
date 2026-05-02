@@ -101,14 +101,37 @@ function initEditModal(user) {
   const avatarPreview = document.getElementById("editAvatarPreview");
   const avatarFileInput = document.getElementById("avatarFileInput");
   const changeAvatarBtn = document.getElementById("changeAvatarBtn");
-
+  const removeAvatarBtn = document.getElementById("removeAvatarBtn");
+  const bannerPreview = document.getElementById("editBanner");
+  const bannerFileInput = document.getElementById("bannerFileInput");
+  const changeBannerBtn = document.getElementById("changeBannerBtn");
+  const removeBannerBtn = document.getElementById("removeBannerBtn");
+  
   let pendingAvatarFile = null;
+  let pendingBannerFile = null;
+  let removeBanner = false;
+  let removeAvatar = false;
 
   function openModal() {
     fName.value = document.getElementById("profileNombre").textContent;
     fBio.value = document.getElementById("profileBio").textContent;
     avatarPreview.src = document.getElementById("profileAvatar").src;
     pendingAvatarFile = null;
+    pendingBannerFile = null;
+
+    removeAvatar = false;
+    avatarFileInput.value = ''; 
+    removeBanner = false;
+    bannerFileInput.value = '';
+
+    // Cargar banner actual en el preview
+    const currentBanner = document.getElementById("profileBannerImg");
+    if (currentBanner && currentBanner.style.display !== 'none') {
+      bannerPreview.style.background = `url(${currentBanner.src}) center/cover`;
+    } else {
+      bannerPreview.style.background = `linear-gradient(135deg, var(--accent) 0%, #4a5687 50%, #6b5d8e 100%)`;
+    }
+
     syncCounters();
     modal.classList.add("open");
     document.body.style.overflow = "hidden";
@@ -141,7 +164,33 @@ function initEditModal(user) {
     avatarPreview.src = URL.createObjectURL(file);
   });
 
-  
+  // Remover avatar
+  removeAvatarBtn.addEventListener("click", () => {
+    pendingAvatarFile = null;
+    removeAvatar = true;
+    avatarFileInput.value = '';
+    avatarPreview.src = `${SERVER_BASE}/assets/default-user.jpg`;
+  });
+
+  changeBannerBtn.addEventListener("click", () => bannerFileInput.click());
+
+  bannerFileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingBannerFile = file;
+    removeBanner = false;
+    const url = URL.createObjectURL(file);
+    bannerPreview.style.background = `url(${url}) center/cover`;
+  });
+
+  // Remover banner
+  removeBannerBtn.addEventListener("click", () => {
+    pendingBannerFile = null;
+    removeBanner = true;
+    bannerFileInput.value = '';
+    bannerPreview.style.background = `linear-gradient(135deg, var(--accent) 0%, #4a5687 50%, #6b5d8e 100%)`;
+  });
+
   saveBtn.addEventListener("click", async () => {
   saveBtn.disabled = true;
   saveBtn.textContent = "Guardando...";
@@ -158,7 +207,7 @@ function initEditModal(user) {
     if (pendingAvatarFile) {
       const formData = new FormData();
       formData.append("avatar", pendingAvatarFile);
-      const avatarRes = await fetch("http://localhost:5001/api/users/me/avatar", {
+      const avatarRes = await fetch(`${API_BASE}/users/me/avatar`, {
         method: "PATCH",
         credentials: "include",
         body: formData
@@ -166,6 +215,34 @@ function initEditModal(user) {
       const avatarData = await avatarRes.json();
       if (avatarData.ok) {
         document.getElementById("profileAvatar").src = avatarData.data.url_imagen;
+      }
+    } else if (removeAvatar) {
+      const delRes = await apiDelete("/users/me/avatar");
+      if (delRes.ok) {
+        document.getElementById("profileAvatar").src = `${SERVER_BASE}/assets/default-user.jpg`;
+      }
+    }
+        
+    // Subir banner si hay uno nuevo
+    if (pendingBannerFile) {
+      const bannerFormData = new FormData();
+      bannerFormData.append("banner", pendingBannerFile);
+      const bannerRes = await fetch(`${API_BASE}/users/me/banner`, {
+        method: "PATCH",
+        credentials: "include",
+        body: bannerFormData
+      });
+      const bannerData = await bannerRes.json();
+      if (bannerData.ok) {
+        const bannerImg = document.getElementById("profileBannerImg");
+        bannerImg.src = bannerData.data.url_banner;
+        bannerImg.style.display = 'block';
+      }
+    } else if (removeBanner) {
+      const delRes = await apiDelete("/users/me/banner");
+      if (delRes.ok) {
+        const bannerImg = document.getElementById("profileBannerImg");
+        bannerImg.style.display = 'none';
       }
     }
 
@@ -231,9 +308,18 @@ async function loadProfile() {
   document.getElementById("profileNickname").textContent = `@${user.nickname}`;
   document.getElementById("profileBio").textContent = user.biografia || "";
   document.getElementById("profileAvatar").src = `http://localhost:5001/api/users/${user.id}/avatar`;
+  // Banner
+  const bannerImg = document.getElementById("profileBannerImg");
+  if (user.url_banner) {
+    bannerImg.src = `${API_BASE}/users/${user.id}/banner`;
+    bannerImg.style.display = 'block';
+  } else {
+    bannerImg.style.display = 'none';
+  }
+
   document.getElementById("profileFecha").innerHTML = `
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
-    <span>Se unió a la comunidad · ${new Date(user.fecha_creacion).toLocaleDateString('es-UY', { month: 'long', year: 'numeric' })}</span>
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Se unió a la comunidad · ${escapeHtml(new Date(user.fecha_creacion).toLocaleDateString('es-UY', { month: 'long', year: 'numeric' }))}</span>
   `;
 
   const nSeguidos = following?.length ?? 0;
@@ -354,6 +440,26 @@ async function loadProfile() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") modal.classList.remove("open");
   });
+
+  // Lógica de banner modal
+  const profileBannerImg = document.getElementById("profileBannerImg");
+  const bannerModal = document.getElementById("bannerModal");
+  const bannerModalImg = document.getElementById("bannerModalImg");
+
+  profileBannerImg.addEventListener("click", () => {
+    if (profileBannerImg.style.display === 'none') return;
+    bannerModalImg.src = profileBannerImg.src;
+    bannerModal.classList.add("open");
+  });
+
+  document.getElementById("bannerModalClose").addEventListener("click", () => {
+    bannerModal.classList.remove("open");
+  });
+
+  bannerModal.addEventListener("click", (e) => {
+    if (e.target === bannerModal) bannerModal.classList.remove("open");
+  });
+
 }
 
 document.addEventListener("DOMContentLoaded", loadProfile);

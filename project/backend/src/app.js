@@ -58,6 +58,16 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
+// Rate limit para limitar búsquedas
+const searchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: 'Demasiadas búsquedas. Intentá de nuevo en un minuto.' }
+});
+app.use('/api/users/search', searchLimiter);
+
 // Rate limit general para toda la API
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,

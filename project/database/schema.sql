@@ -51,13 +51,13 @@ CREATE TYPE etiqueta AS ENUM (
 CREATE TABLE usuario ( -- Revisado y completo. No modificar
   id                BIGSERIAL PRIMARY KEY,
   rol               VARCHAR(20) NOT NULL DEFAULT 'user',
-
   nickname          VARCHAR(50)  NOT NULL UNIQUE,
   nombre            VARCHAR(120) NOT NULL,
   email             VARCHAR(255) NOT NULL UNIQUE,
   password_hash     TEXT         NOT NULL,
   biografia         TEXT,
   url_imagen        TEXT,
+  url_banner        TEXT,
   estado            estado_usr   NOT NULL DEFAULT 'activo',
   fecha_creacion    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
