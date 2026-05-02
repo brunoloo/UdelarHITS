@@ -1,8 +1,11 @@
+import { fileTypeFromBuffer } from 'file-type';
+
 import { registerUserService, loginUserService, getUsersService, createUserByAdminService,
     getUserProfileService, showMeService, updateMeService, 
     getUserAvatarService, banUserService, activeUserService, deleteUserService,
   followUserService, unfollowUserService, isFollowingService, updateAvatarService, 
-  searchUsersService } from '../services/user.service.js';
+  searchUsersService, updateBannerService, getUserBannerService, 
+  deleteBannerService, deleteAvatarService } from '../services/user.service.js';
 
 const showMe = async (req, res) => {
   try {
@@ -85,8 +88,7 @@ const loginUser = async (req, res) => {
       ok: true,
       message: 'Login exitoso', 
       data: {
-        user: result.user,
-        token: result.token 
+        user: result.user
       } 
     });
   } catch (error) {
@@ -232,6 +234,14 @@ const updateAvatar = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ ok: false, message: 'No se proporcionó ninguna imagen' });
     }
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const type = await fileTypeFromBuffer(req.file.buffer);
+
+    if (!type || !allowed.includes(type.mime)) {
+      return res.status(400).json({ ok: false, message: 'Tipo de archivo no permitido' });
+    }
+
     const updated = await updateAvatarService(req.user.id, req.file.buffer, req.file.mimetype);
     return res.status(200).json({ ok: true, data: updated });
   } catch (error) {
@@ -250,6 +260,57 @@ const searchUsers = async (req, res) => {
   }
 };
 
+const updateBanner = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ ok: false, message: 'No se proporcionó ninguna imagen' });
+    }
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const type = await fileTypeFromBuffer(req.file.buffer);
+
+    if (!type || !allowed.includes(type.mime)) {
+      return res.status(400).json({ ok: false, message: 'Tipo de archivo no permitido' });
+    }
+
+    const updated = await updateBannerService(req.user.id, req.file.buffer, req.file.mimetype);
+    return res.status(200).json({ ok: true, data: updated });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const deleteBanner = async (req, res) => {
+  try {
+    await deleteBannerService(req.user.id);
+    return res.status(200).json({ ok: true, message: 'Banner eliminado' });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const getUserBanner = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const url = await getUserBannerService(id);
+    if (!url) return res.status(404).json({ ok: false, message: 'Sin banner' });
+    return res.redirect(url);
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const deleteAvatar = async (req, res) => {
+  try {
+    await deleteAvatarService(req.user.id);
+    return res.status(200).json({ ok: true, message: 'Avatar eliminado' });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 export { showMe, registerUser, loginUser, logoutUser, getUsers, 
   getUserProfile, updateMe, getUserAvatar, changeUserPassword, banUser, 
-  activeUser, deleteUser, followUser, unfollowUser, checkFollowing, updateAvatar, searchUsers }
+  activeUser, deleteUser, followUser, unfollowUser, checkFollowing, updateAvatar, 
+  searchUsers, updateBanner, deleteBanner, getUserBanner, deleteAvatar }
