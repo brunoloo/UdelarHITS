@@ -71,6 +71,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       <a class="btn-primary" href="/src/auth/register.html">Registrarse</a>
     `;
   }
+
+  // Búsqueda global — redirige al index si no estamos ahí
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const q = searchInput.value.trim();
+        if (!q) return;
+        const isIndex = window.location.pathname === '/' || window.location.pathname === '/index.html';
+        if (!isIndex) {
+          window.location.href = `/?q=${encodeURIComponent(q)}`;
+        }
+      }
+    });
+  }
 });
 
 const toast = document.createElement("div");

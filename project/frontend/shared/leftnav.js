@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
       Inicio
     </a>
 
-    <a href="#" class="nav-item" id="nav-explorar">
+    <a href="/src/explore/explore.html" class="nav-item" id="nav-explorar">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       Explorar
     </a>
@@ -26,17 +26,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     <div class="nav-divider"></div>
 
-    <a href="#" class="nav-item" id="nav-populares">
+    <a href="/src/popular/popular.html" class="nav-item" id="nav-populares">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
       Populares
     </a>
 
-    <a href="#" class="nav-item" id="nav-recientes">
+    <a href="/src/recent/recent.html" class="nav-item" id="nav-recientes">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       Recientes
     </a>
 
-    <a href="src/about/about.html" class="nav-item" id="nav-about">
+    <a href="/src/about/about.html" class="nav-item" id="nav-about">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       Quienes somos
     </a>
@@ -47,6 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const path = window.location.pathname;
   if (path === '/' || path.includes('index')) {
     nav.querySelector('#nav-inicio')?.classList.add('active');
+  } else if (path.includes('explore')) {
+    nav.querySelector('#nav-explorar')?.classList.add('active');
+  } else if (path.includes('popular')) {
+    nav.querySelector('#nav-populares')?.classList.add('active');
+  } else if (path.includes('recent')) {
+    nav.querySelector('#nav-recientes')?.classList.add('active');
+  } else if (path.includes('about')) {
+    nav.querySelector('#nav-about')?.classList.add('active');
   }
 
   document.body.appendChild(nav);

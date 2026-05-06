@@ -2,20 +2,29 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Logout</title>
-  <link rel="icon" href="../../favicon.ico">
+  <title>Usuarios</title>
   <link rel="stylesheet" href="../../css/main.css" />
 </head>
 <body>
   <main>
-    <h1>Logout</h1>
-    <button id="logoutBtn">Cerrar sesión</button>
+    <h1>Usuarios del sistema</h1>
+    <table id="usersTable" border="1" cellpadding="8" cellspacing="0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nickname</th>
+          <th>Email</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </main>
+
 
   <script src="../../shared/transitions.js"></script>
   <script src="../../shared/header-testing.js"></script>
   <script src="../../shared/escape.js"></script>
   <script src="../../shared/api.js"></script>
-  <script src="auth.js"></script>
+  <script src="listar-usuarios.js"></script>
 </body>
 </html>
