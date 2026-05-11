@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Categoría — UdelarHITS</title>
+  <link rel="icon" href="../../favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/main.css" />
+  <link rel="stylesheet" href="../../css/reply/replies.css" />
+  <link rel="stylesheet" href="../../css/category/category.css" />
+</head>
+<body>
+  <div class="page">
+    <main>
+
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb" aria-label="Navegación">
+        <a href="/">Inicio</a>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        <span id="breadcrumbTitle">Categoría</span>
+      </nav>
+
+      <!-- Header de categoría -->
+      <div class="cat-header">
+        <div class="cat-header-top">
+          <div class="cat-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          </div>
+          <div class="cat-header-info">
+            <h1 class="cat-title" id="catTitle">Cargando...</h1>
+            <p class="cat-desc" id="catDesc"></p>
+          </div>
+        </div>
+        <div class="cat-tags" id="catTags"></div>
+        <div class="cat-meta" id="catMeta"></div>
+      </div>
+
+      <!-- Tabs -->
+      <nav class="section-tabs" role="tablist">
+        <button class="tab active" role="tab" data-tab="temas">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          Temas <span class="count" id="countTemas">0</span>
+        </button>
+        <button class="tab" role="tab" data-tab="comentarios">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Comentarios <span class="count" id="countComentarios">0</span>
+        </button>
+      </nav>
+
+      <section class="section-panel active" data-panel="temas">
+        <!-- Feed de temas -->
+        <!-- Crear tema -->
+        <section class="create-topic" aria-label="Crear nuevo tema">
+          <button class="create-topic-trigger" id="openCreateTopic" type="button">
+            <span class="ct-avatar" aria-hidden="true">
+              <svg viewBox="0 0 64 64" width="100%" height="100%">
+                <circle cx="32" cy="26" r="11" fill="rgba(255,255,255,0.92)"/>
+                <path d="M10 60c2-12 12-18 22-18s20 6 22 18" fill="rgba(255,255,255,0.92)"/>
+              </svg>
+            </span>
+            <span class="ct-placeholder">Crear un nuevo tema</span>
+            <span class="ct-cta">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              Nuevo tema
+            </span>
+          </button>
+        </section>
+        <!-- Panel crear tema -->
+        <div class="create-cat-panel" id="createTopicPanel">
+          <div class="create-cat-panel-body">
+            <div class="edit-body">
+              <div class="edit-field">
+                <div class="edit-field-label">
+                  <span>Título (*)</span>
+                  <span class="edit-field-counter" id="topicTitleCounter">0 / 100</span>
+                </div>
+                <input id="topicTitle" type="text" maxlength="100" placeholder="¿De qué querés hablar?" />
+              </div>
+              <div class="edit-field">
+                <div class="edit-field-label">
+                  <span>Contenido (*)</span>
+                  <span class="edit-field-counter" id="topicBodyCounter">0 / 750</span>
+                </div>
+                <textarea id="topicBody" maxlength="750" rows="4" placeholder="Desarrollá tu idea"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="create-cat-panel-footer">
+            <button class="cc-cancel" id="closeCreateTopic">Cancelar</button>
+            <button class="save-btn" id="submitCreateTopic" disabled>Crear tema</button>
+          </div>
+        </div>
+        <div id="topicsFeed">
+          <div class="skeleton-card">
+            <div class="skeleton" style="height:11px; width:28%; margin-bottom:10px;"></div>
+            <div class="skeleton" style="height:17px; width:65%; margin-bottom:8px;"></div>
+            <div class="skeleton" style="height:12px; width:90%; margin-bottom:4px;"></div>
+            <div class="skeleton" style="height:12px; width:55%;"></div>
+          </div>
+          <div class="skeleton-card">
+            <div class="skeleton" style="height:11px; width:22%; margin-bottom:10px;"></div>
+            <div class="skeleton" style="height:17px; width:50%; margin-bottom:8px;"></div>
+            <div class="skeleton" style="height:12px; width:80%; margin-bottom:4px;"></div>
+            <div class="skeleton" style="height:12px; width:45%;"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-panel" data-panel="comentarios">
+        <!-- Feed de comentarios -->
+        <!-- Crear comentario -->
+        <section class="create-topic" aria-label="Publicar comentario">
+          <button class="create-topic-trigger" id="openCreateComment" type="button">
+            <span class="ct-avatar ct-avatar-comment" aria-hidden="true">
+              <svg viewBox="0 0 64 64" width="100%" height="100%">
+                <circle cx="32" cy="26" r="11" fill="rgba(255,255,255,0.92)"/>
+                <path d="M10 60c2-12 12-18 22-18s20 6 22 18" fill="rgba(255,255,255,0.92)"/>
+              </svg>
+            </span>
+            <span class="ct-placeholder">Publicar comentario</span>
+            <span class="ct-cta">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              Comentar
+            </span>
+          </button>
+        </section>
+        <!-- Panel crear comentario -->
+        <div class="create-cat-panel" id="createCommentPanel">
+          <div class="create-cat-panel-body">
+            <div class="edit-body">
+              <div class="edit-field">
+                <div class="edit-field-label">
+                  <span>Comentario (*)</span>
+                  <span class="edit-field-counter" id="commentBodyCounter">0 / 2000</span>
+                </div>
+                <textarea id="commentBody" maxlength="2000" rows="4" placeholder="Escribí tu comentario"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="create-cat-panel-footer">
+            <button class="cc-cancel" id="closeCreateComment">Cancelar</button>
+            <button class="save-btn" id="submitCreateComment" disabled>Comentar</button>
+          </div>
+        </div>
+        <div id="commentsFeed"></div>
+      </section>
+
+    </main>
+
+    <aside class="sidebar">
+      <!-- Info de la categoría -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">Sobre esta categoría</div>
+        <div class="sidebar-card-body">
+          <div class="stat-row">
+            <span class="stat-row-label">Temas</span>
+            <span class="stat-row-value" id="statTemas">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Comentarios</span>
+            <span class="stat-row-value" id="statComentarios">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Creada</span>
+            <span class="stat-row-value" id="statCreada">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Moderación -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">Moderación</div>
+        <div class="sidebar-card-body" id="modList">
+          <div class="mod-item">
+            <div class="mod-avatar"></div>
+            <div class="mod-info">
+              <span class="mod-name">Cargando...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="../../shared/escape.js"></script>
+  <script src="../../shared/api.js"></script>
+  <script src="../../shared/header.js"></script>
+  <script src="../../shared/leftnav.js"></script>
+  <script src="../../shared/time-ago.js"></script>
+  <script src="../../shared/comments.js"></script>
+  <script src="category.js"></script>
+</body>
+</html>

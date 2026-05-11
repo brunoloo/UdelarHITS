@@ -10,7 +10,7 @@ router.post('/create', protect, createTopic);        // Crear un tema
 router.get('/me', protect, getMyTopics);             // Ver mis temas
 
 router.patch('/:id', protect, updateTopic);          // Actualizar tema
-router.get('/:id', getTopicById);          // Ver temas por id
+router.get('/:id', getTopicById);                    // Ver temas por id
 
 router.get('/user/:userId', protect, getTopicsByUser);
 

@@ -5,8 +5,34 @@ import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
   incrementTopicCount, getTopicsByUserId } from '../repositories/topic.repository.js';
 
 const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => {
-  if (!categoria_id || !titulo?.trim() || !cuerpo?.trim()) {
-    const err = new Error('Faltan campos obligatorios');
+  if (!categoria_id) {
+    const err = new Error('Debe especificar una categoría');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (!titulo?.trim()) {
+    const err = new Error('El título es obligatorio');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (!cuerpo?.trim()) {
+    const err = new Error('El contenido es obligatorio');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const tituloNormalizado = titulo.trim().replace(/\s+/g, ' ');
+
+  if (tituloNormalizado.length > 100) {
+    const err = new Error('El título superó el máximo caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (cuerpo.trim().length > 750) {
+    const err = new Error('El contenido superó el máximo caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
   }
@@ -24,7 +50,7 @@ const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => 
     throw err;
   }
 
-  const existing = await findTopicByTituloAndCategoria(titulo.trim(), categoria_id);
+  const existing = await findTopicByTituloAndCategoria(tituloNormalizado, categoria_id);
   if (existing) {
     const err = new Error('Ya existe un tema con ese título en esta categoría');
     err.code = 'TITULO_EXISTS';
@@ -34,7 +60,7 @@ const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => 
   const topic = await createTopic({
     autor_id: autorId,
     categoria_id,
-    titulo: titulo.trim(),
+    titulo: tituloNormalizado,
     cuerpo: cuerpo.trim()
   });
 

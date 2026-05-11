@@ -1,0 +1,290 @@
+/* ──────────────────────────────────────────────
+   Comentarios — estructura compartida
+   Usado por topic.html y category.html
+
+   Filosofía visual (estilo X / Twitter):
+   - No hay "cards" aisladas. Todo es un stream vertical.
+   - Separación entre comentarios = border-bottom fino.
+   - El avatar vive siempre en una columna gutter consistente.
+   - El hilo conector baja por el centro del gutter de los ancestros,
+     uniéndolos visualmente como un mismo hilo.
+   - El último ancestro (header actual) NO se distingue visualmente:
+     lo que lo hace "header" es su posición — es el final del hilo,
+     y abajo viene la lista plana de respuestas.
+   ────────────────────────────────────────────── */
+
+/* Variables locales del módulo */
+.comment-card,
+.comment-thread,
+.comment-replies {
+  --comment-avatar-size: 36px;
+  --comment-gutter-width: 36px;
+  --comment-row-gap: 12px;
+  --comment-thread-line: #cfd9de;
+}
+
+/* ──────────────────────────────────────────────
+   Botón Volver
+   ────────────────────────────────────────────── */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 4px;
+}
+
+.back-btn:hover {
+  text-decoration: underline;
+}
+
+/* ──────────────────────────────────────────────
+   Card de comentario (estructura común)
+   Sin fondo, sin border-radius, sin padding lateral.
+   Solo separador inferior fino.
+   ────────────────────────────────────────────── */
+.comment-card {
+  display: flex;
+  gap: var(--comment-row-gap);
+  padding: 12px 0;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Última card del stream no lleva borde inferior */
+.comment-replies .comment-card:last-child {
+  border-bottom: none;
+}
+
+.comment-gutter {
+  width: var(--comment-gutter-width);
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.comment-avatar {
+  width: var(--comment-avatar-size);
+  height: var(--comment-avatar-size);
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1; /* sobre la línea conectora */
+}
+
+.comment-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.comment-head a {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.comment-head a:hover {
+  text-decoration: underline;
+}
+
+.comment-text {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-bottom: 6px;
+}
+
+.read-more-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 2px 0;
+  margin-bottom: 6px;
+}
+
+.read-more-btn:hover {
+  text-decoration: underline;
+}
+
+.comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.comment-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.comment-action-btn:hover {
+  color: var(--accent);
+}
+
+/* Info no-clickeable (cantidad de respuestas) */
+.comment-action-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: default;
+  user-select: none;
+}
+
+/* ──────────────────────────────────────────────
+   Card clickeable (respuestas que profundizan)
+   Hover muy sutil — solo un tinte de fondo, sin
+   "saltar" del stream.
+   ────────────────────────────────────────────── */
+.comment-card--clickable {
+  transition: background-color 0.12s ease;
+  cursor: pointer;
+}
+
+.comment-card--clickable:hover {
+  background-color: var(--bg);
+}
+
+/* ──────────────────────────────────────────────
+   Hilo de ancestros (camino raíz → header actual)
+
+   La línea conectora baja por el centro del gutter
+   desde el avatar de cada ancestro hasta el avatar
+   del siguiente. El último ancestro NO la dibuja:
+   visualmente "cierra" el hilo y a continuación
+   empiezan las respuestas planas.
+   ────────────────────────────────────────────── */
+.comment-thread {
+  position: relative;
+}
+
+/* Ancestros: sin borde inferior — la línea vertical hace la conexión. */
+.comment-card--ancestor {
+  border-bottom: none;
+}
+
+/* Línea vertical desde debajo del avatar hasta cruzar el padding inferior
+   y llegar al avatar del próximo ancestro. */
+.comment-card--ancestor .comment-gutter::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--comment-avatar-size) + 4px);
+  bottom: -12px;
+  left: 50%;
+  width: 2px;
+  background-color: var(--comment-thread-line);
+  transform: translateX(-50%);
+  z-index: 0;
+}
+
+/* El último ancestro no extiende la línea hacia abajo */
+.comment-card--ancestor:last-child .comment-gutter::after {
+  display: none;
+}
+
+/* ──────────────────────────────────────────────
+   Lista de respuestas directas
+
+   Sin divider, sin etiqueta "N respuestas".
+   Vienen pegadas inmediatamente después del hilo,
+   separadas entre sí solo por border-bottom.
+
+   Un border-top sutil marca la transición entre
+   el hilo y las respuestas planas (equivalente al
+   border-bottom que tendría el último ancestro si
+   lo dibujara).
+   ────────────────────────────────────────────── */
+.comment-replies {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Caso "respuestas que cuelgan de un hilo": hay ancestros arriba.
+   Aplicamos border-top (transición visual del hilo a las respuestas)
+   e indentación uniforme hacia la derecha para comunicar que estas
+   respuestas dependen del último ancestro. La indentación NO se acumula
+   con la profundidad — siempre el mismo offset. */
+.comment-thread + .comment-replies {
+  border-top: 1px solid var(--border);
+  padding-left: 28px;
+}
+
+/* ──────────────────────────────────────────────
+   Estado vacío
+   ────────────────────────────────────────────── */
+.feed-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ──────────────────────────────────────────────
+   Panel de respuesta inline
+   ────────────────────────────────────────────── */
+.inline-reply-panel {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.inline-reply-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 72px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface);
+  box-sizing: border-box;
+}
+
+.inline-reply-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.inline-reply-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}

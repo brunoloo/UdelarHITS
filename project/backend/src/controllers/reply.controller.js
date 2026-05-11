@@ -1,6 +1,6 @@
 import { createReplyService, getRepliesByCategoryIdService, 
   getRepliesByTopicIdService, deleteReplyService, getMyRepliesService, 
-  getRepliesByUserIdService, updateReplyService, getReplyByIdService } from '../services/reply.service.js';
+  getRepliesByUserIdService, updateReplyService, getRepliesByCommentIdService, getReplyByIdService } from '../services/reply.service.js';
 
 const createReply = async (req, res) => {
   try {
@@ -79,6 +79,16 @@ const getReplyById = async (req, res) => {
   }
 };
 
+const getRepliesByComment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const replies = await getRepliesByCommentIdService(id);
+    return res.status(200).json({ ok: true, data: replies });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 const updateReply = async (req, res) => {
   try {
     const { id } = req.params;
@@ -93,4 +103,4 @@ const updateReply = async (req, res) => {
 };
 
 export { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply, getMyReplies, 
-  getRepliesByUser, updateReply, getReplyById };
+  getRepliesByUser, updateReply, getReplyById, getRepliesByComment };

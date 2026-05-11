@@ -37,7 +37,8 @@ const createCategory = async ({ titulo, descripcion, autor_id, etiquetas }) => {
 };
 
 const findCategoryByTitulo = async (titulo) => {
-  const q = `SELECT id FROM categoria WHERE LOWER(titulo) = LOWER($1) LIMIT 1`;
+  const q = `SELECT id FROM categoria 
+  WHERE LOWER(REGEXP_REPLACE(titulo, '\\s+', ' ', 'g')) = LOWER($1) LIMIT 1`;
   const { rows } = await pool.query(q, [titulo]);
   return rows[0] || null;
 };
@@ -91,9 +92,12 @@ const getCategoriesByAuthorId = async (autorId) => {
 
 const getTopicsByCategoryId = async (categoryId) => {
   const q = `
-    SELECT t.contenido_id, t.titulo, t.estado, c.fecha_creacion
+    SELECT t.contenido_id, t.titulo, t.estado, c.fecha_creacion,
+      c.autor_id, c.cuerpo, u.nickname AS autor_nickname,
+      (SELECT COUNT(*) FROM comentario com WHERE com.tema_id = t.contenido_id AND com.estado = 'visible') AS contador_comentarios
     FROM tema t
     JOIN contenido c ON c.id = t.contenido_id
+    JOIN usuario u ON u.id = c.autor_id
     WHERE t.categoria_id = $1 AND t.estado = 'activo'
     ORDER BY c.fecha_creacion DESC
   `;

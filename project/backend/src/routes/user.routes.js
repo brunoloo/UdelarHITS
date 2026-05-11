@@ -10,7 +10,7 @@ const router = Router();
 
 router.get('/', protect, isAdmin, getUsers);                     // Obtener lista de usuarios
 router.get('/search', searchUsers);                              // Búsqueda de usuarios
-router.get('/me', protect, showMe);                              // Obtener perfil de usuario
+router.get('/me', protect, showMe);                              // Obtener tu información de usuario
 router.patch('/me', protect, updateMe);                          // Modificar datos personales
 router.patch('/me/avatar', protect, uploadAvatar.single('avatar'), updateAvatar);  // Modifica el avatar
 router.patch('/me/banner', protect, uploadBanner.single('banner'), updateBanner);  // Modifica el banner
@@ -21,7 +21,7 @@ router.put('/change-password', protect, changeUserPassword);     // Actualizar c
 router.get('/:id/avatar', getUserAvatar);                        // Avatar público
 router.get('/:id/banner', getUserBanner);                        // Banner público
 
-router.get('/:nickname', protect, getUserProfile);               // Obtener información del usuario
+router.get('/:nickname', protect, getUserProfile);               // Obtener información del usuario pública
 
 router.post('/:nickname/follow', protect, followUser);           // Seguir otro usuario
 router.delete('/:nickname/follow', protect, unfollowUser);       // Dejar de seguir otro usuario

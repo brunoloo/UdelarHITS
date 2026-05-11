@@ -37,6 +37,20 @@ const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }
     throw err;
   }
 
+  const tituloNormalizado = titulo.trim().replace(/\s+/g, ' ');
+
+  if (tituloNormalizado.length > 100) {
+    const err = new Error('El título superó el máximo de caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (descripcion.trim().length > 300) {
+    const err = new Error('La descripción superó el máximo de caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
   const etiquetasArray = Array.isArray(etiquetas) ? etiquetas : [etiquetas];
 
   const invalidas = etiquetasArray.filter(e => !ETIQUETAS_VALIDAS.includes(e));
@@ -46,19 +60,7 @@ const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }
     throw err;
   }
 
-  if (descripcion?.length > 200) {
-    const err = new Error('La descripción superó el máximo de caracteres');
-    err.code = 'BAD_REQUEST';
-    throw err;
-  }
-
-  if (titulo?.length > 60) {
-    const err = new Error('El título superó el máximo de caracteres');
-    err.code = 'BAD_REQUEST';
-    throw err;
-  }
-
-  const existing = await findCategoryByTitulo(titulo.trim());
+  const existing = await findCategoryByTitulo(tituloNormalizado);
   if (existing) {
     const err = new Error('Ya existe una categoría con ese título');
     err.code = 'TITULO_EXISTS';
@@ -66,7 +68,7 @@ const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }
   }
 
   return await createCategory({
-    titulo: titulo.trim().toLowerCase(),
+    titulo: tituloNormalizado.toLowerCase(),
     descripcion: descripcion.trim(),
     autor_id: autorId,
     etiquetas: etiquetasArray

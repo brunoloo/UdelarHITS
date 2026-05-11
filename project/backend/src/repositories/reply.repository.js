@@ -1,6 +1,6 @@
 import pool from '../config/db.js';
 
-const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id }) => {
+const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario_padre_id }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -13,10 +13,10 @@ const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id }) => {
     const contenido = contenidoRows[0];
 
     const { rows: comentarioRows } = await client.query(`
-      INSERT INTO comentario (contenido_id, tema_id, categoria_id)
-      VALUES ($1, $2, $3)
-      RETURNING contenido_id, tema_id, categoria_id, estado
-    `, [contenido.id, tema_id || null, categoria_id || null]);
+      INSERT INTO comentario (contenido_id, tema_id, categoria_id, comentario_padre_id)
+      VALUES ($1, $2, $3, $4)
+      RETURNING contenido_id, tema_id, categoria_id, comentario_padre_id, estado
+    `, [contenido.id, tema_id || null, categoria_id || null, comentario_padre_id || null]);
     const comentario = comentarioRows[0];
 
     await client.query('COMMIT');
@@ -31,12 +31,13 @@ const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id }) => {
 
 const getRepliesByCategoryId = async (categoriaId) => {
   const q = `
-    SELECT com.contenido_id AS id, con.cuerpo, u.nickname AS autor_nickname, con.fecha_creacion
+    SELECT com.contenido_id AS id, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, con.fecha_creacion,
+      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
-    WHERE com.categoria_id = $1 AND com.estado = 'visible'
-    ORDER BY con.fecha_creacion ASC
+    WHERE com.categoria_id = $1 AND com.estado = 'visible' AND com.comentario_padre_id IS NULL
+    ORDER BY con.fecha_creacion DESC
   `;
   const { rows } = await pool.query(q, [categoriaId]);
   return rows;
@@ -44,12 +45,13 @@ const getRepliesByCategoryId = async (categoriaId) => {
 
 const getRepliesByTopicId = async (topicId) => {
   const q = `
-    SELECT com.contenido_id AS id, con.cuerpo, u.nickname AS autor_nickname, con.fecha_creacion
+    SELECT com.contenido_id AS id, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, con.fecha_creacion,
+      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
-    WHERE com.tema_id = $1 AND com.estado = 'visible'
-    ORDER BY con.fecha_creacion ASC
+    WHERE com.tema_id = $1 AND com.estado = 'visible' AND com.comentario_padre_id IS NULL
+    ORDER BY con.fecha_creacion DESC
   `;
   const { rows } = await pool.query(q, [topicId]);
   return rows;
@@ -68,6 +70,7 @@ const deleteReplyById = async (id) => {
 const getReplyById = async (id) => {
   const q = `
     SELECT com.contenido_id AS id, con.autor_id, con.cuerpo, com.estado,
+      com.tema_id, com.categoria_id, com.comentario_padre_id,
       COALESCE(t.titulo, cat.titulo) AS destino_titulo,
       CASE
         WHEN com.tema_id IS NOT NULL THEN 'tema'
@@ -124,6 +127,20 @@ const getRepliesByUserId = async (userId) => {
   return rows;
 };
 
+const getRepliesByCommentId = async (commentId) => {
+  const q = `
+    SELECT com.contenido_id AS id, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, con.fecha_creacion,
+      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
+    FROM comentario com
+    JOIN contenido con ON con.id = com.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
+    WHERE com.comentario_padre_id = $1 AND com.estado = 'visible'
+    ORDER BY con.fecha_creacion DESC
+  `;
+  const { rows } = await pool.query(q, [commentId]);
+  return rows;
+};
+
 const updateReplyById = async (id, { cuerpo }) => {
   const q = `
     UPDATE contenido SET cuerpo = $1
@@ -136,4 +153,4 @@ const updateReplyById = async (id, { cuerpo }) => {
 
 
 export { createReply, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById, 
-  getReplyById, getRepliesByAuthorId, getRepliesByUserId, updateReplyById }
+  getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById }
