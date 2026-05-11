@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tema — UdelarHITS</title>
+  <link rel="icon" href="../../favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/main.css" />
+  <link rel="stylesheet" href="../../css/reply/replies.css" />
+  <link rel="stylesheet" href="../../css/topic/topic.css" />
+</head>
+<body>
+  <div class="page">
+    <main>
+
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb" aria-label="Navegación">
+        <a href="/">Inicio</a>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        <a href="#" id="breadcrumbCategory">Categoría</a>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        <span id="breadcrumbTitle">Tema</span>
+      </nav>
+
+      <!-- Header del tema -->
+      <div class="topic-header">
+        <h1 class="topic-header-title" id="topicTitle">Cargando...</h1>
+        <div class="topic-header-body" id="topicBody"></div>
+        <div class="cat-meta" id="topicMeta"></div>
+      </div>
+
+      <!-- Crear comentario -->
+      <section class="create-topic" aria-label="Publicar comentario">
+        <button class="create-topic-trigger" id="openCreateComment" type="button">
+          <span class="ct-avatar ct-avatar-comment" aria-hidden="true">
+            <svg viewBox="0 0 64 64" width="100%" height="100%">
+              <circle cx="32" cy="26" r="11" fill="rgba(255,255,255,0.92)"/>
+              <path d="M10 60c2-12 12-18 22-18s20 6 22 18" fill="rgba(255,255,255,0.92)"/>
+            </svg>
+          </span>
+          <span class="ct-placeholder">Publicar comentario</span>
+          <span class="ct-cta">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Comentar
+          </span>
+        </button>
+      </section>
+
+      <!-- Panel crear comentario -->
+      <div class="create-cat-panel" id="createCommentPanel">
+        <div class="create-cat-panel-body">
+          <div class="edit-body">
+            <div class="edit-field">
+              <div class="edit-field-label">
+                <span>Comentario (*)</span>
+                <span class="edit-field-counter" id="commentBodyCounter">0 / 2000</span>
+              </div>
+              <textarea id="commentBody" maxlength="2000" rows="4" placeholder="Escribí tu comentario"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="create-cat-panel-footer">
+          <button class="cc-cancel" id="closeCreateComment">Cancelar</button>
+          <button class="save-btn" id="submitCreateComment" disabled>Comentar</button>
+        </div>
+      </div>
+
+      <!-- Feed de comentarios -->
+      <div id="commentsFeed">
+        <div class="skeleton-card">
+          <div class="skeleton" style="height:11px; width:28%; margin-bottom:10px;"></div>
+          <div class="skeleton" style="height:17px; width:65%; margin-bottom:8px;"></div>
+          <div class="skeleton" style="height:12px; width:90%;"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton" style="height:11px; width:22%; margin-bottom:10px;"></div>
+          <div class="skeleton" style="height:17px; width:50%; margin-bottom:8px;"></div>
+          <div class="skeleton" style="height:12px; width:80%;"></div>
+        </div>
+      </div>
+
+    </main>
+
+    <aside class="sidebar">
+      <!-- Info del tema -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">Sobre este tema</div>
+        <div class="sidebar-card-body">
+          <div class="stat-row">
+            <span class="stat-row-label">Comentarios</span>
+            <span class="stat-row-value" id="statComentarios">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Creado</span>
+            <span class="stat-row-value" id="statCreado">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Autor -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">Autor</div>
+        <div class="sidebar-card-body" id="modList">
+          <div class="mod-item">
+            <div class="mod-avatar"></div>
+            <div class="mod-info">
+              <span class="mod-name">Cargando...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categoría -->
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">Categoría</div>
+        <div class="sidebar-card-body" id="sidebarCategory">
+          <a class="sidebar-cat-link" id="sidebarCatLink" href="#">
+            <div class="sidebar-cat-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            </div>
+            <span id="sidebarCatName">Cargando...</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="../../shared/escape.js"></script>
+  <script src="../../shared/api.js"></script>
+  <script src="../../shared/header.js"></script>
+  <script src="../../shared/leftnav.js"></script>
+  <script src="../../shared/time-ago.js"></script>
+  <script src="../../shared/comments.js"></script>
+  <script src="topic.js"></script>
+</body>
+</html>

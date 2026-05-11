@@ -26,7 +26,7 @@ body {
   padding: 48px;
 }
 
-/* Header de la página */
+/* ── Header de la página ───────────────────────────────── */
 .page-header {
   margin-bottom: 40px;
   padding-bottom: 32px;
@@ -34,13 +34,17 @@ body {
 }
 
 .logo {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--accent);
-  letter-spacing: -0.5px;
-  margin-bottom: 16px;
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  color: var(--text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
   display: block;
+  margin-bottom: 16px;
 }
+
+.logo span { color: var(--accent); }
 
 .page-header h1 {
   font-size: 28px;
@@ -56,7 +60,24 @@ body {
   line-height: 1.6;
 }
 
-/* Secciones */
+/* Breadcrumb (sub-páginas) */
+.breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  transition: color 0.15s;
+}
+
+.breadcrumb:hover { color: var(--accent); }
+
+/* ── Secciones ─────────────────────────────────────────── */
 .section {
   margin-bottom: 36px;
 }
@@ -78,6 +99,7 @@ body {
   height: 16px;
   background: var(--accent);
   border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .section p {
@@ -87,11 +109,20 @@ body {
   margin-bottom: 10px;
 }
 
-.section p:last-child {
-  margin-bottom: 0;
+.section p:last-child { margin-bottom: 0; }
+
+/* Link inline dentro de texto */
+.inline-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid var(--accent-light);
+  transition: border-color 0.15s;
 }
 
-/* Lista de reglas */
+.inline-link:hover { border-color: var(--accent); }
+
+/* ── Lista de reglas ───────────────────────────────────── */
 .rules-list {
   list-style: none;
   display: flex;
@@ -102,6 +133,7 @@ body {
 .rules-list li {
   display: flex;
   gap: 12px;
+  align-items: flex-start;
   font-size: 14px;
   color: var(--text-secondary);
   line-height: 1.6;
@@ -122,14 +154,211 @@ body {
   margin-top: 1px;
 }
 
-/* Divider */
+/* Íconos de estado (check / lock) */
+.rule-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.rule-icon--ok {
+  background: #e6f4ea;
+  color: #1a7f37;
+}
+
+.rule-icon--lock {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+/* ── Info-cards (links a sub-páginas) ──────────────────── */
+.info-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.info-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+  cursor: pointer;
+}
+
+.info-card:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.info-card-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.info-card:hover .info-card-icon {
+  background: var(--accent);
+  color: #fff;
+}
+
+.info-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.info-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.info-card-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.info-card-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: color 0.15s, transform 0.15s;
+}
+
+.info-card:hover .info-card-arrow {
+  color: var(--accent);
+  transform: translateX(3px);
+}
+
+/* ── Scenarios (política de contenido) ─────────────────── */
+.scenario-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.scenario {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.scenario:last-child { border-bottom: none; }
+
+.scenario-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.scenario p {
+  margin-bottom: 0;
+}
+
+/* ── Flow de pasos (moderación) ────────────────────────── */
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 16px;
+}
+
+.flow-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.flow-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.flow-step-body {
+  padding-bottom: 20px;
+}
+
+.flow-step-body strong {
+  display: block;
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.flow-step-body p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.flow-connector {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+  margin-left: 13px;
+}
+
+/* ── Tags de estado de apelación ───────────────────────── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.tag--pending  { background: #fff8e1; color: #b45309; }
+.tag--accepted { background: #e6f4ea; color: #1a7f37; }
+.tag--rejected { background: #fce8e6; color: var(--danger); }
+
+/* ── Divider ───────────────────────────────────────────── */
 .divider {
   border: none;
   border-top: 1px solid var(--border);
   margin: 32px 0;
 }
 
-/* Chip de contacto */
+/* ── Chip de contacto ──────────────────────────────────── */
 .contact-chip {
   display: inline-flex;
   align-items: center;
@@ -141,9 +370,13 @@ body {
   padding: 6px 12px;
   border-radius: 20px;
   margin-top: 8px;
+  text-decoration: none;
+  transition: opacity 0.15s;
 }
 
-/* Botón volver */
+.contact-chip:hover { opacity: 0.85; }
+
+/* ── Footer ────────────────────────────────────────────── */
 .footer {
   margin-top: 40px;
   padding-top: 32px;
@@ -172,35 +405,12 @@ body {
   border: none;
   cursor: pointer;
   transition: opacity 0.15s;
+  font-family: inherit;
 }
 
-.btn-back:hover {
-  opacity: 0.88;
-}
+.btn-back:hover { opacity: 0.88; }
 
 .btn-back svg {
   width: 16px;
   height: 16px;
 }
-
-.logo {
-  font-family: 'DM Serif Display', serif;
-  font-size: 20px;
-  color: var(--text-primary);
-  text-decoration: none;
-  white-space: nowrap;
-  letter-spacing: -0.3px;
-  display: block;
-  margin-bottom: 16px;
-}
-
-.logo span { color: var(--accent); }
-
-a.contact-chip {
-  text-decoration: none;
-}
-
-a.contact-chip:hover {
-  opacity: 0.85;
-}
-

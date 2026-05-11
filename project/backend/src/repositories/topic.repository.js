@@ -31,13 +31,10 @@ const createTopic = async ({ autor_id, categoria_id, titulo, cuerpo }) => {
   }
 };
 
-const findTopicByTituloAndCategoria = async (titulo, categoria_id) => {
-  const q = `
-    SELECT t.contenido_id FROM tema t
-    WHERE LOWER(t.titulo) = LOWER($1) AND t.categoria_id = $2
-    LIMIT 1
-  `;
-  const { rows } = await pool.query(q, [titulo, categoria_id]);
+const findTopicByTituloAndCategoria = async (titulo, categoriaId) => {
+  const q = `SELECT contenido_id FROM tema 
+  WHERE LOWER(REGEXP_REPLACE(titulo, '\\s+', ' ', 'g')) = LOWER($1) AND categoria_id = $2 LIMIT 1`;
+  const { rows } = await pool.query(q, [titulo, categoriaId]);
   return rows[0] || null;
 };
 

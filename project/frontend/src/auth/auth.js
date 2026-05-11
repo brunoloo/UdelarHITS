@@ -39,7 +39,7 @@ if (registerForm) {
     if (result.ok) {
       showMessage('success', result.message || '¡Cuenta creada! Redirigiendo...');
       registerForm.reset();
-      setTimeout(() => window.location.href = '/src/auth/login.html', 2050);
+      setTimeout(() => window.location.href = '/src/auth/login.html', 1950);
     } else {
       showMessage('error', result.message || 'Error al registrarse.');
     }

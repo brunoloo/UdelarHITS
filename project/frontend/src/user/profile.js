@@ -145,8 +145,8 @@ function initEditModal(user) {
   function syncCounters() {
     nameCounter.textContent = `${fName.value.length} / 50`;
     bioCounter.textContent = `${fBio.value.length} / 160`;
-    nameCounter.classList.toggle("limit", fName.value.length >= 50);
-    bioCounter.classList.toggle("limit", fBio.value.length >= 160);
+    nameCounter.classList.toggle("limit", fName.value.length > 50);
+    bioCounter.classList.toggle("limit", fBio.value.length > 160);
   }
 
   editBtn?.addEventListener("click", openModal);

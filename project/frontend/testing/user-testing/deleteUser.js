@@ -5,7 +5,7 @@ async function loadUsers() {
 
   if (!result.ok) {
     alert(result.message || "No autorizado");
-    window.location.href = "/"; 
+    window.history.back(); 
     return;
   }
 
