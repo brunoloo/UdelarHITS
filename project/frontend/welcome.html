@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¡Bienvenido a UdelarHITS!</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    /* ── VARIABLES ── */
+    :root {
+      --bg: #f6f7f8;
+      --surface: #ffffff;
+      --border: #edeff1;
+      --text-primary: #0f1a2e;
+      --text-secondary: #576069;
+      --text-muted: #9aa0a6;
+      --accent: #2563eb;
+      --accent-light: #e8f0fe;
+      --danger: #d93025;
+      --radius: 8px;
+      --header-h: 56px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .invite-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(15, 26, 46, 0.05);
+    }
+
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+    }
+
+    .logo span {
+      color: var(--accent);
+    }
+
+    .badge {
+      display: inline-block;
+      background-color: var(--accent-light);
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .message {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    .message p {
+      margin-bottom: 15px;
+    }
+
+    .message strong {
+      color: var(--text-primary);
+    }
+
+    .btn {
+      display: inline-block;
+      background-color: var(--accent);
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      padding: 14px 32px;
+      border-radius: var(--radius);
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background-color: #1d4ed8; /* Un tono un poco más oscuro que el accent */
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="invite-card">
+    <div class="badge">Acceso Anticipado</div>
+    
+    <div class="logo">Udelar<span>HITS</span></div>
+    
+    <div class="message">
+      <p>Si estás leyendo esto, es porque fuiste elegido(a) para probar la primera versión oficial del foro.</p>
+      
+      <p>Acabamos de terminar la <strong>Fase 1</strong> y necesitamos tu ayuda. Tu objetivo es crearte una cuenta, navegar por las categorías, publicar temas, comentar y toquetear todos los botones que veas.</p>
+      
+      <p>No te preocupes si rompes algo (de hecho, <strong>¡intenta romperlo!</strong>). Tu feedback es fundamental para las próximas fases de desarrollo.</p>
+    </div>
+
+    <!-- Nos lleva a index (la raíz '/') -->
+    <a href="/" class="btn">Entrar al Foro</a>
+  </div>
+
+</body>
+</html>

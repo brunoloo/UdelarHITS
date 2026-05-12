@@ -204,7 +204,7 @@ const getActiveCategories = async () => {
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
     WHERE c.estado = 'activa'
     GROUP BY c.id, u.nickname
-    ORDER BY c.titulo ASC
+    ORDER BY c.titulo DESC
   `;
   const { rows } = await pool.query(q);
   return rows;

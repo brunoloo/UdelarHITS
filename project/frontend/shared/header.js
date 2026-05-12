@@ -1,5 +1,5 @@
-const API_BASE = "http://localhost:5001/api";
-const SERVER_BASE = "http://localhost:5001";
+const API_BASE = "/api";
+const SERVER_BASE = "";
 
 document.addEventListener('DOMContentLoaded', async () => {
   const isTesting = window.location.pathname.includes('/testing');
@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const header = document.createElement('header');
   header.innerHTML = `
-    <a href="${homeUrl}" class="logo">Udelar<span>HITS</span></a>
+    <a href="${homeUrl}" class="logo">Udelar<span>HITS</span> (BETA)</a>
     <div class="search-bar">
       <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>

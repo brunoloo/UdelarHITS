@@ -51,6 +51,10 @@ if (params.get("msg") === "ver-usuarios") {
   showMessage("error", "Debés iniciar sesión para ver el perfil de otros usuarios");
 } else if (params.get("msg") === "crear-categoria") {
   showMessage("error", "Debés iniciar sesión para crear una categoría");
+} else if (params.get("msg") === "crear-tema") {
+  showMessage("error", "Debés iniciar sesión para crear un tema");
+} else if (params.get("msg") === "crear-comentario") {
+  showMessage("error", "Debés iniciar sesión para crear un comentario");
 }
 
 const loginForm = document.getElementById('loginForm');

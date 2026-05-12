@@ -12,6 +12,9 @@ import API from './routes/API.js';
 // Express
 const app = express();
 
+// Confiar en el proxy (Ngrok, Cloudflare, etc.) para que Rate Limiter obtenga la IP real
+app.set('trust proxy', 1);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

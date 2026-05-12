@@ -170,10 +170,6 @@ async function loadTopic() {
   }
 
   openCommentBtn.addEventListener('click', () => {
-    if (!meRes?.ok) {
-      window.location.href = '/src/auth/login.html?msg=crear-comentario';
-      return;
-    }
     openCommentBtn.style.display = 'none';
     const avatar = openCommentBtn.querySelector('.ct-avatar');
     document.querySelector('#createCommentPanel .create-cat-panel-body').prepend(avatar);
@@ -194,6 +190,10 @@ async function loadTopic() {
 
   submitCommentBtn.addEventListener('click', async () => {
     if (submitCommentBtn.disabled) return;
+    if (!meRes?.ok) {
+      window.location.href = '/src/auth/login.html?msg=crear-comentario';
+      return;
+    }
     submitCommentBtn.disabled = true;
     submitCommentBtn.textContent = 'Publicando...';
 

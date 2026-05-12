@@ -15,33 +15,40 @@ function renderTopics(topics) {
   feed.innerHTML = topics.map(t => {
     const commentCount = Number(t.contador_comentarios) || 0;
     return `
-      <a class="topic-card" href="/src/topic/topic.html?id=${encodeURIComponent(t.contenido_id)}">
-        <img class="topic-avatar" 
-             src="${API_BASE}/users/${encodeURIComponent(t.autor_id)}/avatar" 
-             alt="${escapeHtml(t.autor_nickname)}" />
-        <div class="topic-body">
-          <div class="topic-head">
-            <span>${escapeHtml(t.autor_nickname)}</span>
-            <span>·</span>
-            <span>${escapeHtml(timeAgo(t.fecha_creacion))}</span>
-          </div>
-          <div class="topic-title">${escapeHtml(t.titulo)}</div>
-          <div class="topic-preview">${escapeHtml(t.cuerpo || '')}</div>
-          <div class="topic-footer">
-            <span class="topic-stat">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              ${commentCount} ${commentCount === 1 ? 'comentario' : 'comentarios'}
-            </span>
-          </div>
+    <div class="topic-card" data-topic-id="${encodeURIComponent(t.contenido_id)}">
+      <img class="topic-avatar" 
+          src="${API_BASE}/users/${encodeURIComponent(t.autor_id)}/avatar" 
+          alt="${escapeHtml(t.autor_nickname)}" />
+      <div class="topic-body">
+        <div class="topic-head">
+          <a href="/src/user/profile.html?nickname=${encodeURIComponent(t.autor_nickname)}">${escapeHtml(t.autor_nickname)}</a>
+          <span>·</span>
+          <span>${escapeHtml(timeAgo(t.fecha_creacion))}</span>
         </div>
-      </a>
-    `;
+        <div class="topic-title">${escapeHtml(t.titulo)}</div>
+        <div class="topic-preview">${escapeHtml(t.cuerpo || '')}</div>
+        <div class="topic-footer">
+          <span class="topic-stat">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            ${commentCount} ${commentCount === 1 ? 'comentario' : 'comentarios'}
+          </span>
+        </div>
+      </div>
+    </div>
+  `;
   }).join('');
 
   // Fallback de avatares
   feed.querySelectorAll('.topic-avatar').forEach(img => {
     img.addEventListener('error', () => {
       img.src = SERVER_BASE + '/assets/default-user.jpg';
+    });
+  });
+
+  feed.querySelectorAll('.topic-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('a')) return; // ignorar click en el link del autor
+      window.location.href = `/src/topic/topic.html?id=${card.dataset.topicId}`;
     });
   });
 }
@@ -84,7 +91,7 @@ async function loadCategory() {
   const count = Number(cat.contador_temas) || 0;
   document.getElementById('catMeta').innerHTML = `
     <span class="cat-meta-item"><strong>${count}</strong> ${count === 1 ? 'tema' : 'temas'}</span>
-    <span class="cat-meta-item">creada el <strong>${escapeHtml(new Date(cat.fecha_creacion).toLocaleDateString('es-UY'))}</strong></span>
+    <span class="cat-meta-item">creada <strong>${escapeHtml(timeAgo(cat.fecha_creacion))}</strong></span>
   `;
 
   // Sidebar stats
@@ -200,10 +207,7 @@ async function loadCategory() {
   }
 
   openTopicBtn.addEventListener('click', () => {
-    if (!meRes?.ok) {
-      window.location.href = '/src/auth/login.html?msg=crear-tema';
-      return;
-    }
+    
     openTopicBtn.style.display = 'none';
     const avatar = openTopicBtn.querySelector('.ct-avatar');
     document.querySelector('#createTopicPanel .create-cat-panel-body').prepend(avatar);
@@ -226,6 +230,10 @@ async function loadCategory() {
 
   submitTopicBtn.addEventListener('click', async () => {
     if (submitTopicBtn.disabled) return;
+    if (!meRes?.ok) {
+      window.location.href = '/src/auth/login.html?msg=crear-tema';
+      return;
+    }
     submitTopicBtn.disabled = true;
     submitTopicBtn.textContent = 'Creando...';
 
@@ -269,10 +277,6 @@ async function loadCategory() {
   }
 
   openCommentBtn.addEventListener('click', () => {
-    if (!meRes?.ok) {
-      window.location.href = '/src/auth/login.html?msg=crear-comentario';
-      return;
-    }
     openCommentBtn.style.display = 'none';
     const avatar = openCommentBtn.querySelector('.ct-avatar');
     document.querySelector('#createCommentPanel .create-cat-panel-body').prepend(avatar);
@@ -293,6 +297,10 @@ async function loadCategory() {
 
   submitCommentBtn.addEventListener('click', async () => {
     if (submitCommentBtn.disabled) return;
+    if (!meRes?.ok) {
+      window.location.href = '/src/auth/login.html?msg=crear-comentario';
+      return;
+    }
     submitCommentBtn.disabled = true;
     submitCommentBtn.textContent = 'Publicando...';
 
