@@ -52,14 +52,12 @@
 .comment-card {
   display: flex;
   gap: var(--comment-row-gap);
-  padding: 12px 0;
+  padding: 16px;
+  margin-bottom: 10px;
   position: relative;
-  border-bottom: 1px solid var(--border);
-}
-
-/* Última card del stream no lleva borde inferior */
-.comment-replies .comment-card:last-child {
-  border-bottom: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 
 .comment-gutter {
@@ -91,7 +89,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
   margin-bottom: 4px;
 }
@@ -170,12 +168,12 @@
    "saltar" del stream.
    ────────────────────────────────────────────── */
 .comment-card--clickable {
-  transition: background-color 0.12s ease;
   cursor: pointer;
+  transition: border-color 0.15s;
 }
 
 .comment-card--clickable:hover {
-  background-color: var(--bg);
+  border-color: #c8cbd0;
 }
 
 /* ──────────────────────────────────────────────
@@ -193,7 +191,7 @@
 
 /* Ancestros: sin borde inferior — la línea vertical hace la conexión. */
 .comment-card--ancestor {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
 /* Línea vertical desde debajo del avatar hasta cruzar el padding inferior
@@ -240,6 +238,7 @@
 .comment-thread + .comment-replies {
   border-top: 1px solid var(--border);
   padding-left: 28px;
+  
 }
 
 /* ──────────────────────────────────────────────

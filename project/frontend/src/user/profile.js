@@ -307,7 +307,7 @@ async function loadProfile() {
   document.getElementById("profileNombre").textContent = user.nombre;
   document.getElementById("profileNickname").textContent = `@${user.nickname}`;
   document.getElementById("profileBio").textContent = user.biografia || "";
-  document.getElementById("profileAvatar").src = `http://localhost:5001/api/users/${user.id}/avatar`;
+  document.getElementById("profileAvatar").src = `/api/users/${user.id}/avatar`;
   // Banner
   const bannerImg = document.getElementById("profileBannerImg");
   if (user.url_banner) {

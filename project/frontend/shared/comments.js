@@ -212,11 +212,6 @@ function attachReplyListeners(container) {
       e.stopPropagation();
       const commentId = btn.dataset.commentId;
 
-      if (!currentMeRes?.ok) {
-        window.location.href = '/src/auth/login.html?msg=crear-comentario';
-        return;
-      }
-
       const card = btn.closest('.comment-card');
       const existingPanel = card.querySelector('.inline-reply-panel');
       if (existingPanel) {
@@ -260,6 +255,10 @@ function attachReplyListeners(container) {
       cancelBtn.addEventListener('click', () => panel.remove());
 
       submitBtn.addEventListener('click', async () => {
+        if (!currentMeRes?.ok) {
+          window.location.href = '/src/auth/login.html?msg=crear-comentario';
+          return;
+        }
         submitBtn.disabled = true;
         submitBtn.textContent = 'Publicando...';
 
