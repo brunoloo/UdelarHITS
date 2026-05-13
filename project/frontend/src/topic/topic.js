@@ -79,7 +79,7 @@ async function loadTopic() {
   modList.innerHTML = `
     <div class="mod-item">
       <div class="mod-avatar">
-        <img src="${API_BASE}/users/${encodeURIComponent(topic.autor_id)}/avatar" alt="" />
+        <img src="${topic.autor_url_imagen || `${SERVER_BASE}/assets/default-user.jpg`}" />
       </div>
       <div class="mod-info">
         <span class="mod-name"><a href="/src/user/profile.html?nickname=${encodeURIComponent(topic.autor_nickname)}">${escapeHtml(topic.autor_nickname)}</a></span>
@@ -139,7 +139,7 @@ async function loadTopic() {
   if (meRes?.ok) {
     ctAvatars.forEach(ctAvatar => {
       const img = document.createElement('img');
-      img.src = `${API_BASE}/users/${encodeURIComponent(meRes.data.user.id)}/avatar`;
+      img.src = meRes.data.user.url_imagen || `${SERVER_BASE}/assets/default-user.jpg`;
       img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
       img.addEventListener('error', () => img.style.display = 'none');
       ctAvatar.innerHTML = '';

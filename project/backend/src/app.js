@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -34,14 +35,14 @@ app.use(helmet({
 const allowedOrigins = (process.env.URL || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin) return cb(null, true); // peticiones server-to-server / curl
+    if (!origin) return cb(null, true);
     if (allowedOrigins.includes(origin)) return cb(null, true);
     return cb(new Error('Origen no permitido'));
   },
   credentials: true
 }));
 
-app.use('/assets', express.static(path.join(__dirname, 'assets'))); // default img
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Cookie
 app.use(cookieParser());
@@ -86,5 +87,21 @@ app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
 // routes
 app.use("/api", API);
 
+// Error handler para multer y errores de upload
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        ok: false,
+        message: 'La imagen es demasiado pesada. Máximo permitido: avatar 2MB, banner 3MB.'
+      });
+    }
+    return res.status(400).json({ ok: false, message: 'Error al subir el archivo.' });
+  }
+  if (err.message === 'Solo se permiten imágenes') {
+    return res.status(400).json({ ok: false, message: err.message });
+  }
+  next(err);
+});
 
 export default app;

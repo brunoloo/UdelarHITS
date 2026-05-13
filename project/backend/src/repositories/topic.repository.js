@@ -70,7 +70,9 @@ const getTopicById = async (id) => {
   const q = `
     SELECT t.contenido_id AS id, t.titulo, t.estado, t.categoria_id,
       c.titulo AS categoria_titulo,
-      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, con.fecha_creacion
+      con.cuerpo, con.autor_id,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
+      con.fecha_creacion
     FROM tema t
     JOIN contenido con ON con.id = t.contenido_id
     JOIN usuario u ON u.id = con.autor_id

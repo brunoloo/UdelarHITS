@@ -2,9 +2,9 @@ import { fileTypeFromBuffer } from 'file-type';
 
 import { registerUserService, loginUserService, getUsersService, createUserByAdminService,
     getUserProfileService, showMeService, updateMeService, 
-    getUserAvatarService, banUserService, activeUserService, deleteUserService,
+    banUserService, activeUserService, deleteUserService,
   followUserService, unfollowUserService, isFollowingService, updateAvatarService, 
-  searchUsersService, updateBannerService, getUserBannerService, 
+  searchUsersService, updateBannerService, 
   deleteBannerService, deleteAvatarService } from '../services/user.service.js';
 
 const showMe = async (req, res) => {
@@ -144,18 +144,6 @@ const updateMe = async (req, res) => {
   }
 };
 
-const getUserAvatar = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const url = await getUserAvatarService(id);
-
-    const fallback = '/assets/default-user.jpg';
-    return res.redirect(url || fallback);
-  } catch (error) {
-    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
-  }
-};
 
 const banUser = async (req, res) => {
   try {
@@ -290,17 +278,6 @@ const deleteBanner = async (req, res) => {
   }
 };
 
-const getUserBanner = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const url = await getUserBannerService(id);
-    if (!url) return res.status(404).json({ ok: false, message: 'Sin banner' });
-    return res.redirect(url);
-  } catch (error) {
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
-  }
-};
-
 const deleteAvatar = async (req, res) => {
   try {
     await deleteAvatarService(req.user.id);
@@ -311,6 +288,6 @@ const deleteAvatar = async (req, res) => {
 };
 
 export { showMe, registerUser, loginUser, logoutUser, getUsers, 
-  getUserProfile, updateMe, getUserAvatar, changeUserPassword, banUser, 
+  getUserProfile, updateMe, changeUserPassword, banUser, 
   activeUser, deleteUser, followUser, unfollowUser, checkFollowing, updateAvatar, 
-  searchUsers, updateBanner, deleteBanner, getUserBanner, deleteAvatar }
+  searchUsers, updateBanner, deleteBanner, deleteAvatar }

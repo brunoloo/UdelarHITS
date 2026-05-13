@@ -20,8 +20,7 @@ async function loadHeader() {
     document.getElementById("joinBanner")?.remove();
     actions.innerHTML = `
       <a class="user-chip" href="/src/user/profile.html">
-        <img class="user-avatar"
-          src="${API_BASE}/users/${encodeURIComponent(user.id)}/avatar"
+          src="${user.url_imagen || `${SERVER_BASE}/assets/default-user.jpg`}"
           alt="${escapeHtml(user.nickname)}" />
         ${escapeHtml(user.nickname)}
       </a>
@@ -34,7 +33,7 @@ async function loadHeader() {
     const ccAvatar = document.querySelector('.cc-avatar');
     if (ccAvatar) {
       const img = document.createElement('img');
-      img.src = `${API_BASE}/users/${encodeURIComponent(user.id)}/avatar`;
+      img.src = user.url_imagen || `${SERVER_BASE}/assets/default-user.jpg`;
       img.alt = escapeHtml(user.nickname);
       img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
       img.addEventListener('error', () => img.style.display = 'none');
@@ -194,20 +193,26 @@ function renderSearchDropdown(categories, tags, catsByTag, users, query) {
 
   // Usuarios
   if (users.length) {
-    if (categories.length || tags.length) html += `<div class="search-divider"></div>`;
-    html += `<div class="search-section-title">Usuarios</div>`;
-    html += users.map(u => `
+  if (categories.length || tags.length) html += `<div class="search-divider"></div>`;
+  html += `<div class="search-section-title">Usuarios</div>`;
+  html += users.map(u => {
+    const avatarUrl = (u.url_imagen && /^https?:\/\//i.test(u.url_imagen))
+      ? u.url_imagen
+      : (SERVER_BASE + '/assets/default-user.jpg');
+
+    return `
       <a class="search-item" href="/src/user/profile.html?nickname=${encodeURIComponent(u.nickname)}">
         <img class="search-item-avatar" 
-            src="${API_BASE}/users/${encodeURIComponent(u.id)}/avatar" 
-            alt="${escapeHtml(u.nickname)}" />
+              src="${escapeHtml(avatarUrl)}" 
+              alt="${escapeHtml(u.nickname)}" />
         <div class="search-item-info">
           <div class="search-item-title">@${escapeHtml(u.nickname)}</div>
           <div class="search-item-sub">${escapeHtml(u.nombre)}</div>
         </div>
       </a>
-    `).join('');
-  }
+    `;
+  }).join('');
+}
 
   dropdown.innerHTML = html;
   dropdown.querySelectorAll('.search-item-avatar').forEach(img => {

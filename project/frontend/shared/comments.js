@@ -56,7 +56,7 @@ function renderCommentCard(c, role, index, indexPrefix) {
 
   // Data attrs solo en replies (las únicas que profundizan)
   const dataAttrs = role === 'reply'
-    ? `data-comment-id="${c.id}" data-author="${escapeHtml(c.autor_nickname)}" data-body="${escapeHtml(c.cuerpo)}" data-date="${c.fecha_creacion}" data-autor-id="${c.autor_id}" data-reply-count="${replyCount}"`
+    ? `data-comment-id="${c.id}" data-author="${escapeHtml(c.autor_nickname)}" data-body="${escapeHtml(c.cuerpo)}" data-date="${c.fecha_creacion}" data-autor-id="${c.autor_id}" data-autor-url="${c.autor_url_imagen || ''}" data-reply-count="${replyCount}"`
     : `data-comment-id="${c.id}"`;
 
   // Botón de respuestas: en ancestros es info sin acción; en replies es clickeable y profundiza
@@ -72,7 +72,7 @@ function renderCommentCard(c, role, index, indexPrefix) {
     <div class="${cardClasses.join(' ')}" ${dataAttrs}>
       <div class="comment-gutter">
         <img class="comment-avatar"
-             src="${API_BASE}/users/${encodeURIComponent(c.autor_id)}/avatar"
+             src="${c.autor_url_imagen || (SERVER_BASE + '/assets/default-user.jpg')}"
              alt="${escapeHtml(c.autor_nickname)}" />
       </div>
       <div class="comment-body">
@@ -296,6 +296,7 @@ function attachCommentClickListeners(container) {
         cuerpo: card.dataset.body,
         fecha_creacion: card.dataset.date,
         autor_id: card.dataset.autorId,
+        autor_url_imagen: card.dataset.autorUrl || '',
         contador_respuestas: Number(card.dataset.replyCount) || 0
       };
 

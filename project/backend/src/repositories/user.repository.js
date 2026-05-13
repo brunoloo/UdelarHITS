@@ -233,18 +233,6 @@ const searchUsers = async (query) => {
   return rows;
 };
 
-const getUserBannerUrlById = async (id) => {
-  const q = `
-    SELECT url_banner
-    FROM usuario
-    WHERE id = $1
-    LIMIT 1
-  `;
-  const { rows } = await pool.query(q, [id]);
-  if (rows.length === 0) return undefined;
-  return rows[0].url_banner;
-};
-
 const updateBannerById = async (id, url_banner) => {
   const q = `
     UPDATE usuario SET url_banner = $1
@@ -279,4 +267,4 @@ export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUs
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, 
   deleteUserByNickname, followUser, unfollowUser, isFollowing, updateAvatarById, 
-  searchUsers, getUserBannerUrlById, updateBannerById, deleteBannerById, deleteAvatarById };
+  searchUsers, updateBannerById, deleteBannerById, deleteAvatarById };

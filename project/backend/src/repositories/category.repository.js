@@ -61,14 +61,14 @@ const getCategories = async () => {
 const getCategoryById = async (id) => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.autor_id, c.estado, c.fecha_creacion,
-      u.nickname AS autor_nickname,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
     FROM categoria c
     JOIN usuario u ON u.id = c.autor_id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
     WHERE c.id = $1
-    GROUP BY c.id, u.nickname
+    GROUP BY c.id, u.nickname, u.url_imagen
     LIMIT 1
   `;
   const { rows } = await pool.query(q, [id]);
@@ -92,9 +92,13 @@ const getCategoriesByAuthorId = async (autorId) => {
 
 const getTopicsByCategoryId = async (categoryId) => {
   const q = `
-    SELECT t.contenido_id, t.titulo, t.estado, c.fecha_creacion,
-      c.autor_id, c.cuerpo, u.nickname AS autor_nickname,
-      (SELECT COUNT(*) FROM comentario com WHERE com.tema_id = t.contenido_id AND com.estado = 'visible') AS contador_comentarios
+    SELECT t.contenido_id, t.titulo, t.estado, c.fecha_creacion, c.autor_id, c.cuerpo,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
+      (SELECT COUNT(*) FROM comentario com 
+          WHERE com.tema_id = t.contenido_id 
+            AND com.estado = 'visible'
+            AND com.comentario_padre_id IS NULL
+        ) AS contador_comentarios
     FROM tema t
     JOIN contenido c ON c.id = t.contenido_id
     JOIN usuario u ON u.id = c.autor_id

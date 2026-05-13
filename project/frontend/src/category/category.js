@@ -16,8 +16,8 @@ function renderTopics(topics) {
     const commentCount = Number(t.contador_comentarios) || 0;
     return `
     <div class="topic-card" data-topic-id="${encodeURIComponent(t.contenido_id)}">
-      <img class="topic-avatar" 
-          src="${API_BASE}/users/${encodeURIComponent(t.autor_id)}/avatar" 
+      <img class="topic-avatar"
+          src="${t.autor_url_imagen || (SERVER_BASE + '/assets/default-user.jpg')}"
           alt="${escapeHtml(t.autor_nickname)}" />
       <div class="topic-body">
         <div class="topic-head">
@@ -152,7 +152,7 @@ async function loadCategory() {
   modList.innerHTML = `
     <div class="mod-item">
       <div class="mod-avatar">
-        <img src="${API_BASE}/users/${encodeURIComponent(cat.autor_id || cat.autor_nickname)}/avatar" alt="" />
+        <img src="${cat.autor_url_imagen || (SERVER_BASE + '/assets/default-user.jpg')}" alt="" />
       </div>
       <div class="mod-info">
         <span class="mod-name"><a href="/src/user/profile.html?nickname=${encodeURIComponent(cat.autor_nickname)}">${escapeHtml(cat.autor_nickname)}</a></span>
@@ -172,7 +172,7 @@ async function loadCategory() {
   if (meRes?.ok) {
     ctAvatars.forEach(ctAvatar => {
       const img = document.createElement('img');
-      img.src = `${API_BASE}/users/${encodeURIComponent(meRes.data.user.id)}/avatar`;
+      img.src = meRes.data.user.url_imagen || `${SERVER_BASE}/assets/default-user.jpg`;
       img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
       img.addEventListener('error', () => img.style.display = 'none');
       ctAvatar.innerHTML = '';

@@ -205,46 +205,55 @@ function initEditModal(user) {
   try {
     // Subir avatar si hay uno nuevo
     if (pendingAvatarFile) {
-      const formData = new FormData();
-      formData.append("avatar", pendingAvatarFile);
-      const avatarRes = await fetch(`${API_BASE}/users/me/avatar`, {
-        method: "PATCH",
-        credentials: "include",
-        body: formData
-      });
-      const avatarData = await avatarRes.json();
-      if (avatarData.ok) {
-        document.getElementById("profileAvatar").src = avatarData.data.url_imagen;
-      }
+    const formData = new FormData();
+    formData.append("avatar", pendingAvatarFile);
+    const avatarRes = await fetch(`${API_BASE}/users/me/avatar`, {
+      method: "PATCH",
+      credentials: "include",
+      body: formData
+    });
+    const avatarData = await avatarRes.json();
+    if (avatarData.ok) {
+      document.getElementById("profileAvatar").src = avatarData.data.url_imagen;
+    } else {
+      window.showToast && window.showToast(avatarData.message || 'Error al subir avatar', 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Guardar";
+      return;
+    }
+  } else if (removeAvatar) {
+    const delRes = await apiDelete("/users/me/avatar");
+    if (delRes.ok) {
+      document.getElementById("profileAvatar").src = `${SERVER_BASE}/assets/default-user.jpg`;
+    }
+  }
+
+  // Subir banner si hay uno nuevo
+  if (pendingBannerFile) {
+    const bannerFormData = new FormData();
+    bannerFormData.append("banner", pendingBannerFile);
+    const bannerRes = await fetch(`${API_BASE}/users/me/banner`, {
+      method: "PATCH",
+      credentials: "include",
+      body: bannerFormData
+    });
+    const bannerData = await bannerRes.json();
+    if (bannerData.ok) {
+      const bannerImg = document.getElementById("profileBannerImg");
+      bannerImg.src = bannerData.data.url_banner;
+      bannerImg.style.display = 'block';
+    } else {
+      window.showToast && window.showToast(bannerData.message || 'Error al subir banner', 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Guardar";
+      return;
+    }
     } else if (removeAvatar) {
-      const delRes = await apiDelete("/users/me/avatar");
-      if (delRes.ok) {
-        document.getElementById("profileAvatar").src = `${SERVER_BASE}/assets/default-user.jpg`;
-      }
+    const delRes = await apiDelete("/users/me/avatar");
+    if (delRes.ok) {
+      document.getElementById("profileAvatar").src = `${SERVER_BASE}/assets/default-user.jpg?t=${Date.now()}`;
     }
-        
-    // Subir banner si hay uno nuevo
-    if (pendingBannerFile) {
-      const bannerFormData = new FormData();
-      bannerFormData.append("banner", pendingBannerFile);
-      const bannerRes = await fetch(`${API_BASE}/users/me/banner`, {
-        method: "PATCH",
-        credentials: "include",
-        body: bannerFormData
-      });
-      const bannerData = await bannerRes.json();
-      if (bannerData.ok) {
-        const bannerImg = document.getElementById("profileBannerImg");
-        bannerImg.src = bannerData.data.url_banner;
-        bannerImg.style.display = 'block';
-      }
-    } else if (removeBanner) {
-      const delRes = await apiDelete("/users/me/banner");
-      if (delRes.ok) {
-        const bannerImg = document.getElementById("profileBannerImg");
-        bannerImg.style.display = 'none';
-      }
-    }
+  }
 
     // Actualizar nombre y bio
     const body = {};
@@ -307,11 +316,11 @@ async function loadProfile() {
   document.getElementById("profileNombre").textContent = user.nombre;
   document.getElementById("profileNickname").textContent = `@${user.nickname}`;
   document.getElementById("profileBio").textContent = user.biografia || "";
-  document.getElementById("profileAvatar").src = `/api/users/${user.id}/avatar`;
+  document.getElementById("profileAvatar").src = user.url_imagen || `${SERVER_BASE}/assets/default-user.jpg`;
   // Banner
   const bannerImg = document.getElementById("profileBannerImg");
   if (user.url_banner) {
-    bannerImg.src = `${API_BASE}/users/${user.id}/banner`;
+    bannerImg.src = user.url_banner;
     bannerImg.style.display = 'block';
   } else {
     bannerImg.style.display = 'none';
