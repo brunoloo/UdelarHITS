@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="user-menu-wrapper">
         <button class="user-chip" id="userMenuBtn">
           <img class="user-avatar"
-            src="${API_BASE}/users/${encodeURIComponent(user.id)}/avatar"
+            src="${user.url_imagen || (SERVER_BASE + '/assets/default-user.jpg')}"
             alt="${escapeHtml(user.nickname)}" />
           ${escapeHtml(user.nickname)}
         </button>

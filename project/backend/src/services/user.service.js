@@ -5,7 +5,7 @@ import {
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser, 
-  isFollowing, updateAvatarById, searchUsers, getUserBannerUrlById, updateBannerById, 
+  isFollowing, updateAvatarById, searchUsers, updateBannerById, 
   deleteBannerById, deleteAvatarById } from '../repositories/user.repository.js';
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
@@ -254,16 +254,6 @@ const updateMeService = async (userId, { nombre, biografia }) => {
   };
 };
 
-const getUserAvatarService = async (userId) => {
-  const url = await getUserAvatarUrlById(userId);
-  if (url === undefined) {
-    const err = new Error('Usuario no encontrado');
-    err.code = 'NOT_FOUND';
-    throw err;
-  }
-  return url; // puede ser null
-};
-
 const banUserService = async (nickname) => {
   const updated = await updateUserEstado(nickname, 'ban');
   if (!updated) {
@@ -373,18 +363,13 @@ const deleteBannerService = async (userId) => {
   return await deleteBannerById(userId);
 };
 
-const getUserBannerService = async (id) => {
-  return await getUserBannerUrlById(id);
-};
-
 const deleteAvatarService = async (userId) => {
   return await deleteAvatarById(userId);
 };
 
 export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
-  updateMeService, getUserAvatarService, banUserService, activeUserService, 
+  updateMeService, banUserService, activeUserService, 
   deleteUserService, followUserService, unfollowUserService, isFollowingService, 
-  updateAvatarService, searchUsersService, updateBannerService, deleteBannerService, 
-  getUserBannerService, deleteAvatarService };
+  updateAvatarService, searchUsersService, updateBannerService, deleteBannerService, deleteAvatarService };
 
 

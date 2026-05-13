@@ -2,9 +2,9 @@ import { Router } from 'express';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 import { uploadAvatar, uploadBanner } from '../config/multer.js';
 import { showMe, updateMe, getUsers, getUserProfile, changeUserPassword, 
-    getUserAvatar, banUser, activeUser, deleteUser, followUser, unfollowUser, 
+    banUser, activeUser, deleteUser, followUser, unfollowUser, 
     checkFollowing, updateAvatar, searchUsers, updateBanner, deleteBanner, 
-    getUserBanner, deleteAvatar } from '../controllers/user.controller.js';
+    deleteAvatar } from '../controllers/user.controller.js';
 
 const router = Router();
 
@@ -17,9 +17,6 @@ router.patch('/me/banner', protect, uploadBanner.single('banner'), updateBanner)
 router.delete('/me/banner', protect, deleteBanner);              // Elimina el banner
 router.delete('/me/avatar', protect, deleteAvatar);              // Elimina el avatar          
 router.put('/change-password', protect, changeUserPassword);     // Actualizar contraseña
-
-router.get('/:id/avatar', getUserAvatar);                        // Avatar público
-router.get('/:id/banner', getUserBanner);                        // Banner público
 
 router.get('/:nickname', protect, getUserProfile);               // Obtener información del usuario pública
 
