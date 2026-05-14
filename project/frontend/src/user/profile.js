@@ -248,12 +248,14 @@ function initEditModal(user) {
       saveBtn.textContent = "Guardar";
       return;
     }
-    } else if (removeAvatar) {
-    const delRes = await apiDelete("/users/me/avatar");
-    if (delRes.ok) {
-      document.getElementById("profileAvatar").src = `${SERVER_BASE}/assets/default-user.jpg?t=${Date.now()}`;
-    }
+    } else if (removeBanner) {
+  const delRes = await apiDelete("/users/me/banner");
+  if (delRes.ok) {
+    const bannerImg = document.getElementById("profileBannerImg");
+    bannerImg.src = '';
+    bannerImg.style.display = 'none';
   }
+}
 
     // Actualizar nombre y bio
     const body = {};
