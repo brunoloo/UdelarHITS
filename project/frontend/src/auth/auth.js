@@ -72,7 +72,6 @@ if (loginForm) {
       window.location.href = '/';
     } else {
       showMessage('error', result.message || 'Credenciales incorrectas.');
-      loginForm.reset();
     }
   });
 }

@@ -1,5 +1,5 @@
 import bcrypt  from 'bcrypt';
-import uploadToCloudinary from '../utils/uploadToCloudinary.js';
+import {uploadToCloudinary, deleteFromCloudinary} from '../utils/uploadToCloudinary.js';
 import {generateToken} from '../utils/generateToken.js'
 import { 
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
@@ -360,16 +360,20 @@ const updateBannerService = async (userId, fileBuffer, mimetype) => {
 };
 
 const deleteBannerService = async (userId) => {
+  // Intentar borrar en Cloudinary, pero no romper si falla
+  await deleteFromCloudinary('banners', `banner_${userId}`);
   return await deleteBannerById(userId);
 };
 
 const deleteAvatarService = async (userId) => {
+  await deleteFromCloudinary('avatars', `avatar_${userId}`);
   return await deleteAvatarById(userId);
 };
 
 export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
   updateMeService, banUserService, activeUserService, 
   deleteUserService, followUserService, unfollowUserService, isFollowingService, 
-  updateAvatarService, searchUsersService, updateBannerService, deleteBannerService, deleteAvatarService };
+  updateAvatarService, searchUsersService, updateBannerService, 
+  deleteAvatarService, deleteBannerService };
 
 
