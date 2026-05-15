@@ -10,24 +10,24 @@
 
 .edit-banner-overlay {
   position: absolute; inset: 0;
-  background: rgba(15,17,24,0.42);
+  background: var(--overlay-dark-sm);
   display: flex; align-items: center; justify-content: center;
   gap: 16px;
   transition: background .15s;
 }
-.edit-banner:hover .edit-banner-overlay { background: rgba(15,17,24,0.55); }
+.edit-banner:hover .edit-banner-overlay { background: var(--overlay-dark-md); }
 
 .icon-circle {
   width: 40px; height: 40px;
   border-radius: 50%;
-  background: rgba(15,17,24,0.55);
+  background: var(--overlay-dark-md);
   border: 0;
-  color: #fff;
+  color: var(--text-on-accent);
   display: grid; place-items: center;
   cursor: pointer;
   transition: background .12s, transform .08s;
 }
-.icon-circle:hover { background: rgba(15,17,24,0.8); }
+.icon-circle:hover { background: var(--overlay-dark-lg); }
 .icon-circle:active { transform: scale(.95); }
 
 /* Avatar editable */
@@ -43,7 +43,7 @@
   height: 112px;
   border-radius: 50%;
   border: 4px solid var(--surface);
-  box-shadow: 0 2px 8px rgba(20,22,30,0.12);
+  box-shadow: var(--shadow-2);
   position: relative;
   overflow: hidden;
   z-index: 1;
@@ -76,10 +76,10 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(15,17,24,0.55);
+  background: var(--overlay-dark-md);
   border: none;
   cursor: pointer;
-  color: #fff;
+  color: var(--text-on-accent);
   display: grid;
   place-items: center;
   transition: background .12s;
@@ -87,7 +87,7 @@
 
 .edit-avatar-overlay:hover,
 .edit-avatar-remove:hover {
-  background: rgba(15,17,24,0.8);
+  background: var(--overlay-dark-lg);
 }
 
 /* Extras de perfil */

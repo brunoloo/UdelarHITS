@@ -4,11 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Configuración — UdelarHITS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../../css/main.css" />
-  <link rel="stylesheet" href="../../css/configuration.css" />
+  <script src="/shared/anti-flash.js"></script>
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/configuration.css" />
 </head>
 <body>
 
@@ -62,7 +60,7 @@
             <div class="settings-row-control">
               <div class="radio-group" role="radiogroup" aria-label="Selección de tema">
                 <label class="radio-option">
-                  <input type="radio" name="theme" value="light" checked />
+                  <input type="radio" name="theme" value="light" />
                   <span>Claro</span>
                 </label>
                 <label class="radio-option">
@@ -70,7 +68,7 @@
                   <span>Oscuro</span>
                 </label>
                 <label class="radio-option">
-                  <input type="radio" name="theme" value="system" />
+                  <input type="radio" name="theme" value="system" checked />
                   <span>Sistema</span>
                 </label>
               </div>
@@ -119,7 +117,7 @@
           <div class="settings-row">
             <div class="settings-row-info">
               <h3>Sobre el proyecto</h3>
-              <p>UdelarHITS es un foro institucional para la comunidad de la Universidad de la República.</p>
+              <p>UdelarHITS es un foro institucional hecho por estudiantes para la comunidad de la Universidad de la República.</p>
             </div>
             <div class="settings-row-control">
               <a href="/src/about/about.html" class="btn-secondary">Conocer más</a>
@@ -131,10 +129,11 @@
     </div>
   </div>
 
-  <script src="../../shared/escape.js"></script>
-  <script src="./configuration.js"></script>
-  <script src="../../shared/api.js"></script>
-  <script src="../../shared/header.js"></script>
-  <script src="../../shared/leftnav.js"></script>
+  <script src="/shared/escape.js"></script>
+  <script src="/shared/theme.js"></script>
+  <script src="/shared/api.js"></script>
+  <script src="/shared/header.js"></script>
+  <script src="/shared/leftnav.js"></script>
+  <script src="configuration.js"></script>
 </body>
 </html>

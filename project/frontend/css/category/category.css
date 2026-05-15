@@ -74,9 +74,9 @@
 }
 
 .cat-title {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'DM Sans', sans-serif;
   font-size: 22px;
-  font-weight: 400;
+  font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 6px;
   letter-spacing: -0.3px;
@@ -126,16 +126,16 @@
 }
 
 .create-topic-trigger:hover {
-  background: #fafafa;
-  border-color: #d6d8de;
-  box-shadow: 0 1px 2px rgba(20,22,30,0.04);
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-1);
 }
 
 .ct-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #5a8cff);
+  background: linear-gradient(135deg, var(--accent), var(--accent-gradient-end));
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -151,7 +151,7 @@
   align-items: center;
   gap: 6px;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   font-size: 13px;
   font-weight: 600;
   padding: 7px 14px;
@@ -174,7 +174,7 @@
 }
 
 .topic-card:hover {
-  border-color: #c8cbd0;
+  border-color: var(--border-strong);
 }
 
 .topic-avatar {
@@ -280,7 +280,11 @@ a.topic-title:hover {
 
 /* ── SKELETON ── */
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg,
+    var(--skeleton-1) 25%,
+    var(--skeleton-2) 50%,
+    var(--skeleton-1) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.2s infinite;
   border-radius: 4px;

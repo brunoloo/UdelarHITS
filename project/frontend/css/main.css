@@ -7,17 +7,129 @@
 
 /* ── VARIABLES ── */
 :root {
+  /* ── Superficies ─────────────────────────────────── */
   --bg: #f6f7f8;
   --surface: #ffffff;
+  --surface-2: #fafafa;
+
+  /* ── Bordes ──────────────────────────────────────── */
   --border: #edeff1;
+  --border-strong: #d6d8de;
+  --thread-line: #cfd9de;
+
+  /* ── Texto ───────────────────────────────────────── */
   --text-primary: #0f1a2e;
   --text-secondary: #576069;
   --text-muted: #9aa0a6;
+  --text-on-accent: #ffffff;
+
+  --text-primary-testing: #101111;
+  --text-on-accent-testing: #ffffff;
+
+  /* ── Acento ──────────────────────────────────────── */
   --accent: #2563eb;
   --accent-light: #e8f0fe;
+  --accent-strong: #1d4ed8;
+  --accent-gradient-end: #5a8cff;
+  --focus-ring: rgba(37, 99, 235, 0.12);
+
+  /* ── Estado (semánticos) ─────────────────────────── */
   --danger: #d93025;
+
+  --status-error-bg: #fef2f2;
+  --status-error-border: #fecaca;
+  --status-error-text: #dc2626;
+
+  --status-success-bg: #f0fdf4;
+  --status-success-border: #bbf7d0;
+  --status-success-text: #166534;
+
+  /* ── Sombras ─────────────────────────────────────── */
+  --shadow-1: 0 1px 2px rgba(20, 22, 30, 0.04);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.10);
+  --shadow-3: 0 24px 60px rgba(20, 22, 30, 0.20);
+
+  /* ── Overlay (modales) ───────────────────────────── */
+  --modal-overlay: rgba(15, 17, 24, 0.65);
+
+  /* Superficie con transparencia (sticky headers con blur) */
+  --surface-translucent: rgba(255, 255, 255, 0.92); 
+
+  /* Overlays sobre imágenes (no cambian con el tema) */
+  --overlay-dark-sm: rgba(15, 17, 24, 0.42);
+  --overlay-dark-md: rgba(15, 17, 24, 0.55);
+  --overlay-dark-lg: rgba(15, 17, 24, 0.80);
+
+  /* ── Skeleton ────────────────────────────────────── */
+  --skeleton-1: #f0f0f0;
+  --skeleton-2: #e8e8e8;
+
+  /* ── Layout ──────────────────────────────────────── */
   --radius: 8px;
   --header-h: 56px;
+
+  /* ── Warning ──────────────────────────────────────── */
+  --status-warning-bg: #fff3e0;
+  --status-warning-border: #fed7aa;
+  --status-warning-text: #c2410c;
+}
+
+/* ── DARK MODE ───────────────────────────────────────── */
+:root[data-theme="dark"] {
+
+  /* ── Superficies ─────────────────────────────────── */
+  --bg: #0f1419;
+  --surface: #16202a;
+  --surface-2: #1e2d3d;
+  --surface-translucent: rgba(22, 32, 42, 0.92);
+
+  /* ── Bordes ──────────────────────────────────────── */
+  --border: #2a3441;
+  --border-strong: #3d4f60;
+  --thread-line: #2a3441;
+
+  /* ── Texto ───────────────────────────────────────── */
+  --text-primary: #f0f3f6;
+  --text-secondary: #8899a6;
+  --text-muted: #5b7183;
+  --text-on-accent: #ffffff;
+
+  --text-primary-testing: #ffffff;
+  --text-on-accent-testing: #101111;
+
+  /* ── Acento ──────────────────────────────────────── */
+  --accent: #4d8fff;
+  --accent-light: #1a2942;
+  --accent-strong: #3b7ae6;
+  --accent-gradient-end: #7ab0ff;
+  --focus-ring: rgba(77, 143, 255, 0.20);
+
+  /* ── Estado ──────────────────────────────────────── */
+  --danger: #ff6b6b;
+
+  --status-error-bg: #2d1515;
+  --status-error-border: #5c2222;
+  --status-error-text: #ff8080;
+
+  --status-success-bg: #0d2318;
+  --status-success-border: #1a4731;
+  --status-success-text: #4ade80;
+
+  --status-warning-bg: #2a1f0a;
+  --status-warning-border: #4a3510;
+  --status-warning-text: #fbbf24;
+
+  /* ── Sombras ─────────────────────────────────────── */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.40);
+  --shadow-3: 0 24px 60px rgba(0, 0, 0, 0.50);
+
+  /* ── Overlay ─────────────────────────────────────── */
+  --modal-overlay: rgba(0, 0, 0, 0.75);
+
+  /* ── Skeleton ────────────────────────────────────── */
+  --skeleton-1: #1e2d3d;
+  --skeleton-2: #243547;
 }
 
 .page {
@@ -453,7 +565,7 @@ background: var(--accent);
 border-radius: var(--radius);
 padding: 20px 16px;
 text-align: center;
-color: #fff;
+color: var(--text-on-accent);
 }
 
 .join-banner h3 {
@@ -473,7 +585,7 @@ line-height: 1.5;
 display: block;
 padding: 8px;
 border-radius: 20px;
-background: #fff;
+background: var(--text-on-accent);
 color: var(--accent);
 font-family: 'DM Sans', sans-serif;
 font-size: 13px;
@@ -490,7 +602,7 @@ display: block;
 padding: 8px;
 border-radius: 20px;
 border: 1px solid rgba(255,255,255,0.5);
-color: #fff;
+color: var(--text-on-accent);
 font-family: 'DM Sans', sans-serif;
 font-size: 13px;
 font-weight: 500;
@@ -619,7 +731,7 @@ color: var(--accent);
   transition: background 0.15s, border-color 0.15s;
 }
 
-.btn-ghost:hover { background: var(--bg); border-color: #ccc; }
+.btn-ghost:hover { background: var(--bg); border-color: var(--border-strong); }
 
 .btn-primary {
   padding: 6px 16px;
@@ -629,7 +741,7 @@ color: var(--accent);
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
   font-weight: 500;
-  color: #fff;
+  color: var(--text-on-accent);
   cursor: pointer;
   text-decoration: none;
   transition: opacity 0.15s;
@@ -653,12 +765,13 @@ color: var(--accent);
 
 .btn:hover { opacity: 0.88; }
 
-.btn-register { background: #000; color: #fff; }
-.btn-login    { background: #000; color: #fff; }
-.btn-logout   { background: #000; color: #fff; }
-.btn-test     { background: #000; color: #fff; }
-.btn-delete   { background: #5c0909; color: #fff; }
-.btn-volver   { background: #000; color: #fff; }
+/* ── BOTONES TESTING ── */
+.btn-register { background: var(--text-primary-testing); color: var(--text-on-accent-testing); }
+.btn-login    { background: var(--text-primary-testing); color: var(--text-on-accent-testing); }
+.btn-logout   { background: var(--text-primary-testing); color: var(--text-on-accent-testing); }
+.btn-test     { background: var(--text-primary-testing); color: var(--text-on-accent-testing); }
+.btn-delete   { background: var(--danger); color: var(--text-on-accent); }
+.btn-volver   { background: var(--text-primary-testing); color: var(--text-on-accent-testing); }
 
 /* ── FORMULARIOS ── */
 form {
@@ -760,7 +873,7 @@ main {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  box-shadow: var(--shadow-3);
   z-index: 200;
   max-height: 400px;
   overflow-y: auto;
@@ -854,4 +967,36 @@ main {
   height: 1px;
   background: var(--border);
   margin: 4px 0;
+}
+
+/* ── TOAST GLOBAL ────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  display: none;
+  z-index: 9999;
+  box-shadow: var(--shadow-2);
+  border: 1px solid transparent;
+}
+
+.toast.is-visible {
+  display: block;
+}
+
+.toast--error {
+  background: var(--status-error-bg);
+  border-color: var(--status-error-border);
+  color: var(--status-error-text);
+}
+
+.toast--success {
+  background: var(--status-success-bg);
+  border-color: var(--status-success-border);
+  color: var(--status-success-text);
 }
