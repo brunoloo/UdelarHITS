@@ -20,3 +20,29 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+// ── Selector de tema ───────────────────────────────────
+const themeRadios = document.querySelectorAll('input[name="theme"]');
+
+// Marcar el radio correcto al cargar
+function syncThemeSelector() {
+  const saved = localStorage.getItem('theme');
+  const value = saved || 'system';  
+  
+  themeRadios.forEach(radio => {
+    radio.checked = (radio.value === value);
+  });
+}
+
+syncThemeSelector();
+
+// Escuchar cambios
+themeRadios.forEach(radio => {
+  radio.addEventListener('change', () => {
+    if (radio.value === 'system') {
+      window.clearTheme();
+    } else {
+      window.setTheme(radio.value);
+    }
+  });
+});

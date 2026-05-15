@@ -13,7 +13,7 @@
   padding: 68px;
   width: 100%;
   max-width: 600px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-2);
 }
  
 .auth-brand {
@@ -80,7 +80,7 @@
 .form-input:focus {
   border-color: var(--accent);
   background: var(--surface);
-  box-shadow: 0 0 0 3px rgba(0, 87, 255, 0.08);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
  
 .form-input::placeholder { color: var(--text-muted); }
@@ -121,7 +121,7 @@
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 500;
-  color: #fff;
+  color: var(--text-on-accent);
   cursor: pointer;
   transition: opacity 0.15s;
   margin-top: 4px;
@@ -139,16 +139,16 @@
 }
  
 .auth-message.error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: var(--danger);
+  background: var(--status-error-bg);
+  border: 1px solid var(--status-error-border);
+  color: var(--status-error-text);
   display: block;
 }
- 
+
 .auth-message.success {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #166534;
+  background: var(--status-success-bg);
+  border: 1px solid var(--status-success-border);
+  color: var(--status-success-text);
   display: block;
 }
  

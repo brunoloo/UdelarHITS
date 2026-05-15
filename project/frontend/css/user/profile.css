@@ -19,7 +19,7 @@
 
 .profile-banner {
   aspect-ratio: 4 / 1;
-  background: linear-gradient(135deg, var(--accent) 0%, #4a5687 50%, #6b5d8e 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, #4a5687 50%, #6b5d8e 100%); 
   border-radius: 20px 20px 0 0;
   display: flex;
   align-items: center;
@@ -74,7 +74,7 @@
 .avatar-modal {
   position: fixed;
   inset: 0;
-  background: rgba(15, 17, 24, 0.65);
+  background: var(--modal-overlay);
   z-index: 1000;
   display: none;
   align-items: center;
@@ -88,7 +88,7 @@
   left: 16px;
   background: none;
   border: none;
-  color: #fff;
+  color: var(--text-on-accent);
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
@@ -189,7 +189,7 @@
 
 .profile-social-btn:hover {
   background: var(--bg);
-  border-color: #ccc;
+  border-color: var(--border-strong);
 }
 
 .profile-social-btn strong {
@@ -202,7 +202,7 @@
   border-radius: 20px;
   border: none;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
   font-weight: 600;
@@ -217,8 +217,8 @@
 }
 
 .btn-follow--unfollow {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--status-error-bg);
+  border: 1px solid var(--status-error-border);
   color: var(--danger) !important;
 }
 
@@ -268,7 +268,7 @@
   transition: border-color 0.15s;
 }
 
-.cat:hover { border-color: #c8cbd0; }
+.cat:hover { border-color: var(--border-strong); }
 
 .cat-icon {
   width: 36px;

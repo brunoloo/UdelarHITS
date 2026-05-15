@@ -1,11 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap');
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 body {
   background: var(--bg);
   color: var(--text-primary);
@@ -167,13 +159,13 @@ body {
 }
 
 .rule-icon--ok {
-  background: #e6f4ea;
-  color: #1a7f37;
+  background: var(--status-success-bg);
+  color: var(--status-success-text);
 }
 
 .rule-icon--lock {
-  background: #fff3e0;
-  color: #e65100;
+  background: var(--status-warning-bg);
+  color: var(--status-warning-text);
 }
 
 /* ── Info-cards (links a sub-páginas) ──────────────────── */
@@ -216,7 +208,7 @@ body {
 
 .info-card:hover .info-card-icon {
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .info-card-body {
@@ -299,7 +291,7 @@ body {
   height: 28px;
   border-radius: 50%;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   font-size: 13px;
   font-weight: 700;
   display: flex;
@@ -347,9 +339,9 @@ body {
   margin-top: 3px;
 }
 
-.tag--pending  { background: #fff8e1; color: #b45309; }
-.tag--accepted { background: #e6f4ea; color: #1a7f37; }
-.tag--rejected { background: #fce8e6; color: var(--danger); }
+.tag--pending  { background: var(--status-warning-bg);  color: var(--status-warning-text); }
+.tag--accepted { background: var(--status-success-bg);  color: var(--status-success-text); }
+.tag--rejected { background: var(--status-error-bg);    color: var(--status-error-text); }
 
 /* ── Divider ───────────────────────────────────────────── */
 .divider {
@@ -396,7 +388,7 @@ body {
   align-items: center;
   gap: 6px;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   font-size: 14px;
   font-weight: 600;
   padding: 10px 20px;

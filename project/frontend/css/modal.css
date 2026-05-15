@@ -1,7 +1,7 @@
 /* ───── Backdrop ───── */
 .modal-backdrop {
   position: fixed; inset: 0;
-  background: rgba(15, 17, 24, 0.65);
+  background: var(--modal-overlay);
   backdrop-filter: blur(3px);
   display: none;
   align-items: flex-start;
@@ -17,11 +17,10 @@
 
 /* ───── Card ───── */
 .modal {
-  background: #fff;
+  background: var(--surface);
   border-radius: 16px;
   max-width: 100%;
-  box-shadow: 0 24px 60px rgba(15,17,24,0.35),
-              0 4px 12px rgba(15,17,24,0.15);
+  box-shadow: var(--shadow-3), var(--shadow-2);
   overflow: hidden;
   animation: pop .18s ease;
 }
@@ -33,7 +32,7 @@
   align-items: center;
   gap: 12px;
   position: sticky; top: 0;
-  background: rgba(255,255,255,0.92);
+  background: var(--surface-translucent);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
   z-index: 2;
@@ -67,7 +66,7 @@
   border-radius: 999px;
   border: 0;
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   font-family: 'DM Sans', sans-serif;
   font-size: 13.5px;
   font-weight: 600;
@@ -87,16 +86,18 @@
 
 /* ───── Campos ───── */
 .edit-field {
-  border: 1px solid #ccd0d5;
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
   padding: 8px 10px 6px;
-  background: #fff;
+  background: var(--surface);
   transition: border-color .12s, box-shadow .12s;
 }
+
 .edit-field:focus-within {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
 }
+
 .edit-field-label {
   display: flex;
   justify-content: space-between;
@@ -106,9 +107,11 @@
   color: var(--text-muted);
   margin-bottom: 2px;
 }
+
 .edit-field:focus-within .edit-field-label {
   color: var(--accent);
 }
+
 .edit-field input,
 .edit-field textarea {
   width: 100%;
@@ -121,14 +124,17 @@
   padding: 0;
   resize: none;
 }
+
 .edit-field textarea {
   min-height: 70px;
   line-height: 1.45;
 }
+
 .edit-field-counter {
   font-size: 12px;
   color: var(--text-muted);
 }
+
 .edit-field-counter.limit { color: var(--danger); }
 
 /* ───── Animaciones ───── */

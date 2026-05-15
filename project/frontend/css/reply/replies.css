@@ -20,7 +20,7 @@
   --comment-avatar-size: 36px;
   --comment-gutter-width: 36px;
   --comment-row-gap: 12px;
-  --comment-thread-line: #cfd9de;
+  --comment-thread-line: var(--thread-line);
 }
 
 /* ──────────────────────────────────────────────
@@ -173,7 +173,7 @@
 }
 
 .comment-card--clickable:hover {
-  border-color: #c8cbd0;
+  border-color: var(--border-strong);
 }
 
 /* ──────────────────────────────────────────────
