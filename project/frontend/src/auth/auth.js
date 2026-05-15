@@ -55,6 +55,8 @@ if (params.get("msg") === "ver-usuarios") {
   showMessage("error", "Debés iniciar sesión para crear un tema");
 } else if (params.get("msg") === "crear-comentario") {
   showMessage("error", "Debés iniciar sesión para crear un comentario");
+} else if (params.get("msg") === "error") {
+  showMessage("error", "Ha ocurrido un error inesperado");
 }
 
 const loginForm = document.getElementById('loginForm');
