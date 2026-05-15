@@ -25,7 +25,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: true,
     directives: {
-      'img-src': ["'self'", 'data:', 'blob:', 'https:'],
+      'img-src': ["'self'", 'data:', 'blob:', 'https:'], // https://res.cloudinary.com poner eso en vez de https para mayor protección
       'script-src-attr': ["'none'"]
     }
   }
