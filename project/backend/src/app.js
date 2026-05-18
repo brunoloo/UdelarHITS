@@ -53,7 +53,7 @@ app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
 // Rate limit estricto en endpoints de auth para frenar brute-force
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 1,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
@@ -64,7 +64,7 @@ app.use('/api/auth/register', authLimiter);
 
 // Rate limit para limitar búsquedas
 const searchLimiter = rateLimit({
-  windowMs: 60 * 1000,
+  windowMs: 1,
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
@@ -74,7 +74,7 @@ app.use('/api/users/search', searchLimiter);
 
 // Rate limit general para toda la API
 const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,
+  windowMs: 1,
   max: 120,
   standardHeaders: true,
   legacyHeaders: false

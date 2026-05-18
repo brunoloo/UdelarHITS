@@ -79,7 +79,7 @@ async function loadCategory() {
 
   // Header
   document.getElementById('catTitle').textContent = cat.titulo;
-  document.getElementById('catDesc').textContent = cat.descripcion;
+  initReadMore(document.getElementById('catDesc'), cat.descripcion || ''); 
 
   // Etiquetas
   const etiquetas = parseEtiquetas(cat.etiquetas);
@@ -271,7 +271,7 @@ async function loadCategory() {
   const commentBodyCounter = document.getElementById('commentBodyCounter');
 
   function syncCommentCounters() {
-    commentBodyCounter.textContent = commentBodyInput.value.length + ' / 2000';
+    commentBodyCounter.textContent = commentBodyInput.value.length + ' / 5000';
     const ok = commentBodyInput.value.trim().length >= 1;
     submitCommentBtn.disabled = !ok;
   }

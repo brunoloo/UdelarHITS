@@ -131,6 +131,10 @@
   box-shadow: var(--shadow-1);
 }
 
+.create-cat-panel {
+  margin-bottom: 10px;
+}
+
 .ct-avatar {
   width: 36px;
   height: 36px;

@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.syncCatCounters = function() {
     catTitleCounter.textContent = catTitle.value.length + ' / 100';
-    catDescCounter.textContent  = catDesc.value.length  + ' / 300';
+    catDescCounter.textContent  = catDesc.value.length  + ' / 500';
     const ok = catTitle.value.trim().length >= 3 
             && catDesc.value.trim().length >= 1 
             && selectedTags.length >= 1;
