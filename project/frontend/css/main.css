@@ -132,6 +132,15 @@
   --skeleton-2: #243547;
 }
 
+:root[data-theme="dark"] table a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+:root[data-theme="dark"] table a:hover {
+  text-decoration: underline;
+}
+
 .page {
   margin-left: 200px;
   padding: calc(var(--header-h) + 24px) 210px 05px 30px;
@@ -999,4 +1008,20 @@ main {
   background: var(--status-success-bg);
   border-color: var(--status-success-border);
   color: var(--status-success-text);
+}
+
+/* ── GENERAL ────────────────────────────────────── */
+
+.bio-link {
+  color: var(--accent);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.bio-link:visited {
+  color: var(--accent);
+}
+
+.bio-link:hover {
+  color: var(--accent-strong);
 }

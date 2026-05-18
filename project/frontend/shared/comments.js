@@ -11,8 +11,11 @@
 //   - Los ancestros NO son clickeables para profundizar. Mantienen Responder y "X respuestas"
 //     (este último como display informativo, sin acción).
 
-const CHUNK_CHARS = 500;
-const CHUNK_LINES = 8;
+
+const INITIAL_LINES = 8;
+const EXPAND_LINES = 12;
+const INITIAL_CHARS = 500;
+const EXPAND_CHARS = 750;
 
 let commentStack = [];
 let currentMeRes = null;
@@ -25,28 +28,31 @@ function setCommentConfig({ meRes, reloadFn }) {
 
 function truncateText(texto) {
   const lines = texto.split('\n');
-  const needsTruncate = texto.length > CHUNK_CHARS || lines.length > CHUNK_LINES;
+  const needsTruncateLines = lines.length > INITIAL_LINES;
+  const needsTruncateChars = texto.length > INITIAL_CHARS;
 
-  if (!needsTruncate) return { visible: texto, truncated: false };
+  if (!needsTruncateLines && !needsTruncateChars) return { visible: texto, truncated: false };
 
-  const byChars = texto.slice(0, CHUNK_CHARS);
-  const byLines = lines.slice(0, CHUNK_LINES).join('\n');
-  const visible = byChars.length < byLines.length ? byChars : byLines;
+  if (needsTruncateLines) {
+    return { visible: lines.slice(0, INITIAL_LINES).join('\n') + '...', truncated: true, mode: 'lines' };
+  }
 
-  return { visible: visible + '...', truncated: true };
+  return { visible: texto.slice(0, INITIAL_CHARS) + '...', truncated: true, mode: 'chars' };
 }
 
 // ──────────────────────────────────────────────
 // Render de un comentario (template reutilizable)
 // ──────────────────────────────────────────────
 // role: 'ancestor' | 'reply'
-//   - ancestor: parte del camino, NO clickeable para profundizar, "X respuestas" sin acción.
+//   - ancestor: parte del camino, NO clickeable para profundizar, sin acción.
 //   - reply: respuesta directa, clickeable para profundizar.
 // index: posición dentro de su grupo (para IDs únicos del "Leer más").
 // indexPrefix: 'a' para ancestros, 'r' para replies (evita colisión de IDs).
 function renderCommentCard(c, role, index, indexPrefix) {
   const texto = c.cuerpo || '';
-  const { visible, truncated } = truncateText(texto);
+  const result = truncateText(texto);
+  const { visible, truncated } = result;
+  const mode = result.mode || 'lines';
   const replyCount = Number(c.contador_respuestas) || 0;
   const textId = `comment-text-${indexPrefix}-${index}`;
 
@@ -81,7 +87,7 @@ function renderCommentCard(c, role, index, indexPrefix) {
           <span>·</span>
           <span>${escapeHtml(timeAgo(c.fecha_creacion))}</span>
         </div>
-        <div class="comment-text" id="${textId}" data-full="${escapeHtml(texto)}">${escapeHtml(visible)}</div>
+        <div class="comment-text" id="${textId}" data-full="${escapeAttr(texto)}" data-mode="${truncated ? mode : ''}" data-visible="${truncated ? (mode === 'lines' ? INITIAL_LINES : INITIAL_CHARS) : 0}">${renderizarBioConLinks(visible)}</div>
         ${truncated ? `<button class="read-more-btn" data-text-id="${textId}">Leer más</button>` : ''}
         <div class="comment-actions">
           <button class="comment-action-btn reply-btn" data-comment-id="${c.id}">
@@ -173,26 +179,50 @@ function attachReadMoreListeners(container) {
       if (!el) return;
 
       const fullText = el.dataset.full;
-      const currentText = el.textContent.replace(/\.\.\.$/, '');
+      const mode = el.dataset.mode;
+      const currentVisible = parseInt(el.dataset.visible) || 0;
 
-      if (currentText === fullText) {
-        const { visible } = truncateText(fullText);
-        el.textContent = visible;
-        btn.textContent = 'Leer más';
-        return;
-      }
+      if (mode === 'lines') {
+        const allLines = fullText.split('\n');
 
-      const currentLines = currentText.split('\n').length;
-      const allLines = fullText.split('\n');
-      const nextByLines = allLines.slice(0, currentLines + CHUNK_LINES).join('\n');
-      const nextByChars = fullText.slice(0, currentText.length + CHUNK_CHARS);
-      const next = nextByChars.length < nextByLines.length ? nextByChars : nextByLines;
+        // Si ya está completamente expandido, colapsar
+        if (currentVisible >= allLines.length) {
+          el.dataset.visible = INITIAL_LINES;
+          el.innerHTML = renderizarBioConLinks(allLines.slice(0, INITIAL_LINES).join('\n') + '...');
+          btn.textContent = 'Leer más';
+          return;
+        }
 
-      if (next.length >= fullText.length) {
-        el.textContent = fullText;
-        btn.textContent = 'Leer menos';
+        const nextLines = Math.min(currentVisible + EXPAND_LINES, allLines.length);
+        el.dataset.visible = nextLines;
+
+        if (nextLines >= allLines.length) {
+          el.innerHTML = renderizarBioConLinks(fullText);
+          btn.textContent = 'Leer menos';
+        } else {
+          el.innerHTML = renderizarBioConLinks(allLines.slice(0, nextLines).join('\n') + '...');
+        }
+
       } else {
-        el.textContent = next + '...';
+        // mode === 'chars'
+
+        // Si ya está completamente expandido, colapsar
+        if (currentVisible >= fullText.length) {
+          el.dataset.visible = INITIAL_CHARS;
+          el.innerHTML = renderizarBioConLinks(fullText.slice(0, INITIAL_CHARS) + '...');
+          btn.textContent = 'Leer más';
+          return;
+        }
+
+        const nextChars = Math.min(currentVisible + EXPAND_CHARS, fullText.length);
+        el.dataset.visible = nextChars;
+
+        if (nextChars >= fullText.length) {
+          el.innerHTML = renderizarBioConLinks(fullText);
+          btn.textContent = 'Leer menos';
+        } else {
+          el.innerHTML = renderizarBioConLinks(fullText.slice(0, nextChars) + '...');
+        }
       }
     });
   });
@@ -225,9 +255,9 @@ function attachReplyListeners(container) {
         <div class="edit-field">
           <div class="edit-field-label">
             <span>Respuesta (*)</span>
-            <span class="edit-field-counter inline-reply-counter">0 / 2000</span>
+            <span class="edit-field-counter inline-reply-counter">0 / 5000</span>
           </div>
-          <textarea class="inline-reply-input" maxlength="2000" rows="3" placeholder="Escribí tu respuesta"></textarea>
+          <textarea class="inline-reply-input" maxlength="5000" rows="3" placeholder="Escribí tu respuesta"></textarea>
         </div>
         <div class="inline-reply-actions">
           <button class="cc-cancel inline-reply-cancel">Cancelar</button>
@@ -248,7 +278,7 @@ function attachReplyListeners(container) {
       input.focus();
 
       input.addEventListener('input', () => {
-        counter.textContent = input.value.length + ' / 2000';
+        counter.textContent = input.value.length + ' / 5000';
         submitBtn.disabled = input.value.trim().length < 1;
       });
 

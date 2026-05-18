@@ -196,6 +196,7 @@ margin-bottom: 10px;
 /* Crear categoría — barra trigger */
 .create-cat {
   margin: 0 0 8px 0;
+  margin-bottom: 10px;
 }
 
 .create-cat-trigger {

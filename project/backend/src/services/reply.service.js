@@ -33,8 +33,8 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     }
   }
 
-  if (cuerpo.trim().length > 2000) {
-    const err = new Error('El comentario superó el máximo de 2000 caracteres');
+  if (cuerpo.trim().length > 5000) {
+    const err = new Error('El comentario superó el máximo de 5000 caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
   }

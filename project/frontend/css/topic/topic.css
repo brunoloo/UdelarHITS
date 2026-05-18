@@ -110,6 +110,10 @@
   margin: 0 0 10px 0;
 }
 
+.create-cat-panel.open {
+  margin-bottom: 10px;
+}
+
 .create-topic-trigger {
   width: 100%;
   background: var(--surface);

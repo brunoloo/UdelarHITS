@@ -29,50 +29,7 @@ async function loadTopic() {
 
   // Header del tema
   document.getElementById('topicTitle').textContent = topic.titulo;
-  const topicBodyEl = document.getElementById('topicBody');
-  const topicText = topic.cuerpo || '';
-  const TOPIC_CHUNK_CHARS = 750;
-  const TOPIC_CHUNK_LINES = 12;
-  const topicLines = topicText.split('\n');
-  const topicNeedsTruncate = topicText.length > TOPIC_CHUNK_CHARS || topicLines.length > TOPIC_CHUNK_LINES;
-
-  if (topicNeedsTruncate) {
-    const byChars = topicText.slice(0, TOPIC_CHUNK_CHARS);
-    const byLines = topicLines.slice(0, TOPIC_CHUNK_LINES).join('\n');
-    const visible = byChars.length < byLines.length ? byChars : byLines;
-    topicBodyEl.textContent = visible + '...';
-
-    const readMoreBtn = document.createElement('button');
-    readMoreBtn.className = 'read-more-btn';
-    readMoreBtn.textContent = 'Leer más';
-    topicBodyEl.after(readMoreBtn);
-
-    readMoreBtn.addEventListener('click', () => {
-      const currentText = topicBodyEl.textContent.replace(/\.\.\.$/, '');
-
-      if (currentText === topicText) {
-        const truncated = byChars.length < byLines.length ? byChars : byLines;
-        topicBodyEl.textContent = truncated + '...';
-        readMoreBtn.textContent = 'Leer más';
-        return;
-      }
-
-      const currentLines = currentText.split('\n').length;
-      const allLines = topicText.split('\n');
-      const nextByLines = allLines.slice(0, currentLines + TOPIC_CHUNK_LINES).join('\n');
-      const nextByChars = topicText.slice(0, currentText.length + TOPIC_CHUNK_CHARS);
-      const next = nextByChars.length < nextByLines.length ? nextByChars : nextByLines;
-
-      if (next.length >= topicText.length) {
-        topicBodyEl.textContent = topicText;
-        readMoreBtn.textContent = 'Leer menos';
-      } else {
-        topicBodyEl.textContent = next + '...';
-      }
-    });
-  } else {
-    topicBodyEl.textContent = topicText;
-  }
+  initReadMore(document.getElementById('topicBody'), topic.cuerpo || ''); 
 
   // Sidebar autor
   const modList = document.getElementById('modList');
@@ -165,7 +122,7 @@ async function loadTopic() {
   const commentBodyCounter = document.getElementById('commentBodyCounter');
 
   function syncCommentCounters() {
-    commentBodyCounter.textContent = commentBodyInput.value.length + ' / 2000';
+    commentBodyCounter.textContent = commentBodyInput.value.length + ' / 5000';
     submitCommentBtn.disabled = commentBodyInput.value.trim().length < 1;
   }
 

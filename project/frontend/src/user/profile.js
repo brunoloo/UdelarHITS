@@ -265,8 +265,14 @@ function initEditModal(user) {
     const res = await apiPatch("/users/me", body);
     if (res.ok) {
       document.getElementById("profileNombre").textContent = res.data.user.nombre;
-      document.getElementById("profileBio").textContent = res.data.user.biografia || "";
-      closeModal();
+      
+      const bioElement = document.getElementById("profileBio");
+      if (res.data.user.biografia) {
+        bioElement.innerHTML = renderizarBioConLinks(res.data.user.biografia);
+      } else {
+        bioElement.textContent = "";
+      }
+      closeModal(); 
       window.showToast && window.showToast("Perfil actualizado", "success");
     } else {
       window.showToast && window.showToast(res.message || "Error al guardar", "error");
@@ -315,10 +321,15 @@ async function loadProfile() {
     categories = res.data.categories;
   }
 
-  document.getElementById("profileNombre").textContent = user.nombre;
-  document.getElementById("profileNickname").textContent = `@${user.nickname}`;
-  document.getElementById("profileBio").textContent = user.biografia || "";
-  document.getElementById("profileAvatar").src = user.url_imagen || `${SERVER_BASE}/assets/default-user.jpg`;
+    document.getElementById("profileNombre").textContent = user.nombre;
+    document.getElementById("profileNickname").textContent = `@${user.nickname}`;
+    const bioElement = document.getElementById("profileBio");
+    if (user.biografia) {
+      bioElement.innerHTML = renderizarBioConLinks(user.biografia);
+    } else {
+      bioElement.textContent = "";
+    }
+    document.getElementById("profileAvatar").src = user.url_imagen || `${SERVER_BASE}/assets/default-user.jpg`;
   // Banner
   const bannerImg = document.getElementById("profileBannerImg");
   if (user.url_banner) {
