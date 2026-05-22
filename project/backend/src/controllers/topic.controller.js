@@ -61,8 +61,13 @@ const updateTopic = async (req, res) => {
 const deleteTopic = async (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await deleteTopicService(req.user.id, req.user.rol, id);
-    return res.status(200).json({ ok: true, data: updated });
+    const result = await deleteTopicService(req.user.id, req.user.rol, id);
+
+    const message = result.action === 'deleted'
+      ? 'El tema fue eliminado definitivamente'
+      : 'El tema fue desactivado porque contenía comentarios de otros usuarios';
+
+    return res.status(200).json({ ok: true, message, data: result });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
     if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });

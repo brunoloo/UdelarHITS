@@ -50,11 +50,13 @@ const getCategoryById = async (req, res) => {
 const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await deleteCategoryService(req.user.id, req.user.rol, id);
-    return res.status(200).json({ 
-      ok: true,
-      message: 'La categoría se desactivo correctamente', 
-      data: updated });
+    const result = await deleteCategoryService(req.user.id, req.user.rol, id);
+
+    const message = result.action === 'deleted'
+      ? 'La categoría fue eliminada definitivamente'
+      : 'La categoría fue desactivada porque contenía actividad de otros usuarios';
+
+    return res.status(200).json({ ok: true, message, data: result });
   } catch (error) {
     if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });

@@ -105,6 +105,17 @@
   word-break: break-word;
 }
 
+.cat-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cat-meta .btn-ghost {
+  margin-left: auto;
+}
+
 /* ── CREATE COMMENT TRIGGER ── */
 .create-topic {
   margin: 0 0 10px 0;
@@ -225,4 +236,11 @@
   border-radius: var(--radius);
   padding: 16px;
   margin-bottom: 10px;
+}
+
+.topic-header-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }

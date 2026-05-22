@@ -36,7 +36,7 @@ tableBody.addEventListener('click', async (e) => {
   const confirmado = confirm(`¿Seguro que querés eliminar la categoría "${titulo}"? Esta acción la marcará como inactiva.`);
   if (!confirmado) return;
 
-  const result = await apiPatch(`/categories/${id}/delete`);
+  const result = await apiDelete(`/categories/${id}/delete`);
 
   if (result.ok) {
     loadCategories();

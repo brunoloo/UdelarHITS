@@ -21,63 +21,123 @@ async function loadTopic() {
   // Título de la página
   document.title = `${topic.titulo} — UdelarHITS`;
 
+  
+  let meRes = null;
+  try { meRes = await apiGet('/users/me'); } catch (e) {}
+  const isOwner = meRes?.ok && (meRes.data.user.id === topic.autor_id || meRes.data.user.rol === 'admin');
+
+  const catInactiva = topic.categoria_estado === 'inactiva';
+
   // Breadcrumb
-  document.getElementById('breadcrumbTitle').textContent = topic.titulo;
   const breadcrumbCat = document.getElementById('breadcrumbCategory');
-  breadcrumbCat.textContent = topic.categoria_titulo || 'Categoría';
+  breadcrumbCat.textContent = catInactiva ? 'Categoría inactiva' : (topic.categoria_titulo || 'Categoría');
   breadcrumbCat.href = `/src/category/category.html?id=${encodeURIComponent(topic.categoria_id)}`;
 
-  // Header del tema
-  document.getElementById('topicTitle').textContent = topic.titulo;
-  initReadMore(document.getElementById('topicBody'), topic.cuerpo || ''); 
-
-  // Sidebar autor
-  const modList = document.getElementById('modList');
-  modList.innerHTML = `
-    <div class="mod-item">
-      <div class="mod-avatar">
-        <img src="${topic.autor_url_imagen || `${SERVER_BASE}/assets/default-user.jpg`}" />
+  if (topic.estado === 'inactivo') {
+    // Banner informativo en lugar del header
+    document.querySelector('.topic-header').innerHTML = `
+      <div class="cat-inactive-banner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div class="cat-inactive-text">
+          <span class="cat-inactive-title">Este tema ya no está disponible</span>
+          <span class="cat-inactive-desc">El contenido publicado se preserva por la <a href="/src/about/content_policies.html" target="_blank">política de preservación de contenido</a>.</span>
+        </div>
       </div>
-      <div class="mod-info">
-        <span class="mod-name"><a href="/src/user/profile.html?nickname=${encodeURIComponent(topic.autor_nickname)}">${escapeHtml(topic.autor_nickname)}</a></span>
-        <span class="mod-role">creador</span>
-      </div>
-    </div>
-  `;
+    `;
 
-  modList.querySelectorAll('.mod-avatar img').forEach(img => {
-    img.addEventListener('error', () => {
-      img.src = SERVER_BASE + '/assets/default-user.jpg';
+    // Ocultar sidebar
+    document.querySelector('.sidebar').style.display = 'none';
+
+    // Ocultar trigger de crear comentario
+    document.querySelectorAll('.create-topic').forEach(el => el.style.display = 'none');
+
+    // Breadcrumb genérico
+    document.getElementById('breadcrumbTitle').textContent = 'Tema inactivo';
+    document.title = 'Tema inactivo — UdelarHITS';
+
+  } else {
+    // Header normal
+    document.getElementById('breadcrumbTitle').textContent = topic.titulo;
+    document.getElementById('topicTitle').textContent = topic.titulo;
+    initReadMore(document.getElementById('topicBody'), topic.cuerpo || '');
+    // Menú de reporte del tema
+    if (topic.estado !== 'inactivo') {
+      document.getElementById('topicMenuWrap').style.display = '';
+
+      const topicMenuBtn = document.querySelector('#topicMenuWrap .comment-menu-btn');
+      const topicDropdown = document.getElementById('topicDropdown');
+
+      topicMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        topicDropdown.classList.toggle('open');
+      });
+
+      document.addEventListener('click', () => {
+        topicDropdown.classList.remove('open');
+      });
+
+      document.getElementById('reportTopicBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        topicDropdown.classList.remove('open');
+        showToast('Función de reportar próximamente', 'info');
+      });
+    }
+  }
+
+  if (topic.estado !== 'inactivo') {
+    // Sidebar autor
+    const modList = document.getElementById('modList');
+    modList.innerHTML = `
+      <div class="mod-item">
+        <div class="mod-avatar">
+          <img src="${topic.autor_url_imagen || `${SERVER_BASE}/assets/default-user.jpg`}" />
+        </div>
+        <div class="mod-info">
+          <span class="mod-name"><a href="/src/user/profile.html?nickname=${encodeURIComponent(topic.autor_nickname)}">${escapeHtml(topic.autor_nickname)}</a></span>
+          <span class="mod-role">creador</span>
+        </div>
+      </div>
+    `;
+
+    modList.querySelectorAll('.mod-avatar img').forEach(img => {
+      img.addEventListener('error', () => {
+        img.src = SERVER_BASE + '/assets/default-user.jpg';
+      });
     });
-  });
 
-  // Sidebar stats
-  document.getElementById('statCreado').textContent = new Date(topic.fecha_creacion).toLocaleDateString('es-UY');
+    // Sidebar stats
+    document.getElementById('statCreado').textContent = new Date(topic.fecha_creacion).toLocaleDateString('es-UY');
 
-  // Sidebar categoría
-  const catLink = document.getElementById('sidebarCatLink');
-  catLink.href = `/src/category/category.html?id=${encodeURIComponent(topic.categoria_id)}`;
-  document.getElementById('sidebarCatName').textContent = topic.categoria_titulo || 'Categoría';
+    // Sidebar categoría
+    const catLink = document.getElementById('sidebarCatLink');
+    catLink.href = `/src/category/category.html?id=${encodeURIComponent(topic.categoria_id)}`;
+    document.getElementById('sidebarCatName').textContent = catInactiva ? 'Categoría inactiva' : (topic.categoria_titulo || 'Categoría');
+  }
 
   // Cargar comentarios del tema
   const repliesRes = await apiGet(`/replies/topic/${id}`);
   const comments = repliesRes?.ok ? repliesRes.data : [];
   document.getElementById('statComentarios').textContent = comments.length;
+  document.getElementById('countComentarios').textContent = comments.length;
 
-  // Configurar módulo de comentarios
-  let meRes = null;
-  try { meRes = await apiGet('/users/me'); } catch (e) {}
 
   setCommentConfig({
     meRes,
     reloadFn: async () => {
       const repliesUpdated = await apiGet(`/replies/topic/${id}`);
       const updatedComments = repliesUpdated?.ok ? repliesUpdated.data : [];
-      document.getElementById('statComentarios').textContent = updatedComments.length;
-      document.getElementById('topicMeta').innerHTML = `
-        <span class="cat-meta-item"><strong>${updatedComments.length}</strong> ${updatedComments.length === 1 ? 'comentario' : 'comentarios'}</span>
-        <span class="cat-meta-item">creado <strong>${escapeHtml(timeAgo(topic.fecha_creacion))}</strong></span>
-      `;
+      const statEl = document.getElementById('statComentarios');
+      if (statEl) statEl.textContent = updatedComments.length;
+      const countEl = document.getElementById('countComentarios');
+      if (countEl) countEl.textContent = updatedComments.length;
+      const metaEl = document.getElementById('topicMeta');
+      if (metaEl) {
+        const countSpan = metaEl.querySelector('.cat-meta-item strong');
+        if (countSpan) {
+          countSpan.textContent = updatedComments.length;
+          countSpan.nextSibling.textContent = ` ${updatedComments.length === 1 ? 'comentario' : 'comentarios'}`;
+        }
+      }
       renderComments(updatedComments, null);
     }
   });
@@ -86,10 +146,17 @@ async function loadTopic() {
 
   // Meta del tema
   const commentCount = comments.length;
-  document.getElementById('topicMeta').innerHTML = `
-    <span class="cat-meta-item"><strong>${commentCount}</strong> ${commentCount === 1 ? 'comentario' : 'comentarios'}</span>
-    <span class="cat-meta-item">creado <strong>${escapeHtml(timeAgo(topic.fecha_creacion))}</strong></span>
-  `;
+  if (topic.estado !== 'inactivo') {
+    const editBtnHtml = isOwner
+      ? `<button class="btn-ghost" id="editTopicBtn">Editar tema</button>`
+      : '';
+
+    document.getElementById('topicMeta').innerHTML = `
+      <span class="cat-meta-item"><strong>${commentCount}</strong> ${commentCount === 1 ? 'comentario' : 'comentarios'}</span>
+      <span class="cat-meta-item">creado <strong>${escapeHtml(timeAgo(topic.fecha_creacion))}</strong></span>
+      ${editBtnHtml}
+    `;
+  }
 
   // Avatar de los triggers
   const ctAvatars = document.querySelectorAll('.ct-avatar');
@@ -172,6 +239,104 @@ async function loadTopic() {
     submitCommentBtn.disabled = false;
     submitCommentBtn.textContent = 'Comentar';
   });
+  // ── Editar y eliminar tema ──
+  if (isOwner && topic.estado !== 'inactivo') {
+    const editTopicModal = document.getElementById('editTopicModal');
+    const closeTopicModal = document.getElementById('closeTopicModal');
+    const editTopicBody = document.getElementById('editTopicBody');
+    const editTopicBodyCounter = document.getElementById('editTopicBodyCounter');
+    const saveTopicBtn = document.getElementById('saveTopicBtn');
+
+    function syncEditTopicBtn() {
+      editTopicBodyCounter.textContent = editTopicBody.value.length + ' / 750';
+      saveTopicBtn.disabled = editTopicBody.value.trim().length < 1;
+    }
+
+    function openEditTopicModal() {
+      editTopicBody.value = topic.cuerpo || '';
+      syncEditTopicBtn();
+      editTopicModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditTopicModal() {
+      editTopicModal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('editTopicBtn').addEventListener('click', openEditTopicModal);
+    closeTopicModal.addEventListener('click', closeEditTopicModal);
+    editTopicBody.addEventListener('input', syncEditTopicBtn);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (document.getElementById('confirmDeleteModal').classList.contains('open')) {
+          closeConfirmModal();
+        } else if (editTopicModal.classList.contains('open')) {
+          closeEditTopicModal();
+        }
+      }
+    });
+
+    saveTopicBtn.addEventListener('click', async () => {
+      if (saveTopicBtn.disabled) return;
+      saveTopicBtn.disabled = true;
+      saveTopicBtn.textContent = 'Guardando...';
+
+      const result = await apiPatch(`/topics/${id}`, {
+        cuerpo: editTopicBody.value.trim()
+      });
+
+      if (result.ok) {
+        closeEditTopicModal();
+        showToast('Tema actualizado', 'success');
+        topic.cuerpo = editTopicBody.value.trim();
+        initReadMore(document.getElementById('topicBody'), topic.cuerpo);
+      } else {
+        showToast(result.message || 'Error al guardar', 'error');
+      }
+
+      saveTopicBtn.disabled = false;
+      saveTopicBtn.textContent = 'Guardar';
+    });
+
+    // ── Eliminar tema ──
+    const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+    const closeConfirmDelete = document.getElementById('closeConfirmDelete');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+    function openConfirmModal() {
+      editTopicModal.classList.remove('open');
+      confirmDeleteModal.classList.add('open');
+    }
+
+    function closeConfirmModal() {
+      confirmDeleteModal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('deleteTopicBtn').addEventListener('click', openConfirmModal);
+    closeConfirmDelete.addEventListener('click', closeConfirmModal);
+    cancelDeleteBtn.addEventListener('click', closeConfirmModal);
+
+    confirmDeleteBtn.addEventListener('click', async () => {
+      confirmDeleteBtn.disabled = true;
+      confirmDeleteBtn.textContent = 'Eliminando...';
+
+      const result = await apiDelete(`/topics/${id}/delete`);
+
+      if (result.ok) {
+        closeConfirmModal();
+        showToast(result.message || 'Tema eliminado', 'success');
+        setTimeout(() => { window.location.href = `/src/category/category.html?id=${encodeURIComponent(topic.categoria_id)}`; }, 2000);
+      } else {
+        showToast(result.message || 'Error al eliminar', 'error');
+        confirmDeleteBtn.disabled = false;
+        confirmDeleteBtn.textContent = 'Eliminar tema';
+      }
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', loadTopic);

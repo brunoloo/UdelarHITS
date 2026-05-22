@@ -144,7 +144,6 @@ const updateMe = async (req, res) => {
   }
 };
 
-
 const banUser = async (req, res) => {
   try {
     const { nickname } = req.params;

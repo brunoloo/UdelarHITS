@@ -31,12 +31,12 @@ const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario
 
 const getRepliesByCategoryId = async (categoriaId) => {
   const q = `
-    SELECT com.contenido_id AS id, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
+    SELECT com.contenido_id AS id, com.estado AS estado, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
-    WHERE com.categoria_id = $1 AND com.estado = 'visible' AND com.comentario_padre_id IS NULL
+    WHERE com.categoria_id = $1 AND com.comentario_padre_id IS NULL
     ORDER BY con.fecha_creacion DESC
   `;
   const { rows } = await pool.query(q, [categoriaId]);
@@ -45,12 +45,12 @@ const getRepliesByCategoryId = async (categoriaId) => {
 
 const getRepliesByTopicId = async (topicId) => {
   const q = `
-    SELECT com.contenido_id AS id, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
+    SELECT com.contenido_id AS id, com.estado AS estado, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
-    WHERE com.tema_id = $1 AND com.estado = 'visible' AND com.comentario_padre_id IS NULL
+    WHERE com.tema_id = $1 AND com.comentario_padre_id IS NULL
     ORDER BY con.fecha_creacion DESC
   `;
   const { rows } = await pool.query(q, [topicId]);
@@ -115,10 +115,16 @@ const getRepliesByUserId = async (userId) => {
         ELSE 'categoria'
       END AS tipo,
       COALESCE(t.titulo, cat.titulo) AS destino_titulo,
-      COALESCE(com.tema_id, com.categoria_id) AS destino_id
+      COALESCE(com.tema_id, com.categoria_id) AS destino_id,
+      CASE
+        WHEN com.tema_id IS NOT NULL THEN tc.estado
+        ELSE cat.estado
+      END AS categoria_estado,
+      t.estado AS tema_estado
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     LEFT JOIN tema t ON t.contenido_id = com.tema_id
+    LEFT JOIN categoria tc ON tc.id = t.categoria_id
     LEFT JOIN categoria cat ON cat.id = com.categoria_id
     WHERE con.autor_id = $1
     ORDER BY con.fecha_creacion DESC
@@ -129,12 +135,12 @@ const getRepliesByUserId = async (userId) => {
 
 const getRepliesByCommentId = async (commentId) => {
   const q = `
-    SELECT com.contenido_id AS id, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
+    SELECT com.contenido_id AS id, com.estado, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
-    WHERE com.comentario_padre_id = $1 AND com.estado = 'visible'
+    WHERE com.comentario_padre_id = $1
     ORDER BY con.fecha_creacion DESC
   `;
   const { rows } = await pool.query(q, [commentId]);
@@ -151,6 +157,38 @@ const updateReplyById = async (id, { cuerpo }) => {
   return rows[0] || null;
 };
 
+const replyHasReplies = async (id) => {
+  const q = `
+    SELECT EXISTS(
+      SELECT 1 FROM comentario WHERE comentario_padre_id = $1
+    ) AS has_replies
+  `;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0].has_replies;
+};
+
+const hideReplyById = async (id) => {
+  const q = `
+    UPDATE comentario
+    SET estado = 'oculto'
+    WHERE contenido_id = $1
+    RETURNING contenido_id AS id, estado
+  `;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0] || null;
+};
+
+const getParentComment = async (id) => {
+  const q = `
+    SELECT com.comentario_padre_id AS padre_id, parent.estado AS padre_estado
+    FROM comentario com
+    LEFT JOIN comentario parent ON parent.contenido_id = com.comentario_padre_id
+    WHERE com.contenido_id = $1
+  `;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0] || null;
+};
 
 export { createReply, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById, 
-  getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById }
+  getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies, 
+  hideReplyById, getParentComment }

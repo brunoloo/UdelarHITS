@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmado = confirm('Seguro quieres eliminar esta categoría?');
     if (!confirmado) return;
 
-    const result = await apiPatch(`/categories/${id}/delete`);
+    const result = await apiDelete(`/categories/${id}/delete`);
     if(result.ok){
       alert("Categoría eliminada correctamente");
       window.location.href = "myCategories.html";

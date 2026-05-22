@@ -22,6 +22,7 @@ async function loadTopics() {
       <td>${escapeHtml(t.id)}</td>
       <td><a href="/testing/user-testing/user.html?nickname=${encodeURIComponent(t.autor_nickname)}">${escapeHtml(t.autor_nickname)}</a></td>
       <td><a href="/testing/topic-testing/topic.html?id=${encodeURIComponent(t.id)}">${escapeHtml(t.titulo)}</a></td>
+      <td><a href="/testing/category-testing/category.html?id=${encodeURIComponent(t.categoria_id)}">implementar (hay un bug)</a></td>
       <td>${escapeHtml(t.estado)}</td>
       <td><button class="btn-eliminar" data-id="${escapeAttr(t.id)}" data-titulo="${escapeAttr(t.titulo)}">Eliminar</button></td>
       <td><button class="btn-activar" data-id="${escapeAttr(t.id)}" data-titulo="${escapeAttr(t.titulo)}">Activar</button></td>
@@ -37,7 +38,7 @@ tableBody.addEventListener('click', async (e) => {
     const titulo = e.target.dataset.titulo;
     const confirmado = confirm(`¿Seguro que querés eliminar el tema "${titulo}"?`);
     if (!confirmado) return;
-    const result = await apiPatch(`/topics/${id}/delete`);
+    const result = await apiDelete(`/topics/${id}/delete`);
     if (result.ok) {
       loadTopics();
     } else {

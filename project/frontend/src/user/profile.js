@@ -55,7 +55,7 @@ async function loadTabs(userId, categories) {
       <article class="item">
         <div class="item-head">
           <span>en</span>
-          <a href="/src/category/category.html?id=${encodeURIComponent(t.categoria_id)}">${escapeHtml(t.categoria_titulo)}</a>
+          <a href="/src/category/category.html?id=${encodeURIComponent(t.categoria_id)}">${t.categoria_estado === 'inactiva' ? 'Categoría inactiva' : escapeHtml(t.categoria_titulo)}</a>
         </div>
         <h3 class="item-title"><a href="/src/topic/topic.html?id=${encodeURIComponent(t.id)}" style="text-decoration:none;color:inherit;">${escapeHtml(t.titulo)}</a></h3>
         <p class="item-body">${escapeHtml(t.cuerpo || '')}</p>
@@ -76,11 +76,21 @@ async function loadTabs(userId, categories) {
       const href = r.tipo === 'tema'
         ? `/src/topic/topic.html?id=${encodeURIComponent(r.destino_id)}`
         : `/src/category/category.html?id=${encodeURIComponent(r.destino_id)}`;
+
+      let destinoLabel;
+      if (r.tipo === 'tema' && r.tema_estado === 'inactivo') {
+        destinoLabel = 'Tema inactivo';
+      } else if (r.tipo === 'categoria' && r.categoria_estado === 'inactiva') {
+        destinoLabel = 'Categoría inactiva';
+      } else {
+        destinoLabel = escapeHtml(r.destino_titulo);
+      }
+
       return `
       <article class="item">
         <div class="item-head">
           <span>en</span>
-          <a href="${href}">${escapeHtml(r.destino_titulo)}</a>
+          <a href="${href}">${destinoLabel}</a>
         </div>
         <p class="item-body">${escapeHtml(r.cuerpo)}</p>
       </article>
@@ -323,6 +333,7 @@ async function loadProfile() {
 
     document.getElementById("profileNombre").textContent = user.nombre;
     document.getElementById("profileNickname").textContent = `@${user.nickname}`;
+    document.title = `${user.nickname} — UdelarHITS`;
     const bioElement = document.getElementById("profileBio");
     if (user.biografia) {
       bioElement.innerHTML = renderizarBioConLinks(user.biografia);

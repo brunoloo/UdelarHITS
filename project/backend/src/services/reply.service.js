@@ -1,9 +1,10 @@
-import { getTopicById } from '../repositories/topic.repository.js';
-import { assignParticipantRole } from '../repositories/category.repository.js';
-import { getCategoryById } from '../repositories/category.repository.js';
+import { getTopicById, hardDeleteTopicById, topicHasContent } from '../repositories/topic.repository.js';
+import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCategoryById } from '../repositories/category.repository.js';
+
 
 import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById, 
-  deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById } from '../repositories/reply.repository.js';
+  deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, 
+  updateReplyById, replyHasReplies, hideReplyById, getParentComment } from '../repositories/reply.repository.js';
 
 const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, comentario_padre_id }) => {
   if (!cuerpo?.trim()) {
@@ -96,11 +97,36 @@ const getReplyByIdService = async (id) => {
   return reply;
 };
 
+async function cleanupOrphanedParents(commentId) {
+  const hasReplies = await replyHasReplies(commentId);
+  if (hasReplies) return; // todavía tiene otras respuestas, no borrar
+
+  const parentInfo = await getParentComment(commentId);
+  await deleteReplyById(commentId);
+
+  // Seguir subiendo si el padre también está oculto y sin respuestas
+  if (parentInfo?.padre_id && parentInfo.padre_estado === 'oculto') {
+    await cleanupOrphanedParents(parentInfo.padre_id);
+  }
+}
+
 const deleteReplyService = async (userId, userRol, replyId) => {
+  const id = Number(replyId);
+  if (!Number.isInteger(id) || id < 1) {
+    const err = new Error('ID inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  
   const reply = await getReplyById(replyId);
   if (!reply) {
     const err = new Error('Comentario no encontrado');
     err.code = 'NOT_FOUND';
+    throw err;
+  }
+  if (reply.estado === 'oculto') {
+    const err = new Error('El comentario ya fue eliminado');
+    err.code = 'BAD_REQUEST';
     throw err;
   }
   if (userRol !== 'admin' && reply.autor_id !== userId) {
@@ -108,7 +134,47 @@ const deleteReplyService = async (userId, userRol, replyId) => {
     err.code = 'FORBIDDEN';
     throw err;
   }
-  return await deleteReplyById(replyId);
+
+  const hasReplies = await replyHasReplies(replyId);
+
+  if (hasReplies) {
+    await hideReplyById(replyId);
+    return { action: 'hidden' };
+  }
+
+  // Antes de eliminar, guardar info del padre
+  const parentInfo = await getParentComment(replyId);
+
+  await deleteReplyById(replyId);
+
+  // Limpieza en cascada: si el padre está oculto y ya no tiene respuestas, eliminarlo también
+  if (parentInfo?.padre_id && parentInfo.padre_estado === 'oculto') {
+    await cleanupOrphanedParents(parentInfo.padre_id);
+  }
+
+  // Si el comentario pertenecía a un tema inactivo, verificar si se quedó vacío
+  if (reply.tema_id) {
+    const topic = await getTopicById(reply.tema_id);
+    if (topic && topic.estado === 'inactivo') {
+      const topicStillHasContent = await topicHasContent(reply.tema_id);
+      if (!topicStillHasContent) {
+        await hardDeleteTopicById(reply.tema_id);
+      }
+    }
+  }
+
+  // Si el comentario pertenecía directamente a una categoría inactiva
+  if (reply.categoria_id) {
+    const category = await getCategoryById(reply.categoria_id);
+    if (category && category.estado === 'inactiva') {
+      const catStillHasContent = await categoryHasContent(reply.categoria_id);
+      if (!catStillHasContent) {
+        await hardDeleteCategoryById(reply.categoria_id);
+      }
+    }
+  }
+
+  return { action: 'deleted' };
 };
 
 const getMyRepliesService = async (autorId) => {

@@ -16,7 +16,7 @@ router.get('/user/:userId', protect, getTopicsByUser);
 
 router.get('/category/:categoriaId', getTopicsByCategory);
 
-router.patch('/:id/delete', protect, deleteTopic);    // Desactivar tema
+router.delete('/:id/delete', protect, deleteTopic);    // Desactivar tema
 router.patch('/:id/active', protect, activeTopic);    // Activar tema
 
 export default router;

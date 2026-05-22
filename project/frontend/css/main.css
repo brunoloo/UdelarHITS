@@ -283,6 +283,34 @@ header .search-bar {
   font-weight: 600;
 }
 
+.tags-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0;
+}
+.tag-option {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all .12s;
+}
+.tag-option:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tag-option.selected {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-color: var(--accent);
+}
+
+
 /* ── COMMENT CARD ── */
 .comment-card {
   background: var(--surface);
@@ -1008,6 +1036,190 @@ main {
   background: var(--status-success-bg);
   border-color: var(--status-success-border);
   color: var(--status-success-text);
+}
+
+/* ── Zona de peligro dentro del modal ── */
+.modal-danger-zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--status-error-bg);
+}
+
+.danger-zone-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.danger-zone-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--status-error-text);
+}
+
+.danger-zone-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.btn-danger {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--status-error-border);
+  background: var(--status-error-bg);
+  color: var(--status-error-text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s, border-color .12s;
+}
+
+.btn-danger:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--text-on-accent);
+}
+
+/* ── Confirmación de eliminación ── */
+.confirm-delete-body {
+  padding: 20px;
+}
+
+.confirm-delete-body p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-bottom: 20px;
+}
+
+.confirm-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ── Contenido inactivo ── */
+.cat-inactive-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px;
+  color: var(--text-muted);
+}
+
+.cat-inactive-banner svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.cat-inactive-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cat-inactive-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cat-inactive-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.cat-inactive-desc a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.cat-inactive-desc a:hover {
+  text-decoration: underline;
+}
+
+.cat-header-top .comment-menu-wrap {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+/* ── Menú de tres puntos ── */
+.comment-menu-wrap {
+  position: relative;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.comment-menu-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .12s, color .12s;
+}
+
+.comment-menu-btn:hover {
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+.comment-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+  min-width: 180px;
+  z-index: 10;
+  display: none;
+  overflow: hidden;
+}
+
+.comment-dropdown.open {
+  display: block;
+}
+
+.comment-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background .12s;
+  text-align: left;
+}
+
+.comment-dropdown-item:hover {
+  background: var(--bg);
+}
+
+.comment-dropdown-item--danger {
+  color: var(--status-error-text);
+}
+
+.comment-dropdown-item--danger:hover {
+  background: var(--status-error-bg);
 }
 
 /* ── GENERAL ────────────────────────────────────── */

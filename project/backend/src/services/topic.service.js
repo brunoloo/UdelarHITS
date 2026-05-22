@@ -1,8 +1,8 @@
-import { getCategoryById, assignParticipantRole, getTopicsByCategoryId } from '../repositories/category.repository.js';
+import { getCategoryById, assignParticipantRole, getTopicsByCategoryId, categoryHasContent, hardDeleteCategoryById } from '../repositories/category.repository.js';
 
 import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
   getTopicsByAuthorId, updateTopicById, updateTopicEstado, decrementTopicCount, 
-  incrementTopicCount, getTopicsByUserId } from '../repositories/topic.repository.js';
+  incrementTopicCount, getTopicsByUserId, topicHasContent, hardDeleteTopicById } from '../repositories/topic.repository.js';
 
 const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => {
   if (!categoria_id) {
@@ -116,6 +116,13 @@ const updateTopicService = async (userId, topicId, { cuerpo }) => {
 };
 
 const deleteTopicService = async (userId, userRol, topicId) => {
+  const id = Number(topicId);
+  if (!Number.isInteger(id) || id < 1) {
+    const err = new Error('ID inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  
   const topic = await getTopicById(topicId);
   if (!topic) {
     const err = new Error('Tema no encontrado');
@@ -135,7 +142,25 @@ const deleteTopicService = async (userId, userRol, topicId) => {
 
   await decrementTopicCount(topic.categoria_id);
 
-  return await updateTopicEstado(topicId, 'inactivo');
+  const hasContent = await topicHasContent(topicId);
+
+  if (hasContent) {
+    await updateTopicEstado(topicId, 'inactivo');
+    return { action: 'deactivated' };
+  }
+
+  await hardDeleteTopicById(topicId);
+
+  // Si la categoría está inactiva, verificar si se quedó vacía
+  const category = await getCategoryById(topic.categoria_id);
+  if (category && category.estado === 'inactiva') {
+    const catStillHasContent = await categoryHasContent(topic.categoria_id);
+    if (!catStillHasContent) {
+      await hardDeleteCategoryById(topic.categoria_id);
+    }
+  }
+
+  return { action: 'deleted' };
 };
 
 const activeTopicService = async (userId, userRol, topicId) => {

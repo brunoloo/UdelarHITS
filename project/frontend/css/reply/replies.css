@@ -295,3 +295,22 @@
 :root[data-theme="dark"] .comment-card--ancestor .comment-gutter::after {
   background-color: var(--surface-2);
 }
+
+/* ── Placeholder de comentario oculto ── */
+.comment-card--hidden {
+  opacity: 0.6;
+}
+
+.comment-card--hidden .comment-avatar {
+  visibility: hidden;
+}
+
+.comment-hidden-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 4px 0;
+}

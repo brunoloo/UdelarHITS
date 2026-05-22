@@ -16,7 +16,7 @@ router.get('/:id', getCategoryById);            // Ver categoría por id
 
 router.get('/:id/participants', protect, getParticipantsByCategory); // Obtener los participantes de mi categoría
 
-router.patch('/:id/delete', protect, deleteCategory)     // Desactiva la categoría
+router.delete('/:id/delete', protect, deleteCategory)     // Desactiva la categoría
 router.patch('/:id/activar', protect, activeCategory)    // Activa la categoría 
 
 
