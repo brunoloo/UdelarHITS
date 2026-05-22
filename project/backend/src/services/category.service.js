@@ -1,6 +1,8 @@
 import { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
-  updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas } from '../repositories/category.repository.js';
+  updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas, hardDeleteCategoryById, categoryHasContent } from '../repositories/category.repository.js';
+
+import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
 
 const ETIQUETAS_VALIDAS = [
   'Facultades','Parciales y exámenes','Becas y trámites','Residencias','Pasantías',
@@ -100,6 +102,13 @@ const getMyCategoriesService = async (autorId) => {
 };
 
 const deleteCategoryService = async (userId, userRol, categoryId) => {
+  const id = Number(categoryId);
+  if (!Number.isInteger(id) || id < 1) {
+    const err = new Error('ID inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  
   const category = await getCategoryById(categoryId);
 
   if (!category) {
@@ -120,7 +129,17 @@ const deleteCategoryService = async (userId, userRol, categoryId) => {
     throw err;
   }
 
-  return await deactivateCategoryById(categoryId);
+  await cleanupInactiveTopics(categoryId);
+
+  const hasContent = await categoryHasContent(categoryId);
+
+  if (hasContent) {
+    await deactivateCategoryById(categoryId);
+    return { action: 'deactivated' };
+  }
+
+  await hardDeleteCategoryById(categoryId);
+  return { action: 'deleted' };
 };
 
 const activeCategoryService = async (userId, userRol, categoryId) => {
@@ -166,7 +185,7 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
     throw err;
   }
 
-  if (descripcion?.length > 200) {
+  if (descripcion?.length > 500) {
     const err = new Error('La descripción superó el máximo de caracteres');
     err.code = 'BAD_REQUEST';
     throw err;

@@ -71,32 +71,90 @@ async function loadCategory() {
     return;
   }
 
-  const cat = res.data;
+  let cat = res.data;
 
+  // Configurar módulo de comentarios
+  let meRes = null;
+  try { meRes = await apiGet('/users/me'); } catch (e) {}
+  // ── Editar y eliminar categoría ──
+  const isOwner = meRes?.ok && (meRes.data.user.id === cat.autor_id || meRes.data.user.rol === 'admin');
+  
   // Breadcrumb
   document.getElementById('breadcrumbTitle').textContent = cat.titulo;
   document.title = `${cat.titulo} — UdelarHITS`;
-
-  // Header
-  document.getElementById('catTitle').textContent = cat.titulo;
-  initReadMore(document.getElementById('catDesc'), cat.descripcion || ''); 
-
-  // Etiquetas
-  const etiquetas = parseEtiquetas(cat.etiquetas);
-  document.getElementById('catTags').innerHTML = etiquetas
-    .map(e => `<span class="tag">${escapeHtml(e)}</span>`)
-    .join('');
-
-  // Meta
+  
   const count = Number(cat.contador_temas) || 0;
-  document.getElementById('catMeta').innerHTML = `
-    <span class="cat-meta-item"><strong>${count}</strong> ${count === 1 ? 'tema' : 'temas'}</span>
-    <span class="cat-meta-item">creada <strong>${escapeHtml(timeAgo(cat.fecha_creacion))}</strong></span>
-  `;
+  if (cat.estado === 'inactiva') {
+    // Reemplazar header completo por banner informativo
+    document.querySelector('.cat-header').innerHTML = `
+      <div class="cat-inactive-banner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div class="cat-inactive-text">
+          <span class="cat-inactive-title">Esta categoría ya no está disponible</span>
+          <span class="cat-inactive-desc">El contenido publicado se preserva por la <a href="/src/about/content_policies.html" target="_blank">política de preservación de contenido</a>.</span>
+        </div>
+      </div>
+    `;
+
+    // Ocultar sidebar de moderación y stats
+    document.querySelector('.sidebar').style.display = 'none';
+
+    // Ocultar triggers de crear contenido
+    document.querySelectorAll('.create-topic').forEach(el => el.style.display = 'none');
+
+    // Breadcrumb genérico
+    document.getElementById('breadcrumbTitle').textContent = 'Categoría inactiva';
+    document.title = 'Categoría inactiva — UdelarHITS';
+
+  } else {
+    // Header normal
+    document.getElementById('catTitle').textContent = cat.titulo;
+    initReadMore(document.getElementById('catDesc'), cat.descripcion || ''); 
+
+    // Etiquetas
+    const etiquetas = parseEtiquetas(cat.etiquetas);
+    document.getElementById('catTags').innerHTML = etiquetas
+      .map(e => `<span class="tag">${escapeHtml(e)}</span>`)
+      .join('');
+
+    // Meta + botón editar
+    const editBtnHtml = isOwner
+      ? `<button class="btn-ghost" id="editCatBtn">Editar categoría</button>`
+      : '';
+
+    document.getElementById('catMeta').innerHTML = `
+      <span class="cat-meta-item"><strong>${count}</strong> ${count === 1 ? 'tema' : 'temas'}</span>
+      <span class="cat-meta-item">creada <strong>${escapeHtml(timeAgo(cat.fecha_creacion))}</strong></span>
+      ${editBtnHtml}
+    `;
+
+    // Menú de reporte de la categoría
+    document.getElementById('catMenuWrap').style.display = '';
+
+    const catMenuBtn = document.querySelector('#catMenuWrap .comment-menu-btn');
+    const catDropdown = document.getElementById('catDropdown');
+
+    catMenuBtn.addEventListener('click', (e) => { 
+      e.stopPropagation();
+      catDropdown.classList.toggle('open');
+    });
+
+    document.addEventListener('click', () => {
+      catDropdown.classList.remove('open');
+    });
+
+    document.getElementById('reportCatBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      catDropdown.classList.remove('open');
+      showToast('Función de reportar próximamente', 'info');
+    });
+  }
 
   // Sidebar stats
-  document.getElementById('statTemas').textContent = count;
-  document.getElementById('statCreada').textContent = new Date(cat.fecha_creacion).toLocaleDateString('es-UY');
+  if (cat.estado !== 'inactiva') {
+    document.getElementById('statTemas').textContent = count;
+    document.getElementById('statCreada').textContent = new Date(cat.fecha_creacion).toLocaleDateString('es-UY');
+  }
 
   // Temas
   if (cat.topics) {
@@ -107,10 +165,6 @@ async function loadCategory() {
   const repliesRes = await apiGet(`/replies/category/${id}`);
   const commentCount = repliesRes?.ok ? repliesRes.data.length : 0;
   document.getElementById('statComentarios').textContent = commentCount;
-
-  // Configurar módulo de comentarios
-  let meRes = null;
-  try { meRes = await apiGet('/users/me'); } catch (e) {}
 
   setCommentConfig({
     meRes,
@@ -148,24 +202,26 @@ async function loadCategory() {
   });
 
   // Moderación
-  const modList = document.getElementById('modList');
-  modList.innerHTML = `
-    <div class="mod-item">
-      <div class="mod-avatar">
-        <img src="${cat.autor_url_imagen || (SERVER_BASE + '/assets/default-user.jpg')}" alt="" />
+  if (cat.estado !== 'inactiva'){
+    const modList = document.getElementById('modList');
+    modList.innerHTML = `
+      <div class="mod-item">
+        <div class="mod-avatar">
+          <img src="${cat.autor_url_imagen || (SERVER_BASE + '/assets/default-user.jpg')}" alt="" />
+        </div>
+        <div class="mod-info">
+          <span class="mod-name"><a href="/src/user/profile.html?nickname=${encodeURIComponent(cat.autor_nickname)}">${escapeHtml(cat.autor_nickname)}</a></span>
+          <span class="mod-role">moderador</span>
+        </div>
       </div>
-      <div class="mod-info">
-        <span class="mod-name"><a href="/src/user/profile.html?nickname=${encodeURIComponent(cat.autor_nickname)}">${escapeHtml(cat.autor_nickname)}</a></span>
-        <span class="mod-role">moderador</span>
-      </div>
-    </div>
-  `;
-
-  modList.querySelectorAll('.mod-avatar img').forEach(img => {
-    img.addEventListener('error', () => {
-      img.src = SERVER_BASE + '/assets/default-user.jpg';
+    `;
+  
+    modList.querySelectorAll('.mod-avatar img').forEach(img => {
+      img.addEventListener('error', () => {
+        img.src = SERVER_BASE + '/assets/default-user.jpg';
+      });
     });
-  });
+  }
 
   // Avatar de los triggers
   const ctAvatars = document.querySelectorAll('.ct-avatar');
@@ -322,6 +378,156 @@ async function loadCategory() {
     submitCommentBtn.disabled = false;
     submitCommentBtn.textContent = 'Comentar';
   });
+
+
+  if (isOwner && cat.estado !== 'inactiva') {
+    const editCatModal = document.getElementById('editCatModal');
+    const closeCatModal = document.getElementById('closeCatModal');
+    const editCatDesc = document.getElementById('editCatDesc');
+    const editCatDescCounter = document.getElementById('editCatDescCounter');
+    const editCatTagsCounter = document.getElementById('editCatTagsCounter');
+    const saveCatBtn = document.getElementById('saveCatBtn');
+    const editTagsSelector = document.getElementById('editTagsSelector');
+
+    let editSelectedTags = [];
+    let editAvailableTags = [];
+
+    // Cargar etiquetas disponibles
+    async function loadEditTags() {
+      const res = await apiGet('/categories/etiquetas');
+      if (res?.ok) editAvailableTags = res.data;
+    }
+
+    function renderEditTags() {
+      editTagsSelector.innerHTML = editAvailableTags.map(tag =>
+        `<button type="button" class="tag-option${editSelectedTags.includes(tag) ? ' selected' : ''}" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`
+      ).join('');
+
+      editTagsSelector.querySelectorAll('.tag-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tag = btn.dataset.tag;
+          if (editSelectedTags.includes(tag)) {
+            editSelectedTags = editSelectedTags.filter(t => t !== tag);
+            btn.classList.remove('selected');
+          } else if (editSelectedTags.length < 10) {
+            editSelectedTags.push(tag);
+            btn.classList.add('selected');
+          }
+          editCatTagsCounter.textContent = editSelectedTags.length + ' / 10';
+          syncEditCatBtn();
+        });
+      });
+    }
+
+    function syncEditCatBtn() {
+      editCatDescCounter.textContent = editCatDesc.value.length + ' / 500';
+      editCatTagsCounter.textContent = editSelectedTags.length + ' / 10';
+      const ok = editCatDesc.value.trim().length >= 1 && editSelectedTags.length >= 1;
+      saveCatBtn.disabled = !ok;
+    }
+
+    function openEditCatModal() {
+      editCatDesc.value = cat.descripcion || '';
+      editSelectedTags = parseEtiquetas(cat.etiquetas).slice();
+      syncEditCatBtn();
+      renderEditTags();
+      editCatModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditCatModal() {
+      editCatModal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('editCatBtn').addEventListener('click', openEditCatModal);
+    closeCatModal.addEventListener('click', closeEditCatModal);
+    editCatDesc.addEventListener('input', syncEditCatBtn);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (document.getElementById('confirmDeleteModal').classList.contains('open')) {
+          closeConfirmModal();
+        } else if (editCatModal.classList.contains('open')) {
+          closeEditCatModal();
+        }
+      }
+    });
+
+    // Guardar cambios
+    saveCatBtn.addEventListener('click', async () => {
+      if (saveCatBtn.disabled) return;
+      saveCatBtn.disabled = true;
+      saveCatBtn.textContent = 'Guardando...';
+
+      const result = await apiPatch(`/categories/${id}`, {
+        descripcion: editCatDesc.value.trim(),
+        etiquetas: editSelectedTags
+      });
+
+      if (result.ok) {
+        closeEditCatModal();
+        showToast('Categoría actualizada', 'success');
+
+        // Actualizar la vista sin recargar la página
+        const updated = await apiGet(`/categories/${id}`);
+        if (updated?.ok) {
+          cat = updated.data;
+          document.getElementById('catTitle').textContent = cat.titulo;
+          initReadMore(document.getElementById('catDesc'), cat.descripcion || '');
+          const etiquetas = parseEtiquetas(cat.etiquetas);
+          document.getElementById('catTags').innerHTML = etiquetas
+            .map(e => `<span class="tag">${escapeHtml(e)}</span>`)
+            .join('');
+        }
+      } else {
+        showToast(result.message || 'Error al guardar', 'error');
+      }
+
+      saveCatBtn.disabled = false;
+      saveCatBtn.textContent = 'Guardar';
+    });
+
+    // Cargar etiquetas al inicio
+    loadEditTags();
+
+    // ── Eliminar categoría ──
+    const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+    const closeConfirmDelete = document.getElementById('closeConfirmDelete');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+    function openConfirmModal() {
+      editCatModal.classList.remove('open');
+      confirmDeleteModal.classList.add('open');
+    }
+
+    function closeConfirmModal() {
+      confirmDeleteModal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('deleteCatBtn').addEventListener('click', openConfirmModal);
+    closeConfirmDelete.addEventListener('click', closeConfirmModal);
+    cancelDeleteBtn.addEventListener('click', closeConfirmModal);
+
+    confirmDeleteBtn.addEventListener('click', async () => {
+      confirmDeleteBtn.disabled = true;
+      confirmDeleteBtn.textContent = 'Eliminando...';
+
+      const result = await apiDelete(`/categories/${id}/delete`);
+
+      if (result.ok) {
+        closeConfirmModal();
+        showToast(result.message || 'Categoría eliminada', 'success');
+        setTimeout(() => { window.location.href = '/'; }, 2000);
+      } else {
+        showToast(result.message || 'Error al eliminar', 'error');
+        confirmDeleteBtn.disabled = false;
+        confirmDeleteBtn.textContent = 'Eliminar categoría';
+      }
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', loadCategory);

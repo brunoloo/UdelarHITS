@@ -37,10 +37,15 @@ const getRepliesByTopic = async (req, res) => {
 const deleteReply = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await deleteReplyService(req.user.id, req.user.rol, id);
-    return res.status(200).json({ ok: true, data: deleted });
+    const result = await deleteReplyService(req.user.id, req.user.rol, id);
+    const message = result.action === 'deleted'
+      ? 'Comentario eliminado definitivamente'
+      : 'El comentario fue ocultado porque tenía respuestas';
+
+    return res.status(200).json({ ok: true, message, data: result });
   } catch (error) {
     if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
     if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }

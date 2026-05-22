@@ -306,3 +306,16 @@ a.topic-title:hover {
   padding: 16px;
   margin-bottom: 10px;
 }
+
+/* ── Botón editar categoría ── */
+/* ── Meta + botón editar en la misma fila ── */
+.cat-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cat-meta .btn-ghost {
+  margin-left: auto;
+}

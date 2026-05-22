@@ -112,7 +112,7 @@ const getTopicsByCategoryId = async (categoryId) => {
 const deactivateCategoryById = async (id) => {
   const q = `
     UPDATE categoria
-    SET estado = 'inactiva'
+    SET estado = 'inactiva', titulo = titulo || '_deleted_' || id
     WHERE id = $1
     RETURNING id, titulo, estado
   `;
@@ -232,6 +232,24 @@ const getEtiquetas = async () => {
   return rows.map(r => r.valor);
 };
 
+const categoryHasContent = async (id) => {
+  const q = `
+    SELECT EXISTS(
+      SELECT 1 FROM tema WHERE categoria_id = $1
+      UNION ALL
+      SELECT 1 FROM comentario WHERE categoria_id = $1
+    ) AS has_content
+  `;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0].has_content;
+};
+
+const hardDeleteCategoryById = async (id) => {
+  const q = `DELETE FROM categoria WHERE id = $1`;
+  await pool.query(q, [id]);
+};
+
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
-  updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId, getEtiquetas };
+  updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId, 
+  getEtiquetas, categoryHasContent, hardDeleteCategoryById };

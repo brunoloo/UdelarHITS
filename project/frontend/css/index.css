@@ -242,33 +242,6 @@ margin-bottom: 10px;
   flex-shrink: 0;
 }
 
-.tags-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 4px 0;
-}
-.tag-option {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all .12s;
-}
-.tag-option:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.tag-option.selected {
-  background: var(--accent);
-  color: var(--text-on-accent);
-  border-color: var(--accent);
-}
-
 /* Botón "Crear" / "Guardar" del header */
 .save-btn {
   height: 32px;

@@ -24,7 +24,7 @@ async function loadMyTopics() {
     tr.innerHTML = `
       <td>${escapeHtml(t.id)}</td>
       <td><a href="/testing/topic-testing/topic.html?id=${encodeURIComponent(t.id)}">${escapeHtml(t.titulo)}</a></td>
-      <td>${escapeHtml(t.categoria_titulo)}</td>
+      <td><a href="/testing/category-testing/category.html?id=${encodeURIComponent(t.categoria_id)}">${escapeHtml(t.categoria_titulo)}</a></td>
       <td>${escapeHtml(t.estado)}</td>
       <td>${editCell}</td>
     `;

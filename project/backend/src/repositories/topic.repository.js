@@ -69,7 +69,7 @@ const getTopics = async () => {
 const getTopicById = async (id) => {
   const q = `
     SELECT t.contenido_id AS id, t.titulo, t.estado, t.categoria_id,
-      c.titulo AS categoria_titulo,
+      c.titulo AS categoria_titulo, c.estado AS categoria_estado,
       con.cuerpo, con.autor_id,
       u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
       con.fecha_creacion
@@ -109,8 +109,9 @@ const updateTopicById = async (id, { cuerpo }) => {
 };
 
 const updateTopicEstado = async (id, estado) => {
+  const suffix = estado === 'inactivo' ? `, titulo = titulo || '_deleted_' || contenido_id` : '';
   const q = `
-    UPDATE tema SET estado = $1
+    UPDATE tema SET estado = $1${suffix}
     WHERE contenido_id = $2
     RETURNING contenido_id AS id, titulo, estado
   `;
@@ -133,7 +134,7 @@ const decrementTopicCount = async (categoriaId) => {
 const getTopicsByUserId = async (userId) => {
   const q = `
     SELECT t.contenido_id AS id, t.titulo, t.estado, t.categoria_id,
-      c.titulo AS categoria_titulo, con.fecha_creacion
+      c.titulo AS categoria_titulo, c.estado AS categoria_estado, con.fecha_creacion
     FROM tema t
     JOIN contenido con ON con.id = t.contenido_id
     JOIN categoria c ON c.id = t.categoria_id
@@ -144,5 +145,37 @@ const getTopicsByUserId = async (userId) => {
   return rows;
 };
 
+const topicHasContent = async (id) => {
+  const q = `
+    SELECT EXISTS(
+      SELECT 1 FROM comentario WHERE tema_id = $1
+    ) AS has_content
+  `;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0].has_content;
+};
+
+const hardDeleteTopicById = async (id) => {
+  const q = `DELETE FROM contenido WHERE id = $1`;
+  await pool.query(q, [id]);
+};
+
+const cleanupInactiveTopics = async (categoryId) => {
+  const q = `
+    DELETE FROM contenido
+    WHERE id IN (
+      SELECT t.contenido_id
+      FROM tema t
+      WHERE t.categoria_id = $1
+      AND t.estado = 'inactivo'
+      AND NOT EXISTS (
+        SELECT 1 FROM comentario c WHERE c.tema_id = t.contenido_id
+      )
+    )
+  `;
+  await pool.query(q, [categoryId]);
+};
+
 export { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById, getTopicsByAuthorId, 
-  updateTopicById, updateTopicEstado, incrementTopicCount, decrementTopicCount, getTopicsByUserId };
+  updateTopicById, updateTopicEstado, incrementTopicCount, decrementTopicCount, 
+  getTopicsByUserId, topicHasContent, hardDeleteTopicById, cleanupInactiveTopics };

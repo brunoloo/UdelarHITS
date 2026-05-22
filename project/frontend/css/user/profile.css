@@ -248,6 +248,10 @@
   overflow: hidden;
 }
 
+.section-tabs {
+  justify-content: center;
+}
+
 /* Grid de categorías */
 .cat-grid {
   display: grid;
@@ -363,3 +367,4 @@
   font-size: 15px;
   color: var(--text-secondary);
 }
+
