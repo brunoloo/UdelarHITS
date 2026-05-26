@@ -176,6 +176,29 @@ const cleanupInactiveTopics = async (categoryId) => {
   await pool.query(q, [categoryId]);
 };
 
+const getRecentTopics = async (limit = 20) => {
+  const q = `
+    SELECT t.contenido_id AS id, t.titulo, t.estado,
+      con.cuerpo, con.fecha_creacion, con.autor_id,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
+      t.categoria_id, cat.titulo AS categoria_titulo,
+      (SELECT COUNT(*) FROM comentario com 
+        WHERE com.tema_id = t.contenido_id 
+          AND com.estado = 'visible'
+          AND com.comentario_padre_id IS NULL
+      ) AS contador_comentarios
+    FROM tema t
+    JOIN contenido con ON con.id = t.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
+    JOIN categoria cat ON cat.id = t.categoria_id
+    WHERE t.estado = 'activo' AND cat.estado = 'activa'
+    ORDER BY con.fecha_creacion DESC
+    LIMIT $1
+  `;
+  const { rows } = await pool.query(q, [limit]);
+  return rows;
+};
+
 export { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById, getTopicsByAuthorId, 
   updateTopicById, updateTopicEstado, incrementTopicCount, decrementTopicCount, 
-  getTopicsByUserId, topicHasContent, hardDeleteTopicById, cleanupInactiveTopics };
+  getTopicsByUserId, topicHasContent, hardDeleteTopicById, cleanupInactiveTopics, getRecentTopics };

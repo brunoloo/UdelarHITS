@@ -2,7 +2,7 @@ import { getCategoryById, assignParticipantRole, getTopicsByCategoryId, category
 
 import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
   getTopicsByAuthorId, updateTopicById, updateTopicEstado, decrementTopicCount, 
-  incrementTopicCount, getTopicsByUserId, topicHasContent, hardDeleteTopicById } from '../repositories/topic.repository.js';
+  incrementTopicCount, getTopicsByUserId, topicHasContent, hardDeleteTopicById, getRecentTopics } from '../repositories/topic.repository.js';
 
 const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => {
   if (!categoria_id) {
@@ -194,5 +194,11 @@ const getTopicsByUserIdService = async (userId) => {
   return await getTopicsByUserId(userId);
 };
 
+const getRecentTopicsService = async (limit) => {
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 20, 1), 50);
+  return await getRecentTopics(safeLimit);
+};
+
 export { createTopicService, getTopicsService ,getTopicByIdService, getMyTopicsService, 
-  updateTopicService, activeTopicService, deleteTopicService, getTopicsByCategoryIdService, getTopicsByUserIdService };
+  updateTopicService, activeTopicService, deleteTopicService, getTopicsByCategoryIdService, 
+  getTopicsByUserIdService, getRecentTopicsService };

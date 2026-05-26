@@ -1320,6 +1320,181 @@ main {
   font-size: 14px;
 }
 
+/* ── TOPIC CARD ── */
+.topic-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s;
+}
+
+.topic-card:hover {
+  border-color: var(--border-strong);
+}
+
+.topic-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--accent-light);
+  flex-shrink: 0;
+}
+
+.topic-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.topic-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.topic-head a {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.topic-head a:hover {
+  text-decoration: underline;
+}
+
+a.topic-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  line-height: 1.35;
+}
+
+a.topic-title:hover {
+  text-decoration: underline;
+}
+
+.topic-preview {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.topic-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.topic-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.topic-card {
+  cursor: pointer;
+}
+
+/* ───── Sidebar tags ───── */
+.sidebar-tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sidebar-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-light);
+  text-decoration: none;
+  transition: background .12s;
+}
+
+.sidebar-tag:hover {
+  background: var(--accent);
+}
+
+.sidebar-tag:hover .sidebar-tag-name,
+.sidebar-tag:hover .sidebar-tag-count {
+  color: var(--text-on-accent);
+}
+
+.sidebar-tag-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.sidebar-tag-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ───── Sidebar category items ───── */
+.sidebar-cat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  text-decoration: none;
+  color: inherit;
+  transition: color .12s;
+}
+
+.sidebar-cat-item + .sidebar-cat-item {
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-cat-item:hover .sidebar-cat-title {
+  color: var(--accent);
+}
+
+.sidebar-cat-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sidebar-cat-count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ───── Sidebar utils ───── */
+.sidebar-loading {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+.sidebar-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 /* ── GENERAL ────────────────────────────────────── */
 
 .bio-link {
@@ -1334,5 +1509,14 @@ main {
 
 .bio-link:hover {
   color: var(--accent-strong);
+}
+
+.tag {
+font-size: 11px;
+font-weight: 500;
+padding: 2px 8px;
+border-radius: 12px;
+background: var(--accent-light);
+color: var(--accent);
 }
 

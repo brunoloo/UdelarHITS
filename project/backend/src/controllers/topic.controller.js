@@ -1,6 +1,6 @@
 import { createTopicService, getTopicsService, getTopicByIdService, getMyTopicsService, 
   updateTopicService, deleteTopicService, activeTopicService, 
-  getTopicsByCategoryIdService, getTopicsByUserIdService } from '../services/topic.service.js';
+  getTopicsByCategoryIdService, getTopicsByUserIdService, getRecentTopicsService } from '../services/topic.service.js';
 
 const createTopic = async (req, res) => {
   try {
@@ -112,5 +112,14 @@ const getTopicsByUser = async (req, res) => {
   }
 };
 
+const getRecentTopicsList = async (req, res, next) => {
+  try {
+    const topics = await getRecentTopicsService(req.query.limit);
+    return res.status(200).json({ ok: true, data: topics });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export { createTopic, getTopics, getTopicById, getMyTopics, updateTopic, deleteTopic, 
-  activeTopic, getTopicsByCategory, getTopicsByUser };
+  activeTopic, getTopicsByCategory, getTopicsByUser, getRecentTopicsList };

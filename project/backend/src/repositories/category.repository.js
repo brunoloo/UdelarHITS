@@ -249,7 +249,48 @@ const hardDeleteCategoryById = async (id) => {
   await pool.query(q, [id]);
 };
 
+const getPopularCategories = async (days = 7, limit = 20) => {
+  const q = `
+    WITH actividad AS (
+      SELECT c.id AS categoria_id,
+        COUNT(DISTINCT CASE 
+          WHEN t.estado = 'activo' AND con_t.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+          THEN t.contenido_id END) AS temas_recientes,
+        COUNT(DISTINCT CASE 
+          WHEN com.estado = 'visible' AND con_c.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+          THEN com.contenido_id END) AS comentarios_recientes
+      FROM categoria c
+      LEFT JOIN tema t ON t.categoria_id = c.id
+      LEFT JOIN contenido con_t ON con_t.id = t.contenido_id
+      LEFT JOIN comentario com ON (com.categoria_id = c.id OR com.tema_id = t.contenido_id)
+      LEFT JOIN contenido con_c ON con_c.id = com.contenido_id
+      WHERE c.estado = 'activa'
+      GROUP BY c.id
+      HAVING COUNT(DISTINCT CASE 
+          WHEN t.estado = 'activo' AND con_t.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+          THEN t.contenido_id END)
+        + COUNT(DISTINCT CASE 
+          WHEN com.estado = 'visible' AND con_c.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+          THEN com.contenido_id END) > 0
+    )
+    SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
+      c.fecha_creacion, u.nickname AS autor_nickname,
+      ARRAY_AGG(DISTINCT ce.etiqueta_valor) FILTER (WHERE ce.etiqueta_valor IS NOT NULL) AS etiquetas,
+      a.temas_recientes, a.comentarios_recientes,
+      (a.temas_recientes + a.comentarios_recientes) AS actividad_total
+    FROM actividad a
+    JOIN categoria c ON c.id = a.categoria_id
+    JOIN usuario u ON u.id = c.autor_id
+    LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    GROUP BY c.id, u.nickname, a.temas_recientes, a.comentarios_recientes
+    ORDER BY actividad_total DESC, c.fecha_creacion DESC
+    LIMIT $2
+  `;
+  const { rows } = await pool.query(q, [days, limit]);
+  return rows;
+};
+
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
   updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId, 
-  getEtiquetas, categoryHasContent, hardDeleteCategoryById };
+  getEtiquetas, categoryHasContent, hardDeleteCategoryById, getPopularCategories };
