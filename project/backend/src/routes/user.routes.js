@@ -4,7 +4,7 @@ import { uploadAvatar, uploadBanner } from '../config/multer.js';
 import { showMe, updateMe, getUsers, getUserProfile, changeUserPassword, 
     banUser, activeUser, deleteUser, followUser, unfollowUser, 
     checkFollowing, updateAvatar, searchUsers, updateBanner, deleteBanner, 
-    deleteAvatar } from '../controllers/user.controller.js';
+    deleteAvatar, getSuggestedUsersList, getMostActiveUsersList } from '../controllers/user.controller.js';
 
 const router = Router();
 
@@ -17,6 +17,10 @@ router.patch('/me/banner', protect, uploadBanner.single('banner'), updateBanner)
 router.delete('/me/banner', protect, deleteBanner);              // Elimina el banner
 router.delete('/me/avatar', protect, deleteAvatar);              // Elimina el avatar          
 router.put('/change-password', protect, changeUserPassword);     // Actualizar contraseña
+
+router.get('/suggested', protect, getSuggestedUsersList);        // Lista sugerida de usuarios
+
+router.get('/most-active', getMostActiveUsersList);              // Lista de usuarios más activos  
 
 router.get('/:nickname', protect, getUserProfile);               // Obtener información del usuario pública
 

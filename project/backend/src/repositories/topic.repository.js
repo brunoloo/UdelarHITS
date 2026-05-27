@@ -199,6 +199,50 @@ const getRecentTopics = async (limit = 20) => {
   return rows;
 };
 
+const getTrendingTopic = async (days = 7) => {
+  const q = `
+    WITH tema_actividad AS (
+      SELECT t.contenido_id AS tema_id,
+        COUNT(com.contenido_id) AS comentarios_recientes
+      FROM tema t
+      JOIN categoria cat ON cat.id = t.categoria_id
+      JOIN comentario com ON com.tema_id = t.contenido_id AND com.estado = 'visible'
+      JOIN contenido con_com ON con_com.id = com.contenido_id
+        AND con_com.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+      WHERE t.estado = 'activo' AND cat.estado = 'activa'
+      GROUP BY t.contenido_id
+    )
+    SELECT t.contenido_id AS id, t.titulo, t.categoria_id,
+      con.cuerpo, con.fecha_creacion, con.autor_id,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
+      cat.titulo AS categoria_titulo,
+      ta.comentarios_recientes AS total_comentarios,
+      (
+        SELECT json_agg(preview ORDER BY preview.fecha DESC)
+        FROM (
+          SELECT con2.cuerpo AS texto, u2.nickname AS autor, u2.url_imagen AS autor_imagen,
+            con2.fecha_creacion AS fecha
+          FROM comentario c2
+          JOIN contenido con2 ON con2.id = c2.contenido_id
+          JOIN usuario u2 ON u2.id = con2.autor_id
+          WHERE c2.tema_id = t.contenido_id AND c2.estado = 'visible'
+          ORDER BY con2.fecha_creacion DESC
+          LIMIT 3
+        ) preview
+      ) AS comentarios_preview
+    FROM tema_actividad ta
+    JOIN tema t ON t.contenido_id = ta.tema_id
+    JOIN contenido con ON con.id = t.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
+    JOIN categoria cat ON cat.id = t.categoria_id
+    ORDER BY ta.comentarios_recientes DESC, con.fecha_creacion DESC
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [days]);
+  return rows[0] || null;
+};
+
 export { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById, getTopicsByAuthorId, 
   updateTopicById, updateTopicEstado, incrementTopicCount, decrementTopicCount, 
-  getTopicsByUserId, topicHasContent, hardDeleteTopicById, cleanupInactiveTopics, getRecentTopics };
+  getTopicsByUserId, topicHasContent, hardDeleteTopicById, cleanupInactiveTopics, 
+  getRecentTopics, getTrendingTopic };

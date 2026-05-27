@@ -4,20 +4,40 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Explorar — UdelarHITS</title>
-  <script src="/shared/anti-flash.js"></script> 
-  <link rel="stylesheet" href="/css/main.css" /> 
-  <link rel="stylesheet" href="/css/index.css" /> 
+  <script src="/shared/anti-flash.js"></script>
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/leftnav/explore.css" />
 </head>
 <body>
   <div class="page">
     <main>
-      <h2>Explorar</h2>
+      <div class="explore-layout">
+        <h1 class="explore-title">Explorar</h1>
+        <p class="explore-subtitle">Descubrí lo que está pasando en la comunidad</p>
+
+        <!-- Hero: Categoría de la semana -->
+        <section id="heroSection"></section>
+
+        <!-- Tema del momento -->
+        <section id="trendingSection"></section>
+
+        <!-- Usuarios para seguir -->
+        <section id="suggestedSection"></section>
+
+        <!-- Categorías para vos -->
+        <section id="categoriesSection"></section>
+      </div>
     </main>
+    <aside class="sidebar"></aside>
   </div>
-  <script src="/shared/escape.js"></script> 
-  <script src="/shared/theme.js"></script> 
-  <script src="/shared/api.js"></script> 
+
+  <script src="/shared/escape.js"></script>
+  <script src="/shared/api.js"></script>
   <script src="/shared/header.js"></script>
-  <script src="/shared/leftnav.js"></script> 
+  <script src="/shared/theme.js"></script>
+  <script src="/shared/leftnav.js"></script>
+  <script src="/shared/time-ago.js"></script>
+  <script src="/shared/sidebar.js"></script>
+  <script src="explore.js"></script>
 </body>
 </html>

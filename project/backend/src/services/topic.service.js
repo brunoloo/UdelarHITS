@@ -2,7 +2,8 @@ import { getCategoryById, assignParticipantRole, getTopicsByCategoryId, category
 
 import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
   getTopicsByAuthorId, updateTopicById, updateTopicEstado, decrementTopicCount, 
-  incrementTopicCount, getTopicsByUserId, topicHasContent, hardDeleteTopicById, getRecentTopics } from '../repositories/topic.repository.js';
+  incrementTopicCount, getTopicsByUserId, topicHasContent, 
+  hardDeleteTopicById, getRecentTopics, getTrendingTopic } from '../repositories/topic.repository.js';
 
 const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => {
   if (!categoria_id) {
@@ -199,6 +200,11 @@ const getRecentTopicsService = async (limit) => {
   return await getRecentTopics(safeLimit);
 };
 
+const getTrendingTopicService = async (days) => {
+  const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 30);
+  return await getTrendingTopic(safeDays);
+};
+
 export { createTopicService, getTopicsService ,getTopicByIdService, getMyTopicsService, 
   updateTopicService, activeTopicService, deleteTopicService, getTopicsByCategoryIdService, 
-  getTopicsByUserIdService, getRecentTopicsService };
+  getTopicsByUserIdService, getRecentTopicsService, getTrendingTopicService };

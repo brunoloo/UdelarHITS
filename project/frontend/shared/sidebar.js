@@ -84,6 +84,25 @@ async function initSidebar(options = {}) {
       </div>
     `;
   }
+  if (page === 'explore') {
+    html += `
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">Usuarios más activos</div>
+        <div class="sidebar-card-body" id="sidebarActiveUsers">
+          <div class="sidebar-loading">Cargando...</div>
+        </div>
+      </div>
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">Comunidad</div>
+        <div class="sidebar-card-body">
+          <div class="stat-row">
+            <span class="stat-row-label">Categorías activas</span>
+            <span class="stat-row-value" id="statCategories">—</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   aside.innerHTML = html;
 }
@@ -149,4 +168,35 @@ function renderSidebarNewCats(categories) {
       <span class="sidebar-cat-count">${Number(c.contador_temas) || 0} temas</span>
     </a>`
   ).join('');
+}
+
+async function renderSidebarActiveUsers() {
+  const container = document.getElementById('sidebarActiveUsers');
+  if (!container) return;
+
+  try {
+    const res = await apiGet('/users/most-active?limit=5');
+    if (!res?.ok || !res.data.length) {
+      container.innerHTML = `<span class="sidebar-empty">Sin datos aún</span>`;
+      return;
+    }
+
+    container.innerHTML = res.data.map((u, i) => {
+      const avatarSrc = u.url_imagen || `${SERVER_BASE}/assets/default-user.jpg`;
+      const aportes = Number(u.aportes) || 0;
+      return `
+        <a class="sidebar-active-user" href="/src/user/profile.html?nickname=${encodeURIComponent(u.nickname)}">
+          <span class="sidebar-active-rank">${i + 1}</span>
+          <img class="sidebar-active-avatar" src="${escapeHtml(avatarSrc)}" alt=""
+            onerror="this.src='${SERVER_BASE}/assets/default-user.jpg'" />
+          <div class="sidebar-active-info">
+            <span class="sidebar-active-nickname">@${escapeHtml(u.nickname)}</span>
+            <span class="sidebar-active-count">${aportes} ${aportes === 1 ? 'aporte' : 'aportes'}</span>
+          </div>
+        </a>
+      `;
+    }).join('');
+  } catch (e) {
+    container.innerHTML = `<span class="sidebar-empty">Error al cargar</span>`;
+  }
 }

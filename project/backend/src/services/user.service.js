@@ -6,7 +6,7 @@ import {
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser, 
   isFollowing, updateAvatarById, searchUsers, updateBannerById, 
-  deleteBannerById, deleteAvatarById } from '../repositories/user.repository.js';
+  deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers } from '../repositories/user.repository.js';
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
 
@@ -370,10 +370,20 @@ const deleteAvatarService = async (userId) => {
   return await deleteAvatarById(userId);
 };
 
+const getSuggestedUsersService = async (userId, limit) => {
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 10, 1), 20);
+  return await getSuggestedUsers(userId, safeLimit);
+};
+
+const getMostActiveUsersService = async (limit) => {
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 5, 1), 10);
+  return await getMostActiveUsers(safeLimit);
+};
+
 export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
   updateMeService, banUserService, activeUserService, 
   deleteUserService, followUserService, unfollowUserService, isFollowingService, 
   updateAvatarService, searchUsersService, updateBannerService, 
-  deleteAvatarService, deleteBannerService };
+  deleteAvatarService, deleteBannerService, getSuggestedUsersService, getMostActiveUsersService };
 
 

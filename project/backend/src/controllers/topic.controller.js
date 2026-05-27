@@ -1,6 +1,7 @@
 import { createTopicService, getTopicsService, getTopicByIdService, getMyTopicsService, 
   updateTopicService, deleteTopicService, activeTopicService, 
-  getTopicsByCategoryIdService, getTopicsByUserIdService, getRecentTopicsService } from '../services/topic.service.js';
+  getTopicsByCategoryIdService, getTopicsByUserIdService, 
+  getRecentTopicsService, getTrendingTopicService } from '../services/topic.service.js';
 
 const createTopic = async (req, res) => {
   try {
@@ -121,5 +122,14 @@ const getRecentTopicsList = async (req, res, next) => {
   }
 };
 
+const getTrendingTopicItem = async (req, res, next) => {
+  try {
+    const topic = await getTrendingTopicService(req.query.days);
+    return res.status(200).json({ ok: true, data: topic });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export { createTopic, getTopics, getTopicById, getMyTopics, updateTopic, deleteTopic, 
-  activeTopic, getTopicsByCategory, getTopicsByUser, getRecentTopicsList };
+  activeTopic, getTopicsByCategory, getTopicsByUser, getRecentTopicsList, getTrendingTopicItem };
