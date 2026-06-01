@@ -86,6 +86,18 @@ const getTopicByIdService = async (id) => {
     err.code = 'NOT_FOUND';
     throw err;
   }
+  // Ocultar metadatos de un tema inactivo (acceso por link directo: solo se ven comentarios)
+  if (topic.estado === 'inactivo') {
+    topic.titulo = null;
+    topic.cuerpo = null;
+    topic.autor_id = null;
+    topic.autor_nickname = null;
+    topic.autor_url_imagen = null;
+  }
+  // Si la categoría del tema está inactiva, ocultar su título también
+  if (topic.categoria_estado === 'inactiva') {
+    topic.categoria_titulo = null;
+  }
   return topic;
 };
 

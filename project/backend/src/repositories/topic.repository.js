@@ -32,8 +32,8 @@ const createTopic = async ({ autor_id, categoria_id, titulo, cuerpo }) => {
 };
 
 const findTopicByTituloAndCategoria = async (titulo, categoriaId) => {
-  const q = `SELECT contenido_id FROM tema 
-  WHERE LOWER(REGEXP_REPLACE(titulo, '\\s+', ' ', 'g')) = LOWER($1) AND categoria_id = $2 LIMIT 1`;
+  const q = `SELECT contenido_id FROM tema
+  WHERE unaccent(LOWER(REGEXP_REPLACE(titulo, '\\s+', ' ', 'g'))) = unaccent(LOWER($1)) AND categoria_id = $2 LIMIT 1`;
   const { rows } = await pool.query(q, [titulo, categoriaId]);
   return rows[0] || null;
 };
@@ -134,7 +134,8 @@ const decrementTopicCount = async (categoriaId) => {
 const getTopicsByUserId = async (userId) => {
   const q = `
     SELECT t.contenido_id AS id, t.titulo, t.estado, t.categoria_id,
-      c.titulo AS categoria_titulo, c.estado AS categoria_estado, con.fecha_creacion
+      CASE WHEN c.estado = 'inactiva' THEN NULL ELSE c.titulo END AS categoria_titulo,
+      c.estado AS categoria_estado, con.fecha_creacion
     FROM tema t
     JOIN contenido con ON con.id = t.contenido_id
     JOIN categoria c ON c.id = t.categoria_id

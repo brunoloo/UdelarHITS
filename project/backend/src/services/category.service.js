@@ -94,8 +94,19 @@ const getCategoryByIdService = async (id) => {
     err.code = 'NOT_FOUND';
     throw err;
   }
+
+  // Ocultar metadatos de una categoría inactiva
+  if (category.estado === 'inactiva') {
+    category.titulo = null;
+    category.descripcion = null;
+    category.etiquetas = null;
+    category.autor_id = null;
+    category.autor_nickname = null;
+    category.autor_url_imagen = null;
+    category.contador_temas = null;
+  }
   const topics = await getTopicsByCategoryId(id);
-  return { ...category, topics };
+    return { ...category, topics };
 };
 
 const getMyCategoriesService = async (autorId) => {
@@ -180,7 +191,7 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
     throw err;
   }
 
-  if (userRol !== 'admin' && category.autor_id !== userId) {
+  if (category.autor_id !== userId) {
     const err = new Error('No tenés permisos para editar esta categoría');
     err.code = 'FORBIDDEN';
     throw err;

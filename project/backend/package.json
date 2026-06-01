@@ -7,12 +7,16 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/server.js",
     "db:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits;\"",
     "db:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits OWNER brunoloo;\"",
     "db:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/schema.sql",
     "db:reset": "npm run db:drop && npm run db:create && npm run db:schema",
+    "db:test:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits_test;\"",
+    "db:test:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits_test OWNER brunoloo;\"",
+    "db:test:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits_test -f ../database/schema.sql",
+    "db:test:reset": "npm run db:test:drop && npm run db:test:create && npm run db:test:schema",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "seed:admin": "node src/seeds/seedAdmin.js",
     "seed:test": "node src/seeds/seedTestData.js",
     "seed:testV2": "node src/seeds/seedTestDataV2.js"
@@ -36,6 +40,9 @@
     "pg": "^8.20.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "cross-env": "^10.1.0",
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }

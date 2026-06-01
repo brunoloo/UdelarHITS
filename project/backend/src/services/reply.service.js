@@ -203,7 +203,7 @@ const updateReplyService = async (userId, userRol, replyId, { cuerpo }) => {
     throw err;
   }
 
-  if (userRol !== 'admin' && reply.autor_id !== userId) {
+  if (reply.autor_id !== userId) {
     const err = new Error('No tenés permisos para editar este comentario');
     err.code = 'FORBIDDEN';
     throw err;
