@@ -5,7 +5,7 @@ import { registerUserService, loginUserService, getUsersService, createUserByAdm
     banUserService, activeUserService, deleteUserService,
   followUserService, unfollowUserService, isFollowingService, updateAvatarService, 
   searchUsersService, updateBannerService, 
-  deleteBannerService, deleteAvatarService } from '../services/user.service.js';
+  deleteBannerService, deleteAvatarService, getSuggestedUsersService, getMostActiveUsersService } from '../services/user.service.js';
 
 const showMe = async (req, res) => {
   try {
@@ -286,7 +286,25 @@ const deleteAvatar = async (req, res) => {
   }
 };
 
+const getSuggestedUsersList = async (req, res, next) => {
+  try {
+    const users = await getSuggestedUsersService(req.user.id, req.query.limit);
+    return res.status(200).json({ ok: true, data: users });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getMostActiveUsersList = async (req, res, next) => {
+  try {
+    const users = await getMostActiveUsersService(req.query.limit);
+    return res.status(200).json({ ok: true, data: users });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export { showMe, registerUser, loginUser, logoutUser, getUsers, 
   getUserProfile, updateMe, changeUserPassword, banUser, 
   activeUser, deleteUser, followUser, unfollowUser, checkFollowing, updateAvatar, 
-  searchUsers, updateBanner, deleteBanner, deleteAvatar }
+  searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList }

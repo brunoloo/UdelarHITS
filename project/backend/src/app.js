@@ -51,6 +51,10 @@ app.use(cookieParser());
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
+// En test, los limiters son passthrough (evita 429 espurios en la suite)
+const limiterIf = (limiter) => (req, res, next) =>
+  process.env.NODE_ENV === 'test' ? next() : limiter(req, res, next);
+
 // Rate limit estricto en endpoints de auth para frenar brute-force
 const authLimiter = rateLimit({
   windowMs: 1,
@@ -59,8 +63,8 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { ok: false, message: 'Demasiados intentos. Intentá de nuevo en unos minutos.' }
 });
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/login', limiterIf(authLimiter));
+app.use('/api/auth/register', limiterIf(authLimiter));
 
 // Rate limit para limitar búsquedas
 const searchLimiter = rateLimit({
@@ -70,7 +74,7 @@ const searchLimiter = rateLimit({
   legacyHeaders: false,
   message: { ok: false, message: 'Demasiadas búsquedas. Intentá de nuevo en un minuto.' }
 });
-app.use('/api/users/search', searchLimiter);
+app.use('/api/users/search', limiterIf(searchLimiter));
 
 // Rate limit general para toda la API
 const apiLimiter = rateLimit({
@@ -79,7 +83,7 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false
 });
-app.use('/api', apiLimiter);
+app.use('/api', limiterIf(apiLimiter));
 
 //index (usamos el index que aparece en frontend) — path estable, no depende del cwd
 app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));

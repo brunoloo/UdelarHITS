@@ -1,6 +1,7 @@
 import { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
-  updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas, hardDeleteCategoryById, categoryHasContent } from '../repositories/category.repository.js';
+  updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas, 
+  hardDeleteCategoryById, categoryHasContent, getPopularCategories } from '../repositories/category.repository.js';
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
 
@@ -93,8 +94,19 @@ const getCategoryByIdService = async (id) => {
     err.code = 'NOT_FOUND';
     throw err;
   }
+
+  // Ocultar metadatos de una categoría inactiva
+  if (category.estado === 'inactiva') {
+    category.titulo = null;
+    category.descripcion = null;
+    category.etiquetas = null;
+    category.autor_id = null;
+    category.autor_nickname = null;
+    category.autor_url_imagen = null;
+    category.contador_temas = null;
+  }
   const topics = await getTopicsByCategoryId(id);
-  return { ...category, topics };
+    return { ...category, topics };
 };
 
 const getMyCategoriesService = async (autorId) => {
@@ -179,7 +191,7 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
     throw err;
   }
 
-  if (userRol !== 'admin' && category.autor_id !== userId) {
+  if (category.autor_id !== userId) {
     const err = new Error('No tenés permisos para editar esta categoría');
     err.code = 'FORBIDDEN';
     throw err;
@@ -226,6 +238,12 @@ const getEtiquetasService = async () => {
   return await getEtiquetas();
 };
 
+const getPopularCategoriesService = async (days, limit) => {
+  const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 30);
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 20, 1), 50);
+  return await getPopularCategories(safeDays, safeLimit);
+};
+
 export { createCategoryService, getCategoriesService, getCategoryByIdService, deactivateCategoryById, 
   deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService, 
-  getActiveCategoriesService, getParticipantsByCategoryIdService, getEtiquetasService };
+  getActiveCategoriesService, getParticipantsByCategoryIdService, getEtiquetasService, getPopularCategoriesService };

@@ -2,7 +2,8 @@ import { getCategoryById, assignParticipantRole, getTopicsByCategoryId, category
 
 import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
   getTopicsByAuthorId, updateTopicById, updateTopicEstado, decrementTopicCount, 
-  incrementTopicCount, getTopicsByUserId, topicHasContent, hardDeleteTopicById } from '../repositories/topic.repository.js';
+  incrementTopicCount, getTopicsByUserId, topicHasContent, 
+  hardDeleteTopicById, getRecentTopics, getTrendingTopic } from '../repositories/topic.repository.js';
 
 const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => {
   if (!categoria_id) {
@@ -84,6 +85,18 @@ const getTopicByIdService = async (id) => {
     const err = new Error('Tema no encontrado');
     err.code = 'NOT_FOUND';
     throw err;
+  }
+  // Ocultar metadatos de un tema inactivo (acceso por link directo: solo se ven comentarios)
+  if (topic.estado === 'inactivo') {
+    topic.titulo = null;
+    topic.cuerpo = null;
+    topic.autor_id = null;
+    topic.autor_nickname = null;
+    topic.autor_url_imagen = null;
+  }
+  // Si la categoría del tema está inactiva, ocultar su título también
+  if (topic.categoria_estado === 'inactiva') {
+    topic.categoria_titulo = null;
   }
   return topic;
 };
@@ -194,5 +207,16 @@ const getTopicsByUserIdService = async (userId) => {
   return await getTopicsByUserId(userId);
 };
 
+const getRecentTopicsService = async (limit) => {
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 20, 1), 50);
+  return await getRecentTopics(safeLimit);
+};
+
+const getTrendingTopicService = async (days) => {
+  const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 30);
+  return await getTrendingTopic(safeDays);
+};
+
 export { createTopicService, getTopicsService ,getTopicByIdService, getMyTopicsService, 
-  updateTopicService, activeTopicService, deleteTopicService, getTopicsByCategoryIdService, getTopicsByUserIdService };
+  updateTopicService, activeTopicService, deleteTopicService, getTopicsByCategoryIdService, 
+  getTopicsByUserIdService, getRecentTopicsService, getTrendingTopicService };

@@ -18,6 +18,155 @@ function updateSeguidoresUI() {
   document.getElementById("labelSeguidores").textContent = n === 1 ? "Seguidor" : "Seguidores";
 }
 
+function openFollowModal(type, myFollowingList, meUser) {
+  const modal = document.getElementById('followModal');
+  const title = document.getElementById('followModalTitle');
+  const list = document.getElementById('followList');
+  const closeBtn = document.getElementById('followModalClose');
+
+  const data = type === 'seguidores' ? followers : following;
+  title.textContent = type === 'seguidores' ? 'Seguidores' : 'Siguiendo';
+
+  if (data.length === 0) {
+    list.innerHTML = `<div class="follow-list-empty">${
+      type === 'seguidores' ? 'Todavía no tiene seguidores' : 'Todavía no sigue a nadie'
+    }</div>`;
+  } else {
+    // Set de nicknames que yo sigo para lookup rápido
+    const myFollowingSet = new Set((myFollowingList || []).map(u => u.nickname));
+
+    list.innerHTML = data.map(u => {
+      const isMe = meUser && u.nickname === meUser.nickname;
+      const iFollow = myFollowingSet.has(u.nickname);
+
+      let btnHtml = '';
+      if (!isMe && meUser) {
+        if (iFollow) {
+          btnHtml = `<button class="btn-follow-sm btn-follow-sm--following" data-nickname="${escapeHtml(u.nickname)}">Siguiendo</button>`;
+        } else {
+          btnHtml = `<button class="btn-follow-sm" data-nickname="${escapeHtml(u.nickname)}">Seguir</button>`;
+        }
+      }
+
+      const avatarSrc = u.url_imagen || `${SERVER_BASE}/assets/default-user.jpg`;
+
+      return `
+        <div class="follow-item">
+          <img class="follow-item-avatar" src="${escapeHtml(avatarSrc)}" alt="" 
+               onerror="this.src='${SERVER_BASE}/assets/default-user.jpg'" />
+          <div class="follow-item-info">
+            <a class="follow-item-nickname" href="/src/user/profile.html?nickname=${encodeURIComponent(u.nickname)}">@${escapeHtml(u.nickname)}</a>
+            <div class="follow-item-name">${escapeHtml(u.nombre || '')}</div>
+          </div>
+          ${btnHtml}
+        </div>
+      `;
+    }).join('');
+
+    // Listeners para botones de seguir/dejar de seguir
+    list.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-follow-sm');
+    if (!btn || btn.disabled) return;
+
+    const nickname = btn.dataset.nickname;
+    const wasFollowing = btn.classList.contains('btn-follow-sm--following');
+
+    // Optimista: cambiar al instante
+    btn.disabled = true;
+    if (wasFollowing) {
+      btn.classList.remove('btn-follow-sm--following');
+      btn.textContent = 'Seguir';
+    } else {
+      btn.classList.add('btn-follow-sm--following');
+      btn.textContent = 'Siguiendo';
+    }
+
+    try {
+      const res = wasFollowing
+        ? await apiDelete(`/users/${encodeURIComponent(nickname)}/follow`)
+        : await apiPost(`/users/${encodeURIComponent(nickname)}/follow`, {});
+
+      if (res.ok) {
+        if (wasFollowing) {
+          const idx = myFollowingList.findIndex(u => u.nickname === nickname);
+          if (idx !== -1) myFollowingList.splice(idx, 1);
+        } else {
+          myFollowingList.push({ nickname });
+        }
+
+        // Actualizar contador si estoy en mi propio perfil
+        const params = new URLSearchParams(window.location.search);
+        const np = params.get("nickname");
+        const isOwn = !np || np === meUser.nickname;
+        if (isOwn) {
+          if (wasFollowing) {
+            following = following.filter(u => u.nickname !== nickname);
+          } else {
+            following.push({ nickname });
+          }
+          const nSeguidos = following.length;
+          document.getElementById("profileSeguidos").textContent = nSeguidos;
+          document.getElementById("labelSeguidos").textContent = nSeguidos === 1 ? "Seguido" : "Seguidos";
+        }
+      } else {
+        // Rollback si falló
+        if (wasFollowing) {
+          btn.classList.add('btn-follow-sm--following');
+          btn.textContent = 'Siguiendo';
+        } else {
+          btn.classList.remove('btn-follow-sm--following');
+          btn.textContent = 'Seguir';
+        }
+      }
+    } catch (e) {
+      // Rollback
+      if (wasFollowing) {
+        btn.classList.add('btn-follow-sm--following');
+        btn.textContent = 'Siguiendo';
+      } else {
+        btn.classList.remove('btn-follow-sm--following');
+        btn.textContent = 'Seguir';
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // Hover dinámico con delegación (funciona para botones que cambian de estado)
+  list.addEventListener('mouseenter', (e) => {
+    const btn = e.target.closest('.btn-follow-sm--following');
+    if (btn) btn.textContent = 'Dejar de seguir';
+  }, true);
+
+  list.addEventListener('mouseleave', (e) => {
+    const btn = e.target.closest('.btn-follow-sm');
+    if (btn && btn.classList.contains('btn-follow-sm--following')) {
+      btn.textContent = 'Siguiendo';
+    }
+  }, true);
+  }
+
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Cerrar
+  function closeFollow() {
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  closeBtn.onclick = closeFollow;
+  modal.onclick = (e) => { if (e.target === modal) closeFollow(); };
+  
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeFollow();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+}
+
 async function loadTabs(userId, categories) {
   // Categorías
   const catGrid = document.getElementById("panelCategorias");
@@ -296,7 +445,6 @@ function initEditModal(user) {
   });
 }
 
-
 async function loadProfile() {
   const params = new URLSearchParams(window.location.search);
   const nicknameParam = params.get("nickname");
@@ -360,6 +508,18 @@ async function loadProfile() {
   document.getElementById("labelSeguidos").textContent = nSeguidos === 1 ? "Seguido" : "Seguidos";
   updateSeguidoresUI();
 
+  // Listeners para abrir modal de seguidores/seguidos
+  const myFollowingList = isOwnProfile ? following : (meRes.data.following || []);
+  const meUser = meRes.data.user;
+
+  document.getElementById('btnSeguidores').addEventListener('click', () => {
+    openFollowModal('seguidores', myFollowingList, meUser);
+  });
+
+  document.getElementById('btnSeguidos').addEventListener('click', () => {
+    openFollowModal('seguidos', myFollowingList, meUser);
+  });
+
   const editBtn = document.querySelector(".profile-edit-btn");
   if (editBtn) editBtn.style.display = isOwnProfile ? "" : "none";
 
@@ -410,7 +570,12 @@ async function loadProfile() {
           yaSiguiendo = false;
           btn.classList.remove("btn-follow--unfollow");
           updateFollowBtn(btn, false);
-          followers = new Array(res.data.seguidores);
+          // Recargar datos reales de seguidores
+          const updatedRes = await apiGet(`/users/${encodeURIComponent(nicknameParam)}`);
+          if (updatedRes.ok) {
+            followers = updatedRes.data.followers;
+            following = updatedRes.data.following;
+          }
           updateSeguidoresUI();
         } else {
           followers = prevFollowers;
@@ -425,7 +590,12 @@ async function loadProfile() {
         if (res.ok) {
           yaSiguiendo = true;
           updateFollowBtn(btn, true);
-          followers = new Array(res.data.seguidores);
+          // Recargar datos reales de seguidores
+          const updatedRes = await apiGet(`/users/${encodeURIComponent(nicknameParam)}`);
+          if (updatedRes.ok) {
+            followers = updatedRes.data.followers;
+            following = updatedRes.data.following;
+          }
           updateSeguidoresUI();
         } else {
           followers = prevFollowers;

@@ -71,7 +71,10 @@ const getReplyById = async (id) => {
   const q = `
     SELECT com.contenido_id AS id, con.autor_id, con.cuerpo, com.estado,
       com.tema_id, com.categoria_id, com.comentario_padre_id,
-      COALESCE(t.titulo, cat.titulo) AS destino_titulo,
+      COALESCE(
+        CASE WHEN t.estado = 'inactivo' THEN NULL ELSE t.titulo END,
+        CASE WHEN cat.estado = 'inactiva' THEN NULL ELSE cat.titulo END
+      ) AS destino_titulo,
       CASE
         WHEN com.tema_id IS NOT NULL THEN 'tema'
         ELSE 'categoria'
@@ -94,7 +97,10 @@ const getRepliesByAuthorId = async (autorId) => {
         WHEN com.tema_id IS NOT NULL THEN 'tema'
         ELSE 'categoria'
       END AS tipo,
-      COALESCE(t.titulo, cat.titulo) AS destino_titulo,
+      COALESCE(
+        CASE WHEN t.estado = 'inactivo' THEN NULL ELSE t.titulo END,
+        CASE WHEN cat.estado = 'inactiva' THEN NULL ELSE cat.titulo END
+      ) AS destino_titulo,
       COALESCE(com.tema_id, com.categoria_id) AS destino_id
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
@@ -114,7 +120,10 @@ const getRepliesByUserId = async (userId) => {
         WHEN com.tema_id IS NOT NULL THEN 'tema'
         ELSE 'categoria'
       END AS tipo,
-      COALESCE(t.titulo, cat.titulo) AS destino_titulo,
+      COALESCE(
+        CASE WHEN t.estado = 'inactivo' THEN NULL ELSE t.titulo END,
+        CASE WHEN cat.estado = 'inactiva' THEN NULL ELSE cat.titulo END
+      ) AS destino_titulo,
       COALESCE(com.tema_id, com.categoria_id) AS destino_id,
       CASE
         WHEN com.tema_id IS NOT NULL THEN tc.estado

@@ -1,7 +1,7 @@
 import { createCategoryService, getCategoriesService, getCategoryByIdService, 
   deleteCategoryService, activeCategoryService, getMyCategoriesService, 
   updateCategoryService, getActiveCategoriesService, 
-  getParticipantsByCategoryIdService, getEtiquetasService } from '../services/category.service.js';
+  getParticipantsByCategoryIdService, getEtiquetasService, getPopularCategoriesService } from '../services/category.service.js';
 
 const createCategory = async (req, res) => {
   try {
@@ -124,5 +124,14 @@ const getEtiquetasList = async (req, res) => {
   }
 };
 
+const getPopularCategoriesList = async (req, res, next) => {
+  try {
+    const categories = await getPopularCategoriesService(req.query.days, req.query.limit);
+    return res.status(200).json({ ok: true, data: categories });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory, 
-  getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, getEtiquetasList };
+  getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, getEtiquetasList, getPopularCategoriesList };

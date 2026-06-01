@@ -17,7 +17,6 @@ async function loadHeader() {
   if (res?.ok) {
     isAuthenticated = true;
     const user = res.data.user;
-    document.getElementById("joinBanner")?.remove();
     actions.innerHTML = `
       <a class="user-chip" href="/src/user/profile.html">
           src="${user.url_imagen || `${SERVER_BASE}/assets/default-user.jpg`}"
@@ -41,8 +40,6 @@ async function loadHeader() {
       ccAvatar.appendChild(img);
     }
   } else {
-    const banner = document.getElementById("joinBanner");
-    if (banner) banner.style.display = "block";
     actions.innerHTML = `
       <a class="btn-ghost" href="/src/auth/login.html">Iniciar sesión</a>
       <a class="btn-primary" href="/src/auth/register.html">Registrarse</a>
@@ -381,13 +378,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Carga inicial ──
 loadHeader();
-loadCategories().then(() => {
-  loadEtiquetas().then(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const initialQuery = urlParams.get('q');
-    if (initialQuery) {
-      document.getElementById('searchInput').value = initialQuery;
-      document.getElementById('searchInput').dispatchEvent(new Event('input'));
-    }
+initSidebar({ page: 'index' }).then(() => {
+  loadCategories().then(() => {
+    loadEtiquetas().then(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialQuery = urlParams.get('q');
+      if (initialQuery) {
+        document.getElementById('searchInput').value = initialQuery;
+        // Filtrar directamente por etiqueta
+        const filtered = allCategories.filter(c => {
+          const etiquetas = parseEtiquetas(c.etiquetas);
+          return etiquetas.some(e => e.toLowerCase() === initialQuery.toLowerCase());
+        });
+        if (filtered.length > 0) {
+          renderCategories(filtered);
+        } else {
+          document.getElementById('searchInput').dispatchEvent(new Event('input'));
+        }
+      }
+    });
   });
 });

@@ -263,8 +263,46 @@ const deleteAvatarById = async (id) => {
   return rows[0] || null;
 };
 
+const getSuggestedUsers = async (userId, limit = 10) => {
+  const q = `
+    SELECT u.id, u.nickname, u.nombre, u.url_imagen,
+      (SELECT COUNT(*) FROM contenido c WHERE c.autor_id = u.id) AS actividad
+    FROM usuario u
+    WHERE u.estado = 'activo'
+      AND u.id != $1
+      AND u.id NOT IN (
+        SELECT us.seguido_id FROM usuario_seguidor us WHERE us.seguidor_id = $1
+      )
+    ORDER BY actividad DESC, u.fecha_creacion DESC
+    LIMIT $2
+  `;
+  const { rows } = await pool.query(q, [userId, limit]);
+  return rows;
+};
+
+const getMostActiveUsers = async (limit = 5) => {
+  const q = `
+    SELECT u.id, u.nickname, u.nombre, u.url_imagen,
+      (
+        SELECT COUNT(*) FROM tema t 
+        JOIN contenido c ON c.id = t.contenido_id 
+        WHERE c.autor_id = u.id AND t.estado = 'activo'
+      ) + (
+        SELECT COUNT(*) FROM comentario com 
+        JOIN contenido c ON c.id = com.contenido_id 
+        WHERE c.autor_id = u.id AND com.estado = 'visible'
+      ) AS aportes
+    FROM usuario u
+    WHERE u.estado = 'activo'
+    ORDER BY aportes DESC
+    LIMIT $1
+  `;
+  const { rows } = await pool.query(q, [limit]);
+  return rows;
+};
+
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, 
   deleteUserByNickname, followUser, unfollowUser, isFollowing, updateAvatarById, 
-  searchUsers, updateBannerById, deleteBannerById, deleteAvatarById };
+  searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers };
