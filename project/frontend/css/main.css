@@ -1572,6 +1572,74 @@ a.topic-title {
   color: var(--accent);
 }
 
+/* ── Modal de reporte ── */
+.report-modal {
+  width: 480px;
+}
+ 
+.report-subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+}
+ 
+.report-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+ 
+.report-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 4px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+ 
+.report-option:hover {
+  background: var(--surface-2);
+}
+ 
+.report-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+ 
+.report-option-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+ 
+.report-option-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+ 
+.report-option input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+ 
+.report-footer {
+  padding: 12px 20px 16px;
+}
+ 
+.report-submit-btn {
+  width: 100%;
+  height: 40px;
+  font-size: 15px;
+  border-radius: var(--radius);
+}
+
 /* ── GENERAL ────────────────────────────────────── */
 
 .bio-link {

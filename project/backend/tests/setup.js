@@ -5,7 +5,7 @@ const TABLES = [
   'historial_edicion_comentario', 'historial_edicion_categoria',
   'comentario', 'tema', 'contenido',
   'participacion_categoria', 'categoria_etiqueta', 'categoria',
-  'usuario_seguidor', 'usuario',
+  'usuario_seguidor', 'usuario', 'notificacion',
 ];
 
 beforeEach(async () => {

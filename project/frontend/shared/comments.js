@@ -316,12 +316,17 @@ function attachMenuListeners(container) {
     container.querySelectorAll('.comment-dropdown.open').forEach(d => d.classList.remove('open'));
   });
 
-  // Reportar (placeholder — sin función por ahora)
+  // Reportar comentario
   container.querySelectorAll('.report-comment-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      showToast('Función de reportar próximamente', 'info');
       btn.closest('.comment-dropdown').classList.remove('open');
+      const card = btn.closest('.comment-card');
+      if (currentMeRes?.ok && currentMeRes.data.user.id == card.dataset.autorId) {
+        showToast('No podés reportar tu propio contenido', 'error');
+        return;
+      }
+      openReportModal(btn.dataset.commentId);
     });
   });
 

@@ -108,10 +108,28 @@ const updateTopicById = async (id, { cuerpo }) => {
   return rows[0] || null;
 };
 
-const updateTopicEstado = async (id, estado) => {
-  const suffix = estado === 'inactivo' ? `, titulo = titulo || '_deleted_' || contenido_id` : '';
+const updateTopicEstado = async (id, estado, motivo = null) => {
+  if (estado === 'inactivo') {
+    const q = `
+      UPDATE tema
+      SET estado = 'inactivo',
+          titulo = titulo || '_deleted_' || contenido_id,
+          motivo_inactivacion = $2,
+          fecha_inactivacion = NOW()
+      WHERE contenido_id = $1
+      RETURNING contenido_id AS id, titulo, estado
+    `;
+    const { rows } = await pool.query(q, [id, motivo]);
+    return rows[0] || null;
+  }
+ 
+  // estado 'activo' u otros: comportamiento original + limpieza de moderación
   const q = `
-    UPDATE tema SET estado = $1${suffix}
+    UPDATE tema
+    SET estado = $1,
+        motivo_inactivacion = NULL,
+        fecha_inactivacion = NULL,
+        inactivado_directo = FALSE
     WHERE contenido_id = $2
     RETURNING contenido_id AS id, titulo, estado
   `;
@@ -243,7 +261,89 @@ const getTrendingTopic = async (days = 7) => {
   return rows[0] || null;
 };
 
+const moderateDeactivateTopicTx = async (id, client) => {
+  const q = `
+    UPDATE tema
+    SET estado = 'inactivo',
+        titulo = titulo || '_deleted_' || contenido_id,
+        motivo_inactivacion = 'moderacion_reporte',
+        fecha_inactivacion = NOW(),
+        inactivado_directo = TRUE
+    WHERE contenido_id = $1 AND estado = 'activo'
+    RETURNING contenido_id AS id, categoria_id, estado
+  `;
+  const { rows } = await client.query(q, [id]);
+  return rows[0] || null;
+};
+
+const moderateHideTopicRepliesTx = async (temaId, client) => {
+  const q = `
+    UPDATE comentario
+    SET estado = 'oculto',
+        motivo_inactivacion = 'moderacion_reporte',
+        fecha_inactivacion = NOW(),
+        inactivado_directo = FALSE
+    WHERE tema_id = $1 AND estado = 'visible'
+  `;
+  const { rowCount } = await client.query(q, [temaId]);
+  return rowCount;
+};
+
+const decrementTopicCountTxModeration = async (categoriaId, client) => {
+  await client.query(`
+    UPDATE categoria SET contador_temas = contador_temas - 1
+    WHERE id = $1 AND contador_temas > 0
+  `, [categoriaId]);
+};
+
+const reactivateTopicTx = async (id, client) => {
+  const q = `
+    UPDATE tema
+    SET estado = 'activo',
+        titulo = regexp_replace(titulo, '_deleted_' || contenido_id || '$', ''),
+        motivo_inactivacion = NULL,
+        fecha_inactivacion = NULL,
+        inactivado_directo = FALSE
+    WHERE contenido_id = $1 AND estado = 'inactivo'
+    RETURNING contenido_id AS id, categoria_id, titulo, estado
+  `;
+  const { rows } = await client.query(q, [id]);
+  return rows[0] || null;
+};
+
+const restoreDraggedRepliesTx = async (temaId, client) => {
+  const q = `
+    UPDATE comentario
+    SET estado = 'visible',
+        motivo_inactivacion = NULL,
+        fecha_inactivacion = NULL
+    WHERE tema_id = $1
+      AND estado = 'oculto'
+      AND motivo_inactivacion = 'moderacion_reporte'
+      AND inactivado_directo = FALSE
+  `;
+  const { rowCount } = await client.query(q, [temaId]);
+  return rowCount;
+};
+
+const hardDeleteTopicTreeTx = async (temaId, client) => {
+  // 1) borrar los contenidos de todos los comentarios del tema
+  await client.query(`
+    DELETE FROM contenido
+    WHERE id IN (SELECT contenido_id FROM comentario WHERE tema_id = $1)
+  `, [temaId]);
+ 
+  // 2) borrar el contenido del tema (cascadea a la fila de tema)
+  const { rowCount } = await client.query(`DELETE FROM contenido WHERE id = $1`, [temaId]);
+  return rowCount;
+};
+
+const deleteReportsByContenidoTx = async (contenidoId, client) => {
+  await client.query(`DELETE FROM reporte WHERE contenido_id = $1`, [contenidoId]);
+};
+
 export { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById, getTopicsByAuthorId, 
   updateTopicById, updateTopicEstado, incrementTopicCount, decrementTopicCount, 
   getTopicsByUserId, topicHasContent, hardDeleteTopicById, cleanupInactiveTopics, 
-  getRecentTopics, getTrendingTopic };
+  getRecentTopics, getTrendingTopic, moderateDeactivateTopicTx, moderateHideTopicRepliesTx, 
+  decrementTopicCountTx, reactivateTopicTx, restoreDraggedRepliesTx, hardDeleteTopicTreeTx, deleteReportsByContenidoTx };

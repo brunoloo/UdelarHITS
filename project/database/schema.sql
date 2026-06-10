@@ -1,5 +1,14 @@
 -- =========================================================
--- Schema v1 - Foro (PostgreSQL)
+-- Schema v4 - Foro (PostgreSQL)
+-- Cambios v2 (Fase 4.A — moderación):
+--   * enum motivo_inactivacion
+--   * tema/comentario/categoria: motivo_inactivacion, fecha_inactivacion, inactivado_directo
+--   * índices parciales de moderación
+-- Cambios v3 (Fase 4.B — apelaciones):
+--   * índice único parcial uq_apelacion_pendiente (una apelación pendiente por contenido)
+-- Cambios v4 (Fase 4 — frontend de moderación):
+--   * motivo_reporte expandido: +acoso, +contenidoInapropiado, +informacionEnganosa, +suplantacion
+--   * tabla notificacion (base para notificaciones de moderación y futuras)
 -- =========================================================
 
 CREATE EXTENSION IF NOT EXISTS unaccent;
@@ -15,8 +24,15 @@ CREATE TYPE estado_com AS ENUM ('visible', 'oculto');
 CREATE TYPE rol_participacion AS ENUM ('moderador', 'participante');
 
 CREATE TYPE tipo_reaccion AS ENUM ('meGusta', 'noMeGusta', 'interesante', 'divertido');
-CREATE TYPE motivo_reporte AS ENUM ('spam', 'incitacionOdio');
+CREATE TYPE motivo_reporte AS ENUM ('spam', 'incitacionOdio', 'acoso', 'contenidoInapropiado', 'informacionEnganosa', 'suplantacion');
 CREATE TYPE estado_apelacion AS ENUM ('pendiente', 'aceptada', 'rechazada');
+
+-- Por qué un contenido quedó inactivo/oculto. Nunca se infiere por ausencia:
+-- cada inactivación escribe su motivo explícito.
+--   'autor'              → lo borró su propio autor (Fase 2)
+--   'moderacion_reporte' → cayó por cruzar el umbral de reportes (Fase 4.A)
+--   'moderacion_admin'   → lo eliminó un admin como moderación (Fase 4.C, previsto)
+CREATE TYPE motivo_inactivacion AS ENUM ('autor', 'moderacion_reporte', 'moderacion_admin');
 
 CREATE TYPE etiqueta AS ENUM (
   -- Vida universitaria
@@ -83,6 +99,9 @@ CREATE TABLE categoria ( -- Revisado y completo. No modificar
   autor_id                    BIGINT NOT NULL REFERENCES usuario(id) ON DELETE RESTRICT,
   contador_temas              INTEGER NOT NULL DEFAULT 0 CHECK (contador_temas >= 0),
   estado                      estado_cat NOT NULL DEFAULT 'activa',
+  -- Fase 4.A: previsto para reporte de categorías (aún no usado en 4.A)
+  motivo_inactivacion         motivo_inactivacion NULL,
+  fecha_inactivacion          TIMESTAMPTZ NULL,
   fecha_creacion              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -130,6 +149,10 @@ CREATE TABLE tema (
   categoria_id      BIGINT NOT NULL REFERENCES categoria(id) ON DELETE RESTRICT,
   titulo            VARCHAR(200) NOT NULL,
   estado            estado_tem NOT NULL DEFAULT 'activo',
+  -- Fase 4.A: trazabilidad de inactivación
+  motivo_inactivacion  motivo_inactivacion NULL,
+  fecha_inactivacion   TIMESTAMPTZ NULL,
+  inactivado_directo   BOOLEAN NOT NULL DEFAULT FALSE,
   CHECK (char_length(titulo) > 0),
   UNIQUE (categoria_id, titulo) -- título de tema único dentro de categoría
 );
@@ -143,6 +166,12 @@ CREATE TABLE comentario (
   categoria_id            BIGINT NULL REFERENCES categoria(id) ON DELETE CASCADE,
   comentario_padre_id     BIGINT NULL REFERENCES comentario(contenido_id) ON DELETE CASCADE,
   estado                  estado_com NOT NULL DEFAULT 'visible',
+  -- Fase 4.A: trazabilidad de inactivación
+  --   inactivado_directo = TRUE  → cruzó su PROPIO umbral de reportes (apelable en 4.B)
+  --   inactivado_directo = FALSE → cayó por arrastre (su tema fue reportado)
+  motivo_inactivacion     motivo_inactivacion NULL,
+  fecha_inactivacion      TIMESTAMPTZ NULL,
+  inactivado_directo      BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT comentario_target_check CHECK (
     (tema_id IS NOT NULL AND categoria_id IS NULL) OR
     (tema_id IS NULL AND categoria_id IS NOT NULL)
@@ -204,6 +233,28 @@ CREATE TABLE apelacion (
 CREATE INDEX idx_apelacion_contenido ON apelacion(contenido_id);
 CREATE INDEX idx_apelacion_estado ON apelacion(estado);
 
+-- Fase 4.B: una sola apelación PENDIENTE por contenido (impide doble-submit).
+-- Como al resolver la apelación se BORRA la fila, en la práctica solo existen
+-- filas 'pendiente'; el WHERE deja el índice correcto igual.
+CREATE UNIQUE INDEX uq_apelacion_pendiente
+  ON apelacion (contenido_id) WHERE estado = 'pendiente';
+
+-- -----------------------------
+-- NOTIFICACIONES
+-- -----------------------------
+-- Registra eventos dirigidos a un usuario (ej: "tu contenido fue moderado").
+-- contenido_id nullable con SET NULL: si el contenido se hard-deletea, la
+-- notificación sigue existiendo pero sin referencia.
+CREATE TABLE notificacion (
+  id                BIGSERIAL PRIMARY KEY,
+  usuario_id        BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  tipo              VARCHAR(50) NOT NULL,
+  mensaje           TEXT NOT NULL,
+  contenido_id      BIGINT NULL REFERENCES contenido(id) ON DELETE SET NULL,
+  leida             BOOLEAN NOT NULL DEFAULT FALSE,
+  fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- -----------------------------
 -- ÍNDICES ÚTILES
 -- -----------------------------
@@ -213,3 +264,16 @@ CREATE INDEX idx_tema_estado ON tema(estado);
 CREATE INDEX idx_categoria_estado ON categoria(estado);
 CREATE INDEX idx_reporte_contenido ON reporte(contenido_id);
 CREATE INDEX idx_reaccion_contenido ON reaccion(contenido_id);
+
+-- Fase 4.A: índices parciales para listar contenido caído por moderación
+CREATE INDEX idx_tema_moderacion
+  ON tema (motivo_inactivacion)
+  WHERE motivo_inactivacion = 'moderacion_reporte';
+
+CREATE INDEX idx_comentario_moderacion
+  ON comentario (motivo_inactivacion)
+  WHERE motivo_inactivacion = 'moderacion_reporte';
+
+-- Notificaciones
+CREATE INDEX idx_notificacion_usuario ON notificacion(usuario_id, fecha_creacion DESC);
+CREATE INDEX idx_notificacion_no_leida ON notificacion(usuario_id) WHERE leida = FALSE;
