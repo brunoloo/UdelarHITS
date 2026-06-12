@@ -9,6 +9,7 @@ import TopicRoutes from './topic.routes.js'
 import ReplyRoutes from './reply.routes.js'
 import ReportRoutes from './report.routes.js'
 import AppealRoutes from './appeal.routes.js'
+import NotificationRoutes from './notification.routes.js'
 
 const router = Router();
 
@@ -20,6 +21,7 @@ router.use('/topics', TopicRoutes);
 router.use('/replies', ReplyRoutes);
 router.use('/reports', ReportRoutes);
 router.use('/appeals', AppealRoutes);
+router.use('/notifications',NotificationRoutes);
 
 router.get('/', (_req, res) => {
   res.json({ 

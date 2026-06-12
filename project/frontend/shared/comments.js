@@ -52,6 +52,9 @@ function renderCommentCard(c, role, index, indexPrefix) {
   // Comentario oculto → placeholder
   if (c.estado === 'oculto') {
     const replyCount = Number(c.contador_respuestas) || 0;
+    const hiddenText = c.motivo_inactivacion === 'moderacion_reporte'
+      ? 'Este comentario fue ocultado por la comunidad'
+      : 'Este comentario fue eliminado por su autor';
     const cardClasses = ['comment-card', 'comment-card--hidden'];
     if (role === 'ancestor') cardClasses.push('comment-card--ancestor');
     if (role === 'reply' && replyCount > 0) cardClasses.push('comment-card--clickable');
@@ -75,7 +78,7 @@ function renderCommentCard(c, role, index, indexPrefix) {
         <div class="comment-body">
           <div class="comment-hidden-text">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Este comentario fue eliminado por su autor
+            ${hiddenText}
           </div>
           ${replyCount > 0 ? `<div class="comment-actions">${repliesBtnHtml}</div>` : ''}
         </div>

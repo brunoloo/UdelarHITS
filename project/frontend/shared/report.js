@@ -1,7 +1,6 @@
 // ── Modal de Reporte ──
-// Inyecta el modal en el DOM y expone window.openReportModal(contenidoId).
-// Usado por comments.js (reporte de comentario) y topic.js (reporte de tema).
-// Reusa la estructura de modal.css (.modal-backdrop, .modal, .modal-head, etc.)
+// Inyecta el modal en el DOM y expone window.openReportModal(id, tipo).
+// tipo: 'contenido' (default, para tema/comentario) o 'categoria'
 
 const REPORT_MOTIVOS = [
   { value: 'spam', label: 'Spam', desc: 'Contenido comercial, repetitivo o irrelevante' },
@@ -14,6 +13,7 @@ const REPORT_MOTIVOS = [
 
 let reportModal = null;
 let currentReportId = null;
+let currentReportTipo = 'contenido';
 
 function injectReportModal() {
   if (document.getElementById('reportModal')) return;
@@ -53,29 +53,18 @@ function injectReportModal() {
   document.body.insertAdjacentHTML('beforeend', html);
   reportModal = document.getElementById('reportModal');
 
-  // Cerrar con X
   document.getElementById('closeReportModal').addEventListener('click', closeReportModal);
-
-  // Cerrar con click en backdrop
   reportModal.addEventListener('click', (e) => {
     if (e.target === reportModal) closeReportModal();
   });
-
-  // Cerrar con Escape
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && reportModal.classList.contains('open')) {
-      closeReportModal();
-    }
+    if (e.key === 'Escape' && reportModal.classList.contains('open')) closeReportModal();
   });
-
-  // Habilitar botón al seleccionar un motivo
   reportModal.querySelectorAll('input[name="reportMotivo"]').forEach(radio => {
     radio.addEventListener('change', () => {
       document.getElementById('submitReport').disabled = false;
     });
   });
-
-  // Enviar reporte
   document.getElementById('submitReport').addEventListener('click', handleSubmitReport);
 }
 
@@ -84,7 +73,7 @@ function closeReportModal() {
   reportModal.classList.remove('open');
   document.body.style.overflow = '';
   currentReportId = null;
-  // Reset radios y botón
+  currentReportTipo = 'contenido';
   reportModal.querySelectorAll('input[name="reportMotivo"]').forEach(r => { r.checked = false; });
   const btn = document.getElementById('submitReport');
   btn.disabled = true;
@@ -99,13 +88,16 @@ async function handleSubmitReport() {
   btn.disabled = true;
   btn.textContent = 'Enviando...';
 
-  const result = await apiPost('/reports/create', {
-    contenido_id: currentReportId,
-    motivo: selected.value
-  });
+  const body = { motivo: selected.value };
+  if (currentReportTipo === 'categoria') {
+    body.categoria_id = currentReportId;
+  } else {
+    body.contenido_id = currentReportId;
+  }
+
+  const result = await apiPost('/reports/create', body);
 
   closeReportModal();
-
   if (result.ok) {
     showToast(result.message || 'Reporte registrado', 'success');
   } else {
@@ -113,9 +105,11 @@ async function handleSubmitReport() {
   }
 }
 
-window.openReportModal = function(contenidoId) {
+// tipo: 'contenido' (default) o 'categoria'
+window.openReportModal = function(id, tipo) {
   injectReportModal();
-  currentReportId = contenidoId;
+  currentReportId = id;
+  currentReportTipo = tipo || 'contenido';
   reportModal.classList.add('open');
   document.body.style.overflow = 'hidden';
 };

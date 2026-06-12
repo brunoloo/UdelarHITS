@@ -3,12 +3,8 @@ import { crearReporteService } from '../services/report.service.js';
 const crearReporte = async (req, res) => {
   try {
     const result = await crearReporteService(req.user.id, req.body);
-
-    const message = result.inactivado
-      ? 'Reporte registrado. El contenido fue retirado por superar el umbral de reportes.'
-      : 'Reporte registrado. Gracias por ayudar a moderar la comunidad.';
-
-    return res.status(201).json({ ok: true, message, data: result });
+ 
+    return res.status(201).json({ ok: true, message: 'Contenido reportado', data: result });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
     if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });

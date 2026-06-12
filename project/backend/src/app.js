@@ -58,9 +58,10 @@ const limiterIf = (limiter) => (req, res, next) =>
 // Rate limit general para toda la API
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 120,
+  max: 300,
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  message: { ok: false, message: 'Demasiadas solicitudes. Intentá de nuevo en un momento.' }
 });
 app.use('/api', limiterIf(apiLimiter));
 

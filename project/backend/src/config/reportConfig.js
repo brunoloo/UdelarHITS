@@ -12,7 +12,7 @@
 
 // Umbral fijo: cantidad de reportes DISTINTOS que inactiva un contenido.
 // Configurable por env; default 5.
-const UMBRAL_REPORTES = parseInt(process.env.UMBRAL_REPORTES, 10) || 5;
+const UMBRAL_REPORTES = parseInt(process.env.UMBRAL_REPORTES, 10) || 5; // DONDE PONE 1 CAMBIAR A 5 (PERO EN REALIDAD ARREGLAR EL UMBRAL)
 
 /**
  * Devuelve el umbral de reportes a partir del cual un contenido se inactiva.

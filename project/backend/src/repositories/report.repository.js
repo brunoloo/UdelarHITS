@@ -77,4 +77,20 @@ const getContenidoTipo = async (contenidoId) => {
   };
 };
 
-export { createReporte, countReportesByContenido, getContenidoTipo };
+const createReporteCategoria = async ({ usuario_id, categoria_id, motivo }) => {
+  const q = `
+    INSERT INTO reporte (usuario_id, categoria_id, motivo)
+    VALUES ($1, $2, $3)
+    RETURNING id, usuario_id, categoria_id, motivo, fecha_reporte
+  `;
+  const { rows } = await pool.query(q, [usuario_id, categoria_id, motivo]);
+  return rows[0];
+};
+ 
+const countReportesByCategoria = async (categoriaId, client = pool) => {
+  const q = `SELECT COUNT(*)::int AS total FROM reporte WHERE categoria_id = $1`;
+  const { rows } = await client.query(q, [categoriaId]);
+  return rows[0].total;
+};
+
+export { createReporte, countReportesByContenido, getContenidoTipo, createReporteCategoria, countReportesByCategoria };

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contenido moderado — UdelarHITS</title>
+  <style> html { visibility: hidden; } </style>
+  <script src="/shared/guard/user-guard.js"></script>
+  <link rel="stylesheet" href="/css/modal.css" />
+  <link rel="stylesheet" href="/css/central/central.css" />
+</head>
+<body>
+
+  <div class="mi-topbar">
+    <a href="/" class="mi-logo">UdelarHITS</a>
+    <span class="mi-topbar-sep">·</span>
+    <span class="mi-topbar-section">Moderación</span>
+  </div>
+
+  <div class="mi-breadcrumb">
+    <a href="/src-central/central.html">Inicio</a>
+    <span>›</span>
+    <span>Contenido moderado</span>
+  </div>
+
+  <div class="mi-content">
+    <h1>Tu contenido fue moderado</h1>
+    <hr class="mi-divider" />
+
+    <p class="mi-lead" id="modInfoLead">
+      Tu contenido fue ocultado porque múltiples usuarios de la comunidad lo reportaron. A continuación te explicamos qué significa esto y cuáles son tus opciones.
+    </p>
+
+    <h2>¿Qué significa?</h2>
+    <p>Cuando un contenido recibe múltiples reportes de usuarios distintos, nuestro sistema lo oculta automáticamente como medida de protección para la comunidad. Tu contenido no fue eliminado permanentemente, pero dejó de ser visible para otros usuarios mientras se resuelve la situación.</p>
+
+    <h2>¿Qué puedo hacer?</h2>
+    <p>Si creés que tu contenido fue ocultado injustamente, podés enviar una apelación explicando tu punto de vista. Un administrador revisará tu caso y decidirá si restaurar tu contenido o mantener la decisión. Solo podés apelar una vez por contenido moderado.</p>
+
+    <h2>¿Qué pasa si apelo?</h2>
+    <p>Tu apelación será revisada por un administrador. Si la acepta, tu contenido será restaurado y volverá a ser visible junto con todo el contenido. Si la rechaza, el contenido será eliminado definitivamente de la plataforma, incluyendo las respuestas asociadas. Esta decisión es irreversible.</p>
+
+    <div class="mi-actions" id="modInfoActions">
+      <button class="mi-btn mi-btn--primary" id="btnAppeal">Apelar mi contenido</button>
+      <button class="mi-btn mi-btn--secondary" id="btnAccept">Lo he entendido</button>
+    </div>
+  </div>
+
+  <!-- Modal 1: Selección de contenido moderado -->
+  <div class="modal-backdrop" id="selectModal">
+    <div class="modal" style="width: 560px;">
+      <div class="modal-head">
+        <button class="modal-close" id="closeSelectModal" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <h3>Tu contenido moderado</h3>
+      </div>
+      <div class="edit-body" style="padding: 8px 0;">
+        <p class="mi-modal-desc" style="padding: 0 20px 8px;">Elegí qué contenido querés apelar.</p>
+        <div id="moderatedList" class="moderated-list">
+          <div class="moderated-loading">Cargando...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Justificación (ya existente) -->
+  <div class="modal-backdrop" id="appealModal">
+    <div class="modal" style="width: 520px;">
+      <div class="modal-head">
+        <button class="modal-close" id="closeAppealModal" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <h3>Apelar contenido</h3>
+      </div>
+      <div class="edit-body">
+        <div id="selectedContentPreview" class="selected-preview"></div>
+        <p class="mi-modal-desc">Explicá por qué creés que tu contenido no debería haber sido ocultado. Un administrador revisará tu justificación.</p>
+        <div class="edit-field">
+          <div class="edit-field-label">
+            <span>Justificación (*)</span>
+            <span class="edit-field-counter" id="appealCounter">0 / 2000</span>
+          </div>
+          <textarea id="appealInput" maxlength="2000" rows="6" placeholder="Describí por qué tu contenido es legítimo y no viola las normas de la comunidad"></textarea>
+        </div>
+      </div>
+      <div class="mi-modal-footer">
+        <button class="mi-btn mi-btn--primary mi-btn--full" id="submitAppeal" disabled>Enviar apelación</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mi-toast" id="miToast"></div>
+
+  <script src="/shared/escape.js"></script>
+  <script src="/shared/api.js"></script>
+  <script src="/src-central/moderation/moderation-info.js"></script>
+</body>
+</html>

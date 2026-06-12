@@ -210,10 +210,14 @@ CREATE TABLE reaccion (
 CREATE TABLE reporte (
   id                BIGSERIAL PRIMARY KEY,
   usuario_id        BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
-  contenido_id      BIGINT NOT NULL REFERENCES contenido(id) ON DELETE CASCADE,
+  contenido_id      BIGINT NULL REFERENCES contenido(id) ON DELETE CASCADE,
+  categoria_id      BIGINT NULL REFERENCES categoria(id) ON DELETE CASCADE,
   motivo            motivo_reporte NOT NULL,
   fecha_reporte     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (usuario_id, contenido_id) -- no reportar dos veces mismo contenido
+  CONSTRAINT reporte_target_check CHECK (
+    (contenido_id IS NOT NULL AND categoria_id IS NULL) OR
+    (contenido_id IS NULL AND categoria_id IS NOT NULL)
+  )
 );
 
 -- -----------------------------
@@ -221,23 +225,31 @@ CREATE TABLE reporte (
 -- -----------------------------
 CREATE TABLE apelacion (
   id                 BIGSERIAL PRIMARY KEY,
-  contenido_id       BIGINT NOT NULL REFERENCES contenido(id) ON DELETE CASCADE,
+  contenido_id       BIGINT NULL REFERENCES contenido(id) ON DELETE CASCADE,
+  categoria_id       BIGINT NULL REFERENCES categoria(id) ON DELETE CASCADE,
   autor_id           BIGINT NOT NULL REFERENCES usuario(id) ON DELETE RESTRICT,
   titulo             VARCHAR(200) NOT NULL,
   justificacion      TEXT NOT NULL,
   estado             estado_apelacion NOT NULL DEFAULT 'pendiente',
   fecha_solicitud    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  fecha_resolucion   TIMESTAMPTZ NULL
+  fecha_resolucion   TIMESTAMPTZ NULL,
+  CONSTRAINT apelacion_target_check CHECK (
+    (contenido_id IS NOT NULL AND categoria_id IS NULL) OR
+    (contenido_id IS NULL AND categoria_id IS NOT NULL)
+  )
 );
 
 CREATE INDEX idx_apelacion_contenido ON apelacion(contenido_id);
 CREATE INDEX idx_apelacion_estado ON apelacion(estado);
 
--- Fase 4.B: una sola apelación PENDIENTE por contenido (impide doble-submit).
--- Como al resolver la apelación se BORRA la fila, en la práctica solo existen
--- filas 'pendiente'; el WHERE deja el índice correcto igual.
-CREATE UNIQUE INDEX uq_apelacion_pendiente
-  ON apelacion (contenido_id) WHERE estado = 'pendiente';
+-- Una sola apelación pendiente por target (contenido o categoría)
+CREATE UNIQUE INDEX uq_apelacion_pendiente_contenido
+  ON apelacion (contenido_id)
+  WHERE contenido_id IS NOT NULL AND estado = 'pendiente';
+
+CREATE UNIQUE INDEX uq_apelacion_pendiente_categoria
+  ON apelacion (categoria_id)
+  WHERE categoria_id IS NOT NULL AND estado = 'pendiente';
 
 -- -----------------------------
 -- NOTIFICACIONES
@@ -263,6 +275,9 @@ CREATE INDEX idx_tema_categoria ON tema(categoria_id);
 CREATE INDEX idx_tema_estado ON tema(estado);
 CREATE INDEX idx_categoria_estado ON categoria(estado);
 CREATE INDEX idx_reporte_contenido ON reporte(contenido_id);
+CREATE INDEX idx_reporte_categoria ON reporte(categoria_id) WHERE categoria_id IS NOT NULL;
+CREATE UNIQUE INDEX uq_reporte_usuario_contenido ON reporte(usuario_id, contenido_id) WHERE contenido_id IS NOT NULL;
+CREATE UNIQUE INDEX uq_reporte_usuario_categoria ON reporte(usuario_id, categoria_id) WHERE categoria_id IS NOT NULL;
 CREATE INDEX idx_reaccion_contenido ON reaccion(contenido_id);
 
 -- Fase 4.A: índices parciales para listar contenido caído por moderación

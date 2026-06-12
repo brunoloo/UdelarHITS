@@ -61,12 +61,11 @@ describe('reportes — inactivación de TEMA al cruzar umbral', () => {
     expect(tema.inactivado_directo).toBe(true);
     expect(tema.fecha_inactivacion).not.toBeNull();
 
-    // comentarios: ocultos por ARRASTRE (inactivado_directo = false)
+    // comentarios: siguen visibles
     for (const c of [c1, c2]) {
       const com = await filaComentario(idOf(c));
-      expect(com.estado).toBe('oculto');
-      expect(com.motivo_inactivacion).toBe('moderacion_reporte');
-      expect(com.inactivado_directo).toBe(false);
+      expect(com.estado).toBe('visible');
+      expect(com.motivo_inactivacion).toBeNull();
     }
 
     // contador decrementado en 1

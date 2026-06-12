@@ -1,8 +1,10 @@
 import {
   crearApelacionService,
   listarApelacionesPendientesService,
-  resolverApelacionService
+  resolverApelacionService,
 } from '../services/appeal.service.js';
+
+import { getModeratedContentByUserId } from '../repositories/appeal.repository.js';
 
 // =========================================================
 // Appeal controller (Fase 4.B)
@@ -55,4 +57,13 @@ const resolverApelacion = async (req, res) => {
   }
 };
 
-export { crearApelacion, listarApelacionesPendientes, resolverApelacion };
+const getMyModeratedContent = async (req, res) => {
+  try {
+    const content = await getModeratedContentByUserId(req.user.id);
+    return res.status(200).json({ ok: true, data: content });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+export { crearApelacion, listarApelacionesPendientes, resolverApelacion, getMyModeratedContent };

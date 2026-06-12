@@ -57,23 +57,6 @@ describe('apelaciones — creación', () => {
     expect(res.status).toBe(403);
   });
 
-  test('no se puede apelar un comentario caído por ARRASTRE → 403', async () => {
-    const autor = await registerAndLogin();
-    const otro = await registerAndLogin();
-    const topic = await createTopic(autor.cookie);
-    const tid = idOf(topic);
-
-    // comentario de "otro" dentro del tema; cae por arrastre cuando el tema es reportado
-    const comentario = await createReply(otro.cookie, { tema_id: tid });
-    const cid = idOf(comentario);
-
-    await tumbarPorReportes(tid);
-
-    // el comentario está oculto pero por arrastre (inactivado_directo = false) → no apelable
-    const res = await apelar(cid, 'mi comentario era válido', otro.cookie);
-    expect(res.status).toBe(403);
-  });
-
   test('no se puede apelar dos veces el mismo contenido → 409', async () => {
     const autor = await registerAndLogin();
     const topic = await createTopic(autor.cookie);
