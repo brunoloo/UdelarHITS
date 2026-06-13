@@ -131,12 +131,30 @@ const activeCategoryById = async (id) => {
   return rows[0] || null;
 };
 
-const updateCategoryById = async (id, { descripcion, etiquetas }) => {
+const updateCategoryById = async (id, { descripcion, etiquetas }, editorId) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     if (descripcion !== undefined) {
+      // Obtener descripción actual antes de sobreescribir
+      const { rows: currentRows } = await client.query(
+        `SELECT descripcion FROM categoria WHERE id = $1`,
+        [id]
+      );
+
+      const currentDesc = currentRows[0]?.descripcion;
+
+      // Solo guardar historial si la descripción realmente cambió
+      if (currentDesc != null && currentDesc !== descripcion) {
+        await client.query(
+          `INSERT INTO historial_edicion_categoria 
+            (categoria_id, descripcion_anterior, descripcion_nueva, editor_id)
+           VALUES ($1, $2, $3, $4)`,
+          [id, currentDesc, descripcion, editorId]
+        );
+      }
+
       await client.query(
         `UPDATE categoria SET descripcion = $1 WHERE id = $2`,
         [descripcion, id]
@@ -174,6 +192,19 @@ const updateCategoryById = async (id, { descripcion, etiquetas }) => {
   } finally {
     client.release();
   }
+};
+
+const getCategoryEditHistory = async (categoryId) => {
+  const q = `
+    SELECT h.id, h.descripcion_anterior, h.descripcion_nueva,
+      h.fecha_edicion, u.nickname AS editor_nickname
+    FROM historial_edicion_categoria h
+    JOIN usuario u ON u.id = h.editor_id
+    WHERE h.categoria_id = $1
+    ORDER BY h.fecha_edicion DESC
+  `;
+  const { rows } = await pool.query(q, [categoryId]);
+  return rows;
 };
 
 const assignParticipantRole = async (userId, categoriaId) => {
@@ -293,4 +324,5 @@ const getPopularCategories = async (days = 7, limit = 20) => {
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
   updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId, 
-  getEtiquetas, categoryHasContent, hardDeleteCategoryById, getPopularCategories };
+  getEtiquetas, categoryHasContent, hardDeleteCategoryById, getPopularCategories,
+  getCategoryEditHistory };

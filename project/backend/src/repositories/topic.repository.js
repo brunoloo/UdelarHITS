@@ -98,14 +98,37 @@ const getTopicsByAuthorId = async (autorId) => {
   return rows;
 };
 
-const updateTopicById = async (id, { cuerpo }) => {
-  const q = `
-    UPDATE contenido SET cuerpo = $1
-    WHERE id = $2
-    RETURNING id, cuerpo, fecha_creacion
-  `;
-  const { rows } = await pool.query(q, [cuerpo, id]);
-  return rows[0] || null;
+const updateTopicById = async (id, { cuerpo }, editorId) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const { rows: currentRows } = await client.query(
+      `SELECT cuerpo FROM contenido WHERE id = $1`, [id]
+    );
+
+    const currentBody = currentRows[0]?.cuerpo;
+    if (currentBody != null && currentBody !== cuerpo) {
+      await client.query(
+        `INSERT INTO historial_edicion_tema (tema_id, contenido_anterior, contenido_nuevo, editor_id)
+         VALUES ($1, $2, $3, $4)`,
+        [id, currentBody, cuerpo, editorId]
+      );
+    }
+
+    const { rows } = await client.query(
+      `UPDATE contenido SET cuerpo = $1 WHERE id = $2 RETURNING id, cuerpo, fecha_creacion`,
+      [cuerpo, id]
+    );
+
+    await client.query('COMMIT');
+    return rows[0] || null;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 const updateTopicEstado = async (id, estado, motivo = null) => {
@@ -342,8 +365,21 @@ const deleteReportsByContenidoTx = async (contenidoId, client) => {
   await client.query(`DELETE FROM reporte WHERE contenido_id = $1`, [contenidoId]);
 };
 
+const getTopicEditHistory = async (topicId) => {
+  const q = `
+    SELECT h.id, h.contenido_anterior, h.contenido_nuevo,
+      h.fecha_edicion, u.nickname AS editor_nickname
+    FROM historial_edicion_tema h
+    JOIN usuario u ON u.id = h.editor_id
+    WHERE h.tema_id = $1
+    ORDER BY h.fecha_edicion DESC
+  `;
+  const { rows } = await pool.query(q, [topicId]);
+  return rows;
+};
+
 export { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById, getTopicsByAuthorId, 
   updateTopicById, updateTopicEstado, incrementTopicCount, decrementTopicCount, 
   getTopicsByUserId, topicHasContent, hardDeleteTopicById, cleanupInactiveTopics, 
   getRecentTopics, getTrendingTopic, moderateDeactivateTopicTx, moderateHideTopicRepliesTx, 
-  decrementTopicCountTx, reactivateTopicTx, restoreDraggedRepliesTx, hardDeleteTopicTreeTx, deleteReportsByContenidoTx };
+  decrementTopicCountTx, reactivateTopicTx, restoreDraggedRepliesTx, hardDeleteTopicTreeTx, deleteReportsByContenidoTx, getTopicEditHistory };

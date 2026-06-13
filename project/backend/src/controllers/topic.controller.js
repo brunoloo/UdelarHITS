@@ -1,7 +1,7 @@
 import { createTopicService, getTopicsService, getTopicByIdService, getMyTopicsService, 
   updateTopicService, deleteTopicService, activeTopicService, 
   getTopicsByCategoryIdService, getTopicsByUserIdService, 
-  getRecentTopicsService, getTrendingTopicService } from '../services/topic.service.js';
+  getRecentTopicsService, getTrendingTopicService, getTopicEditHistoryService } from '../services/topic.service.js';
 
 const createTopic = async (req, res) => {
   try {
@@ -131,5 +131,16 @@ const getTrendingTopicItem = async (req, res, next) => {
   }
 };
 
+const getTopicEditHistory = async (req, res, next) => {
+  try {
+    const history = await getTopicEditHistoryService(req.params.id);
+    return res.status(200).json({ ok: true, data: history });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 export { createTopic, getTopics, getTopicById, getMyTopics, updateTopic, deleteTopic, 
-  activeTopic, getTopicsByCategory, getTopicsByUser, getRecentTopicsList, getTrendingTopicItem };
+  activeTopic, getTopicsByCategory, getTopicsByUser, getRecentTopicsList, getTrendingTopicItem, getTopicEditHistory };

@@ -1,7 +1,8 @@
 import { createCategoryService, getCategoriesService, getCategoryByIdService, 
   deleteCategoryService, activeCategoryService, getMyCategoriesService, 
   updateCategoryService, getActiveCategoriesService, 
-  getParticipantsByCategoryIdService, getEtiquetasService, getPopularCategoriesService } from '../services/category.service.js';
+  getParticipantsByCategoryIdService, getEtiquetasService, 
+  getPopularCategoriesService, getCategoryEditHistoryService } from '../services/category.service.js';
 
 const createCategory = async (req, res) => {
   try {
@@ -133,5 +134,17 @@ const getPopularCategoriesList = async (req, res, next) => {
   }
 };
 
+const getCategoryEditHistory = async (req, res) => {
+  try {
+    const history = await getCategoryEditHistoryService(req.params.id);
+    return res.status(200).json({ ok: true, data: history });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory, 
-  getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, getEtiquetasList, getPopularCategoriesList };
+  getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, getEtiquetasList, 
+  getPopularCategoriesList, getCategoryEditHistory };

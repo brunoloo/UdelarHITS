@@ -3,7 +3,7 @@ import { getCategoryById, assignParticipantRole, getTopicsByCategoryId, category
 import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
   getTopicsByAuthorId, updateTopicById, updateTopicEstado, decrementTopicCount, 
   incrementTopicCount, getTopicsByUserId, topicHasContent, 
-  hardDeleteTopicById, getRecentTopics, getTrendingTopic } from '../repositories/topic.repository.js';
+  hardDeleteTopicById, getRecentTopics, getTrendingTopic, getTopicEditHistory } from '../repositories/topic.repository.js';
 
 const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => {
   if (!categoria_id) {
@@ -125,7 +125,7 @@ const updateTopicService = async (userId, topicId, { cuerpo }) => {
     throw err;
   }
 
-  return await updateTopicById(topicId, { cuerpo: cuerpo.trim() });
+  return await updateTopicById(topicId, { cuerpo: cuerpo.trim() }, userId);
 };
 
 const deleteTopicService = async (userId, userRol, topicId) => {
@@ -217,6 +217,24 @@ const getTrendingTopicService = async (days) => {
   return await getTrendingTopic(safeDays);
 };
 
+const getTopicEditHistoryService = async (topicId) => {
+  const id = Number(topicId);
+  if (!Number.isInteger(id) || id < 1) {
+    const err = new Error('ID inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const topic = await getTopicById(topicId);
+  if (!topic) {
+    const err = new Error('Tema no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  return await getTopicEditHistory(topicId);
+};
+
 export { createTopicService, getTopicsService ,getTopicByIdService, getMyTopicsService, 
   updateTopicService, activeTopicService, deleteTopicService, getTopicsByCategoryIdService, 
-  getTopicsByUserIdService, getRecentTopicsService, getTrendingTopicService };
+  getTopicsByUserIdService, getRecentTopicsService, getTrendingTopicService, getTopicEditHistoryService };

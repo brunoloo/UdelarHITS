@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory, 
     getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, 
-    getEtiquetasList, getPopularCategoriesList } from '../controllers/category.controller.js';
+    getEtiquetasList, getPopularCategoriesList, getCategoryEditHistory } from '../controllers/category.controller.js';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 
 const router = Router();
@@ -14,6 +14,7 @@ router.get('/me', protect, getMyCategories);             // Ver mis categorías
 
 router.get('/popular', getPopularCategoriesList);        // Lista de categorías populares
 
+router.get('/:id/history', getCategoryEditHistory);      // Obtener edición de categoría
 router.patch('/:id', protect, updateCategory);           // Actualizar categoría
 router.get('/:id', getCategoryById);                     // Ver categoría por id
 

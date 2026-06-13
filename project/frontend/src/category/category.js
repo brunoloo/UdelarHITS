@@ -53,6 +53,67 @@ function renderTopics(topics) {
   });
 }
 
+// ── Historial de ediciones — carrusel ──
+let historyEntries = [];
+let historyIndex = 0;
+
+function renderHistorySlide() {
+  const body = document.getElementById('historyBody');
+
+  if (historyEntries.length === 0) {
+    body.innerHTML = `<div class="history-empty">Esta categoría no tiene ediciones anteriores.</div>`;
+    return;
+  }
+
+  const entry = historyEntries[historyIndex];
+  const total = historyEntries.length;
+
+  body.innerHTML = `
+    <div class="history-carousel">
+      <div class="history-header">
+        <span class="history-counter">${historyIndex + 1} de ${total}</span>
+        <span class="history-date">${escapeHtml(timeAgo(entry.fecha_edicion))}</span>
+      </div>
+      <div class="history-content">
+        <p class="history-label">Descripción anterior</p>
+        <div class="history-text">${escapeHtml(entry.descripcion_anterior)}</div>
+      </div>
+      <div class="history-nav">
+        <button class="history-arrow" id="historyPrev" ${historyIndex >= total - 1 ? 'disabled' : ''}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button class="history-arrow" id="historyNext" ${historyIndex <= 0 ? 'disabled' : ''}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('historyPrev').addEventListener('click', () => {
+    if (historyIndex < total - 1) {
+      historyIndex++;
+      renderHistorySlide();
+    }
+  });
+
+  document.getElementById('historyNext').addEventListener('click', () => {
+    if (historyIndex > 0) {
+      historyIndex--;
+      renderHistorySlide();
+    }
+  });
+}
+
+function openHistoryModal() {
+  document.getElementById('historyModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHistoryModal() {
+  document.getElementById('historyModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 async function loadCategory() {
   const params = new URLSearchParams(window.location.search);
   const id = params.get('id');
@@ -128,7 +189,7 @@ async function loadCategory() {
       ${editBtnHtml}
     `;
 
-    // Menú de reporte de la categoría
+    // Menú de tres puntos
     document.getElementById('catMenuWrap').style.display = '';
 
     const catMenuBtn = document.querySelector('#catMenuWrap .comment-menu-btn');
@@ -147,6 +208,26 @@ async function loadCategory() {
       e.stopPropagation();
       catDropdown.classList.remove('open');
       openReportModal(id, 'categoria');
+    });
+
+    // ── Historial de ediciones ──
+    document.getElementById('historyCatBtn').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      catDropdown.classList.remove('open');
+
+      const histRes = await apiGet(`/categories/${id}/history`);
+      historyEntries = histRes?.ok ? histRes.data : [];
+      historyIndex = 0;
+      renderHistorySlide();
+      openHistoryModal();
+    });
+
+    document.getElementById('closeHistoryModal').addEventListener('click', closeHistoryModal);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('historyModal').classList.contains('open')) {
+        closeHistoryModal();
+      }
     });
   }
 

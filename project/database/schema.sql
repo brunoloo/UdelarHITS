@@ -157,6 +157,16 @@ CREATE TABLE tema (
   UNIQUE (categoria_id, titulo) -- título de tema único dentro de categoría
 );
 
+-- historial de edición de tema
+CREATE TABLE historial_edicion_tema (
+  id                 BIGSERIAL PRIMARY KEY,
+  tema_id            BIGINT NOT NULL REFERENCES tema(contenido_id) ON DELETE CASCADE,
+  contenido_anterior TEXT NOT NULL,
+  contenido_nuevo    TEXT NOT NULL,
+  editor_id          BIGINT NOT NULL REFERENCES usuario(id) ON DELETE RESTRICT,
+  fecha_edicion      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- -----------------------------
 -- COMENTARIO (subtipo de contenido)
 -- -----------------------------

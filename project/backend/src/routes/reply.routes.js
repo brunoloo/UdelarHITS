@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply, 
-    getMyReplies, getRepliesByUser, updateReply, getReplyById, getRepliesByComment } from '../controllers/reply.controller.js';
+    getMyReplies, getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory } from '../controllers/reply.controller.js';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 
 const router = Router();
@@ -9,11 +9,13 @@ router.post('/create', protect, createReply);                        // Publicar
 
 router.get('/me', protect, getMyReplies);                            // Listar mis comentarios
 
+router.get('/:id/history', getReplyEditHistory);                     // Obtener historial de edición
+
 router.get('/:id', getReplyById);                                    // Listar comentarios dado un id
 
 router.get('/:id/replies', getRepliesByComment);                     // Listar comentarios de un comentario dado un id
 
-router.get('/user/:userId', protect, getRepliesByUser);         
+router.get('/user/:userId', protect, getRepliesByUser);              // Obtener respuestas de usuario         
 
 router.patch('/update/:id', protect, updateReply);                   // Editar comentario 
 

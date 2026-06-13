@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createTopic, getTopics, getTopicById, getMyTopics, 
     updateTopic, deleteTopic, activeTopic,  getTopicsByCategory, getTopicsByUser, 
-    getRecentTopicsList, getTrendingTopicItem } from '../controllers/topic.controller.js';
+    getRecentTopicsList, getTrendingTopicItem, getTopicEditHistory } from '../controllers/topic.controller.js';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 
 const router = Router();
@@ -13,6 +13,7 @@ router.get('/recent', getRecentTopicsList);          // Temas recientes (públic
 
 router.get('/trending', getTrendingTopicItem);       // Obtener el tema más popular
 
+router.get('/:id/history', getTopicEditHistory);     // Obtener ediciones anteriores
 router.patch('/:id', protect, updateTopic);          // Actualizar tema
 router.get('/:id', getTopicById);                    // Ver temas por id
 
