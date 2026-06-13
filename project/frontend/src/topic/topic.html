@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/css/reply/replies.css" />
   <link rel="stylesheet" href="/css/modal.css" />
   <link rel="stylesheet" href="/css/topic/topic.css" />
+  <link rel="stylesheet" href="/css/history.css" />
 </head>
 <body>
   <div class="page">
@@ -35,6 +36,10 @@
               <button class="comment-dropdown-item" id="reportTopicBtn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
                 Reportar
+              </button>
+              <button class="comment-dropdown-item" id="historyTopicBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Historial de ediciones
               </button>
             </div>
           </div>
@@ -196,6 +201,19 @@
           <button class="btn-danger" id="confirmDeleteBtn">Eliminar tema</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal historial de ediciones -->
+  <div class="modal-backdrop" id="historyModal">
+    <div class="modal" style="width:500px">
+      <div class="modal-head">
+        <button class="modal-close" id="closeHistoryModal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h3>Historial de ediciones</h3>
+      </div>
+      <div class="history-body" id="historyBody"></div>
     </div>
   </div>
 

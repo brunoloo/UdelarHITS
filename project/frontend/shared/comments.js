@@ -1,3 +1,47 @@
+// ── Historial de ediciones de comentarios — carrusel ──
+let commentHistoryEntries = [];
+let commentHistoryIndex = 0;
+
+function renderCommentHistorySlide() {
+  const body = document.getElementById('historyBody');
+
+  if (commentHistoryEntries.length === 0) {
+    body.innerHTML = `<div class="history-empty">Este comentario no tiene ediciones anteriores.</div>`;
+    return;
+  }
+
+  const entry = commentHistoryEntries[commentHistoryIndex];
+  const total = commentHistoryEntries.length;
+
+  body.innerHTML = `
+    <div class="history-carousel">
+      <div class="history-header">
+        <span class="history-counter">${commentHistoryIndex + 1} de ${total}</span>
+        <span class="history-date">${escapeHtml(timeAgo(entry.fecha_edicion))}</span>
+      </div>
+      <div class="history-content">
+        <p class="history-label">Contenido anterior</p>
+        <div class="history-text">${escapeHtml(entry.contenido_anterior)}</div>
+      </div>
+      <div class="history-nav">
+        <button class="history-arrow" id="historyPrev" ${commentHistoryIndex >= total - 1 ? 'disabled' : ''}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button class="history-arrow" id="historyNext" ${commentHistoryIndex <= 0 ? 'disabled' : ''}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('historyPrev').addEventListener('click', () => {
+    if (commentHistoryIndex < total - 1) { commentHistoryIndex++; renderCommentHistorySlide(); }
+  });
+  document.getElementById('historyNext').addEventListener('click', () => {
+    if (commentHistoryIndex > 0) { commentHistoryIndex--; renderCommentHistorySlide(); }
+  });
+}
+
 // ── Comentarios compartidos ──
 // Usado por topic.js y category.js
 //
@@ -114,6 +158,12 @@ function renderCommentCard(c, role, index, indexPrefix) {
   const isAdmin = currentMeRes?.ok && currentMeRes.data.user.rol === 'admin';
   const canDelete = isAuthor || isAdmin;
 
+  const historyOption = `
+    <button class="comment-dropdown-item history-comment-btn" data-comment-id="${c.id}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Historial de ediciones
+    </button>`;
+
   const editOption = isAuthor
     ? `<button class="comment-dropdown-item edit-comment-btn" data-comment-id="${c.id}">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -138,6 +188,7 @@ function renderCommentCard(c, role, index, indexPrefix) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
           Reportar
         </button>
+        ${historyOption}
         ${editOption}
         ${deleteOption}
       </div>
@@ -330,6 +381,24 @@ function attachMenuListeners(container) {
         return;
       }
       openReportModal(btn.dataset.commentId);
+    });
+  });
+
+  // Historial de ediciones de comentario
+  container.querySelectorAll('.history-comment-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      btn.closest('.comment-dropdown').classList.remove('open');
+
+      const commentId = btn.dataset.commentId;
+      const histRes = await apiGet(`/replies/${commentId}/history`);
+      commentHistoryEntries = histRes?.ok ? histRes.data : [];
+      commentHistoryIndex = 0;
+      renderCommentHistorySlide();
+
+      const modal = document.getElementById('historyModal');
+      modal.classList.add('open');
+      document.body.style.overflow = 'hidden';
     });
   });
 

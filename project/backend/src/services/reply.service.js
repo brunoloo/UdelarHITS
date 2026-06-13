@@ -4,7 +4,7 @@ import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCa
 
 import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById, 
   deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, 
-  updateReplyById, replyHasReplies, hideReplyById, getParentComment } from '../repositories/reply.repository.js';
+  updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory } from '../repositories/reply.repository.js';
 
 const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, comentario_padre_id }) => {
   if (!cuerpo?.trim()) {
@@ -209,10 +209,27 @@ const updateReplyService = async (userId, userRol, replyId, { cuerpo }) => {
     throw err;
   }
 
-  return await updateReplyById(replyId, { cuerpo: cuerpo.trim() });
+  return await updateReplyById(replyId, { cuerpo: cuerpo.trim() }, userId);
 };
 
+const getReplyEditHistoryService = async (replyId) => {
+  const id = Number(replyId);
+  if (!Number.isInteger(id) || id < 1) {
+    const err = new Error('ID inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const reply = await getReplyById(replyId);
+  if (!reply) {
+    const err = new Error('Comentario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  return await getReplyEditHistory(replyId);
+};
 
 export { createReplyService, getRepliesByCategoryIdService, getRepliesByTopicIdService, 
   deleteReplyService, getMyRepliesService, getRepliesByUserIdService, updateReplyService, 
-  getReplyByIdService, getRepliesByCommentIdService };
+  getReplyByIdService, getRepliesByCommentIdService, getReplyEditHistoryService };

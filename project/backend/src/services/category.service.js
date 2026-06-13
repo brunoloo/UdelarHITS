@@ -1,7 +1,8 @@
 import { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
   updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas, 
-  hardDeleteCategoryById, categoryHasContent, getPopularCategories } from '../repositories/category.repository.js';
+  hardDeleteCategoryById, categoryHasContent, getPopularCategories,
+  getCategoryEditHistory } from '../repositories/category.repository.js';
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
 
@@ -71,7 +72,7 @@ const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }
   }
 
   return await createCategory({
-    titulo: tituloNormalizado.toLowerCase(),
+    titulo: tituloNormalizado,
     descripcion: descripcion.trim(),
     autor_id: autorId,
     etiquetas: etiquetasArray
@@ -212,7 +213,7 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
     }
   }
 
-  return await updateCategoryById(categoryId, { descripcion, etiquetas });
+  return await updateCategoryById(categoryId, { descripcion, etiquetas }, userId);
 };
 
 const getActiveCategoriesService = async () => {
@@ -244,6 +245,25 @@ const getPopularCategoriesService = async (days, limit) => {
   return await getPopularCategories(safeDays, safeLimit);
 };
 
+const getCategoryEditHistoryService = async (categoryId) => {
+  const id = Number(categoryId);
+  if (!Number.isInteger(id) || id < 1) {
+    const err = new Error('ID inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const category = await getCategoryById(categoryId);
+  if (!category) {
+    const err = new Error('Categoría no encontrada');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  return await getCategoryEditHistory(categoryId);
+};
+
 export { createCategoryService, getCategoriesService, getCategoryByIdService, deactivateCategoryById, 
   deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService, 
-  getActiveCategoriesService, getParticipantsByCategoryIdService, getEtiquetasService, getPopularCategoriesService };
+  getActiveCategoriesService, getParticipantsByCategoryIdService, getEtiquetasService, 
+  getPopularCategoriesService, getCategoryEditHistoryService };

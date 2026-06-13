@@ -159,14 +159,37 @@ const getRepliesByCommentId = async (commentId) => {
   return rows;
 };
 
-const updateReplyById = async (id, { cuerpo }) => {
-  const q = `
-    UPDATE contenido SET cuerpo = $1
-    WHERE id = $2
-    RETURNING id, cuerpo, fecha_creacion
-  `;
-  const { rows } = await pool.query(q, [cuerpo, id]);
-  return rows[0] || null;
+const updateReplyById = async (id, { cuerpo }, editorId) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const { rows: currentRows } = await client.query(
+      `SELECT cuerpo FROM contenido WHERE id = $1`, [id]
+    );
+
+    const currentBody = currentRows[0]?.cuerpo;
+    if (currentBody != null && currentBody !== cuerpo) {
+      await client.query(
+        `INSERT INTO historial_edicion_comentario (comentario_id, contenido_anterior, contenido_nuevo, editor_id)
+         VALUES ($1, $2, $3, $4)`,
+        [id, currentBody, cuerpo, editorId]
+      );
+    }
+
+    const { rows } = await client.query(
+      `UPDATE contenido SET cuerpo = $1 WHERE id = $2 RETURNING id, cuerpo, fecha_creacion`,
+      [cuerpo, id]
+    );
+
+    await client.query('COMMIT');
+    return rows[0] || null;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 const replyHasReplies = async (id) => {
@@ -246,6 +269,19 @@ const hardDeleteReplySubtreeTx = async (id, client) => {
   return rowCount;
 };
 
+const getReplyEditHistory = async (commentId) => {
+  const q = `
+    SELECT h.id, h.contenido_anterior, h.contenido_nuevo,
+      h.fecha_edicion, u.nickname AS editor_nickname
+    FROM historial_edicion_comentario h
+    JOIN usuario u ON u.id = h.editor_id
+    WHERE h.comentario_id = $1
+    ORDER BY h.fecha_edicion DESC
+  `;
+  const { rows } = await pool.query(q, [commentId]);
+  return rows;
+};
+
 export { createReply, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById, 
   getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies, 
-  hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx }
+  hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx, getReplyEditHistory }
