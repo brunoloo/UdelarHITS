@@ -76,11 +76,16 @@ async function loadTopic() {
         topicDropdown.classList.remove('open');
       });
 
+      // Reportar tema
       document.getElementById('reportTopicBtn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        topicDropdown.classList.remove('open');
-        showToast('Función de reportar próximamente', 'info');
-      });
+      e.stopPropagation();
+      topicDropdown.classList.remove('open');
+      if (meRes?.ok && meRes.data.user.id === topic.autor_id) {
+        showToast('No podés reportar tu propio contenido', 'error');
+        return;
+      }
+      openReportModal(id);
+    });
     }
   }
 

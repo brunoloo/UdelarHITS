@@ -31,7 +31,8 @@ const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario
 
 const getRepliesByCategoryId = async (categoriaId) => {
   const q = `
-    SELECT com.contenido_id AS id, com.estado AS estado, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
+    SELECT com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion, 
+      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
@@ -45,7 +46,8 @@ const getRepliesByCategoryId = async (categoriaId) => {
 
 const getRepliesByTopicId = async (topicId) => {
   const q = `
-    SELECT com.contenido_id AS id, com.estado AS estado, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
+    SELECT com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion,
+      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
@@ -144,7 +146,8 @@ const getRepliesByUserId = async (userId) => {
 
 const getRepliesByCommentId = async (commentId) => {
   const q = `
-    SELECT com.contenido_id AS id, com.estado, con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
+    SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion, 
+      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
@@ -176,14 +179,16 @@ const replyHasReplies = async (id) => {
   return rows[0].has_replies;
 };
 
-const hideReplyById = async (id) => {
+const hideReplyById = async (id, motivo = 'autor') => {
   const q = `
     UPDATE comentario
-    SET estado = 'oculto'
+    SET estado = 'oculto',
+        motivo_inactivacion = $2,
+        fecha_inactivacion = NOW()
     WHERE contenido_id = $1
     RETURNING contenido_id AS id, estado
   `;
-  const { rows } = await pool.query(q, [id]);
+  const { rows } = await pool.query(q, [id, motivo]);
   return rows[0] || null;
 };
 
@@ -198,6 +203,49 @@ const getParentComment = async (id) => {
   return rows[0] || null;
 };
 
+const moderateHideReply = async (id, client = pool) => {
+  const q = `
+    UPDATE comentario
+    SET estado = 'oculto',
+        motivo_inactivacion = 'moderacion_reporte',
+        fecha_inactivacion = NOW(),
+        inactivado_directo = TRUE
+    WHERE contenido_id = $1 AND estado = 'visible'
+    RETURNING contenido_id AS id, estado
+  `;
+  const { rows } = await client.query(q, [id]);
+  return rows[0] || null;
+};
+
+const reactivateReplyTx = async (id, client) => {
+  const q = `
+    UPDATE comentario
+    SET estado = 'visible',
+        motivo_inactivacion = NULL,
+        fecha_inactivacion = NULL,
+        inactivado_directo = FALSE
+    WHERE contenido_id = $1 AND estado = 'oculto'
+    RETURNING contenido_id AS id, estado
+  `;
+  const { rows } = await client.query(q, [id]);
+  return rows[0] || null;
+};
+
+const hardDeleteReplySubtreeTx = async (id, client) => {
+  const q = `
+    WITH RECURSIVE subarbol AS (
+      SELECT contenido_id FROM comentario WHERE contenido_id = $1
+      UNION ALL
+      SELECT c.contenido_id
+      FROM comentario c
+      JOIN subarbol s ON c.comentario_padre_id = s.contenido_id
+    )
+    DELETE FROM contenido WHERE id IN (SELECT contenido_id FROM subarbol)
+  `;
+  const { rowCount } = await client.query(q, [id]);
+  return rowCount;
+};
+
 export { createReply, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById, 
   getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies, 
-  hideReplyById, getParentComment }
+  hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx }

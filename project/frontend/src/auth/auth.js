@@ -28,18 +28,37 @@ if (registerForm) {
   btn.dataset.label = btn.textContent;
   registerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (registerForm.password.value.length < 8) {
+    const password = registerForm.password.value;
+    const confirmPassword = registerForm.confirmPassword.value;
+    const acceptTerms = document.getElementById('acceptTerms');
+
+    if (password.length < 8) {
       showMessage('error', 'La contraseña debe tener al menos 8 caracteres.');
       return;
     }
+    if (password !== confirmPassword) {
+      showMessage('error', 'Las contraseñas no coinciden.');
+      return;
+    }
+    if (!acceptTerms.checked) {
+      showMessage('error', 'Debés aceptar los términos de uso y la política de privacidad.');
+      return;
+    }
+
     setLoading(btn, true);
-    const data = Object.fromEntries(new FormData(registerForm));
+    const formData = new FormData(registerForm);
+    const data = {
+      nombre: formData.get('nombre'),
+      nickname: formData.get('nickname'),
+      email: formData.get('email'),
+      password: formData.get('password')
+    };
     const result = await apiPost('/auth/register', data);
     setLoading(btn, false);
     if (result.ok) {
       showMessage('success', result.message || '¡Cuenta creada! Redirigiendo...');
       registerForm.reset();
-      setTimeout(() => window.location.href = '/src/auth/login.html', 1950);
+      setTimeout(() => window.location.href = '/src/auth/login.html', 1350);
     } else {
       showMessage('error', result.message || 'Error al registrarse.');
     }

@@ -146,7 +146,7 @@ async function loadCategory() {
     document.getElementById('reportCatBtn').addEventListener('click', (e) => {
       e.stopPropagation();
       catDropdown.classList.remove('open');
-      showToast('Función de reportar próximamente', 'info');
+      openReportModal(id, 'categoria');
     });
   }
 

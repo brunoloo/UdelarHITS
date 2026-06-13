@@ -55,9 +55,19 @@ app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 const limiterIf = (limiter) => (req, res, next) =>
   process.env.NODE_ENV === 'test' ? next() : limiter(req, res, next);
 
+// Rate limit general para toda la API
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: 'Demasiadas solicitudes. Intentá de nuevo en un momento.' }
+});
+app.use('/api', limiterIf(apiLimiter));
+
 // Rate limit estricto en endpoints de auth para frenar brute-force
 const authLimiter = rateLimit({
-  windowMs: 1,
+  windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
@@ -68,22 +78,22 @@ app.use('/api/auth/register', limiterIf(authLimiter));
 
 // Rate limit para limitar búsquedas
 const searchLimiter = rateLimit({
-  windowMs: 1,
+  windowMs: 60 * 1000,
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { ok: false, message: 'Demasiadas búsquedas. Intentá de nuevo en un minuto.' }
+  message: { ok: false, message: 'Demasiadas búsquedas. Intentá de nuevo en un momento.' }
 });
 app.use('/api/users/search', limiterIf(searchLimiter));
 
-// Rate limit general para toda la API
-const apiLimiter = rateLimit({
-  windowMs: 1,
-  max: 120,
+const reporteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  message: { ok: false, message: 'Demasiados reportes en poco tiempo. Intentá de nuevo en un momento.' }
 });
-app.use('/api', limiterIf(apiLimiter));
+app.use('/api/reports', limiterIf(reporteLimiter));
 
 //index (usamos el index que aparece en frontend) — path estable, no depende del cwd
 app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));

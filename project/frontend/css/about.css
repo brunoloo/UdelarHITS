@@ -406,3 +406,29 @@ body {
   width: 16px;
   height: 16px;
 }
+
+/* Banner de aviso a La Central */
+.central-callout {
+  background: var(--accent-light);
+  border-left: 4px solid var(--accent);
+  padding: 12px 20px;
+  margin-bottom: 32px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.central-callout svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.central-callout a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.central-callout a:hover {
+  text-decoration: underline;
+}
