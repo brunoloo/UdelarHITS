@@ -30,7 +30,6 @@ async function loadCategories() {
 tableBody.addEventListener('click', async (e) => {
   if (!e.target.classList.contains('btn-eliminar')) return;
 
-  const id = e.target.dataset.id;
   const titulo = e.target.dataset.titulo;
 
   const confirmado = confirm(`¿Seguro que querés eliminar la categoría "${titulo}"? Esta acción la marcará como inactiva.`);

@@ -3,6 +3,9 @@
    Siempre light, institucional, sin elementos de la app social.
    ========================================================= */
 
+/* ── Fuentes (La Central es autocontenida: no carga main.css) ── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap');
+
 /* ── Variables para modal.css (light mode fijo) ── */
 :root {
   --modal-overlay: rgba(0, 0, 0, 0.5);
@@ -107,7 +110,7 @@ body {
 
 .mi-lead {
   font-size: 16px;
-  color: #1a1a1a;;
+  color: #1a1a1a;
   line-height: 1.7;
   margin: 0 0 40px;
 }
@@ -122,7 +125,7 @@ body {
 
 .mi-content p {
   font-size: 15px;
-  color: #1a1a1a;;
+  color: #1a1a1a;
   line-height: 1.75;
   margin: 0 0 16px;
 }
@@ -309,11 +312,9 @@ body {
 }
 
 /* =========================================================
-   AGREGAR al final de css/central/central.css
-   Estilos del índice del Centro de ayuda
+   Índice del Centro de ayuda
    ========================================================= */
 
-/* ── Secciones del índice ── */
 .ca-section {
   margin-bottom: 40px;
 }
@@ -329,7 +330,6 @@ body {
   border-bottom: 1px solid #e8e8e8;
 }
 
-/* ── Links del índice ── */
 .ca-link {
   display: block;
   padding: 14px 12px;
@@ -362,11 +362,9 @@ body {
 }
 
 /* =========================================================
-   AGREGAR al final de css/central/central.css
    Modal de selección de contenido moderado
    ========================================================= */
 
-/* ── Lista de contenido moderado ── */
 .moderated-list {
   max-height: 400px;
   overflow-y: auto;
@@ -418,6 +416,11 @@ body {
   color: #b45309;
 }
 
+.moderated-badge--categoria {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
 .moderated-date {
   font-size: 12px;
   color: #999;
@@ -452,7 +455,6 @@ body {
   font-size: 14px;
 }
 
-/* ── Preview del contenido seleccionado en el modal de justificación ── */
 .selected-preview-box {
   background: #f7f7f7;
   border-radius: 8px;
@@ -472,7 +474,193 @@ body {
   line-height: 1.5;
 }
 
-.moderated-badge--categoria {
-  background: #e8f5e9;
-  color: #2e7d32;
+/* =========================================================
+   NUEVO — Contenido editorial de La Central
+   (links inline, listas, subtítulos, callouts, tablas)
+   ========================================================= */
+
+.mi-content a:not(.ca-link):not(.mi-btn) {
+  color: #1a1a1a;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: #bbb;
+}
+
+.mi-content a:not(.ca-link):not(.mi-btn):hover {
+  text-decoration-color: #1a1a1a;
+}
+
+.mi-content ul,
+.mi-content ol {
+  margin: 0 0 16px;
+  padding-left: 22px;
+}
+
+.mi-content li {
+  font-size: 15px;
+  color: #1a1a1a;
+  line-height: 1.75;
+  margin-bottom: 8px;
+}
+
+.mi-content li::marker {
+  color: #999;
+}
+
+.mi-content h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 28px 0 8px;
+}
+
+/* ── Callout informativo ── */
+.ca-note {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #f7f7f7;
+  border-left: 3px solid #1a1a1a;
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+  margin: 0 0 24px;
+}
+
+.ca-note p {
+  margin: 0;
+  font-size: 14px;
+  color: #444;
+  line-height: 1.6;
+}
+
+.ca-note--warn {
+  border-left-color: #b45309;
+  background: #fef9f0;
+}
+
+/* ── Tabla institucional ── */
+.ca-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 24px;
+  font-size: 14px;
+}
+
+.ca-table th {
+  text-align: left;
+  font-weight: 700;
+  color: #555;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 12px;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.ca-table td {
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #1a1a1a;
+  line-height: 1.55;
+  vertical-align: top;
+}
+
+.ca-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Fecha de actualización ── */
+.ca-updated {
+  font-size: 13px;
+  color: #999;
+  margin: -28px 0 32px;
+}
+
+/* =========================================================
+   NUEVO — Footer institucional de La Central
+   ========================================================= */
+
+.ca-footer {
+  border-top: 1px solid #e8e8e8;
+  background: #fafafa;
+  margin-top: 40px;
+}
+
+.ca-footer-grid {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 32px;
+}
+
+.ca-footer-col h3 {
+  font-size: 12px;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 14px;
+}
+
+.ca-footer-col a {
+  display: block;
+  font-size: 14px;
+  color: #1a1a1a;
+  text-decoration: none;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.ca-footer-col a:hover {
+  text-decoration: underline;
+}
+
+.ca-footer-bottom {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 48px 32px;
+  border-top: 1px solid #eeeeee;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #888;
+}
+
+/* =========================================================
+   NUEVO — Responsive
+   ========================================================= */
+
+@media (max-width: 640px) {
+  .mi-topbar,
+  .mi-breadcrumb {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .mi-content {
+    padding: 24px 20px 64px;
+  }
+
+  .mi-content h1 {
+    font-size: 28px;
+  }
+
+  .ca-footer-grid {
+    padding: 32px 20px;
+    gap: 24px;
+  }
+
+  .ca-footer-bottom {
+    padding: 16px 20px 28px;
+    flex-direction: column;
+  }
+
+  .mi-actions {
+    flex-direction: column;
+  }
 }
