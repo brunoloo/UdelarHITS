@@ -1,0 +1,88 @@
+.followers-modal {
+  width: 420px;
+}
+
+.follow-list {
+  max-height: 400px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.follow-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  transition: background 0.1s;
+}
+
+.follow-item:hover {
+  background: var(--surface-2);
+}
+
+.follow-item + .follow-item {
+  border-top: 1px solid var(--border);
+}
+
+.follow-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.follow-item-nickname {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+  display: block;
+}
+
+.follow-item-nickname:hover {
+  color: var(--accent);
+}
+
+.follow-item-name {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-follow-sm {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.btn-follow-sm:hover {
+  background: var(--surface-2);
+}
+
+.btn-follow-sm--following {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-color: var(--accent);
+}
+
+.btn-follow-sm--following:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.follow-list-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}

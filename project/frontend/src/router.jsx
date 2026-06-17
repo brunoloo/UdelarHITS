@@ -5,6 +5,7 @@ import { RegisterPage } from './features/auth/RegisterPage'
 import { FeedPage } from './features/feed/FeedPage'
 import { CategoryPage } from './features/category/CategoryPage'
 import { TopicPage } from './features/topic/TopicPage'
+import { ProfilePage } from './features/profile/ProfilePage'
 
 export const router = createBrowserRouter([
   {
@@ -14,6 +15,7 @@ export const router = createBrowserRouter([
       { index: true, element: <FeedPage /> },
       { path: 'category/:id', element: <CategoryPage /> },
       { path: 'topic/:id', element: <TopicPage /> },
+      { path: 'user/:nickname', element: <ProfilePage /> },
     ],
   },
   {
