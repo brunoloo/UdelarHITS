@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import './Modal.css'
 
-export function Modal({ isOpen, onClose, title, children }) {
+export function Modal({ isOpen, onClose, title, children, headerAction }) {
   useEffect(() => {
     if (!isOpen) return
     function handleKey(e) {
@@ -25,6 +25,7 @@ export function Modal({ isOpen, onClose, title, children }) {
             </svg>
           </button>
           <h3>{title}</h3>
+          {headerAction}
         </div>
         {children}
       </div>

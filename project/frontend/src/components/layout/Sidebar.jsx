@@ -1,8 +1,9 @@
-import { useLocation, Link } from 'react-router-dom'
+import { useLocation, Link, useMatch } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
+import { resolveAutor } from '../shared/AuthorDisplay'
 import './Sidebar.css'
 
 const SIDEBAR_PAGES = ['/', '/recent', '/popular', '/explore']
@@ -143,9 +144,80 @@ function ActiveUsersCard() {
   )
 }
 
+function CategorySidebarContent({ catId }) {
+  const { data: cat } = useQuery({
+    queryKey: ['category', catId],
+    queryFn: () => apiGet(`/categories/${catId}`).then(r => r.data),
+    enabled: !!catId,
+  })
+
+  const { data: replies = [] } = useQuery({
+    queryKey: ['replies', 'category', catId],
+    queryFn: () => apiGet(`/replies/category/${catId}`).then(r => r.data),
+    enabled: !!catId,
+  })
+
+  if (!cat || cat.estado === 'inactiva') return null
+
+  const autorDisplay = resolveAutor(cat)
+  const topicCount = cat.topics?.length ?? Number(cat.contador_temas) ?? 0
+  const commentCount = replies.length
+  const createdDate = new Date(cat.fecha_creacion).toLocaleDateString('es-UY')
+
+  return (
+    <>
+      <div className="sidebar-card">
+        <div className="sidebar-card-header">Sobre esta categoría</div>
+        <div className="sidebar-card-body">
+          <div className="stat-row">
+            <span className="stat-row-label">Temas</span>
+            <span className="stat-row-value">{topicCount}</span>
+          </div>
+          <div className="stat-row">
+            <span className="stat-row-label">Comentarios</span>
+            <span className="stat-row-value">{commentCount}</span>
+          </div>
+          <div className="stat-row">
+            <span className="stat-row-label">Creada</span>
+            <span className="stat-row-value">{createdDate}</span>
+          </div>
+        </div>
+      </div>
+      <div className="sidebar-card">
+        <div className="sidebar-card-header">Moderación</div>
+        <div className="sidebar-card-body">
+          <div className="mod-item">
+            <div className="mod-avatar">
+              <img
+                src={autorDisplay.url_imagen || '/assets/default-user.jpg'}
+                alt=""
+                onError={e => { e.currentTarget.src = '/assets/default-user.jpg' }}
+              />
+            </div>
+            <div className="mod-info">
+              {autorDisplay.isInactive ? (
+                <span className="mod-name inactive-author">{autorDisplay.nickname}</span>
+              ) : (
+                <span className="mod-name">
+                  <Link to={`/user/${encodeURIComponent(autorDisplay.nickname)}`}>
+                    {autorDisplay.nickname}
+                  </Link>
+                </span>
+              )}
+              <span className="mod-role">moderador</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export function Sidebar() {
   const { user } = useAuth()
   const { pathname } = useLocation()
+  const categoryMatch = useMatch('/category/:id')
+  const catId = categoryMatch?.params?.id
 
   const { data: categories = [], isLoading: catsLoading } = useQuery({
     queryKey: ['categories', 'active'],
@@ -158,7 +230,15 @@ export function Sidebar() {
     enabled: pathname === '/recent',
   })
 
-  if (!SIDEBAR_PAGES.includes(pathname)) return null
+  if (!SIDEBAR_PAGES.includes(pathname) && !catId) return null
+
+  if (catId) {
+    return (
+      <aside className="sidebar">
+        <CategorySidebarContent catId={catId} />
+      </aside>
+    )
+  }
 
   const categoryCount = catsLoading ? null : categories.length
 
