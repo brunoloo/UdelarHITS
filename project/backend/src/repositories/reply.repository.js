@@ -32,7 +32,7 @@ const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario
 const getRepliesByCategoryId = async (categoriaId) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion, 
-      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
+      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
@@ -47,7 +47,7 @@ const getRepliesByCategoryId = async (categoriaId) => {
 const getRepliesByTopicId = async (topicId) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion,
-      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
+      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
@@ -147,7 +147,7 @@ const getRepliesByUserId = async (userId) => {
 const getRepliesByCommentId = async (commentId) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion, 
-      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion,
+      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id

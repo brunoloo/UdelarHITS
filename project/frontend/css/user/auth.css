@@ -241,3 +241,16 @@
     border-radius: 12px;
   }
 }
+
+.auth-forgot {
+  text-align: left;
+  margin: -8px 0 4px;
+  font-size: 13px;
+}
+.auth-forgot a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.auth-forgot a:hover {
+  color: var(--accent);
+}

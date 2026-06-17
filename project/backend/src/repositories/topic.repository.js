@@ -71,7 +71,7 @@ const getTopicById = async (id) => {
     SELECT t.contenido_id AS id, t.titulo, t.estado, t.categoria_id,
       c.titulo AS categoria_titulo, c.estado AS categoria_estado,
       con.cuerpo, con.autor_id,
-      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
       con.fecha_creacion
     FROM tema t
     JOIN contenido con ON con.id = t.contenido_id
@@ -222,7 +222,7 @@ const getRecentTopics = async (limit = 20) => {
   const q = `
     SELECT t.contenido_id AS id, t.titulo, t.estado,
       con.cuerpo, con.fecha_creacion, con.autor_id,
-      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
       t.categoria_id, cat.titulo AS categoria_titulo,
       (SELECT COUNT(*) FROM comentario com 
         WHERE com.tema_id = t.contenido_id 
@@ -256,7 +256,7 @@ const getTrendingTopic = async (days = 7) => {
     )
     SELECT t.contenido_id AS id, t.titulo, t.categoria_id,
       con.cuerpo, con.fecha_creacion, con.autor_id,
-      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
       cat.titulo AS categoria_titulo,
       ta.comentarios_recientes AS total_comentarios,
       (

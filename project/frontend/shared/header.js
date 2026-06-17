@@ -110,3 +110,21 @@ window.showToast = (msg, type = "error") => {
     toast.classList.remove("is-visible");
   }, 4000);
 };
+
+// Helper para usuarios inactivos
+function getAutorDisplay(comment) {
+  if (comment.autor_estado === 'inactivo') {
+    return {
+      nickname: 'Usuario inactivo',
+      avatar: SERVER_BASE + '/assets/default-user.jpg',
+      profileLink: null,
+      isInactive: true
+    };
+  }
+  return {
+    nickname: comment.autor_nickname,
+    avatar: comment.autor_url_imagen || (SERVER_BASE + '/assets/default-user.jpg'),
+    profileLink: `/src/user/profile.html?nickname=${encodeURIComponent(comment.autor_nickname)}`,
+    isInactive: false
+  };
+}

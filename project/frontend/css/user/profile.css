@@ -368,3 +368,25 @@
   color: var(--text-secondary);
 }
 
+.profile-banner-wrap {
+  position: relative;
+}
+
+.profile-menu-wrap {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+}
+
+.profile-menu-wrap .comment-menu-btn {
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+}
+
+.profile-menu-wrap .comment-menu-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+}

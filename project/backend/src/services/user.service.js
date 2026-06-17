@@ -1,12 +1,16 @@
 import bcrypt  from 'bcrypt';
 import {uploadToCloudinary, deleteFromCloudinary} from '../utils/uploadToCloudinary.js';
 import {generateToken} from '../utils/generateToken.js'
+import crypto from 'crypto';
+import { sendEmail } from '../utils/sendEmail.js';
+import { createResetToken, findValidToken, markTokenAsUsed } from '../repositories/token.repository.js';
 import { 
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser, 
   isFollowing, updateAvatarById, searchUsers, updateBannerById, 
-  deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers } from '../repositories/user.repository.js';
+  deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getPasswordHashById, 
+  updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy } from '../repositories/user.repository.js';
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
 
@@ -148,7 +152,7 @@ const loginUserService =  async ({nickname ,email, password}) => {
     }
 
     if(existingUser.estado !== 'activo'){
-        const err = new Error('Usuario baneado');
+        const err = new Error('Tu cuenta no está activa');
         err.code = 'FORBIDDEN';
         throw err;
     }
@@ -207,7 +211,8 @@ const showMeService = async (nickname) => {
     biografia: user.biografia,
     url_imagen: user.url_imagen,
     url_banner: user.url_banner,
-    fecha_creacion: user.fecha_creacion
+    fecha_creacion: user.fecha_creacion,
+    privado: user.privado 
   };
 
   return { user: safeUser, categories, followers, following };
@@ -380,10 +385,184 @@ const getMostActiveUsersService = async (limit) => {
   return await getMostActiveUsers(safeLimit);
 };
 
+const changePasswordService = async (userId, { currentPassword, newPassword }) => {
+  if (!currentPassword || !newPassword) {
+    const err = new Error('Faltan campos obligatorios');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (newPassword.length < 8) {
+    const err = new Error('La nueva contraseña debe tener al menos 8 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const hash = await getPasswordHashById(userId);
+  if (!hash) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  const isValid = await bcrypt.compare(currentPassword, hash);
+  if (!isValid) {
+    const err = new Error('La contraseña actual no es correcta.');
+    err.code = 'INVALID_CREDENTIALS';
+    throw err;
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const newHash = await bcrypt.hash(newPassword, salt);
+
+  await updatePasswordHashById(userId, newHash);
+};
+
+const forgotPasswordService = async (email) => {
+  const normalizedEmail = email?.trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    const err = new Error('Falta el correo electrónico');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  // Buscar usuario por email (reutilizamos lo que ya existe)
+  const user = await findByEmailOrNicknameForLogin({ nickname: null, email: normalizedEmail });
+
+  // Si no existe, no hacemos nada pero tampoco revelamos que no existe
+  if (!user) return;
+
+  // Si está baneado o inactivo, tampoco enviamos
+  if (user.estado !== 'activo') return;
+
+  // Generar token seguro
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiraEn = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
+
+  await createResetToken(user.id, token, expiraEn);
+
+  // Enviar email
+  const resetUrl = `${process.env.APP_URL}/src-central/cuenta/reset-password.html?token=${token}`;
+
+  await sendEmail({
+    to: normalizedEmail,
+    subject: 'Recuperar tu contraseña — UdelarHITS',
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 20px;">
+        <h2 style="font-size: 20px; margin-bottom: 16px;">Recuperar tu contraseña</h2>
+        <p style="font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 24px;">
+          Recibimos una solicitud para restablecer la contraseña de tu cuenta en UdelarHITS. 
+          Si no fuiste vos, podés ignorar este mensaje.
+        </p>
+        <a href="${resetUrl}" 
+           style="display: inline-block; padding: 12px 28px; background: #2563eb; color: #fff; 
+                  text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+          Restablecer contraseña
+        </a>
+        <p style="font-size: 13px; color: #999; margin-top: 24px; line-height: 1.5;">
+          Este enlace expira en 10 minutos. Si no solicitaste este cambio, no es necesario que hagas nada.
+        </p>
+      </div>
+    `,
+  });
+};
+
+const verifyResetTokenService = async (token) => {
+  if (!token) {
+    const err = new Error('Token faltante');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const valid = await findValidToken(token);
+  if (!valid) {
+    const err = new Error('Token inválido o expirado');
+    err.code = 'INVALID_TOKEN';
+    throw err;
+  }
+
+  return true;
+};
+
+const resetPasswordService = async (token, newPassword) => {
+  if (!token || !newPassword) {
+    const err = new Error('Faltan campos obligatorios');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (newPassword.length < 8) {
+    const err = new Error('La contraseña debe tener al menos 8 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const validToken = await findValidToken(token);
+  if (!validToken) {
+    const err = new Error('Token inválido o expirado');
+    err.code = 'INVALID_TOKEN';
+    throw err;
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const newHash = await bcrypt.hash(newPassword, salt);
+
+  await updatePasswordHashById(validToken.usuario_id, newHash);
+  await markTokenAsUsed(validToken.id);
+};
+
+const deactivateAccountService = async (userId, password) => {
+  if (!password) {
+    const err = new Error('Falta la contraseña');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const hash = await getPasswordHashById(userId);
+  if (!hash) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  const isValid = await bcrypt.compare(password, hash);
+  if (!isValid) {
+    const err = new Error('La contraseña no es correcta');
+    err.code = 'INVALID_CREDENTIALS';
+    throw err;
+  }
+
+  // Borrar avatar y banner de Cloudinary
+  await deleteFromCloudinary('avatars', `avatar_${userId}`);
+  await deleteFromCloudinary('banners', `banner_${userId}`);
+
+  // Limpiar seguidores en ambas direcciones
+  await clearFollows(userId);
+
+  // Desactivar cuenta (estado, avatar, banner, bio → NULL)
+  await deactivateUser(userId);
+};
+
+const togglePrivacyService = async (userId) => {
+  const current = await getPrivacyById(userId);
+  if (!current) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  const newValue = !current.privado;
+  const updated = await updatePrivacy(userId, newValue);
+  return updated;
+};
+
 export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
   updateMeService, banUserService, activeUserService, 
   deleteUserService, followUserService, unfollowUserService, isFollowingService, 
   updateAvatarService, searchUsersService, updateBannerService, 
-  deleteAvatarService, deleteBannerService, getSuggestedUsersService, getMostActiveUsersService };
+  deleteAvatarService, deleteBannerService, getSuggestedUsersService, getMostActiveUsersService, 
+  changePasswordService, forgotPasswordService, verifyResetTokenService, resetPasswordService, 
+  deactivateAccountService, togglePrivacyService };
 
 

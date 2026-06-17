@@ -1,0 +1,176 @@
+.report-admin {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.report-admin-header {
+  margin-bottom: 32px;
+}
+
+.report-admin-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 16px 0 8px;
+}
+
+.report-admin-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── Secciones ── */
+.report-section {
+  margin-bottom: 40px;
+}
+
+.report-section h2 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Items ── */
+.report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.report-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.report-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.report-item-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.report-item-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.report-item-nickname {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+}
+
+.report-item-name {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.report-item-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ── Campos del detalle ── */
+.report-item-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.report-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.report-field-content {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  background: var(--bg);
+  padding: 12px;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.report-field-motivo {
+  border-left: 3px solid var(--danger);
+}
+
+/* ── Botones de acción ── */
+.report-item-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.report-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+
+.report-btn:hover {
+  opacity: 0.85;
+}
+
+.report-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.report-btn--dismiss {
+  background: #1a7f37;
+  color: #ffffff;
+}
+
+.report-btn--deactivate {
+  background: #d93025;
+  color: #ffffff;
+}
+
+/* ── Estados vacío y cargando ── */
+.report-empty,
+.report-loading {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}

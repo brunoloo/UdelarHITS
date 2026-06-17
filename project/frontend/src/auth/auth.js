@@ -76,6 +76,8 @@ if (params.get("msg") === "ver-usuarios") {
   showMessage("error", "Debés iniciar sesión para crear un comentario");
 } else if (params.get("msg") === "error") {
   showMessage("error", "Ha ocurrido un error inesperado");
+} else if (params.get("msg") === "eliminar-cuenta") {
+  showMessage("error", "Debés iniciar sesión para eliminar tu cuenta");
 }
 
 const loginForm = document.getElementById('loginForm');

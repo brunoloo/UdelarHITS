@@ -6,7 +6,9 @@
   <title>Configuración — UdelarHITS</title>
   <script src="/shared/anti-flash.js"></script>
   <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/modal.css" />
   <link rel="stylesheet" href="/css/configuration.css" />
+  <link rel="stylesheet" href="/css/user/auth.css" />
 </head>
 <body>
 
@@ -80,8 +82,24 @@
           <h2>Cuenta</h2>
           <p class="settings-section-desc">Gestioná los datos de tu cuenta.</p>
 
-          <div class="settings-placeholder">
-            <p>Próximamente vas a poder cambiar tu contraseña, email y eliminar tu cuenta desde acá.</p>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <h3>Contraseña</h3>
+              <p>Cambiá tu contraseña actual por una nueva.</p>
+            </div>
+            <div class="settings-row-control">
+              <button class="btn-secondary" id="btn-change-password">Cambiar contraseña</button>
+            </div>
+          </div>
+          
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <h3>Eliminar cuenta</h3>
+              <p>Desactivá tu perfil. Tu contenido publicado se mantiene visible.</p>
+            </div>
+            <div class="settings-row-control">
+              <a href="/src-central/cuenta/delete-account.html" target="_blank" class="btn-danger-outline">Eliminar cuenta</a>
+            </div>
           </div>
         </article>
 
@@ -98,8 +116,17 @@
           <h2>Privacidad</h2>
           <p class="settings-section-desc">Controlá qué información tuya es visible para otros usuarios.</p>
 
-          <div class="settings-placeholder">
-            <p>Las opciones de privacidad estarán disponibles próximamente.</p>
+          <div class="settings-row">
+            <div class="settings-row-info">
+              <h3>Cuenta privada</h3>
+              <p>Solo tus seguidores podrán ver tus categorías, temas y comentarios desde tu perfil. Tu información pública sigue visible para todos.</p>
+            </div>
+            <div class="settings-row-control">
+              <label class="toggle-switch">
+                <input type="checkbox" id="privacyToggle" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
           </div>
         </article>
 

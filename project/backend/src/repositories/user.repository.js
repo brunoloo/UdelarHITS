@@ -58,7 +58,7 @@ const getUsers = async () => {
 
 const getUserByNickname = async (nickname) => {
   const q = `
-    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion
+    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado
     FROM usuario
     WHERE LOWER(nickname) = LOWER($1)
     LIMIT 1
@@ -301,8 +301,65 @@ const getMostActiveUsers = async (limit = 5) => {
   return rows;
 };
 
+const getPasswordHashById = async (id) => {
+  const q = `
+    SELECT password_hash
+    FROM usuario
+    WHERE id = $1
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0]?.password_hash || null;
+};
+
+const updatePasswordHashById = async (id, passwordHash) => {
+  const q = `
+    UPDATE usuario
+    SET password_hash = $1
+    WHERE id = $2
+    RETURNING id
+  `;
+  const { rows } = await pool.query(q, [passwordHash, id]);
+  return rows[0] || null;
+};
+
+const deactivateUser = async (userId) => {
+  const q = `
+    UPDATE usuario
+    SET estado = 'inactivo',
+        url_imagen = NULL,
+        url_banner = NULL,
+        biografia = NULL
+    WHERE id = $1
+    RETURNING id, nickname
+  `;
+  const { rows } = await pool.query(q, [userId]);
+  return rows[0] || null;
+};
+
+const clearFollows = async (userId) => {
+  await pool.query(`DELETE FROM usuario_seguidor WHERE seguidor_id = $1 OR seguido_id = $1`, [userId]);
+};
+
+const updatePrivacy = async (id, privado) => {
+  const q = `
+    UPDATE usuario SET privado = $1
+    WHERE id = $2
+    RETURNING id, privado
+  `;
+  const { rows } = await pool.query(q, [privado, id]);
+  return rows[0] || null;
+};
+
+const getPrivacyById = async (id) => {
+  const q = `SELECT privado FROM usuario WHERE id = $1`;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0] || null;
+};
+
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, 
   deleteUserByNickname, followUser, unfollowUser, isFollowing, updateAvatarById, 
-  searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers };
+  searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers, 
+  getMostActiveUsers, getPasswordHashById, updatePasswordHashById, deactivateUser, clearFollows, updatePrivacy, getPrivacyById };

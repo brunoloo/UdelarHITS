@@ -473,7 +473,23 @@ async function loadProfile() {
       window.location.href = "/";
       return;
     }
-    user = res.data.user;
+      user = res.data.user;
+      if (user.estado === 'inactivo') {
+      document.title = 'Perfil no disponible — UdelarHITS';
+      document.querySelector('.profile-card').innerHTML = `
+        <div class="cat-inactive-banner" style="padding: 40px 20px; text-align: center;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div class="cat-inactive-text">
+            <span class="cat-inactive-title">Este perfil no está disponible</span>
+            <span class="cat-inactive-desc">El contenido publicado se mantiene visible.</span>
+          </div>
+        </div>
+      `;
+      // Ocultar tabs y sidebar
+      document.querySelector('.section-tabs')?.remove();
+      document.querySelectorAll('.section-panel').forEach(p => p.remove());
+      return;
+    }
     followers = res.data.followers;
     following = res.data.following;
     categories = res.data.categories;
@@ -603,10 +619,112 @@ async function loadProfile() {
         }
       }
     });
+
+    // ── Reportar usuario ──
+    if (!isOwnProfile) {
+      const menuWrap = document.getElementById('profileMenuWrap');
+      menuWrap.style.display = '';
+
+      const menuBtn = menuWrap.querySelector('.comment-menu-btn');
+      const dropdown = document.getElementById('profileDropdown');
+
+      menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+      });
+
+      document.addEventListener('click', () => dropdown.classList.remove('open'));
+
+      document.getElementById('reportProfileBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove('open');
+
+        const modal = document.getElementById('reportUserModal');
+        const input = document.getElementById('reportMotiveInput');
+        const counter = document.getElementById('reportMotiveCounter');
+        const errorEl = document.getElementById('reportUserError');
+        const submitBtn = document.getElementById('submitReportUser');
+        const cancelBtn = document.getElementById('cancelReportUser');
+        const closeBtn = document.getElementById('closeReportUserModal');
+
+        input.value = '';
+        errorEl.textContent = '';
+        counter.textContent = '0 / 1000';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Enviar reporte';
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+
+        const close = () => {
+          modal.classList.remove('open');
+          document.body.style.overflow = '';
+        };
+
+        closeBtn.onclick = close;
+        cancelBtn.onclick = close;
+        modal.onclick = (e) => { if (e.target === modal) close(); };
+
+        input.oninput = () => {
+          counter.textContent = input.value.length + ' / 1000';
+          submitBtn.disabled = input.value.trim().length < 10;
+        };
+
+        submitBtn.onclick = async () => {
+          errorEl.textContent = '';
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Enviando...';
+
+          const res = await apiPost(`/user-reports/${encodeURIComponent(nicknameParam)}/report`, {
+            motivo: input.value.trim()
+          });
+
+          if (res.ok) {
+            close();
+            window.showToast?.('Reporte enviado correctamente', 'success');
+          } else {
+            errorEl.textContent = res.message || 'Error al enviar el reporte';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Enviar reporte';
+          }
+        };
+      });
+    }
   }
 
   // Cargar tabs
-  await loadTabs(user.id, categories);
+  const isPrivateProfile = user.privado && !isOwnProfile;
+  let canViewContent = true;
+
+  if (isPrivateProfile) {
+    const isAdmin = meRes?.ok && meRes.data.user.rol === 'admin';
+    const iFollow = followers.some(f => f.nickname === meRes.data.user.nickname);
+
+    if (!isAdmin && !iFollow) {
+      canViewContent = false;
+    }
+  }
+
+    if (!canViewContent) {
+    document.getElementById('btnSeguidores').style.pointerEvents = 'none';
+    document.getElementById('btnSeguidos').style.pointerEvents = 'none';
+  }
+
+  if (canViewContent) {
+    await loadTabs(user.id, categories);
+  } else {
+    // Mostrar mensaje de cuenta privada en todas las tabs
+    document.getElementById('panelCategorias').innerHTML = `
+      <div class="empty-panel" style="grid-column:1/-1; text-align: center; padding: 32px 16px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 8px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <p style="color: var(--text-muted); font-size: 14px; margin: 0;">Esta cuenta es privada. Solo sus seguidores pueden ver su contenido.</p>
+      </div>
+    `;
+    document.getElementById('panelTemas').innerHTML = document.getElementById('panelCategorias').innerHTML;
+    document.getElementById('panelComentarios').innerHTML = document.getElementById('panelCategorias').innerHTML;
+    document.getElementById('countCategorias').textContent = '—';
+    document.getElementById('countTemas').textContent = '—';
+    document.getElementById('countComentarios').textContent = '—';
+  }
 
   // Editar perfil
   if (isOwnProfile) initEditModal(user);

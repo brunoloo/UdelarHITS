@@ -13,15 +13,18 @@ function renderTopics(topics) {
   }
 
   feed.innerHTML = topics.map(t => {
+    const autor = getAutorDisplay(t);
     const commentCount = Number(t.contador_comentarios) || 0;
     return `
     <div class="topic-card" data-topic-id="${encodeURIComponent(t.contenido_id)}">
       <img class="topic-avatar"
-          src="${t.autor_url_imagen || (SERVER_BASE + '/assets/default-user.jpg')}"
-          alt="${escapeHtml(t.autor_nickname)}" />
+          src="${autor.avatar}"
+          alt="${escapeHtml(autor.nickname)}" />
       <div class="topic-body">
         <div class="topic-head">
-          <a href="/src/user/profile.html?nickname=${encodeURIComponent(t.autor_nickname)}">${escapeHtml(t.autor_nickname)}</a>
+          ${autor.isInactive
+          ? `<span class="inactive-author">${escapeHtml(autor.nickname)}</span>`
+          : `<a href="${autor.profileLink}">${escapeHtml(autor.nickname)}</a>`}
           <span>·</span>
           <span>${escapeHtml(timeAgo(t.fecha_creacion))}</span>
         </div>
@@ -285,13 +288,17 @@ async function loadCategory() {
   // Moderación
   if (cat.estado !== 'inactiva'){
     const modList = document.getElementById('modList');
+    const autorDisplay = getAutorDisplay(cat);
+
     modList.innerHTML = `
       <div class="mod-item">
         <div class="mod-avatar">
-          <img src="${cat.autor_url_imagen || (SERVER_BASE + '/assets/default-user.jpg')}" alt="" />
+          <img src="${autorDisplay.avatar}" />
         </div>
         <div class="mod-info">
-          <span class="mod-name"><a href="/src/user/profile.html?nickname=${encodeURIComponent(cat.autor_nickname)}">${escapeHtml(cat.autor_nickname)}</a></span>
+          ${autorDisplay.isInactive
+            ? `<span class="mod-name inactive-author">${escapeHtml(autorDisplay.nickname)}</span>`
+            : `<span class="mod-name"><a href="${autorDisplay.profileLink}">${escapeHtml(autorDisplay.nickname)}</a></span>`}
           <span class="mod-role">moderador</span>
         </div>
       </div>

@@ -1822,6 +1822,27 @@ a.topic-title {
   color: var(--danger);
 }
 
+/* ── Botón danger outline ── */
+.btn-danger-outline {
+  display: inline-block;
+  padding: 8px 18px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  background: transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.btn-danger-outline:hover {
+  background: var(--danger);
+  color: #ffffff;
+}
+
 /* ── GENERAL ────────────────────────────────────── */
 
 .bio-link {
@@ -1847,3 +1868,8 @@ background: var(--accent-light);
 color: var(--accent);
 }
 
+.inactive-author {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-style: italic;
+}
