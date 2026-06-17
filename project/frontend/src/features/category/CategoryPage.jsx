@@ -11,6 +11,7 @@ import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { useToast } from '../../hooks/useToast'
 import { CreateTopicPanel } from '../topic/CreateTopicPanel'
+import { ReportModal } from '../../components/shared/ReportModal'
 import './category.css'
 
 // ── SKELETONS ──────────────────────────────────────────────────────────────────
@@ -321,6 +322,7 @@ export function CategoryPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
 
   const { data: cat, isLoading: catLoading, isError } = useQuery({
     queryKey: ['category', id],
@@ -390,7 +392,10 @@ export function CategoryPage() {
           <line x1="4" y1="22" x2="4" y2="15"/>
         </svg>
       ),
-      onClick: () => showToast('Función de reporte próximamente', 'info'),
+      onClick: () => {
+        if (isOwner) { showToast('No podés reportar tu propio contenido', 'error'); return }
+        setReportOpen(true)
+      },
     },
     {
       label: 'Historial de ediciones',
@@ -555,6 +560,14 @@ export function CategoryPage() {
           isPending={deleteMutation.isPending}
         />
       )}
+
+      {/* Report modal */}
+      <ReportModal
+        isOpen={reportOpen}
+        onClose={() => setReportOpen(false)}
+        contentId={id}
+        contentType="category"
+      />
 
       {/* History modal */}
       <Modal

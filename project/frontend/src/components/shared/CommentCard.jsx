@@ -9,6 +9,7 @@ import { UserAvatar } from './UserAvatar'
 import { ReadMore } from '../ui/ReadMore'
 import { DropdownMenu } from '../ui/DropdownMenu'
 import { CommentForm } from './CommentForm'
+import { ReportModal } from './ReportModal'
 import { timeAgo } from '../../utils/timeAgo'
 import './CommentCard.css'
 
@@ -26,6 +27,7 @@ export function CommentCard({
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState('')
   const [replyOpen, setReplyOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
 
   const isHidden = comment.estado === 'oculto'
   const replyCount = Number(comment.contador_respuestas) || 0
@@ -117,7 +119,7 @@ export function CommentCard({
         showToast('No podés reportar tu propio contenido', 'error')
         return
       }
-      showToast('Función de reporte próximamente', 'info')
+      setReportOpen(true)
     },
   })
 
@@ -148,6 +150,7 @@ export function CommentCard({
   }
 
   return (
+    <>
     <div className={cardClasses.join(' ')} onClick={handleCardClick}>
       <div className="comment-gutter">
         <UserAvatar
@@ -247,5 +250,13 @@ export function CommentCard({
         )}
       </div>
     </div>
+
+    <ReportModal
+      isOpen={reportOpen}
+      onClose={() => setReportOpen(false)}
+      contentId={comment.id}
+      contentType="comment"
+    />
+    </>
   )
 }

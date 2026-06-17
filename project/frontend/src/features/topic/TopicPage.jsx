@@ -10,6 +10,7 @@ import { ReadMore } from '../../components/ui/ReadMore'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
 import { Modal } from '../../components/ui/Modal'
 import { CommentThread } from '../../components/shared/CommentThread'
+import { ReportModal } from '../../components/shared/ReportModal'
 import { timeAgo } from '../../utils/timeAgo'
 import '../category/category.css'
 import './topic.css'
@@ -29,6 +30,7 @@ export function TopicPage() {
   const [historyIndex, setHistoryIndex] = useState(0)
   const [commentText, setCommentText] = useState('')
   const [commentFormOpen, setCommentFormOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
 
   const { data: topic, isLoading, isError } = useQuery({
     queryKey: ['topic', id],
@@ -104,7 +106,7 @@ export function TopicPage() {
     ),
     onClick: () => {
       if (isAuthor) { showToast('No podés reportar tu propio contenido', 'error'); return }
-      showToast('Función de reporte próximamente', 'info')
+      setReportOpen(true)
     },
   })
 
@@ -367,6 +369,14 @@ export function TopicPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Report modal */}
+      <ReportModal
+        isOpen={reportOpen}
+        onClose={() => setReportOpen(false)}
+        contentId={id}
+        contentType="topic"
+      />
 
       {/* History modal */}
       <Modal
