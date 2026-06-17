@@ -5,17 +5,13 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UdelarHITS</title>
+    <!-- Anti-flash: debe ejecutarse ANTES de que el navegador pinte — sin defer ni async -->
     <script>
       (function () {
-        const saved = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        let theme = 'light';
-        if (saved) {
-          theme = saved;
-        } else if (prefersDark) {
-          theme = 'dark';
-        }
-        document.documentElement.dataset.theme = theme;
+        var saved = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var dark = saved === 'dark' || ((saved === 'system' || !saved) && prefersDark);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
       })();
     </script>
   </head>
