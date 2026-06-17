@@ -4,7 +4,7 @@ import { uploadAvatar, uploadBanner } from '../config/multer.js';
 import { showMe, updateMe, getUsers, getUserProfile, changeUserPassword, 
     banUser, activeUser, deleteUser, followUser, unfollowUser, 
     checkFollowing, updateAvatar, searchUsers, updateBanner, deleteBanner, 
-    deleteAvatar, getSuggestedUsersList, getMostActiveUsersList } from '../controllers/user.controller.js';
+    deleteAvatar, getSuggestedUsersList, getMostActiveUsersList, deactivateAccount, togglePrivacy } from '../controllers/user.controller.js';
 
 const router = Router();
 
@@ -14,9 +14,12 @@ router.get('/me', protect, showMe);                              // Obtener tu i
 router.patch('/me', protect, updateMe);                          // Modificar datos personales
 router.patch('/me/avatar', protect, uploadAvatar.single('avatar'), updateAvatar);  // Modifica el avatar
 router.patch('/me/banner', protect, uploadBanner.single('banner'), updateBanner);  // Modifica el banner
-router.delete('/me/banner', protect, deleteBanner);              // Elimina el banner
-router.delete('/me/avatar', protect, deleteAvatar);              // Elimina el avatar          
+router.delete('/me/banner', protect, deleteBanner);              // Eliminar banner
+router.delete('/me/avatar', protect, deleteAvatar);              // Eliminar avatar          
+router.patch('/me/privacy', protect, togglePrivacy);             // Perfil privado
+router.post('/me/deactivate', protect, deactivateAccount);       // Desactivar cuenta
 router.put('/change-password', protect, changeUserPassword);     // Actualizar contraseña
+
 
 router.get('/suggested', protect, getSuggestedUsersList);        // Lista sugerida de usuarios
 

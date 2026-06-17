@@ -5,7 +5,9 @@ import { registerUserService, loginUserService, getUsersService, createUserByAdm
     banUserService, activeUserService, deleteUserService,
   followUserService, unfollowUserService, isFollowingService, updateAvatarService, 
   searchUsersService, updateBannerService, 
-  deleteBannerService, deleteAvatarService, getSuggestedUsersService, getMostActiveUsersService } from '../services/user.service.js';
+  deleteBannerService, deleteAvatarService, getSuggestedUsersService, getMostActiveUsersService, 
+  changePasswordService, forgotPasswordService, verifyResetTokenService, 
+  resetPasswordService, deactivateAccountService, togglePrivacyService } from '../services/user.service.js';
 
 const showMe = async (req, res) => {
   try {
@@ -181,8 +183,6 @@ const deleteUser = async (req, res) => {
   }
 };
 
-const changeUserPassword = async (req, res) => {} // TODO
-
 const followUser = async (req, res) => {
   try {
     const { nickname } = req.params;
@@ -304,7 +304,83 @@ const getMostActiveUsersList = async (req, res, next) => {
   }
 };
 
+const changeUserPassword = async (req, res) => {
+  try {
+    await changePasswordService(req.user.id, req.body);
+    return res.status(200).json({ ok: true, message: 'Contraseña actualizada correctamente' });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    if (error.code === 'INVALID_CREDENTIALS') return res.status(401).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
+
+const forgotPassword = async (req, res) => {
+  try {
+    await forgotPasswordService(req.body.email);
+    // Siempre responder 200 para no revelar si el email existe
+    return res.status(200).json({ ok: true, message: 'Si el email existe, se envió el enlace de recuperación' });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
+
+const verifyResetToken = async (req, res) => {
+  try {
+    await verifyResetTokenService(req.body.token);
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'INVALID_TOKEN') return res.status(400).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    await resetPasswordService(req.body.token, req.body.newPassword);
+    return res.status(200).json({ ok: true, message: 'Contraseña actualizada correctamente' });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'INVALID_TOKEN') return res.status(400).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
+
+const deactivateAccount = async (req, res) => {
+  try {
+    await deactivateAccountService(req.user.id, req.body.password);
+
+    // Limpiar cookie JWT
+    res.clearCookie('jwt', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+
+    return res.status(200).json({ ok: true, message: 'Cuenta desactivada correctamente' });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    if (error.code === 'INVALID_CREDENTIALS') return res.status(401).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
+
+const togglePrivacy = async (req, res) => {
+  try {
+    const updated = await togglePrivacyService(req.user.id);
+    return res.status(200).json({ ok: true, data: updated });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
+
 export { showMe, registerUser, loginUser, logoutUser, getUsers, 
-  getUserProfile, updateMe, changeUserPassword, banUser, 
+  getUserProfile, updateMe, banUser, 
   activeUser, deleteUser, followUser, unfollowUser, checkFollowing, updateAvatar, 
-  searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList }
+  searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList, 
+  changeUserPassword, forgotPassword, verifyResetToken, resetPassword, deactivateAccount, togglePrivacy }

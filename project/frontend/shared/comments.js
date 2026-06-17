@@ -137,7 +137,7 @@ function renderCommentCard(c, role, index, indexPrefix) {
   const mode = result.mode || 'lines';
   const replyCount = Number(c.contador_respuestas) || 0;
   const textId = `comment-text-${indexPrefix}-${index}`;
-
+  const autor = getAutorDisplay(c);  // ← agregar esta línea
   const cardClasses = ['comment-card'];
   if (role === 'ancestor') cardClasses.push('comment-card--ancestor');
   if (role === 'reply') cardClasses.push('comment-card--clickable');
@@ -199,12 +199,14 @@ function renderCommentCard(c, role, index, indexPrefix) {
     <div class="${cardClasses.join(' ')}" ${dataAttrs}>
       <div class="comment-gutter">
         <img class="comment-avatar"
-             src="${c.autor_url_imagen || (SERVER_BASE + '/assets/default-user.jpg')}"
-             alt="${escapeHtml(c.autor_nickname)}" />
+             src="${autor.avatar}"
+             alt="${escapeHtml(autor.nickname)}" />
       </div>
       <div class="comment-body">
         <div class="comment-head">
-          <a href="/src/user/profile.html?nickname=${encodeURIComponent(c.autor_nickname)}">${escapeHtml(c.autor_nickname)}</a>
+          ${autor.isInactive
+          ? `<span class="inactive-author">${escapeHtml(autor.nickname)}</span>`
+          : `<a href="${autor.profileLink}">${escapeHtml(autor.nickname)}</a>`}
           <span>·</span>
           <span>${escapeHtml(timeAgo(c.fecha_creacion))}</span>
           ${menuHtml}

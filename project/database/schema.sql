@@ -16,7 +16,7 @@ CREATE EXTENSION IF NOT EXISTS unaccent;
 -- -----------------------------
 -- ENUMS
 -- -----------------------------
-CREATE TYPE estado_usr AS ENUM ('activo', 'ban');
+CREATE TYPE estado_usr AS ENUM ('activo','inactivo' ,'ban');
 CREATE TYPE estado_cat AS ENUM ('activa', 'inactiva');
 CREATE TYPE estado_tem AS ENUM ('activo', 'inactivo');
 CREATE TYPE estado_com AS ENUM ('visible', 'oculto');
@@ -77,6 +77,7 @@ CREATE TABLE usuario ( -- Revisado y completo. No modificar
   url_imagen        TEXT,
   url_banner        TEXT,
   estado            estado_usr   NOT NULL DEFAULT 'activo',
+  privado BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_creacion    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
@@ -275,6 +276,33 @@ CREATE TABLE notificacion (
   contenido_id      BIGINT NULL REFERENCES contenido(id) ON DELETE SET NULL,
   leida             BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- -----------------------------
+-- RESEND
+-- -----------------------------
+CREATE TABLE token_reset_password (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  token VARCHAR(64) NOT NULL UNIQUE,
+  expira_en TIMESTAMPTZ NOT NULL,
+  usado BOOLEAN NOT NULL DEFAULT FALSE,
+  fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- -----------------------------
+-- REPORTAR
+-- -----------------------------
+CREATE TABLE reporte_usuario (
+  id SERIAL PRIMARY KEY,
+  usuario_reportado_id INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  reportador_id INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  motivo TEXT NOT NULL,
+  estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+  decision VARCHAR(20),
+  fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  fecha_resolucion TIMESTAMPTZ,
+  UNIQUE(usuario_reportado_id, reportador_id)
 );
 
 -- -----------------------------

@@ -8,8 +8,10 @@
 
     const isLogged = (body.ok && body.data && body.data.user);
 
+    const guardMsg = document.querySelector('meta[name="guard-msg"]')?.content || 'ver-usuarios';
+
     if (!isLogged) {
-      window.location.replace("/src/auth/login.html?msg=ver-usuarios");
+      window.location.replace("/src/auth/login.html?msg=" + guardMsg);
     } else {
       document.documentElement.style.visibility = 'visible';
     }

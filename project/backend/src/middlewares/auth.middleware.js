@@ -11,12 +11,21 @@ export const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const { rows } = await pool.query(
-      'SELECT id, rol, nickname FROM usuario WHERE id = $1',
+      'SELECT id, rol, nickname, estado FROM usuario WHERE id = $1',
       [decoded.id]
     );
 
     if (!rows[0]) {
       return res.status(401).json({ ok: false, message: 'Usuario no válido' });
+    }
+
+    if (rows[0].estado !== 'activo') {
+      res.clearCookie('jwt', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+      return res.status(403).json({ ok: false, message: 'Tu cuenta no está activa' });
     }
 
     req.user = { id: rows[0].id, rol: rows[0].rol, nickname: rows[0].nickname };

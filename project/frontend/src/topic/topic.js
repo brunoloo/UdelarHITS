@@ -160,17 +160,21 @@ async function loadTopic() {
   if (topic.estado !== 'inactivo') {
     // Sidebar autor
     const modList = document.getElementById('modList');
+    const autorDisplay = getAutorDisplay(topic);
+
     modList.innerHTML = `
       <div class="mod-item">
         <div class="mod-avatar">
-          <img src="${topic.autor_url_imagen || `${SERVER_BASE}/assets/default-user.jpg`}" />
+          <img src="${autorDisplay.avatar}" />
         </div>
         <div class="mod-info">
-          <span class="mod-name"><a href="/src/user/profile.html?nickname=${encodeURIComponent(topic.autor_nickname)}">${escapeHtml(topic.autor_nickname)}</a></span>
+          ${autorDisplay.isInactive
+            ? `<span class="mod-name inactive-author">${escapeHtml(autorDisplay.nickname)}</span>`
+            : `<span class="mod-name"><a href="${autorDisplay.profileLink}">${escapeHtml(autorDisplay.nickname)}</a></span>`}
           <span class="mod-role">creador</span>
         </div>
       </div>
-    `;
+`;
 
     modList.querySelectorAll('.mod-avatar img').forEach(img => {
       img.addEventListener('error', () => {
