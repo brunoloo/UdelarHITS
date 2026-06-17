@@ -1,0 +1,9 @@
+/* Global styles — tokens imported separately in main.jsx */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
