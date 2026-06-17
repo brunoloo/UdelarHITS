@@ -41,13 +41,20 @@
   min-width: 0;
 }
 
+.comment-body-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
 .comment-head {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
   color: var(--text-secondary);
-  margin-bottom: 4px;
 }
 
 .comment-head a {
@@ -67,6 +74,19 @@
   white-space: pre-wrap;
   word-wrap: break-word;
   margin-bottom: 6px;
+}
+
+.comment-text a,
+.comment-body a.bio-link {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+  transition: text-decoration 0.12s;
+}
+
+.comment-text a:hover,
+.comment-body a.bio-link:hover {
+  text-decoration: underline;
 }
 
 /* ── Actions row ── */

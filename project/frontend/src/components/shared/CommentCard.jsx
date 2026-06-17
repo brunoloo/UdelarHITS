@@ -158,16 +158,18 @@ export function CommentCard({
         />
       </div>
       <div className="comment-body">
-        <div className="comment-head">
-          {autor.isInactive ? (
-            <span className="inactive-author">{autor.nickname}</span>
-          ) : (
-            <Link to={`/user/${encodeURIComponent(autor.nickname)}`} onClick={e => e.stopPropagation()}>
-              {autor.nickname}
-            </Link>
-          )}
-          <span>·</span>
-          <span>{timeAgo(comment.fecha_creacion)}</span>
+        <div className="comment-body-top">
+          <div className="comment-head">
+            {autor.isInactive ? (
+              <span className="inactive-author">{autor.nickname}</span>
+            ) : (
+              <Link to={`/user/${encodeURIComponent(autor.nickname)}`} onClick={e => e.stopPropagation()}>
+                {autor.nickname}
+              </Link>
+            )}
+            <span>·</span>
+            <span>{timeAgo(comment.fecha_creacion)}</span>
+          </div>
           <DropdownMenu items={menuItems} />
         </div>
 
