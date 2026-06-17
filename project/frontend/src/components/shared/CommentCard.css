@@ -215,7 +215,5 @@
 }
 
 .comment-thread + .comment-replies {
-  border-top: 1px solid var(--border);
   padding-left: 28px;
-  padding-top: 10px;
 }
