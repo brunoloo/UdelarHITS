@@ -1,0 +1,253 @@
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: calc(var(--header-h) + 24px);
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sidebar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.sidebar-card-header {
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.sidebar-card-body {
+  padding: 12px 16px;
+}
+
+/* ── STAT ROWS ── */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.stat-row-label {
+  color: var(--text-secondary);
+}
+
+.stat-row-value {
+  font-weight: 600;
+}
+
+/* ── JOIN BANNER ── */
+.join-banner {
+  background: var(--accent);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  text-align: center;
+  color: var(--text-on-accent);
+}
+
+.join-banner h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.join-banner p {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.btn-white {
+  display: block;
+  padding: 8px;
+  border-radius: 20px;
+  background: var(--text-on-accent);
+  color: var(--accent);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 8px;
+  transition: opacity 0.15s;
+}
+
+.btn-white:hover {
+  opacity: 0.9;
+}
+
+.btn-outline-white {
+  display: block;
+  padding: 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: var(--text-on-accent);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.btn-outline-white:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ── POPULAR TAGS ── */
+.sidebar-tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sidebar-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-light);
+  text-decoration: none;
+  transition: background 0.12s;
+}
+
+.sidebar-tag:hover {
+  background: var(--accent);
+}
+
+.sidebar-tag:hover .sidebar-tag-name,
+.sidebar-tag:hover .sidebar-tag-count {
+  color: var(--text-on-accent);
+}
+
+.sidebar-tag-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.sidebar-tag-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── NEW CATEGORIES ── */
+.sidebar-cat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.12s;
+}
+
+.sidebar-cat-item + .sidebar-cat-item {
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-cat-item:hover .sidebar-cat-title {
+  color: var(--accent);
+}
+
+.sidebar-cat-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sidebar-cat-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  margin-left: 8px;
+}
+
+/* ── ACTIVE USERS ── */
+.sidebar-active-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+}
+
+.sidebar-active-user + .sidebar-active-user {
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-active-user:hover .sidebar-active-nickname {
+  color: var(--accent);
+}
+
+.sidebar-active-rank {
+  width: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sidebar-active-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.sidebar-active-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-active-nickname {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.12s;
+}
+
+.sidebar-active-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── UTILS ── */
+.sidebar-loading {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+.sidebar-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
