@@ -4,8 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { TopicCard } from '../../components/shared/TopicCard'
-import { UserAvatar } from '../../components/shared/UserAvatar'
-import { resolveAutor } from '../../components/shared/AuthorDisplay'
+import { CommentThread } from '../../components/shared/CommentThread'
 import { Modal } from '../../components/ui/Modal'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
 import { timeAgo } from '../../utils/timeAgo'
@@ -31,35 +30,6 @@ function TopicSkeleton() {
         <div className="skeleton" style={{ height: 12, width: '45%' }} />
       </div>
     </>
-  )
-}
-
-// ── COMMENT CARD ───────────────────────────────────────────────────────────────
-function CommentCard({ comment }) {
-  const autor = resolveAutor(comment)
-  return (
-    <div className="comment-card">
-      <div className="comment-gutter">
-        <UserAvatar
-          url_imagen={autor.url_imagen}
-          nickname={autor.nickname}
-          size="md"
-          inactive={autor.isInactive}
-        />
-      </div>
-      <div className="comment-body">
-        <div className="comment-head">
-          {autor.isInactive ? (
-            <span className="inactive-author">{autor.nickname}</span>
-          ) : (
-            <Link to={`/user/${encodeURIComponent(autor.nickname)}`}>{autor.nickname}</Link>
-          )}
-          <span>·</span>
-          <span>{timeAgo(comment.fecha_creacion)}</span>
-        </div>
-        <div className="comment-text">{comment.cuerpo}</div>
-      </div>
-    </div>
   )
 }
 
@@ -553,10 +523,11 @@ export function CategoryPage() {
           {user && isActive && <CreateCommentPanel categoryId={id} user={user} />}
           {repliesLoading ? (
             <div className="feed-empty">Cargando comentarios...</div>
-          ) : replies.length === 0 ? (
-            <div className="feed-empty">Todavía no hay comentarios en esta categoría.</div>
           ) : (
-            replies.map(c => <CommentCard key={c.contenido_id || c.id} comment={c} />)
+            <CommentThread
+              comments={replies}
+              invalidateKey={['replies', 'category', id]}
+            />
           )}
         </div>
       )}

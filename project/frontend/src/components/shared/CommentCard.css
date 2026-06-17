@@ -1,0 +1,201 @@
+/* ── Comment card local variables ── */
+.comment-card,
+.comment-thread,
+.comment-replies {
+  --comment-avatar-size: 36px;
+  --comment-gutter-width: 36px;
+  --comment-row-gap: 12px;
+  --comment-thread-line: var(--thread-line);
+}
+
+/* ── Card layout ── */
+.comment-card {
+  display: flex;
+  gap: var(--comment-row-gap);
+  padding: 16px;
+  margin-bottom: 10px;
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.comment-gutter {
+  width: var(--comment-gutter-width);
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.comment-avatar--empty {
+  width: var(--comment-avatar-size);
+  height: var(--comment-avatar-size);
+  border-radius: 50%;
+  background: var(--bg);
+}
+
+.comment-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.comment-head a {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.comment-head a:hover {
+  text-decoration: underline;
+}
+
+.comment-text {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-bottom: 6px;
+}
+
+/* ── Actions row ── */
+.comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.comment-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: inherit;
+}
+
+.comment-action-btn:hover {
+  color: var(--accent);
+}
+
+.comment-action-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: default;
+  user-select: none;
+}
+
+/* ── Clickable reply cards ── */
+.comment-card--clickable {
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.comment-card--clickable:hover {
+  border-color: var(--border-strong);
+}
+
+/* ── Ancestor cards (thread stack) ── */
+.comment-card--ancestor {
+  margin-bottom: 0;
+}
+
+.comment-card--ancestor + .comment-card--ancestor {
+  margin-top: -1px;
+}
+
+/* Thread line from avatar down to next ancestor */
+.comment-card--ancestor .comment-gutter::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--comment-avatar-size) + 4px);
+  bottom: -12px;
+  left: 50%;
+  width: 2px;
+  background-color: var(--comment-thread-line);
+  transform: translateX(-50%);
+  z-index: 0;
+}
+
+.comment-card--ancestor:last-child .comment-gutter::after {
+  display: none;
+}
+
+:root[data-theme="dark"] .comment-card--ancestor .comment-gutter::after {
+  background-color: var(--surface-2);
+}
+
+/* ── Hidden comment placeholder ── */
+.comment-card--hidden {
+  opacity: 0.6;
+}
+
+.comment-card--hidden .comment-avatar--empty {
+  visibility: hidden;
+}
+
+.comment-hidden-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+/* ── Back button ── */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 4px;
+  font-family: inherit;
+}
+
+.back-btn:hover {
+  text-decoration: underline;
+}
+
+/* ── Thread container ── */
+.comment-thread {
+  position: relative;
+}
+
+/* ── Replies list ── */
+.comment-replies {
+  display: flex;
+  flex-direction: column;
+}
+
+.comment-thread + .comment-replies {
+  border-top: 1px solid var(--border);
+  padding-left: 28px;
+  padding-top: 10px;
+}
