@@ -175,27 +175,27 @@ export function TopicPage() {
         ) : (
           <>
             <div className="topic-header-top-row">
-              <h1 className="topic-header-title">{topic.titulo}</h1>
+              <div className="topic-header-meta">
+                <UserAvatar
+                  url_imagen={autor.url_imagen}
+                  nickname={autor.nickname}
+                  size="md"
+                  inactive={autor.isInactive}
+                />
+                <div className="topic-header-meta-text">
+                  {autor.isInactive ? (
+                    <span className="inactive-author">{autor.nickname}</span>
+                  ) : (
+                    <Link to={`/user/${encodeURIComponent(autor.nickname)}`} className="topic-header-author">
+                      {autor.nickname}
+                    </Link>
+                  )}
+                  <span className="topic-header-date">{timeAgo(topic.fecha_creacion)}</span>
+                </div>
+              </div>
               <DropdownMenu items={menuItems} />
             </div>
-            <div className="topic-header-meta">
-              <UserAvatar
-                url_imagen={autor.url_imagen}
-                nickname={autor.nickname}
-                size="md"
-                inactive={autor.isInactive}
-              />
-              <div className="topic-header-meta-text">
-                {autor.isInactive ? (
-                  <span className="inactive-author">{autor.nickname}</span>
-                ) : (
-                  <Link to={`/user/${encodeURIComponent(autor.nickname)}`} className="topic-header-author">
-                    {autor.nickname}
-                  </Link>
-                )}
-                <span className="topic-header-date">{timeAgo(topic.fecha_creacion)}</span>
-              </div>
-            </div>
+            <h1 className="topic-header-title">{topic.titulo}</h1>
             <div className="topic-header-body">
               <ReadMore text={topic.cuerpo} maxLength={500} />
             </div>
