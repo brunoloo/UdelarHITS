@@ -76,11 +76,6 @@ header .search-bar {
   align-items: center;
   gap: 8px;
   margin-left: auto;
-  /* Keep the chip (and its dropdown) within the main-content zone.
-     The sidebar is 280px wide; adding the same margin-right ensures the
-     trigger sits at the left boundary of the sidebar — the dropdown's
-     right: 0 then aligns it there, never covering sidebar content. */
-  margin-right: 280px;
 }
 
 /* ── USER CHIP ── */
@@ -117,13 +112,20 @@ header .search-bar {
 }
 
 .user-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  /* Fixed to the viewport so the dropdown drops straight down from the chip
+     in the top-right corner. right: 20px matches the header's horizontal
+     padding (the avatar's margin from the screen edge), and the width is
+     capped so the menu never crosses the right sidebar's left boundary
+     (~210px wide) into the main-content area. */
+  position: fixed;
+  top: calc(var(--header-h) + 8px);
+  right: 20px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  min-width: 180px;
+  min-width: 170px;
+  max-width: 190px;
+  width: max-content;
   box-shadow: var(--shadow-2);
   z-index: 200;
   overflow: hidden;
