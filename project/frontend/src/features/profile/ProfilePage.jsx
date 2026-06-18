@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { apiGet } from '../../api/client'
+import { Skeleton } from '../../components/ui/Skeleton'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { FollowButton } from '../../components/shared/FollowButton'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
@@ -15,21 +16,47 @@ import { FollowersModal } from './FollowersModal'
 import { ReportUserModal } from './ReportUserModal'
 import './profile.css'
 
+function ProfileSkeleton() {
+  return (
+    <div className="profile-page">
+      <div className="profile-card">
+        <div className="profile-banner-wrap">
+          <div className="profile-banner" />
+          <div className="profile-avatar-wrap">
+            <Skeleton width={88} height={88} borderRadius="50%" />
+          </div>
+        </div>
+        <div className="profile-info" style={{ marginTop: 56 }}>
+          <Skeleton width="40%" height={18} style={{ marginBottom: 8 }} />
+          <Skeleton width="25%" height={13} style={{ marginBottom: 12 }} />
+          <Skeleton width="80%" height={13} style={{ marginBottom: 6 }} />
+          <Skeleton width="60%" height={13} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function ProfilePage() {
   const { nickname } = useParams()
   const { user: me, loading: authLoading } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
 
   // Require a session to view profiles. Wait for auth to resolve so an
   // authenticated user reloading on /user/:nickname isn't wrongly bounced.
+  // A ref ensures the toast + redirect fire exactly once, so an unstable
+  // showToast identity can't re-trigger and cause a redirect loop.
+  const redirectedRef = useRef(false)
   useEffect(() => {
-    if (!authLoading && !me) {
+    if (!authLoading && !me && !redirectedRef.current) {
+      redirectedRef.current = true
       showToast('Debes iniciar sesión para ver el perfil de otros usuarios', 'error')
-      navigate('/login', { replace: true })
+      navigate('/login', { replace: true, state: { from: location.pathname } })
     }
-  }, [authLoading, me, navigate, showToast])
+  }, [authLoading, me, navigate, showToast, location.pathname])
 
   const [activeTab, setActiveTab] = useState('categorias')
   const [editOpen, setEditOpen] = useState(false)
@@ -91,10 +118,11 @@ export function ProfilePage() {
 
   const canViewContent = canView()
 
-  // Guest (or auth still resolving): render nothing meaningful while the
-  // redirect effect sends them to /login.
-  if (authLoading || !me) return <div className="feed-empty">Cargando...</div>
-  if (isLoading) return <div className="feed-empty">Cargando...</div>
+  // While auth resolves, show a skeleton (never block header/leftnav, which
+  // live outside the outlet). Guests fall through to the same skeleton while
+  // the redirect effect sends them to /login.
+  if (authLoading || !me) return <ProfileSkeleton />
+  if (isLoading) return <ProfileSkeleton />
   if (isError || !profile) return <div className="feed-empty">Perfil no encontrado.</div>
 
   if (profile.estado === 'inactivo') {

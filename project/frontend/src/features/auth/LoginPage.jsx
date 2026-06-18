@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
@@ -23,9 +23,17 @@ function EyeOffIcon() {
 }
 
 export function LoginPage() {
-  const { login } = useAuth()
+  const { login, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
+
+  // If a session is already active, go straight to home — NOT to any prior
+  // route — so we can't bounce back into a page that redirected us here.
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/', { replace: true })
+    }
+  }, [authLoading, user, navigate])
 
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
