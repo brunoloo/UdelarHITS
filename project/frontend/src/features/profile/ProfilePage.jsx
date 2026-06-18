@@ -149,7 +149,10 @@ export function ProfilePage() {
 
   const iFollowThem = followStatus?.following ?? false
 
-  const teSigue = !isOwnProfile && me && followers.some(f => f.nickname === me.nickname)
+  // "Te sigue" means the profile user follows ME — i.e. I (me) appear in the
+  // profile user's *following* list. (Not their followers list, which would
+  // instead mean that *I* follow *them*.)
+  const teSigue = !isOwnProfile && me && following.some(f => f.nickname === me.nickname)
 
   const menuItems = []
   if (!isOwnProfile) {

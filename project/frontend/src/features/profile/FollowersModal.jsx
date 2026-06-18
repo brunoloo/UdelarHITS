@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { apiPost, apiDelete } from '../../api/client'
@@ -37,6 +37,7 @@ export function FollowersModal({ isOpen, onClose, title, users, myFollowing = []
 function FollowItem({ user: u, myFollowing, onClose, onFollowChange }) {
   const { user: me } = useAuth()
   const { showToast } = useToast()
+  const queryClient = useQueryClient()
   const isMe = me && me.nickname === u.nickname
   const initialFollowing = myFollowing.some(f => f.nickname === u.nickname)
   const [following, setFollowing] = useState(initialFollowing)
@@ -51,6 +52,12 @@ function FollowItem({ user: u, myFollowing, onClose, onFollowChange }) {
       const newVal = !following
       setFollowing(newVal)
       if (onFollowChange) onFollowChange(u.nickname, newVal)
+      // Invalidate profile caches so follower/following counters refresh and
+      // the follow state survives closing and reopening the modal. ['me'] is
+      // the source of `myFollowing` when viewing another user's profile, and
+      // ['user'] covers any open profile (partial-key match).
+      queryClient.invalidateQueries({ queryKey: ['me'] })
+      queryClient.invalidateQueries({ queryKey: ['user'] })
     },
     onError: (err) => showToast(err.message || 'Error', 'error'),
   })

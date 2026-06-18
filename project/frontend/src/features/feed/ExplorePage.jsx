@@ -158,13 +158,19 @@ function Carousel({ children, className = '' }) {
 // ── User mini card ──
 function UserMiniCard({ user, onFollowed }) {
   const { showToast } = useToast()
+  const [leaving, setLeaving] = useState(false)
   const mutation = useMutation({
     mutationFn: () => apiPost(`/users/${encodeURIComponent(user.nickname)}/follow`, {}),
-    onSuccess: onFollowed,
+    // Play an exit animation (fade + scale, matching the vanilla version),
+    // then remove the card from the suggested list.
+    onSuccess: () => {
+      setLeaving(true)
+      setTimeout(() => onFollowed(), 300)
+    },
     onError: err => showToast(err.message || 'Error', 'error'),
   })
   return (
-    <div className="user-mini-card">
+    <div className={`user-mini-card${leaving ? ' user-mini-card--leaving' : ''}`}>
       <Link to={`/user/${encodeURIComponent(user.nickname)}`}>
         <UserAvatar url_imagen={user.url_imagen} nickname={user.nickname} size={48} />
       </Link>

@@ -292,7 +292,13 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  transition: border-color .15s, box-shadow .15s;
+  transition: border-color .15s, box-shadow .15s, opacity .3s, transform .3s;
+}
+
+.user-mini-card--leaving {
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
 }
 
 .user-mini-card > a:has(.user-avatar-fallback),
