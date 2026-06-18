@@ -17,6 +17,7 @@ import './CommentCard.css'
 export function CommentCard({
   comment,
   role = 'reply',
+  showThreadLine = false,
   onReply,
   onDrillDown,
   invalidateKey,
@@ -65,6 +66,7 @@ export function CommentCard({
 
     const cardClasses = ['comment-card', 'comment-card--hidden']
     if (role === 'ancestor') cardClasses.push('comment-card--ancestor')
+    if (role === 'ancestor' && showThreadLine) cardClasses.push('comment-card--has-line')
     if (role === 'reply' && replyCount > 0) cardClasses.push('comment-card--clickable')
 
     return (
@@ -102,6 +104,7 @@ export function CommentCard({
 
   const cardClasses = ['comment-card']
   if (role === 'ancestor') cardClasses.push('comment-card--ancestor')
+  if (role === 'ancestor' && showThreadLine) cardClasses.push('comment-card--has-line')
   if (role === 'reply') cardClasses.push('comment-card--clickable')
 
   function handleCardClick(e) {

@@ -7,6 +7,7 @@ import { TopicCard } from '../../components/shared/TopicCard'
 import { CommentThread } from '../../components/shared/CommentThread'
 import { Modal } from '../../components/ui/Modal'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
+import { ReadMore } from '../../components/ui/ReadMore'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { useToast } from '../../hooks/useToast'
@@ -456,7 +457,7 @@ export function CategoryPage() {
               </div>
               <div className="cat-header-info">
                 <h1 className="cat-title">{cat.titulo}</h1>
-                <p className="cat-desc">{cat.descripcion}</p>
+                <p className="cat-desc"><ReadMore text={cat.descripcion} maxLength={500} /></p>
               </div>
               <DropdownMenu items={dropdownItems} />
             </div>

@@ -20,7 +20,7 @@ export function ReadMore({ text, maxLength = 500 }) {
         <button
           type="button"
           className="read-more-btn"
-          onClick={() => setExpanded(v => !v)}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(v => !v) }}
         >
           {expanded ? 'Leer menos' : 'Leer más'}
         </button>

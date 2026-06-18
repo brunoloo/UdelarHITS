@@ -63,15 +63,25 @@ export function CommentThread({ comments, invalidateKey }) {
 
       {stack.length > 0 && (
         <div className="comment-thread">
-          {stack.map((anc, i) => (
-            <CommentCard
-              key={anc.id + '-anc-' + i}
-              comment={anc}
-              role="ancestor"
-              onReply={handleReply}
-              invalidateKey={invalidateKey}
-            />
-          ))}
+          {stack.map((anc, i) => {
+            // Show the thread line only when there is at least one comment
+            // visible below this ancestor: either another ancestor in the
+            // chain, or (for the deepest ancestor) actual replies underneath.
+            const isLastAncestor = i === stack.length - 1
+            const showThreadLine = isLastAncestor
+              ? visibleComments.length > 0
+              : true
+            return (
+              <CommentCard
+                key={anc.id + '-anc-' + i}
+                comment={anc}
+                role="ancestor"
+                showThreadLine={showThreadLine}
+                onReply={handleReply}
+                invalidateKey={invalidateKey}
+              />
+            )
+          })}
         </div>
       )}
 

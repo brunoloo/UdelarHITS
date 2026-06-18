@@ -143,8 +143,9 @@
   margin-top: -1px;
 }
 
-/* Thread line from avatar down to next ancestor */
-.comment-card--ancestor .comment-gutter::after {
+/* Thread line from avatar down to the comment below. Only drawn when the
+   ancestor actually has a reply visible underneath (see CommentThread). */
+.comment-card--has-line .comment-gutter::after {
   content: '';
   position: absolute;
   top: calc(var(--comment-avatar-size) + 4px);
@@ -156,11 +157,7 @@
   z-index: 0;
 }
 
-.comment-card--ancestor:last-child .comment-gutter::after {
-  display: none;
-}
-
-:root[data-theme="dark"] .comment-card--ancestor .comment-gutter::after {
+:root[data-theme="dark"] .comment-card--has-line .comment-gutter::after {
   background-color: var(--surface-2);
 }
 

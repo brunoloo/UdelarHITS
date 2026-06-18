@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Tag } from '../ui/Tag'
+import { ReadMore } from '../ui/ReadMore'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import './CategoryCard.css'
@@ -26,7 +27,9 @@ export function CategoryCard({ category }) {
         </div>
 
         {descripcion && (
-          <div className="category-description">{descripcion}</div>
+          <div className="category-description">
+            <ReadMore text={descripcion} maxLength={500} />
+          </div>
         )}
 
         {tags.length > 0 && (
