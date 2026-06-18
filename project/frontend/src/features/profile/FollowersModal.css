@@ -7,6 +7,28 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* Custom scrollbar scoped to the modal so the default white bar doesn't
+   break the dark-mode aesthetic. */
+.follow-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.follow-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.follow-list::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.follow-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .follow-item {
