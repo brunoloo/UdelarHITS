@@ -69,7 +69,7 @@ function CreateCommentPanel({ categoryId, user }) {
   const canSubmit = cuerpo.trim().length >= 1
 
   function handleSubmit() {
-    if (!requireAuth('Iniciá sesión para comentar')) return
+    if (!requireAuth('Debes iniciar sesión para comentar')) return
     if (!canSubmit || mutation.isPending) return
     mutation.mutate()
   }

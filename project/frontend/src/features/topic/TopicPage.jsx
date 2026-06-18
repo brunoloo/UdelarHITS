@@ -81,7 +81,7 @@ export function TopicPage() {
   })
 
   function handleCommentSubmit() {
-    if (!requireAuth('Iniciá sesión para comentar')) return
+    if (!requireAuth('Debes iniciar sesión para comentar')) return
     if (commentText.trim().length < 1 || commentMutation.isPending) return
     commentMutation.mutate(commentText.trim())
   }

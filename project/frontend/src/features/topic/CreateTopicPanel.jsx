@@ -48,7 +48,7 @@ export function CreateTopicPanel({ categoryId, user }) {
   const canSubmit = titulo.trim().length >= 3 && cuerpo.trim().length >= 1
 
   function handleSubmit() {
-    if (!requireAuth('Iniciá sesión para crear un tema')) return
+    if (!requireAuth('Debes iniciar sesión para crear un tema')) return
     if (!canSubmit || mutation.isPending) return
     mutation.mutate()
   }

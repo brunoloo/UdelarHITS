@@ -62,7 +62,7 @@ export function CreateCategoryPanel() {
   }
 
   function handleSubmit() {
-    if (!requireAuth('Iniciá sesión para crear una categoría')) return
+    if (!requireAuth('Debes iniciar sesión para crear una categoría')) return
     if (!isFormValid || mutation.isPending) return
     mutation.mutate({
       titulo: titulo.trim(),

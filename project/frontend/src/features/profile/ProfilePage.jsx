@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../hooks/useToast'
 import { apiGet } from '../../api/client'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { FollowButton } from '../../components/shared/FollowButton'
@@ -16,8 +17,19 @@ import './profile.css'
 
 export function ProfilePage() {
   const { nickname } = useParams()
-  const { user: me } = useAuth()
+  const { user: me, loading: authLoading } = useAuth()
+  const { showToast } = useToast()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
+
+  // Require a session to view profiles. Wait for auth to resolve so an
+  // authenticated user reloading on /user/:nickname isn't wrongly bounced.
+  useEffect(() => {
+    if (!authLoading && !me) {
+      showToast('Debes iniciar sesión para ver el perfil de otros usuarios', 'error')
+      navigate('/login', { replace: true })
+    }
+  }, [authLoading, me, navigate, showToast])
 
   const [activeTab, setActiveTab] = useState('categorias')
   const [editOpen, setEditOpen] = useState(false)
@@ -34,6 +46,7 @@ export function ProfilePage() {
       isOwnProfile
         ? apiGet('/users/me').then(r => r.data)
         : apiGet(`/users/${encodeURIComponent(nickname)}`).then(r => r.data),
+    enabled: !!me,
   })
 
   const profile = profileData?.user
@@ -78,6 +91,9 @@ export function ProfilePage() {
 
   const canViewContent = canView()
 
+  // Guest (or auth still resolving): render nothing meaningful while the
+  // redirect effect sends them to /login.
+  if (authLoading || !me) return <div className="feed-empty">Cargando...</div>
   if (isLoading) return <div className="feed-empty">Cargando...</div>
   if (isError || !profile) return <div className="feed-empty">Perfil no encontrado.</div>
 

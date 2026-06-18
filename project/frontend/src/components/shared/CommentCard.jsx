@@ -241,7 +241,7 @@ export function CommentCard({
             autoFocus
             onCancel={() => setReplyOpen(false)}
             onSubmit={async (text) => {
-              if (!requireAuth('Iniciá sesión para responder')) return
+              if (!requireAuth('Debes iniciar sesión para responder')) return
               if (onReply) {
                 await onReply(comment.id, text)
                 setReplyOpen(false)
