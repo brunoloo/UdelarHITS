@@ -398,7 +398,7 @@ export function CategoryPage() {
         </svg>
       ),
       onClick: () => {
-        if (isOwner) { showToast('No podés reportar tu propio contenido', 'error'); return }
+        if (user?.id == cat.autor_id) { showToast('No podés reportar tu propio contenido', 'error'); return }
         setReportOpen(true)
       },
     },
