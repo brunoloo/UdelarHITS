@@ -9,8 +9,6 @@
 
 .user-avatar-fallback {
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--text-on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
