@@ -54,6 +54,14 @@
   white-space: pre-wrap;
   word-wrap: break-word;
 }
+.category-description .bio-link {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+}
+.category-description .bio-link:hover {
+  text-decoration: underline;
+}
 
 .category-footer {
   display: flex;

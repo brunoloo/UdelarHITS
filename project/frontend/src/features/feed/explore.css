@@ -295,6 +295,13 @@
   transition: border-color .15s, box-shadow .15s;
 }
 
+.user-mini-card > a:has(.user-avatar-fallback),
+.user-mini-card > a:has(.user-avatar-img) {
+  display: block;
+  line-height: 0;
+  text-decoration: none;
+}
+
 .user-mini-card:hover {
   border-color: var(--border-strong);
   box-shadow: var(--shadow-1, 0 1px 4px rgba(0,0,0,.08));
@@ -312,7 +319,7 @@
   width: 100%;
 }
 
-.btn-follow-sm {
+.user-mini-card .btn-follow-sm {
   width: 100%;
   padding: 6px 0;
   border-radius: 999px;
@@ -326,7 +333,7 @@
   transition: background .12s, opacity .12s;
 }
 
-.btn-follow-sm:disabled {
+.user-mini-card .btn-follow-sm:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
