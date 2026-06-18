@@ -1,43 +1,58 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { renderBioWithLinks } from '../../utils/renderBioWithLinks'
 import './ReadMore.css'
 
-const MAX_LINES = 5
+const INITIAL_LINES = 8
+const EXPAND_LINES = 12
+const EXPAND_CHARS = 750
 
 export function ReadMore({ text, maxLength = 500 }) {
-  const [expanded, setExpanded] = useState(false)
+  const [currentVisible, setCurrentVisible] = useState(null)
+
+  useEffect(() => {
+    setCurrentVisible(null)
+  }, [text])
 
   if (!text) return null
 
   const lines = text.split('\n')
-  const tooManyLines = lines.length > MAX_LINES
-  const tooLong = text.length > maxLength
-  const needsTruncate = tooLong || tooManyLines
+  const needsTruncateLines = lines.length > INITIAL_LINES
+  const needsTruncateChars = text.length > maxLength
 
-  let visible = text
-  if (needsTruncate && !expanded) {
-    if (tooManyLines) {
-      visible = lines.slice(0, MAX_LINES).join('\n')
+  if (!needsTruncateLines && !needsTruncateChars) {
+    return <span>{renderBioWithLinks(text)}</span>
+  }
+
+  const mode = needsTruncateLines ? 'lines' : 'chars'
+  const initial = mode === 'lines' ? INITIAL_LINES : maxLength
+  const expandSize = mode === 'lines' ? EXPAND_LINES : EXPAND_CHARS
+  const total = mode === 'lines' ? lines.length : text.length
+
+  const visible = currentVisible ?? initial
+  const isFullyExpanded = visible >= total
+
+  const displayText = isFullyExpanded
+    ? text
+    : mode === 'lines'
+      ? lines.slice(0, visible).join('\n') + '...'
+      : text.slice(0, visible) + '...'
+
+  function handleClick(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (isFullyExpanded) {
+      setCurrentVisible(initial)
     } else {
-      visible = text.slice(0, maxLength)
+      setCurrentVisible(Math.min(visible + expandSize, total))
     }
   }
 
   return (
     <>
-      <span>
-        {renderBioWithLinks(visible)}
-        {needsTruncate && !expanded ? '...' : ''}
-      </span>
-      {needsTruncate && (
-        <button
-          type="button"
-          className="read-more-btn"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded(v => !v) }}
-        >
-          {expanded ? 'Leer menos' : 'Leer más'}
-        </button>
-      )}
+      <span>{renderBioWithLinks(displayText)}</span>
+      <button type="button" className="read-more-btn" onClick={handleClick}>
+        {isFullyExpanded ? 'Leer menos' : 'Leer más'}
+      </button>
     </>
   )
 }
