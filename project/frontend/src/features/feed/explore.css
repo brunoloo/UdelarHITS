@@ -275,6 +275,11 @@
 .carousel-arrow--left { left: -12px; }
 .carousel-arrow--right { right: -12px; }
 
+.carousel-arrow[disabled] {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ── User mini cards ── */
 .user-mini-card {
   flex-shrink: 0;

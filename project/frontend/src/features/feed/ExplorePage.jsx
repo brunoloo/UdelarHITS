@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
@@ -92,24 +92,65 @@ function TrendingSection({ topic }) {
 // ── Carousel ──
 function Carousel({ children, className = '' }) {
   const trackRef = useRef(null)
+  const [overflowing, setOverflowing] = useState(false)
+  const [atStart, setAtStart] = useState(true)
+  const [atEnd, setAtEnd] = useState(false)
+
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track) return
+
+    function update() {
+      const overflow = track.scrollWidth > track.clientWidth + 1
+      setOverflowing(overflow)
+      setAtStart(track.scrollLeft <= 0)
+      setAtEnd(track.scrollLeft + track.clientWidth >= track.scrollWidth - 1)
+    }
+
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(track)
+    track.addEventListener('scroll', update)
+
+    return () => {
+      observer.disconnect()
+      track.removeEventListener('scroll', update)
+    }
+  }, [children])
+
   function scroll(dir) {
     trackRef.current?.scrollBy({ left: dir * 260, behavior: 'smooth' })
   }
+
   return (
     <div className="carousel-wrap">
       <div ref={trackRef} className={`carousel-track ${className}`}>
         {children}
       </div>
-      <button className="carousel-arrow carousel-arrow--left" type="button" onClick={() => scroll(-1)}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
-      </button>
-      <button className="carousel-arrow carousel-arrow--right" type="button" onClick={() => scroll(1)}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <path d="M9 18l6-6-6-6"/>
-        </svg>
-      </button>
+      {overflowing && (
+        <>
+          <button
+            className="carousel-arrow carousel-arrow--left"
+            type="button"
+            onClick={() => scroll(-1)}
+            disabled={atStart}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <button
+            className="carousel-arrow carousel-arrow--right"
+            type="button"
+            onClick={() => scroll(1)}
+            disabled={atEnd}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
+        </>
+      )}
     </div>
   )
 }
