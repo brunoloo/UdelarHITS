@@ -2,6 +2,7 @@
 .sidebar {
   width: 280px;
   flex-shrink: 0;
+  margin-left: auto;
   position: sticky;
   top: calc(var(--header-h) + 24px);
   align-self: flex-start;

@@ -112,20 +112,13 @@ header .search-bar {
 }
 
 .user-menu {
-  /* Fixed to the viewport so the dropdown drops straight down from the chip
-     in the top-right corner. right: 20px matches the header's horizontal
-     padding (the avatar's margin from the screen edge), and the width is
-     capped so the menu never crosses the right sidebar's left boundary
-     (~210px wide) into the main-content area. */
-  position: fixed;
-  top: calc(var(--header-h) + 8px);
-  right: 20px;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  min-width: 170px;
-  max-width: 190px;
-  width: max-content;
+  min-width: 180px;
   box-shadow: var(--shadow-2);
   z-index: 200;
   overflow: hidden;
