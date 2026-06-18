@@ -214,11 +214,107 @@ function CategorySidebarContent({ catId }) {
   )
 }
 
+function TopicSidebarContent({ topicId }) {
+  const { data: topic } = useQuery({
+    queryKey: ['topic', topicId],
+    queryFn: () => apiGet(`/topics/${topicId}`).then(r => r.data),
+    enabled: !!topicId,
+  })
+
+  const { data: replies = [] } = useQuery({
+    queryKey: ['replies', 'topic', topicId],
+    queryFn: () => apiGet(`/replies/topic/${topicId}`).then(r => r.data),
+    enabled: !!topicId && !!topic && topic.estado !== 'inactivo',
+  })
+
+  if (!topic || topic.estado === 'inactivo') return null
+
+  const autorDisplay = resolveAutor(topic)
+  const commentCount = replies.length
+  const createdDate = new Date(topic.fecha_creacion).toLocaleDateString('es-UY')
+  const catInactiva = topic.categoria_estado === 'inactiva'
+  const catName = catInactiva ? 'Categoría inactiva' : (topic.categoria_titulo || 'Categoría')
+
+  return (
+    <>
+      <div className="sidebar-card">
+        <div className="sidebar-card-header">Sobre este tema</div>
+        <div className="sidebar-card-body">
+          <div className="stat-row">
+            <span className="stat-row-label">Comentarios</span>
+            <span className="stat-row-value">{commentCount}</span>
+          </div>
+          <div className="stat-row">
+            <span className="stat-row-label">Creado</span>
+            <span className="stat-row-value">{createdDate}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="sidebar-card">
+        <div className="sidebar-card-header">Autor</div>
+        <div className="sidebar-card-body">
+          <div className="mod-item">
+            <UserAvatar
+              className="mod-avatar"
+              url_imagen={autorDisplay.url_imagen}
+              nickname={autorDisplay.nickname}
+              size={36}
+              inactive={autorDisplay.isInactive}
+            />
+            <div className="mod-info">
+              {autorDisplay.isInactive ? (
+                <span className="mod-name inactive-author">{autorDisplay.nickname}</span>
+              ) : (
+                <span className="mod-name">
+                  <Link to={`/user/${encodeURIComponent(autorDisplay.nickname)}`}>
+                    {autorDisplay.nickname}
+                  </Link>
+                </span>
+              )}
+              <span className="mod-role">creador</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="sidebar-card">
+        <div className="sidebar-card-header">Categoría</div>
+        <div className="sidebar-card-body">
+          {catInactiva ? (
+            <div className="sidebar-cat-link" style={{ cursor: 'default' }}>
+              <div className="sidebar-cat-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                </svg>
+              </div>
+              <span>{catName}</span>
+            </div>
+          ) : (
+            <Link className="sidebar-cat-link" to={`/category/${encodeURIComponent(topic.categoria_id)}`}>
+              <div className="sidebar-cat-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                </svg>
+              </div>
+              <span>{catName}</span>
+            </Link>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
 export function Sidebar() {
   const { user } = useAuth()
   const { pathname } = useLocation()
   const categoryMatch = useMatch('/category/:id')
   const catId = categoryMatch?.params?.id
+  const topicMatch = useMatch('/topic/:id')
+  const topicId = topicMatch?.params?.id
 
   const { data: categories = [], isLoading: catsLoading } = useQuery({
     queryKey: ['categories', 'active'],
@@ -231,12 +327,20 @@ export function Sidebar() {
     enabled: pathname === '/recent',
   })
 
-  if (!SIDEBAR_PAGES.includes(pathname) && !catId) return null
+  if (!SIDEBAR_PAGES.includes(pathname) && !catId && !topicId) return null
 
   if (catId) {
     return (
       <aside className="sidebar">
         <CategorySidebarContent catId={catId} />
+      </aside>
+    )
+  }
+
+  if (topicId) {
+    return (
+      <aside className="sidebar">
+        <TopicSidebarContent topicId={topicId} />
       </aside>
     )
   }

@@ -239,6 +239,38 @@
   color: var(--text-muted);
 }
 
+/* ── SIDEBAR CATEGORY LINK (topic page) ── */
+.sidebar-cat-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text-primary);
+  padding: 4px 0;
+  transition: color 0.12s;
+}
+
+.sidebar-cat-link:hover {
+  color: var(--accent);
+}
+
+.sidebar-cat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.sidebar-cat-link span {
+  font-size: 14px;
+  font-weight: 500;
+}
+
 /* ── MODERATOR CARD ── */
 .mod-item {
   display: flex;
