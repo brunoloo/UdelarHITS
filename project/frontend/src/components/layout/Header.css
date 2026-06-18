@@ -76,6 +76,11 @@ header .search-bar {
   align-items: center;
   gap: 8px;
   margin-left: auto;
+  /* Keep the chip (and its dropdown) within the main-content zone.
+     The sidebar is 280px wide; adding the same margin-right ensures the
+     trigger sits at the left boundary of the sidebar — the dropdown's
+     right: 0 then aligns it there, never covering sidebar content. */
+  margin-right: 280px;
 }
 
 /* ── USER CHIP ── */
