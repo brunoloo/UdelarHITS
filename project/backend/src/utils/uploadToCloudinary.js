@@ -19,14 +19,13 @@ export const uploadToCloudinary = async (buffer, folder, publicId) => {
 };
 
 export const deleteFromCloudinary = async (folder, publicId) => {
+  console.log(`[CLOUDINARY DELETE] folder=${folder} publicId=${publicId}`, new Error().stack);
   try {
-    // Si no existe, Cloudinary responde "not found" → lo ignoramos
     return await cloudinary.uploader.destroy(
       `${folder}/${publicId}`,
       { resource_type: 'image' }
     );
   } catch (err) {
-    // No rompemos el flujo
     return { result: 'error', error: err?.message };
   }
 };
