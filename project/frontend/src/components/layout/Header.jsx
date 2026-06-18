@@ -89,8 +89,12 @@ export function Header() {
   }, [query, categories, tags])
 
   async function handleLogout() {
-    await logout()
+    // Navigate home BEFORE clearing the session. Otherwise, if we're on a page
+    // that requires auth (e.g. a user profile), setUser(null) fires that page's
+    // redirect-to-login effect — bouncing us to /login with a "Debes iniciar
+    // sesión" toast instead of landing cleanly on the home feed.
     navigate('/')
+    await logout()
   }
 
   return (
