@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
+import { UserAvatar } from '../shared/UserAvatar'
 import './Header.css'
 
 function parseEtiquetas(raw) {
@@ -142,11 +143,11 @@ export function Header() {
         {user ? (
           <div className="user-menu-wrapper" ref={menuRef}>
             <button className="user-chip" onClick={() => setMenuOpen(o => !o)}>
-              <img
+              <UserAvatar
                 className="user-avatar"
-                src={user.url_imagen || '/assets/default-user.jpg'}
-                alt={user.nickname}
-                onError={e => { e.currentTarget.style.display = 'none' }}
+                url_imagen={user.url_imagen}
+                nickname={user.nickname}
+                size={28}
               />
               {user.nickname}
             </button>
@@ -258,7 +259,7 @@ function SearchDropdown({ results, query, categories, onClose, onTagClick }) {
             const avatarUrl =
               u.url_imagen && /^https?:\/\//i.test(u.url_imagen)
                 ? u.url_imagen
-                : '/assets/default-user.jpg'
+                : null
             return (
               <Link
                 key={u.nickname}
@@ -266,11 +267,11 @@ function SearchDropdown({ results, query, categories, onClose, onTagClick }) {
                 className="search-item"
                 onClick={onClose}
               >
-                <img
+                <UserAvatar
                   className="search-item-avatar"
-                  src={avatarUrl}
-                  alt={u.nickname}
-                  onError={e => { e.currentTarget.src = '/assets/default-user.jpg' }}
+                  url_imagen={avatarUrl}
+                  nickname={u.nickname}
+                  size={28}
                 />
                 <div className="search-item-info">
                   <div className="search-item-title">@{u.nickname}</div>

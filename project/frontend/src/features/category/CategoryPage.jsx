@@ -12,6 +12,7 @@ import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { useToast } from '../../hooks/useToast'
 import { CreateTopicPanel } from '../topic/CreateTopicPanel'
 import { ReportModal } from '../../components/shared/ReportModal'
+import { UserAvatar } from '../../components/shared/UserAvatar'
 import './category.css'
 
 // ── SKELETONS ──────────────────────────────────────────────────────────────────
@@ -65,14 +66,9 @@ function CreateCommentPanel({ categoryId, user }) {
 
   const canSubmit = cuerpo.trim().length >= 1
 
-  const avatarContent = user?.url_imagen ? (
-    <img
-      src={user.url_imagen}
-      alt=""
-      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
-      onError={e => { e.currentTarget.style.display = 'none' }}
-    />
-  ) : null
+  const avatarContent = (
+    <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size={36} />
+  )
 
   if (!open) {
     return (

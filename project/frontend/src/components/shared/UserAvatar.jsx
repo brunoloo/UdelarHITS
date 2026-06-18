@@ -16,16 +16,37 @@ function hashColor(str) {
   return `hsl(${h}, 55%, 42%)`
 }
 
-export function UserAvatar({ url_imagen, nickname, size = 'md', inactive = false }) {
+export function UserAvatar({
+  url_imagen,
+  nickname,
+  size = 'md',
+  inactive = false,
+  className = '',
+  style,
+  onClick,
+}) {
   const [failed, setFailed] = useState(false)
-  const cls = `user-avatar-${size}${inactive ? ' user-avatar-inactive' : ''}`
+
+  const isNumeric = typeof size === 'number'
+  const sizeCls = isNumeric ? '' : `user-avatar-${size}`
+  const sizeStyle = isNumeric
+    ? { width: size, height: size, fontSize: Math.round(size * 0.4) }
+    : null
+
+  const cls = [
+    sizeCls,
+    inactive ? 'user-avatar-inactive' : '',
+    onClick ? 'user-avatar-clickable' : '',
+    className,
+  ].filter(Boolean).join(' ')
 
   if (!url_imagen || failed) {
     return (
       <div
         className={`user-avatar-fallback ${cls}`}
         aria-label={nickname}
-        style={{ background: hashColor(nickname), color: '#fff' }}
+        onClick={onClick}
+        style={{ ...sizeStyle, background: hashColor(nickname), color: '#fff', ...style }}
       >
         {getInitials(nickname)}
       </div>
@@ -37,6 +58,8 @@ export function UserAvatar({ url_imagen, nickname, size = 'md', inactive = false
       className={`user-avatar-img ${cls}`}
       src={url_imagen}
       alt={nickname}
+      onClick={onClick}
+      style={{ ...sizeStyle, ...style }}
       onError={() => setFailed(true)}
     />
   )

@@ -149,12 +149,12 @@ export function ProfilePage() {
             )}
           </div>
           <div className="profile-avatar-wrap">
-            <img
+            <UserAvatar
               className="profile-avatar"
-              src={profile.url_imagen || '/assets/default-user.jpg'}
-              alt="Avatar"
+              url_imagen={profile.url_imagen}
+              nickname={profile.nickname}
+              size={88}
               onClick={() => setAvatarModalOpen(true)}
-              onError={e => { e.currentTarget.src = '/assets/default-user.jpg' }}
             />
           </div>
           {!isOwnProfile && menuItems.length > 0 && (
@@ -228,10 +228,11 @@ export function ProfilePage() {
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
-          <img
+          <UserAvatar
             className="avatar-modal-img"
-            src={profile.url_imagen || '/assets/default-user.jpg'}
-            alt="Avatar"
+            url_imagen={profile.url_imagen}
+            nickname={profile.nickname}
+            size={320}
             onClick={e => e.stopPropagation()}
           />
         </div>

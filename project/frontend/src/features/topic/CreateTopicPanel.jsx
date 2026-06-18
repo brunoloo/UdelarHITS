@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiPost } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
+import { UserAvatar } from '../../components/shared/UserAvatar'
 
 export function CreateTopicPanel({ categoryId, user }) {
   const [open, setOpen] = useState(false)
@@ -44,14 +45,9 @@ export function CreateTopicPanel({ categoryId, user }) {
 
   const canSubmit = titulo.trim().length >= 3 && cuerpo.trim().length >= 1
 
-  const avatarContent = user?.url_imagen ? (
-    <img
-      src={user.url_imagen}
-      alt=""
-      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
-      onError={e => { e.currentTarget.style.display = 'none' }}
-    />
-  ) : null
+  const avatarContent = (
+    <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size={36} />
+  )
 
   if (!open) {
     return (

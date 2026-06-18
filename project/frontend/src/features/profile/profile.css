@@ -46,8 +46,6 @@
   border-radius: 50%;
   object-fit: cover;
   border: 4px solid var(--surface);
-  background: var(--accent-light);
-  display: block;
   cursor: pointer;
   transition: opacity 0.15s;
 }

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { resolveAutor } from '../shared/AuthorDisplay'
+import { UserAvatar } from '../shared/UserAvatar'
 import './Sidebar.css'
 
 const SIDEBAR_PAGES = ['/', '/recent', '/popular', '/explore']
@@ -123,11 +124,11 @@ function ActiveUsersCard() {
                 className="sidebar-active-user"
               >
                 <span className="sidebar-active-rank">{i + 1}</span>
-                <img
+                <UserAvatar
                   className="sidebar-active-avatar"
-                  src={u.url_imagen || '/assets/default-user.jpg'}
-                  alt=""
-                  onError={e => { e.currentTarget.src = '/assets/default-user.jpg' }}
+                  url_imagen={u.url_imagen}
+                  nickname={u.nickname}
+                  size={32}
                 />
                 <div className="sidebar-active-info">
                   <span className="sidebar-active-nickname">@{u.nickname}</span>
@@ -187,13 +188,13 @@ function CategorySidebarContent({ catId }) {
         <div className="sidebar-card-header">Moderación</div>
         <div className="sidebar-card-body">
           <div className="mod-item">
-            <div className="mod-avatar">
-              <img
-                src={autorDisplay.url_imagen || '/assets/default-user.jpg'}
-                alt=""
-                onError={e => { e.currentTarget.src = '/assets/default-user.jpg' }}
-              />
-            </div>
+            <UserAvatar
+              className="mod-avatar"
+              url_imagen={autorDisplay.url_imagen}
+              nickname={autorDisplay.nickname}
+              size={36}
+              inactive={autorDisplay.isInactive}
+            />
             <div className="mod-info">
               {autorDisplay.isInactive ? (
                 <span className="mod-name inactive-author">{autorDisplay.nickname}</span>

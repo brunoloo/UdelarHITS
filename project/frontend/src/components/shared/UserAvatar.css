@@ -26,3 +26,7 @@
   opacity: 0.45;
   filter: grayscale(1);
 }
+
+.user-avatar-clickable {
+  cursor: pointer;
+}

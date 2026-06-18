@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { apiGet, apiPost } from '../../api/client'
+import { UserAvatar } from '../../components/shared/UserAvatar'
 
 export function CreateCategoryPanel() {
   const { user } = useAuth()
@@ -72,11 +73,7 @@ export function CreateCategoryPanel() {
       {!panelOpen ? (
         <button className="create-cat-trigger" type="button" onClick={openPanel}>
           <span className="cc-avatar" aria-hidden="true">
-            <img
-              src={user.url_imagen || '/assets/default-user.jpg'}
-              alt={user.nickname}
-              onError={e => { e.currentTarget.src = '/assets/default-user.jpg' }}
-            />
+            <UserAvatar url_imagen={user.url_imagen} nickname={user.nickname} size={36} />
           </span>
           <span className="cc-placeholder">Crear una nueva categoría</span>
           <span className="cc-cta">
@@ -90,11 +87,7 @@ export function CreateCategoryPanel() {
         <div className="create-cat-panel open">
           <div className="create-cat-panel-body">
             <span className="cc-avatar" aria-hidden="true">
-              <img
-                src={user.url_imagen || '/assets/default-user.jpg'}
-                alt={user.nickname}
-                onError={e => { e.currentTarget.src = '/assets/default-user.jpg' }}
-              />
+              <UserAvatar url_imagen={user.url_imagen} nickname={user.nickname} size={36} />
             </span>
             <div className="cc-form">
               <div className="edit-field">
