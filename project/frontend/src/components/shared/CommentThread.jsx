@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { apiGet, apiPost } from '../../api/client'
 import { CommentCard } from './CommentCard'
 import './CommentCard.css'
 
 export function CommentThread({ comments, invalidateKey }) {
-  const { user } = useAuth()
   const { showToast } = useToast()
   const queryClient = useQueryClient()
 
@@ -70,7 +68,7 @@ export function CommentThread({ comments, invalidateKey }) {
               key={anc.id + '-anc-' + i}
               comment={anc}
               role="ancestor"
-              onReply={user ? handleReply : undefined}
+              onReply={handleReply}
               invalidateKey={invalidateKey}
             />
           ))}
@@ -93,7 +91,7 @@ export function CommentThread({ comments, invalidateKey }) {
               comment={c}
               role="reply"
               onDrillDown={drillDown}
-              onReply={user ? handleReply : undefined}
+              onReply={handleReply}
               invalidateKey={invalidateKey}
             />
           ))

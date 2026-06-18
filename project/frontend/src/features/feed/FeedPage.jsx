@@ -1,6 +1,5 @@
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
 import { CategoryCard } from '../../components/shared/CategoryCard'
 import { CreateCategoryPanel } from '../category/CreateCategoryPanel'
@@ -19,7 +18,6 @@ function CategorySkeleton() {
 }
 
 export function FeedPage() {
-  const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const qParam = searchParams.get('q')
 
@@ -37,7 +35,7 @@ export function FeedPage() {
 
   return (
     <div className="feed-page">
-      {user && <CreateCategoryPanel />}
+      <CreateCategoryPanel />
 
       <div className="categories-feed">
         {isLoading ? (

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
+import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { apiPatch, apiDelete } from '../../api/client'
 import { resolveAutor } from './AuthorDisplay'
 import { UserAvatar } from './UserAvatar'
@@ -22,6 +23,7 @@ export function CommentCard({
 }) {
   const { user } = useAuth()
   const { showToast } = useToast()
+  const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
 
   const [editing, setEditing] = useState(false)
@@ -210,18 +212,16 @@ export function CommentCard({
               <ReadMore text={comment.cuerpo} maxLength={500} />
             </div>
             <div className="comment-actions">
-              {user && (
-                <button
-                  className="comment-action-btn"
-                  type="button"
-                  onClick={e => { e.stopPropagation(); setReplyOpen(v => !v) }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                  </svg>
-                  Responder
-                </button>
-              )}
+              <button
+                className="comment-action-btn"
+                type="button"
+                onClick={e => { e.stopPropagation(); setReplyOpen(v => !v) }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Responder
+              </button>
               {replyCount > 0 && (
                 <span className="comment-action-info">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -241,6 +241,7 @@ export function CommentCard({
             autoFocus
             onCancel={() => setReplyOpen(false)}
             onSubmit={async (text) => {
+              if (!requireAuth('Iniciá sesión para responder')) return
               if (onReply) {
                 await onReply(comment.id, text)
                 setReplyOpen(false)

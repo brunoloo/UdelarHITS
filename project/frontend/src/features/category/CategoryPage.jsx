@@ -10,6 +10,7 @@ import { DropdownMenu } from '../../components/ui/DropdownMenu'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { useToast } from '../../hooks/useToast'
+import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { CreateTopicPanel } from '../topic/CreateTopicPanel'
 import { ReportModal } from '../../components/shared/ReportModal'
 import { UserAvatar } from '../../components/shared/UserAvatar'
@@ -40,6 +41,7 @@ function CreateCommentPanel({ categoryId, user }) {
   const [open, setOpen] = useState(false)
   const [cuerpo, setCuerpo] = useState('')
   const { showToast } = useToast()
+  const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
@@ -65,6 +67,12 @@ function CreateCommentPanel({ categoryId, user }) {
   }
 
   const canSubmit = cuerpo.trim().length >= 1
+
+  function handleSubmit() {
+    if (!requireAuth('Iniciá sesión para comentar')) return
+    if (!canSubmit || mutation.isPending) return
+    mutation.mutate()
+  }
 
   const avatarContent = (
     <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size={36} />
@@ -115,7 +123,7 @@ function CreateCommentPanel({ categoryId, user }) {
             className="save-btn"
             type="button"
             disabled={!canSubmit || mutation.isPending}
-            onClick={() => mutation.mutate()}
+            onClick={handleSubmit}
           >
             {mutation.isPending ? 'Publicando...' : 'Comentar'}
           </button>
@@ -505,7 +513,7 @@ export function CategoryPage() {
       {/* Topics panel */}
       {activeTab === 'temas' && (
         <div className="section-panel">
-          {user && isActive && <CreateTopicPanel categoryId={id} user={user} />}
+          {isActive && <CreateTopicPanel categoryId={id} user={user} />}
           {catLoading ? (
             <TopicSkeleton />
           ) : !cat.topics || cat.topics.length === 0 ? (
@@ -521,7 +529,7 @@ export function CategoryPage() {
       {/* Comments panel */}
       {activeTab === 'comentarios' && (
         <div className="section-panel">
-          {user && isActive && <CreateCommentPanel categoryId={id} user={user} />}
+          {isActive && <CreateCommentPanel categoryId={id} user={user} />}
           {repliesLoading ? (
             <div className="feed-empty">Cargando comentarios...</div>
           ) : (

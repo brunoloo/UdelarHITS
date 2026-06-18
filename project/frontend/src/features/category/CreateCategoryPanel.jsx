@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
+import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { apiGet, apiPost } from '../../api/client'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 
 export function CreateCategoryPanel() {
   const { user } = useAuth()
   const { showToast } = useToast()
+  const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
 
   const [panelOpen, setPanelOpen] = useState(false)
@@ -60,6 +62,7 @@ export function CreateCategoryPanel() {
   }
 
   function handleSubmit() {
+    if (!requireAuth('Iniciá sesión para crear una categoría')) return
     if (!isFormValid || mutation.isPending) return
     mutation.mutate({
       titulo: titulo.trim(),
@@ -73,7 +76,7 @@ export function CreateCategoryPanel() {
       {!panelOpen ? (
         <button className="create-cat-trigger" type="button" onClick={openPanel}>
           <span className="cc-avatar" aria-hidden="true">
-            <UserAvatar url_imagen={user.url_imagen} nickname={user.nickname} size={36} />
+            <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size={36} />
           </span>
           <span className="cc-placeholder">Crear una nueva categoría</span>
           <span className="cc-cta">
@@ -87,7 +90,7 @@ export function CreateCategoryPanel() {
         <div className="create-cat-panel open">
           <div className="create-cat-panel-body">
             <span className="cc-avatar" aria-hidden="true">
-              <UserAvatar url_imagen={user.url_imagen} nickname={user.nickname} size={36} />
+              <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size={36} />
             </span>
             <div className="cc-form">
               <div className="edit-field">

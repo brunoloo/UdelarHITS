@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
+import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { resolveAutor } from '../../components/shared/AuthorDisplay'
 import { UserAvatar } from '../../components/shared/UserAvatar'
@@ -20,6 +21,7 @@ export function TopicPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { showToast } = useToast()
+  const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
 
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -77,6 +79,12 @@ export function TopicPage() {
     },
     onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
   })
+
+  function handleCommentSubmit() {
+    if (!requireAuth('Iniciá sesión para comentar')) return
+    if (commentText.trim().length < 1 || commentMutation.isPending) return
+    commentMutation.mutate(commentText.trim())
+  }
 
   async function loadHistory() {
     const res = await apiGet(`/topics/${id}/history`)
@@ -224,15 +232,14 @@ export function TopicPage() {
           </nav>
 
           <section className="section-panel active">
-            {user && (
-              <section className="create-topic" aria-label="Publicar comentario">
+            <section className="create-topic" aria-label="Publicar comentario">
                 {!commentFormOpen ? (
                   <button
                     className="create-topic-trigger"
                     type="button"
                     onClick={() => setCommentFormOpen(true)}
                   >
-                    <UserAvatar url_imagen={user.url_imagen} nickname={user.nickname} size="sm" />
+                    <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size="sm" />
                     <span className="ct-placeholder">Publicar comentario</span>
                     <span className="ct-cta">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -273,15 +280,14 @@ export function TopicPage() {
                         className="save-btn"
                         type="button"
                         disabled={commentText.trim().length < 1 || commentMutation.isPending}
-                        onClick={() => commentMutation.mutate(commentText.trim())}
+                        onClick={handleCommentSubmit}
                       >
                         {commentMutation.isPending ? 'Publicando...' : 'Comentar'}
                       </button>
                     </div>
                   </div>
                 )}
-              </section>
-            )}
+            </section>
 
             <CommentThread
               comments={replies}

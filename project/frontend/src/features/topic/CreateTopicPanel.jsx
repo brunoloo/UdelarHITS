@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiPost } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
+import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 
 export function CreateTopicPanel({ categoryId, user }) {
@@ -10,6 +11,7 @@ export function CreateTopicPanel({ categoryId, user }) {
   const [titulo, setTitulo] = useState('')
   const [cuerpo, setCuerpo] = useState('')
   const { showToast } = useToast()
+  const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
@@ -44,6 +46,12 @@ export function CreateTopicPanel({ categoryId, user }) {
   }
 
   const canSubmit = titulo.trim().length >= 3 && cuerpo.trim().length >= 1
+
+  function handleSubmit() {
+    if (!requireAuth('Iniciá sesión para crear un tema')) return
+    if (!canSubmit || mutation.isPending) return
+    mutation.mutate()
+  }
 
   const avatarContent = (
     <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size={36} />
@@ -107,7 +115,7 @@ export function CreateTopicPanel({ categoryId, user }) {
             className="save-btn"
             type="button"
             disabled={!canSubmit || mutation.isPending}
-            onClick={() => mutation.mutate()}
+            onClick={handleSubmit}
           >
             {mutation.isPending ? 'Creando...' : 'Crear tema'}
           </button>
