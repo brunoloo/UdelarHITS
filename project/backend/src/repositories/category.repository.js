@@ -38,8 +38,7 @@ const createCategory = async ({ titulo, descripcion, autor_id, etiquetas }) => {
 
 const findCategoryByTitulo = async (titulo) => {
   const q = `SELECT id FROM categoria
-  WHERE unaccent(LOWER(REGEXP_REPLACE(titulo, '\\s+', ' ', 'g'))) = unaccent(LOWER($1))
-  AND estado = 'activa' LIMIT 1`;
+  WHERE unaccent(LOWER(REGEXP_REPLACE(titulo, '\\s+', ' ', 'g'))) = unaccent(LOWER($1)) LIMIT 1`;
   const { rows } = await pool.query(q, [titulo]);
   return rows[0] || null;
 };
