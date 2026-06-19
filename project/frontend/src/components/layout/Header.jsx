@@ -13,6 +13,10 @@ function parseEtiquetas(raw) {
   return []
 }
 
+function norm(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+}
+
 export function Header() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -64,15 +68,15 @@ export function Header() {
 
     const catResults = categories
       .filter(c =>
-        c.titulo.toLowerCase().split(/\s+/).some(w => w.startsWith(q.toLowerCase()))
+        norm(c.titulo).split(/\s+/).some(w => w.startsWith(norm(q)))
       )
       .slice(0, 3)
 
     const tagResults = tags
       .filter(t => {
-        if (!t.toLowerCase().split(/\s+/).some(w => w.startsWith(q.toLowerCase()))) return false
+        if (!norm(t).split(/\s+/).some(w => w.startsWith(norm(q)))) return false
         return categories.some(c =>
-          parseEtiquetas(c.etiquetas).some(e => e.toLowerCase() === t.toLowerCase())
+          parseEtiquetas(c.etiquetas).some(e => norm(e) === norm(t))
         )
       })
       .slice(0, 3)

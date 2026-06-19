@@ -6,6 +6,10 @@ import { CreateCategoryPanel } from '../category/CreateCategoryPanel'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import './feed.css'
 
+function norm(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+}
+
 function CategorySkeleton() {
   return (
     <div className="skeleton-card">
@@ -28,8 +32,8 @@ export function FeedPage() {
 
   const displayCategories = qParam
     ? categories.filter(c =>
-        parseEtiquetas(c.etiquetas).some(e => e.toLowerCase() === qParam.toLowerCase()) ||
-        c.titulo.toLowerCase().split(/\s+/).some(w => w.startsWith(qParam.toLowerCase()))
+        parseEtiquetas(c.etiquetas).some(e => norm(e) === norm(qParam)) ||
+        norm(c.titulo).split(/\s+/).some(w => w.startsWith(norm(qParam)))
       )
     : categories
 
