@@ -3,6 +3,7 @@ import './about.css'
 
 export function ModerationPage() {
   return (
+    <div className="about-page-wrap">
     <div className="about-container">
       <div className="about-page-header">
         <Link to="/about" className="about-breadcrumb">
@@ -116,6 +117,7 @@ export function ModerationPage() {
           Volver
         </Link>
       </div>
+    </div>
     </div>
   )
 }

@@ -10,6 +10,7 @@ const LOCK_ICON = (
 
 export function RulesPage() {
   return (
+    <div className="about-page-wrap">
     <div className="about-container">
       <div className="about-page-header">
         <Link to="/about" className="about-breadcrumb">
@@ -124,6 +125,7 @@ export function RulesPage() {
           Volver
         </Link>
       </div>
+    </div>
     </div>
   )
 }

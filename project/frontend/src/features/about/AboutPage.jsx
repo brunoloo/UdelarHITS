@@ -10,8 +10,10 @@ const ARROW_ICON = (
 
 export function AboutPage() {
   return (
+    <div className="about-page-wrap">
     <div className="about-container">
       <div className="about-page-header">
+        <Link to="/" className="about-logo">Udelar<span>HITS</span></Link>
         <h1>Acerca de la plataforma</h1>
         <p>Todo lo que necesitás saber sobre la comunidad, sus normativas, cómo funciona nuestro sistema y qué esperamos de quienes participan en el foro.</p>
       </div>
@@ -112,6 +114,7 @@ export function AboutPage() {
           Inicio
         </Link>
       </div>
+    </div>
     </div>
   )
 }

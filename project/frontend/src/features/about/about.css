@@ -1,5 +1,28 @@
 /* ── ABOUT PAGES ── */
 
+/* Standalone page wrapper — same centering as vanilla about body */
+.about-page-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 16px 64px;
+}
+
+/* Logo link (AboutPage only — sub-pages use breadcrumb instead) */
+.about-logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  color: var(--text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.about-logo span { color: var(--accent); }
+
 .about-container {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -7,7 +30,6 @@
   max-width: 680px;
   width: 100%;
   padding: 48px;
-  margin: 0 auto;
 }
 
 /* ── PAGE HEADER ── */

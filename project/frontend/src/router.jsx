@@ -32,10 +32,6 @@ export const router = createBrowserRouter([
         path: 'settings',
         element: <ProtectedRoute><SettingsPage /></ProtectedRoute>,
       },
-      { path: 'about', element: <AboutPage /> },
-      { path: 'about/rules', element: <RulesPage /> },
-      { path: 'about/policies', element: <ContentPoliciesPage /> },
-      { path: 'about/moderation', element: <ModerationPage /> },
     ],
   },
   {
@@ -46,4 +42,8 @@ export const router = createBrowserRouter([
     path: '/register',
     element: <RegisterPage />,
   },
+  { path: '/about', element: <AboutPage /> },
+  { path: '/about/rules', element: <RulesPage /> },
+  { path: '/about/policies', element: <ContentPoliciesPage /> },
+  { path: '/about/moderation', element: <ModerationPage /> },
 ])
