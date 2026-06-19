@@ -28,8 +28,16 @@ export function ThemeProvider({ children }) {
   }, [theme])
 
   function setTheme(value) {
+    document.documentElement.classList.add('no-transitions')
     localStorage.setItem('theme', value)
     setThemeState(value)
+    // Two rAF frames: first lets React apply the new data-theme,
+    // second lets the browser paint it before re-enabling transitions.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove('no-transitions')
+      })
+    })
   }
 
   return (
