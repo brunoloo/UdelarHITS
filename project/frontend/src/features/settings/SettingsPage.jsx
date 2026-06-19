@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
@@ -231,6 +232,9 @@ export function SettingsPage() {
                   <div className="settings-row-info">
                     <h3>Sobre el proyecto</h3>
                     <p>UdelarHITS es un foro institucional hecho por estudiantes para la comunidad de la Universidad de la República.</p>
+                  </div>
+                  <div className="settings-row-control">
+                    <Link to="/about" className="settings-btn-secondary">Conocer más</Link>
                   </div>
                 </div>
               </article>
