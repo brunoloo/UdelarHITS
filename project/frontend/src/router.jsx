@@ -9,6 +9,8 @@ import { ExplorePage } from './features/feed/ExplorePage'
 import { CategoryPage } from './features/category/CategoryPage'
 import { TopicPage } from './features/topic/TopicPage'
 import { ProfilePage } from './features/profile/ProfilePage'
+import { SettingsPage } from './features/settings/SettingsPage'
+import { ProtectedRoute } from './components/auth/ProtectedRoute'
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +24,10 @@ export const router = createBrowserRouter([
       { path: 'category/:id', element: <CategoryPage /> },
       { path: 'topic/:id', element: <TopicPage /> },
       { path: 'user/:nickname', element: <ProfilePage /> },
+      {
+        path: 'settings',
+        element: <ProtectedRoute><SettingsPage /></ProtectedRoute>,
+      },
     ],
   },
   {

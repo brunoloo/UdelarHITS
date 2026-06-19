@@ -183,3 +183,23 @@
   from { opacity: 0; transform: translateY(8px) scale(0.98); }
   to   { opacity: 1; transform: none; }
 }
+
+/* ── NARROW VARIANT (change password, etc.) ── */
+.modal--narrow {
+  width: 420px;
+}
+
+/* ── CHANGE PASSWORD MODAL EXTRAS ── */
+.cp-forgot-link {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-top: -10px;
+}
+.cp-forgot-link:hover { color: var(--accent); }
+
+.cp-error {
+  font-size: 13px;
+  color: var(--danger);
+  margin: 0;
+}
