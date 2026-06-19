@@ -145,67 +145,69 @@ export function TopicPage() {
         <span>{isInactive ? 'Tema inactivo' : topic.titulo}</span>
       </nav>
 
-      {isInactive && (
-        <div className="cat-inactive-banner">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <div className="cat-inactive-text">
-            <span className="cat-inactive-title">Este tema ya no está disponible</span>
-            <span className="cat-inactive-desc">
-              El contenido publicado se preserva por la{' '}
-              <Link to="/about/policies" target="_blank" rel="noopener noreferrer">
-                política de preservación de contenido
-              </Link>.
-            </span>
-          </div>
-        </div>
-      )}
-
       <div className="topic-header">
-        <div className="topic-header-top-row">
-          <div className="topic-header-meta">
-            <UserAvatar
-              url_imagen={autor.url_imagen}
-              nickname={autor.nickname}
-              size="md"
-              inactive={autor.isInactive}
-            />
-            <div className="topic-header-meta-text">
-              {autor.isInactive ? (
-                <span className="inactive-author">{autor.nickname}</span>
-              ) : (
-                <Link to={`/user/${encodeURIComponent(autor.nickname)}`} className="topic-header-author">
-                  {autor.nickname}
-                </Link>
-              )}
-              <span className="topic-header-date">{timeAgo(topic.fecha_creacion)}</span>
+        {isInactive ? (
+          <div className="cat-inactive-banner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div className="cat-inactive-text">
+              <span className="cat-inactive-title">Este tema ya no está disponible</span>
+              <span className="cat-inactive-desc">
+                El contenido publicado se preserva por la{' '}
+                <Link to="/about/policies" target="_blank" rel="noopener noreferrer">
+                  política de preservación de contenido
+                </Link>.
+              </span>
             </div>
           </div>
-          {!isInactive && <DropdownMenu items={menuItems} />}
-        </div>
-        <h1 className="topic-header-title">{topic.titulo}</h1>
-        <div className="topic-header-body">
-          <ReadMore text={topic.cuerpo} maxLength={500} />
-        </div>
-        <div className="cat-meta">
-          <span className="cat-meta-item">
-            <strong>{replies.length}</strong>{' '}
-            {replies.length === 1 ? 'comentario' : 'comentarios'}
-          </span>
-          <span className="cat-meta-item">
-            creado <strong>{timeAgo(topic.fecha_creacion)}</strong>
-          </span>
-          {canManage && (
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={() => setEditModalOpen(true)}
-            >
-              Editar tema
-            </button>
-          )}
-        </div>
+        ) : (
+          <>
+            <div className="topic-header-top-row">
+              <div className="topic-header-meta">
+                <UserAvatar
+                  url_imagen={autor.url_imagen}
+                  nickname={autor.nickname}
+                  size="md"
+                  inactive={autor.isInactive}
+                />
+                <div className="topic-header-meta-text">
+                  {autor.isInactive ? (
+                    <span className="inactive-author">{autor.nickname}</span>
+                  ) : (
+                    <Link to={`/user/${encodeURIComponent(autor.nickname)}`} className="topic-header-author">
+                      {autor.nickname}
+                    </Link>
+                  )}
+                  <span className="topic-header-date">{timeAgo(topic.fecha_creacion)}</span>
+                </div>
+              </div>
+              <DropdownMenu items={menuItems} />
+            </div>
+            <h1 className="topic-header-title">{topic.titulo}</h1>
+            <div className="topic-header-body">
+              <ReadMore text={topic.cuerpo} maxLength={500} />
+            </div>
+            <div className="cat-meta">
+              <span className="cat-meta-item">
+                <strong>{replies.length}</strong>{' '}
+                {replies.length === 1 ? 'comentario' : 'comentarios'}
+              </span>
+              <span className="cat-meta-item">
+                creado <strong>{timeAgo(topic.fecha_creacion)}</strong>
+              </span>
+              {canManage && (
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setEditModalOpen(true)}
+                >
+                  Editar tema
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <nav className="section-tabs" role="tablist">
