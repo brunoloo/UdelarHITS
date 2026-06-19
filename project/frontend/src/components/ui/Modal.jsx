@@ -27,7 +27,9 @@ export function Modal({ isOpen, onClose, title, children, headerAction, classNam
           <h3>{title}</h3>
           {headerAction}
         </div>
-        {children}
+        <div className="modal-body">
+          {children}
+        </div>
       </div>
     </div>
   )
