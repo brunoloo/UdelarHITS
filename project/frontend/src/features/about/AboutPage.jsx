@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import './about.css'
 
@@ -9,6 +10,7 @@ const ARROW_ICON = (
 )
 
 export function AboutPage() {
+  useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
     <div className="about-page-wrap">
     <div className="about-container">
