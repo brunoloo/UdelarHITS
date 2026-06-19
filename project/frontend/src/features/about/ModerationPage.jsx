@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import './about.css'
 
 export function ModerationPage() {
+  useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
     <div className="about-page-wrap">
     <div className="about-container">
