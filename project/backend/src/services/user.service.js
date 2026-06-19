@@ -443,7 +443,7 @@ const forgotPasswordService = async (email) => {
   await createResetToken(user.id, token, expiraEn);
 
   // Enviar email
-  const resetUrl = `${process.env.APP_URL}/src-central/cuenta/reset-password.html?token=${token}`;
+  const resetUrl = `${process.env.APP_URL}/central/cuenta/reset-password.html?token=${token}`;
 
   await sendEmail({
     to: normalizedEmail,
