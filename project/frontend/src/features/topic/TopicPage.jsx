@@ -154,7 +154,10 @@ export function TopicPage() {
             <div className="cat-inactive-text">
               <span className="cat-inactive-title">Este tema ya no está disponible</span>
               <span className="cat-inactive-desc">
-                El contenido publicado se preserva por la política de preservación de contenido.
+                El contenido publicado se preserva por la{' '}
+                <Link to="/about/policies">
+                  política de preservación de contenido
+                </Link>.
               </span>
             </div>
           </div>

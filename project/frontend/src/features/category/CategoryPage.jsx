@@ -425,9 +425,9 @@ export function CategoryPage() {
               <span className="cat-inactive-title">Esta categoría ya no está disponible</span>
               <span className="cat-inactive-desc">
                 El contenido publicado se preserva por la{' '}
-                <a href="/about/content_policies" target="_blank" rel="noopener noreferrer">
+                <Link to="/about/policies">
                   política de preservación de contenido
-                </a>.
+                </Link>.
               </span>
             </div>
           </div>
