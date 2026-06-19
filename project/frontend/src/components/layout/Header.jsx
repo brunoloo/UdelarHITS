@@ -138,6 +138,7 @@ export function Header() {
             onTagClick={tag => {
               setQuery(tag)
               setResults(null)
+              navigate(`/?q=${encodeURIComponent(tag)}`)
             }}
           />
         )}
