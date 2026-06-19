@@ -108,8 +108,7 @@ export function ContentPoliciesPage() {
           <line x1="12" y1="16" x2="12" y2="12"/>
           <line x1="12" y1="8" x2="12.01" y2="8"/>
         </svg>
-        {/* TODO: link a La Central /central/info/preservacion.html — se conecta en Etapa 5 */}
-        <span>Visitá el <strong><a href="#" onClick={e => e.preventDefault()}>centro de ayuda</a></strong> para obtener información más detallada acerca de la política de preservación de contenido.</span>
+        <span>Visitá el <strong><a href="/central/info/preservacion.html" target="_blank" rel="noreferrer">centro de ayuda</a></strong> para obtener información más detallada acerca de la política de preservación de contenido.</span>
       </div>
 
       <div className="about-footer">

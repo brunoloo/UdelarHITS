@@ -114,8 +114,7 @@ export function RulesPage() {
           <line x1="12" y1="16" x2="12" y2="12"/>
           <line x1="12" y1="8" x2="12.01" y2="8"/>
         </svg>
-        {/* TODO: link a La Central /central/info/normas.html — se conecta en Etapa 5 */}
-        <span>Visitá el <strong><a href="#" onClick={e => e.preventDefault()}>centro de ayuda</a></strong> para obtener información más detallada acerca de las normas de la comunidad.</span>
+        <span>Visitá el <strong><a href="/central/info/normas.html" target="_blank" rel="noreferrer">centro de ayuda</a></strong> para obtener información más detallada acerca de las normas de la comunidad.</span>
       </div>
 
       <div className="about-footer">
