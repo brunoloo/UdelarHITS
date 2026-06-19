@@ -51,14 +51,6 @@ export function Header() {
       return
     }
 
-    console.log('=== SEARCH DEBUG ===')
-    console.log('query raw:', query)
-    console.log('query norm:', norm(query))
-    console.log('categorias count:', categories.length)
-    categories.slice(0, 3).forEach(c => {
-      console.log('cat titulo:', c.titulo, '| norm:', norm(c.titulo), '| includes:', norm(c.titulo).includes(norm(query)))
-    })
-
     const catResults = categories
       .filter(c => norm(c.titulo).includes(norm(q)))
       .slice(0, 3)
@@ -67,6 +59,11 @@ export function Header() {
     const activeTags = [...new Set(
       categories.flatMap(c => parseEtiquetas(c.etiquetas)).filter(Boolean)
     )]
+
+    console.log('=== ETIQUETAS DEBUG ===')
+    console.log('query norm:', norm(query))
+    console.log('etiquetas disponibles (todas):', activeTags)
+    console.log('etiquetas filtradas:', activeTags.filter(t => norm(t).includes(norm(query))))
 
     const tagResults = activeTags
       .filter(t => norm(t).includes(norm(q)))
