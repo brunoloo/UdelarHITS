@@ -17,7 +17,7 @@ export function renderBioWithLinks(text) {
       elements.push(
         <a
           key={key++}
-          href={`/src/redirect/redirect.html?to=${encodeURIComponent(part)}`}
+          href={`/redirect?to=${encodeURIComponent(part)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="bio-link"

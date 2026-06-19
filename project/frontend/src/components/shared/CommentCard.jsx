@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { useRequireAuth } from '../../hooks/useRequireAuth'
-import { apiPatch, apiDelete } from '../../api/client'
+import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import { resolveAutor } from './AuthorDisplay'
 import { UserAvatar } from './UserAvatar'
 import { ReadMore } from '../ui/ReadMore'
 import { DropdownMenu } from '../ui/DropdownMenu'
 import { CommentForm } from './CommentForm'
 import { ReportModal } from './ReportModal'
+import { Modal } from '../ui/Modal'
 import { timeAgo } from '../../utils/timeAgo'
 import './CommentCard.css'
 
@@ -31,6 +32,7 @@ export function CommentCard({
   const [editText, setEditText] = useState('')
   const [replyOpen, setReplyOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const isHidden = comment.estado === 'oculto'
   const replyCount = Number(comment.contador_respuestas) || 0
@@ -131,7 +133,7 @@ export function CommentCard({
   menuItems.push({
     label: 'Historial de ediciones',
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-    onClick: () => showToast('Historial próximamente', 'info'),
+    onClick: () => setHistoryOpen(true),
   })
 
   if (canEdit) {
@@ -261,6 +263,65 @@ export function CommentCard({
       contentId={comment.id}
       contentType="comment"
     />
+
+    <Modal
+      isOpen={historyOpen}
+      onClose={() => setHistoryOpen(false)}
+      title="Historial de ediciones"
+      className="modal--narrow"
+    >
+      {historyOpen && <CommentHistoryBody commentId={comment.id} />}
+    </Modal>
     </>
+  )
+}
+
+function CommentHistoryBody({ commentId }) {
+  const [idx, setIdx] = useState(0)
+
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ['reply', commentId, 'history'],
+    queryFn: () => apiGet(`/replies/${commentId}/history`).then(r => r.data),
+  })
+
+  if (isLoading) return <div className="history-empty">Cargando...</div>
+  if (entries.length === 0) return <div className="history-empty">Este comentario no tiene ediciones anteriores.</div>
+
+  const entry = entries[idx]
+  const total = entries.length
+
+  return (
+    <div className="history-carousel">
+      <div className="history-header">
+        <span>{idx + 1} de {total}</span>
+        <span>{timeAgo(entry.fecha_edicion)}</span>
+      </div>
+      <div>
+        <p className="history-label">Contenido anterior</p>
+        <div className="history-text">{entry.contenido_anterior}</div>
+      </div>
+      <div className="history-nav">
+        <button
+          className="history-arrow"
+          disabled={idx >= total - 1}
+          onClick={() => setIdx(i => i + 1)}
+          aria-label="Anterior"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+        <button
+          className="history-arrow"
+          disabled={idx <= 0}
+          onClick={() => setIdx(i => i - 1)}
+          aria-label="Siguiente"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   )
 }

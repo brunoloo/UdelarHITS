@@ -14,6 +14,7 @@ import { AboutPage } from './features/about/AboutPage'
 import { RulesPage } from './features/about/RulesPage'
 import { ContentPoliciesPage } from './features/about/ContentPoliciesPage'
 import { ModerationPage } from './features/about/ModerationPage'
+import { RedirectPage } from './features/redirect/RedirectPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 
 export const router = createBrowserRouter([
@@ -46,4 +47,5 @@ export const router = createBrowserRouter([
   { path: '/about/rules', element: <RulesPage /> },
   { path: '/about/policies', element: <ContentPoliciesPage /> },
   { path: '/about/moderation', element: <ModerationPage /> },
+  { path: '/redirect', element: <RedirectPage /> },
 ])
