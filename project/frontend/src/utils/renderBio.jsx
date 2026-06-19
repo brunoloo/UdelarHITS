@@ -11,7 +11,7 @@ export function BioText({ text }) {
       return (
         <a
           key={i}
-          href={part}
+          href={`/redirect?to=${encodeURIComponent(part)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="bio-link"
