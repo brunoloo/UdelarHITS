@@ -233,7 +233,7 @@ export function SettingsPage() {
                     <p>UdelarHITS es un foro institucional hecho por estudiantes para la comunidad de la Universidad de la República.</p>
                   </div>
                   <div className="settings-row-control">
-                    <a href="/central/central.html" target="_blank" rel="noreferrer" className="settings-btn-secondary">Conocer más</a>
+                    <Link to="/about" className="settings-btn-secondary">Conocer más</Link>
                   </div>
                 </div>
               </article>
