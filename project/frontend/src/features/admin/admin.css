@@ -213,7 +213,8 @@
   white-space: nowrap;
 }
 
-.admin-status--activo {
+.admin-status--activo,
+.admin-status--activa {
   background: var(--status-success-bg);
   color: var(--status-success-text);
   border: 1px solid var(--status-success-border);
@@ -225,7 +226,8 @@
   border: 1px solid var(--status-error-border);
 }
 
-.admin-status--inactivo {
+.admin-status--inactivo,
+.admin-status--inactiva {
   background: var(--status-warning-bg);
   color: var(--status-warning-text);
   border: 1px solid var(--status-warning-border);

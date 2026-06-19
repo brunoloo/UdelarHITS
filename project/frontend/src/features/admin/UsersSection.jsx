@@ -65,6 +65,7 @@ export function UsersSection() {
         <input
           className="admin-search"
           type="text"
+          autoComplete="off"
           placeholder="Buscar por nickname o email..."
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -77,6 +78,7 @@ export function UsersSection() {
           <option value="todos">Todos los estados</option>
           <option value="activo">Activos</option>
           <option value="ban">Suspendidos</option>
+          <option value="inactivo">Inactivos</option>
         </select>
       </div>
 

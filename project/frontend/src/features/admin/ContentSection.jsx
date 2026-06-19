@@ -58,8 +58,8 @@ function CategoriesTab() {
           onChange={e => setEstadoFilter(e.target.value)}
         >
           <option value="todos">Todos los estados</option>
-          <option value="activo">Activas</option>
-          <option value="inactivo">Inactivas</option>
+          <option value="activa">Activas</option>
+          <option value="inactiva">Inactivas</option>
         </select>
       </div>
 
