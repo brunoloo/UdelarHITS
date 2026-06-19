@@ -26,12 +26,24 @@ export function FeedPage() {
     queryFn: () => apiGet('/categories/active').then(r => r.data),
   })
 
+  const { data: allTags = [] } = useQuery({
+    queryKey: ['categories', 'etiquetas'],
+    queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
+  })
+
   const displayCategories = qParam
     ? categories.filter(c =>
         parseEtiquetas(c.etiquetas).some(e => norm(e) === norm(qParam)) ||
         norm(c.titulo).includes(norm(qParam))
       )
     : categories
+
+  function emptyMessage() {
+    if (!qParam) return 'No se encontraron categorías.'
+    const isKnownTag = allTags.some(t => norm(t) === norm(qParam))
+    if (isKnownTag) return `Todavía no hay categorías con la etiqueta "${qParam}".`
+    return `No se encontraron categorías para "${qParam}".`
+  }
 
   return (
     <div className="feed-page">
@@ -45,11 +57,7 @@ export function FeedPage() {
             <CategorySkeleton />
           </>
         ) : displayCategories.length === 0 ? (
-          <div className="feed-empty">
-            {qParam
-              ? `No se encontraron categorías para "${qParam}".`
-              : 'No se encontraron categorías.'}
-          </div>
+          <div className="feed-empty">{emptyMessage()}</div>
         ) : (
           displayCategories.map(c => <CategoryCard key={c.id} category={c} />)
         )}

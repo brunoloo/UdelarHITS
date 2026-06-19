@@ -23,6 +23,11 @@ export function Header() {
     queryFn: () => apiGet('/categories/active').then(r => r.data),
   })
 
+  const { data: allTags = [] } = useQuery({
+    queryKey: ['categories', 'etiquetas'],
+    queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
+  })
+
   // Cerrar menú de usuario al click afuera
   useEffect(() => {
     if (!menuOpen) return
@@ -55,17 +60,7 @@ export function Header() {
       .filter(c => norm(c.titulo).includes(norm(q)))
       .slice(0, 3)
 
-    // Tags derivadas de categorías activas: única fuente de verdad, garantiza sincronía
-    const activeTags = [...new Set(
-      categories.flatMap(c => parseEtiquetas(c.etiquetas)).filter(Boolean)
-    )]
-
-    console.log('=== ETIQUETAS DEBUG ===')
-    console.log('query norm:', norm(query))
-    console.log('etiquetas disponibles (todas):', activeTags)
-    console.log('etiquetas filtradas:', activeTags.filter(t => norm(t).includes(norm(query))))
-
-    const tagResults = activeTags
+    const tagResults = allTags
       .filter(t => norm(t).includes(norm(q)))
       .slice(0, 3)
 
@@ -78,7 +73,7 @@ export function Header() {
         .catch(() => {})
     }, 250)
     return () => clearTimeout(timer)
-  }, [query, categories])
+  }, [query, categories, allTags])
 
   async function handleLogout() {
     // Navigate home BEFORE clearing the session. Otherwise, if we're on a page
