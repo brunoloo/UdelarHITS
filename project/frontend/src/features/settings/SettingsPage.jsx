@@ -172,8 +172,7 @@ export function SettingsPage() {
                     <p>Desactivá tu perfil. Tu contenido publicado se mantiene visible.</p>
                   </div>
                   <div className="settings-row-control">
-                    {/* TODO: link a La Central /central/cuenta/delete-account.html — se conecta en Etapa 5 */}
-                    <a href="#" className="settings-btn-danger" onClick={e => e.preventDefault()}>
+                    <a href="/central/cuenta/delete-account.html" target="_blank" rel="noreferrer" className="settings-btn-danger">
                       Eliminar cuenta
                     </a>
                   </div>
@@ -234,7 +233,7 @@ export function SettingsPage() {
                     <p>UdelarHITS es un foro institucional hecho por estudiantes para la comunidad de la Universidad de la República.</p>
                   </div>
                   <div className="settings-row-control">
-                    <Link to="/about" className="settings-btn-secondary">Conocer más</Link>
+                    <a href="/central/central.html" target="_blank" rel="noreferrer" className="settings-btn-secondary">Conocer más</a>
                   </div>
                 </div>
               </article>

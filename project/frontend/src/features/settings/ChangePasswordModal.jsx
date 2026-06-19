@@ -126,8 +126,7 @@ export function ChangePasswordModal({ isOpen, onClose }) {
           onToggle={() => setShowCurrent(v => !v)}
           autoComplete="current-password"
         />
-        {/* TODO: link a La Central /central/cuenta/forgot-password.html — se conecta en Etapa 5 */}
-        <a href="#" className="cp-forgot-link" onClick={e => e.preventDefault()}>
+        <a href="/central/cuenta/forgot-password.html" target="_blank" rel="noreferrer" className="cp-forgot-link">
           ¿Olvidaste tu contraseña?
         </a>
         <PasswordField

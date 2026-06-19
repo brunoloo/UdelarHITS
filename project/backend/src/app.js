@@ -95,6 +95,9 @@ const reporteLimiter = rateLimit({
 });
 app.use('/api/reports', limiterIf(reporteLimiter));
 
+// La Central — capa institucional (HTML estático, siempre light)
+app.use('/central', express.static(path.join(__dirname, '..', '..', 'src-central')));
+
 //index (usamos el index que aparece en frontend) — path estable, no depende del cwd
 app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
 

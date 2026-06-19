@@ -191,11 +191,11 @@ export function RegisterPage() {
               />
               <span>
                 Acepto los{' '}
-                <a href="/src-central/legal/terminos.html" target="_blank" rel="noreferrer">
+                <a href="/central/legal/terminos.html" target="_blank" rel="noreferrer">
                   términos de uso
                 </a>
                 {' '}y la{' '}
-                <a href="/src-central/legal/privacidad.html" target="_blank" rel="noreferrer">
+                <a href="/central/legal/privacidad.html" target="_blank" rel="noreferrer">
                   política de privacidad
                 </a>
               </span>

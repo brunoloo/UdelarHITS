@@ -103,7 +103,7 @@ export function LoginPage() {
 
           <p className="auth-forgot">
             <a
-              href="/src-central/cuenta/forgot-password.html"
+              href="/central/cuenta/forgot-password.html"
               target="_blank"
               rel="noreferrer"
             >
