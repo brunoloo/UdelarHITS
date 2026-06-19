@@ -194,6 +194,12 @@ header .search-bar {
 
 .search-dropdown.open { display: block; }
 
+.search-dropdown { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.search-dropdown::-webkit-scrollbar { width: 6px; }
+.search-dropdown::-webkit-scrollbar-track { background: transparent; }
+.search-dropdown::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: var(--radius); }
+.search-dropdown::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
 .search-section-title {
   padding: 10px 14px 4px;
   font-size: 11px;
