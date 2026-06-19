@@ -47,6 +47,14 @@ export function RegisterPage() {
   async function handleSubmit(e) {
     e.preventDefault()
 
+    if (form.nickname.length > 30) {
+      showToast('El nickname no puede superar los 30 caracteres.', 'error')
+      return
+    }
+    if (!/^[a-zA-ZÀ-ÿ0-9_-]+$/.test(form.nickname)) {
+      showToast('El nickname solo puede contener letras, números, guiones y guiones bajos. No se permiten espacios ni caracteres especiales como @, #, $, etc.', 'error')
+      return
+    }
     if (form.password.length < 8) {
       showToast('La contraseña debe tener al menos 8 caracteres.', 'error')
       return
@@ -68,7 +76,8 @@ export function RegisterPage() {
         email: form.email,
         password: form.password,
       })
-      navigate('/')
+      showToast('¡Cuenta creada exitosamente! Bienvenido/a a UdelarHITS', 'success')
+      setTimeout(() => navigate('/login'), 1500)
     } catch (err) {
       showToast(err.message || 'Error al registrarse.', 'error')
     } finally {

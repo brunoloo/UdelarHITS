@@ -25,6 +25,18 @@ const registerUserService = async ({ nickname, nombre, email, password}) => {
     throw err;
   }
 
+  // Validación de nickname
+  if (normalizedNickname.length < 3 || normalizedNickname.length > 30) {
+    const err = new Error('El nickname debe tener entre 3 y 30 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  if (!/^[a-zA-ZÀ-ÿ0-9_-]+$/.test(normalizedNickname)) {
+    const err = new Error('El nickname solo puede contener letras, números, guiones y guiones bajos');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
   // Chequeo de password > 8 caracteres
   if(password.length < 8){
     const err = new Error('La contraseña debe tener al menos 8 caracteres');
