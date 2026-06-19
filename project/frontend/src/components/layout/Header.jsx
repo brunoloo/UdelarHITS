@@ -23,11 +23,6 @@ export function Header() {
     queryFn: () => apiGet('/categories/active').then(r => r.data),
   })
 
-  const { data: tags = [] } = useQuery({
-    queryKey: ['categories', 'etiquetas'],
-    queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
-  })
-
   // Cerrar menú de usuario al click afuera
   useEffect(() => {
     if (!menuOpen) return
@@ -57,18 +52,16 @@ export function Header() {
     }
 
     const catResults = categories
-      .filter(c =>
-        norm(c.titulo).split(/\s+/).some(w => w.startsWith(norm(q)))
-      )
+      .filter(c => norm(c.titulo).includes(norm(q)))
       .slice(0, 3)
 
-    const tagResults = tags
-      .filter(t => {
-        if (!norm(t).split(/\s+/).some(w => w.startsWith(norm(q)))) return false
-        return categories.some(c =>
-          parseEtiquetas(c.etiquetas).some(e => norm(e) === norm(t))
-        )
-      })
+    // Tags derivadas de categorías activas: única fuente de verdad, garantiza sincronía
+    const activeTags = [...new Set(
+      categories.flatMap(c => parseEtiquetas(c.etiquetas)).filter(Boolean)
+    )]
+
+    const tagResults = activeTags
+      .filter(t => norm(t).includes(norm(q)))
       .slice(0, 3)
 
     setResults({ cats: catResults, tags: tagResults, users: [] })
@@ -80,7 +73,7 @@ export function Header() {
         .catch(() => {})
     }, 250)
     return () => clearTimeout(timer)
-  }, [query, categories, tags])
+  }, [query, categories])
 
   async function handleLogout() {
     // Navigate home BEFORE clearing the session. Otherwise, if we're on a page
@@ -228,7 +221,7 @@ function SearchDropdown({ results, query, categories, onClose, onTagClick }) {
           <div className="search-section-title">Etiquetas</div>
           {tags.map(tag => {
             const count = categories.filter(c =>
-              parseEtiquetas(c.etiquetas).some(e => e.toLowerCase() === tag.toLowerCase())
+              parseEtiquetas(c.etiquetas).some(e => norm(e) === norm(tag))
             ).length
             return (
               <button key={tag} className="search-item" onClick={() => onTagClick(tag)}>

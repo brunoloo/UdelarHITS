@@ -29,7 +29,7 @@ export function FeedPage() {
   const displayCategories = qParam
     ? categories.filter(c =>
         parseEtiquetas(c.etiquetas).some(e => norm(e) === norm(qParam)) ||
-        norm(c.titulo).split(/\s+/).some(w => w.startsWith(norm(qParam)))
+        norm(c.titulo).includes(norm(qParam))
       )
     : categories
 
