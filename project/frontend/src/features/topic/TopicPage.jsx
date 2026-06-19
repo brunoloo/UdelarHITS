@@ -42,7 +42,7 @@ export function TopicPage() {
   const { data: replies = [] } = useQuery({
     queryKey: ['replies', 'topic', id],
     queryFn: () => apiGet(`/replies/topic/${id}`).then(r => r.data),
-    enabled: !!topic && topic.estado !== 'inactivo',
+    enabled: !!topic,
   })
 
   useEffect(() => {
@@ -145,147 +145,143 @@ export function TopicPage() {
         <span>{isInactive ? 'Tema inactivo' : topic.titulo}</span>
       </nav>
 
+      {isInactive && (
+        <div className="cat-inactive-banner">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div className="cat-inactive-text">
+            <span className="cat-inactive-title">Este tema ya no está disponible</span>
+            <span className="cat-inactive-desc">
+              El contenido publicado se preserva por la{' '}
+              <Link to="/about/policies" target="_blank" rel="noopener noreferrer">
+                política de preservación de contenido
+              </Link>.
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="topic-header">
-        {isInactive ? (
-          <div className="cat-inactive-banner">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <div className="cat-inactive-text">
-              <span className="cat-inactive-title">Este tema ya no está disponible</span>
-              <span className="cat-inactive-desc">
-                El contenido publicado se preserva por la{' '}
-                <Link to="/about/policies" target="_blank" rel="noopener noreferrer">
-                  política de preservación de contenido
-                </Link>.
-              </span>
+        <div className="topic-header-top-row">
+          <div className="topic-header-meta">
+            <UserAvatar
+              url_imagen={autor.url_imagen}
+              nickname={autor.nickname}
+              size="md"
+              inactive={autor.isInactive}
+            />
+            <div className="topic-header-meta-text">
+              {autor.isInactive ? (
+                <span className="inactive-author">{autor.nickname}</span>
+              ) : (
+                <Link to={`/user/${encodeURIComponent(autor.nickname)}`} className="topic-header-author">
+                  {autor.nickname}
+                </Link>
+              )}
+              <span className="topic-header-date">{timeAgo(topic.fecha_creacion)}</span>
             </div>
           </div>
-        ) : (
-          <>
-            <div className="topic-header-top-row">
-              <div className="topic-header-meta">
-                <UserAvatar
-                  url_imagen={autor.url_imagen}
-                  nickname={autor.nickname}
-                  size="md"
-                  inactive={autor.isInactive}
-                />
-                <div className="topic-header-meta-text">
-                  {autor.isInactive ? (
-                    <span className="inactive-author">{autor.nickname}</span>
-                  ) : (
-                    <Link to={`/user/${encodeURIComponent(autor.nickname)}`} className="topic-header-author">
-                      {autor.nickname}
-                    </Link>
-                  )}
-                  <span className="topic-header-date">{timeAgo(topic.fecha_creacion)}</span>
-                </div>
-              </div>
-              <DropdownMenu items={menuItems} />
-            </div>
-            <h1 className="topic-header-title">{topic.titulo}</h1>
-            <div className="topic-header-body">
-              <ReadMore text={topic.cuerpo} maxLength={500} />
-            </div>
-            <div className="cat-meta">
-              <span className="cat-meta-item">
-                <strong>{replies.length}</strong>{' '}
-                {replies.length === 1 ? 'comentario' : 'comentarios'}
-              </span>
-              <span className="cat-meta-item">
-                creado <strong>{timeAgo(topic.fecha_creacion)}</strong>
-              </span>
-              {canManage && (
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  onClick={() => setEditModalOpen(true)}
-                >
-                  Editar tema
-                </button>
-              )}
-            </div>
-          </>
-        )}
+          {!isInactive && <DropdownMenu items={menuItems} />}
+        </div>
+        <h1 className="topic-header-title">{topic.titulo}</h1>
+        <div className="topic-header-body">
+          <ReadMore text={topic.cuerpo} maxLength={500} />
+        </div>
+        <div className="cat-meta">
+          <span className="cat-meta-item">
+            <strong>{replies.length}</strong>{' '}
+            {replies.length === 1 ? 'comentario' : 'comentarios'}
+          </span>
+          <span className="cat-meta-item">
+            creado <strong>{timeAgo(topic.fecha_creacion)}</strong>
+          </span>
+          {canManage && (
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={() => setEditModalOpen(true)}
+            >
+              Editar tema
+            </button>
+          )}
+        </div>
       </div>
 
-      {!isInactive && (
-        <>
-          <nav className="section-tabs" role="tablist">
-            <button className="tab active" role="tab">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-              Comentarios <span className="count">{replies.length}</span>
-            </button>
-          </nav>
+      <nav className="section-tabs" role="tablist">
+        <button className="tab active" role="tab">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Comentarios <span className="count">{replies.length}</span>
+        </button>
+      </nav>
 
-          <section className="section-panel active">
-            <section className="create-topic" aria-label="Publicar comentario">
-                {!commentFormOpen ? (
-                  <button
-                    className="create-topic-trigger"
-                    type="button"
-                    onClick={() => setCommentFormOpen(true)}
-                  >
-                    <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size="sm" />
-                    <span className="ct-placeholder">Publicar comentario</span>
-                    <span className="ct-cta">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 5v14M5 12h14"/>
-                      </svg>
-                      Comentar
-                    </span>
-                  </button>
-                ) : (
-                  <div className="create-cat-panel open">
-                    <div className="create-cat-panel-body">
-                      <div className="cc-form">
-                        <div className="edit-field">
-                          <div className="edit-field-label">
-                            <span>Comentario (*)</span>
-                            <span className="edit-field-counter">{commentText.length} / 5000</span>
-                          </div>
-                          <textarea
-                            maxLength={5000}
-                            rows={4}
-                            placeholder="Escribí tu comentario"
-                            value={commentText}
-                            onChange={e => setCommentText(e.target.value)}
-                            autoFocus
-                          />
-                        </div>
+      <section className="section-panel active">
+        {!isInactive && (
+          <section className="create-topic" aria-label="Publicar comentario">
+            {!commentFormOpen ? (
+              <button
+                className="create-topic-trigger"
+                type="button"
+                onClick={() => setCommentFormOpen(true)}
+              >
+                <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size="sm" />
+                <span className="ct-placeholder">Publicar comentario</span>
+                <span className="ct-cta">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                  Comentar
+                </span>
+              </button>
+            ) : (
+              <div className="create-cat-panel open">
+                <div className="create-cat-panel-body">
+                  <div className="cc-form">
+                    <div className="edit-field">
+                      <div className="edit-field-label">
+                        <span>Comentario (*)</span>
+                        <span className="edit-field-counter">{commentText.length} / 5000</span>
                       </div>
-                    </div>
-                    <div className="create-cat-panel-footer">
-                      <button
-                        className="cc-cancel"
-                        type="button"
-                        onClick={() => { setCommentFormOpen(false); setCommentText('') }}
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        className="save-btn"
-                        type="button"
-                        disabled={commentText.trim().length < 1 || commentMutation.isPending}
-                        onClick={handleCommentSubmit}
-                      >
-                        {commentMutation.isPending ? 'Publicando...' : 'Comentar'}
-                      </button>
+                      <textarea
+                        maxLength={5000}
+                        rows={4}
+                        placeholder="Escribí tu comentario"
+                        value={commentText}
+                        onChange={e => setCommentText(e.target.value)}
+                        autoFocus
+                      />
                     </div>
                   </div>
-                )}
-            </section>
-
-            <CommentThread
-              comments={replies}
-              invalidateKey={['replies', 'topic', id]}
-            />
+                </div>
+                <div className="create-cat-panel-footer">
+                  <button
+                    className="cc-cancel"
+                    type="button"
+                    onClick={() => { setCommentFormOpen(false); setCommentText('') }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="save-btn"
+                    type="button"
+                    disabled={commentText.trim().length < 1 || commentMutation.isPending}
+                    onClick={handleCommentSubmit}
+                  >
+                    {commentMutation.isPending ? 'Publicando...' : 'Comentar'}
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
-        </>
-      )}
+        )}
+
+        <CommentThread
+          comments={replies}
+          invalidateKey={['replies', 'topic', id]}
+        />
+      </section>
 
       {/* Edit modal */}
       <Modal
