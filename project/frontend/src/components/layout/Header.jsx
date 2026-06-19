@@ -51,6 +51,14 @@ export function Header() {
       return
     }
 
+    console.log('=== SEARCH DEBUG ===')
+    console.log('query raw:', query)
+    console.log('query norm:', norm(query))
+    console.log('categorias count:', categories.length)
+    categories.slice(0, 3).forEach(c => {
+      console.log('cat titulo:', c.titulo, '| norm:', norm(c.titulo), '| includes:', norm(c.titulo).includes(norm(query)))
+    })
+
     const catResults = categories
       .filter(c => norm(c.titulo).includes(norm(q)))
       .slice(0, 3)
