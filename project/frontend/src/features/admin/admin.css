@@ -191,6 +191,12 @@
   vertical-align: middle;
 }
 
+/* Shrink Estado, date, and Acciones columns to their content; let Título/Autor expand */
+.admin-table th:nth-child(n+3),
+.admin-table td:nth-child(n+3) {
+  white-space: nowrap;
+}
+
 .admin-table tbody tr:last-child td { border-bottom: none; }
 .admin-table tbody tr:hover td { background: var(--bg); }
 
