@@ -3,3 +3,7 @@ export function parseEtiquetas(raw) {
   if (typeof raw === 'string') return raw.replace(/[{}"]/g, '').split(',').map(e => e.trim()).filter(Boolean)
   return []
 }
+
+export function normSearch(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+}

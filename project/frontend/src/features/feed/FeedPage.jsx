@@ -3,12 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '../../api/client'
 import { CategoryCard } from '../../components/shared/CategoryCard'
 import { CreateCategoryPanel } from '../category/CreateCategoryPanel'
-import { parseEtiquetas } from '../../utils/parseEtiquetas'
+import { parseEtiquetas, normSearch as norm } from '../../utils/parseEtiquetas'
 import './feed.css'
-
-function norm(s) {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-}
 
 function CategorySkeleton() {
   return (
