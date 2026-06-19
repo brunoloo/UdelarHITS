@@ -16,6 +16,8 @@ import { ContentPoliciesPage } from './features/about/ContentPoliciesPage'
 import { ModerationPage } from './features/about/ModerationPage'
 import { RedirectPage } from './features/redirect/RedirectPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
+import { AdminRoute } from './components/auth/AdminRoute'
+import { AdminPage } from './features/admin/AdminPage'
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +34,10 @@ export const router = createBrowserRouter([
       {
         path: 'settings',
         element: <ProtectedRoute><SettingsPage /></ProtectedRoute>,
+      },
+      {
+        path: 'admin',
+        element: <AdminRoute><AdminPage /></AdminRoute>,
       },
     ],
   },

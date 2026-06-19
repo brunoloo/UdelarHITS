@@ -48,7 +48,7 @@ const createUser = async ({ nickname, nombre, email, passwordHash, rol = 'user' 
 
 const getUsers = async () => {
   const q = `
-    SELECT id, nickname, email, estado
+    SELECT id, nickname, nombre, email, rol, url_imagen, estado, fecha_creacion
     FROM usuario
     ORDER BY id ASC
   `;
