@@ -71,7 +71,7 @@ export function RecentPage() {
   const items = (() => {
     const list = []
     if (tab === 'todos' || tab === 'temas') {
-      topics.forEach(t => list.push({ type: 'tema', data: t, date: new Date(t.fecha_creacion) }))
+      topics.forEach(t => list.push({ type: 'tema', data: { ...t, contenido_id: t.contenido_id ?? t.id }, date: new Date(t.fecha_creacion) }))
     }
     if (tab === 'todos' || tab === 'categorias') {
       categories.forEach(c => list.push({ type: 'categoria', data: c, date: new Date(c.fecha_creacion) }))
