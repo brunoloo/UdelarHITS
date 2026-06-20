@@ -89,12 +89,6 @@ export function ProfilePage() {
 
   const myFollowing = isOwnProfile ? following : (myData?.following || [])
 
-  const { data: followStatus, isLoading: followStatusLoading } = useQuery({
-    queryKey: ['followStatus', nickname],
-    queryFn: () => apiGet(`/users/${encodeURIComponent(nickname)}/following`).then(r => r.data),
-    enabled: !!me && !isOwnProfile && !!profile && profile.estado !== 'inactivo',
-  })
-
   const { data: topics = [] } = useQuery({
     queryKey: ['topics', 'user', profile?.id],
     queryFn: () => apiGet(`/topics/user/${profile.id}`).then(r => r.data),
@@ -147,7 +141,9 @@ export function ProfilePage() {
   const nSeguidos = following.length
   const fecha = new Date(profile.fecha_creacion).toLocaleDateString('es-UY', { month: 'long', year: 'numeric' })
 
-  const iFollowThem = followStatus?.following ?? false
+  // Comes straight from the profile payload, so it's available the moment the
+  // card renders — the follow button shows the right state on first paint.
+  const iFollowThem = profileData?.ya_sigo ?? false
 
   // "Te sigue" means the profile user follows ME — i.e. I (me) appear in the
   // profile user's *following* list. (Not their followers list, which would
@@ -171,7 +167,6 @@ export function ProfilePage() {
 
   function handleFollowToggle() {
     queryClient.invalidateQueries({ queryKey: profileQueryKey })
-    queryClient.invalidateQueries({ queryKey: ['followStatus', nickname] })
   }
 
   const privateMessage = (
@@ -218,13 +213,12 @@ export function ProfilePage() {
               Editar perfil
             </button>
           ) : me && (
-            followStatusLoading
-              ? <button className="btn-follow" disabled style={{ opacity: 0.5, cursor: 'default' }}>Seguir</button>
-              : <FollowButton
-                  nickname={nickname}
-                  initialFollowing={iFollowThem}
-                  onToggle={handleFollowToggle}
-                />
+            <FollowButton
+              key={nickname}
+              nickname={nickname}
+              initialFollowing={iFollowThem}
+              onToggle={handleFollowToggle}
+            />
           )}
         </div>
 

@@ -189,7 +189,7 @@ const getUsersService = async () => {
   return await getUsers();
 };
 
-const getUserProfileService = async (nickname) => {
+const getUserProfileService = async (nickname, viewerId = null) => {
   const normalizedNickname = nickname?.trim().toLowerCase();
 
   if (!normalizedNickname) {
@@ -197,7 +197,7 @@ const getUserProfileService = async (nickname) => {
     err.code = 'BAD_REQUEST';
     throw err;
   }
-  
+
   const user = await getUserByNickname(normalizedNickname);
   if (!user) {
     const err = new Error('Usuario no encontrado');
@@ -208,7 +208,15 @@ const getUserProfileService = async (nickname) => {
   const followers = await getFollowersByUserId(user.id);
   const following = await getFollowingByUserId(user.id);
 
-  return { user , categories, followers, following };
+  // Whether the authenticated viewer already follows this profile. Resolved
+  // alongside the profile so the follow button renders with the correct state
+  // on first paint (no separate request, no "Seguir" → "Siguiendo" flash).
+  let ya_sigo = false;
+  if (viewerId && viewerId !== user.id) {
+    ya_sigo = await isFollowing(viewerId, user.id);
+  }
+
+  return { user , categories, followers, following, ya_sigo };
 };
 
 const showMeService = async (nickname) => {
