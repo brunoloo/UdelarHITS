@@ -8,7 +8,7 @@ import { parseEtiquetas, normSearch as norm } from '../../utils/parseEtiquetas'
 import './Header.css'
 
 export function Header() {
-  const { user, logout } = useAuth()
+  const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
 
   const [menuOpen, setMenuOpen] = useState(false)
@@ -132,7 +132,7 @@ export function Header() {
       </div>
 
       <div className="header-actions">
-        {user ? (
+        {loading ? null : user ? (
           <div className="user-menu-wrapper" ref={menuRef}>
             <button className="user-chip" onClick={() => setMenuOpen(o => !o)}>
               <UserAvatar

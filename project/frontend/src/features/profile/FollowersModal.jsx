@@ -20,8 +20,12 @@ export function FollowersModal({ isOpen, onClose, title, users, myFollowing = []
           </div>
         ) : (
           users.map(u => (
+            // Key includes follow-membership so the item remounts (and its
+            // useState re-initializes) if `myFollowing` arrives or changes
+            // after first render — otherwise a late ['me'] query would leave
+            // already-followed users stuck showing "Seguir".
             <FollowItem
-              key={u.nickname}
+              key={`${u.nickname}:${myFollowing.some(f => f.nickname === u.nickname)}`}
               user={u}
               myFollowing={myFollowing}
               onClose={onClose}

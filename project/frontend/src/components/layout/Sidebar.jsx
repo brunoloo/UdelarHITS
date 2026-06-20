@@ -309,7 +309,7 @@ function TopicSidebarContent({ topicId }) {
 }
 
 export function Sidebar() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const { pathname } = useLocation()
   const categoryMatch = useMatch('/category/:id')
   const catId = categoryMatch?.params?.id
@@ -349,7 +349,7 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar">
-      {!user && <JoinBanner />}
+      {!loading && !user && <JoinBanner />}
 
       {pathname === '/' && (
         <CommunityCard categoryCount={categoryCount} />
