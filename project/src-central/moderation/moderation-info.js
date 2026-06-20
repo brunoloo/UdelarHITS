@@ -65,12 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ── Paso 1: "Apelar mi contenido" → panel de administración en construcción ──
+  // ── Paso 1: "Apelar mi contenido" → lista de contenido moderado ──
   document.getElementById('btnAppeal').addEventListener('click', async () => {
-    showToast('El panel de administración está en construcción', 'info');
-    return;
-
-    // -- código deshabilitado temporalmente --
     selectModal.classList.add('open');
     document.body.style.overflow = 'hidden';
     moderatedList.innerHTML = '<div class="moderated-loading">Cargando...</div>';
