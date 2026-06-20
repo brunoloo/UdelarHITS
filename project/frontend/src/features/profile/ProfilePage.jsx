@@ -89,7 +89,7 @@ export function ProfilePage() {
 
   const myFollowing = isOwnProfile ? following : (myData?.following || [])
 
-  const { data: followStatus } = useQuery({
+  const { data: followStatus, isLoading: followStatusLoading } = useQuery({
     queryKey: ['followStatus', nickname],
     queryFn: () => apiGet(`/users/${encodeURIComponent(nickname)}/following`).then(r => r.data),
     enabled: !!me && !isOwnProfile && !!profile && profile.estado !== 'inactivo',
@@ -218,11 +218,13 @@ export function ProfilePage() {
               Editar perfil
             </button>
           ) : me && (
-            <FollowButton
-              nickname={nickname}
-              initialFollowing={iFollowThem}
-              onToggle={handleFollowToggle}
-            />
+            followStatusLoading
+              ? <button className="btn-follow" disabled style={{ opacity: 0.5, cursor: 'default' }}>Seguir</button>
+              : <FollowButton
+                  nickname={nickname}
+                  initialFollowing={iFollowThem}
+                  onToggle={handleFollowToggle}
+                />
           )}
         </div>
 
