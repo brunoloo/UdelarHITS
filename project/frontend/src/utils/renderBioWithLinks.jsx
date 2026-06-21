@@ -36,3 +36,7 @@ export function renderBioWithLinks(text) {
 
   return elements
 }
+
+export function BioText({ text }) {
+  return renderBioWithLinks(text)
+}
