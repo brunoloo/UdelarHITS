@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Link } from 'react-router-dom'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
@@ -18,6 +18,16 @@ import { RedirectPage } from './features/redirect/RedirectPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AdminRoute } from './components/auth/AdminRoute'
 import { AdminPage } from './features/admin/AdminPage'
+
+function NotFoundPage() {
+  return (
+    <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+      <h1>404 — Página no encontrada</h1>
+      <p>La página que buscás no existe.</p>
+      <Link to="/">Volver al inicio</Link>
+    </div>
+  )
+}
 
 export const router = createBrowserRouter([
   {
@@ -39,6 +49,7 @@ export const router = createBrowserRouter([
         path: 'admin',
         element: <AdminRoute><AdminPage /></AdminRoute>,
       },
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
   {

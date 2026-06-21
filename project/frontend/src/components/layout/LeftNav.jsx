@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../hooks/useToast'
 import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import './LeftNav.css'
 
@@ -16,6 +17,7 @@ function notifTimeAgo(dateStr) {
 
 export function LeftNav() {
   const { user } = useAuth()
+  const { showToast } = useToast()
   const { pathname } = useLocation()
   const isAdmin = user?.rol === 'admin'
 
@@ -128,7 +130,7 @@ export function LeftNav() {
           )}
         </button>
 
-        <button className="nav-item" id="nav-chat">
+        <button className="nav-item" id="nav-chat" onClick={() => showToast('El chat estará disponible próximamente', 'info')}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
