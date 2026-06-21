@@ -98,11 +98,16 @@ app.use('/api/reports', limiterIf(reporteLimiter));
 // La Central — capa institucional (HTML estático, siempre light)
 app.use('/central', express.static(path.join(__dirname, '..', '..', 'src-central')));
 
-//index (usamos el index que aparece en frontend) — path estable, no depende del cwd
-app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
+// React SPA build (Vite dist)
+app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')));
 
 // routes
 app.use("/api", API);
+
+// SPA fallback: cualquier ruta que no sea /api ni /central devuelve el index.html de React
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'));
+});
 
 // Error handler para multer y errores de upload
 app.use((err, req, res, next) => {
