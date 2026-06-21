@@ -268,6 +268,7 @@ const getTrendingTopic = async (days = 7) => {
           JOIN contenido con2 ON con2.id = c2.contenido_id
           JOIN usuario u2 ON u2.id = con2.autor_id
           WHERE c2.tema_id = t.contenido_id AND c2.estado = 'visible'
+            AND c2.comentario_padre_id IS NULL
           ORDER BY con2.fecha_creacion DESC
           LIMIT 3
         ) preview

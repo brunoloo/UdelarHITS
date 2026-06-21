@@ -25,6 +25,18 @@ const registerUserService = async ({ nickname, nombre, email, password}) => {
     throw err;
   }
 
+  // Validación de nickname
+  if (normalizedNickname.length < 3 || normalizedNickname.length > 30) {
+    const err = new Error('El nickname debe tener entre 3 y 30 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  if (!/^[a-zA-ZÀ-ÿ0-9_-]+$/.test(normalizedNickname)) {
+    const err = new Error('El nickname solo puede contener letras, números, guiones y guiones bajos');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
   // Chequeo de password > 8 caracteres
   if(password.length < 8){
     const err = new Error('La contraseña debe tener al menos 8 caracteres');
@@ -177,7 +189,7 @@ const getUsersService = async () => {
   return await getUsers();
 };
 
-const getUserProfileService = async (nickname) => {
+const getUserProfileService = async (nickname, viewerId = null) => {
   const normalizedNickname = nickname?.trim().toLowerCase();
 
   if (!normalizedNickname) {
@@ -185,7 +197,7 @@ const getUserProfileService = async (nickname) => {
     err.code = 'BAD_REQUEST';
     throw err;
   }
-  
+
   const user = await getUserByNickname(normalizedNickname);
   if (!user) {
     const err = new Error('Usuario no encontrado');
@@ -196,7 +208,15 @@ const getUserProfileService = async (nickname) => {
   const followers = await getFollowersByUserId(user.id);
   const following = await getFollowingByUserId(user.id);
 
-  return { user , categories, followers, following };
+  // Whether the authenticated viewer already follows this profile. Resolved
+  // alongside the profile so the follow button renders with the correct state
+  // on first paint (no separate request, no "Seguir" → "Siguiendo" flash).
+  let ya_sigo = false;
+  if (viewerId && viewerId !== user.id) {
+    ya_sigo = await isFollowing(viewerId, user.id);
+  }
+
+  return { user , categories, followers, following, ya_sigo };
 };
 
 const showMeService = async (nickname) => {
@@ -443,7 +463,7 @@ const forgotPasswordService = async (email) => {
   await createResetToken(user.id, token, expiraEn);
 
   // Enviar email
-  const resetUrl = `${process.env.APP_URL}/src-central/cuenta/reset-password.html?token=${token}`;
+  const resetUrl = `${process.env.APP_URL}/central/cuenta/reset-password.html?token=${token}`;
 
   await sendEmail({
     to: normalizedEmail,

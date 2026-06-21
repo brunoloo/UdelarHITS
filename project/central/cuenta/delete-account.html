@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eliminar cuenta — UdelarHITS</title>
+  <style> html { visibility: hidden; } </style>
+  <meta name="guard-msg" content="eliminar-cuenta">
+  <script src="/central/shared/guard/user-guard.js"></script>
+  <link rel="stylesheet" href="/central/css/central.css" />
+</head>
+<body>
+
+  <div class="mi-topbar">
+    <a href="/" class="mi-logo">UdelarHITS</a>
+    <span class="mi-topbar-sep">·</span>
+    <span class="mi-topbar-section">Cuenta</span>
+  </div>
+
+  <div class="mi-breadcrumb">
+    <a href="/central/">Inicio</a>
+    <span>›</span>
+    <span>Eliminar cuenta</span>
+  </div>
+
+  <div class="mi-content">
+    <h1>Eliminar tu cuenta</h1>
+    <hr class="mi-divider" />
+
+    <!-- Estado 1: información y confirmación -->
+    <div id="deleteInfo">
+      <p class="mi-lead">
+        Antes de continuar, leé con atención qué implica eliminar tu cuenta. Esta acción desactiva tu perfil de forma inmediata.
+      </p>
+
+      <h2>¿Qué pasa con tu perfil?</h2>
+      <p>Tu perfil pasa a estado <strong>inactivo</strong>. No se elimina físicamente de la base de datos, pero se inhabilita por completo: no vas a poder iniciar sesión, tu perfil no aparece en la barra de búsqueda, y tu información personal (nombre, biografía, avatar, banner) deja de ser visible para otros usuarios.</p>
+      <p>Tu perfil sigue accesible por link directo, pero se muestra como un perfil inactivo sin datos personales.</p>
+
+      <h2>¿Qué pasa con tu contenido?</h2>
+      <p>Todo el contenido que publicaste —categorías, temas y comentarios— <strong>sigue siendo visible y navegable</strong>. Esto es así para preservar la integridad de las conversaciones en las que participaron otros usuarios. Tu autoría se mantiene asociada al contenido, pero tu perfil se muestra como inactivo.</p>
+
+      <h2>¿Puedo recuperar mi cuenta?</h2>
+      <p>Sí. Podés solicitar la reactivación de tu cuenta en cualquier momento enviando un email a <a href="mailto:udelarhits@gmail.com">udelarhits@gmail.com</a> desde el correo electrónico asociado a tu cuenta. Un administrador la reactivará y vas a poder iniciar sesión de nuevo con tus credenciales originales.</p>
+
+      <div class="ca-danger-zone">
+        <h3>Confirmar eliminación</h3>
+        <p>Para confirmar que querés eliminar tu cuenta, ingresá tu contraseña actual.</p>
+
+        <div class="ca-form-field">
+          <label class="ca-form-label" for="deletePassword">Contraseña</label>
+          <input
+            type="password"
+            id="deletePassword"
+            class="ca-form-input"
+            placeholder="Tu contraseña actual"
+            autocomplete="current-password"
+          />
+        </div>
+        <p class="auth-forgot">
+          <a href="/central/cuenta/forgot-password.html" target="_blank">¿Olvidaste tu contraseña?</a>
+        </p>
+        <p class="ca-form-error" id="deleteError"></p>
+        <button class="mi-btn mi-btn--danger mi-btn--full" id="btnDeleteAccount">
+          Eliminar mi cuenta
+        </button>
+      </div>
+    </div>
+
+    <!-- Estado 2: cuenta eliminada -->
+    <div id="deleteSuccess" class="ca-confirmation" style="display: none;">
+      <div class="ca-confirmation-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1a7f37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <h2>Cuenta desactivada</h2>
+      <p>Tu cuenta fue desactivada correctamente. Si en algún momento querés volver, escribinos a <a href="mailto:udelarhits@gmail.com">udelarhits@gmail.com</a> y la reactivamos.</p>
+      <a href="/" class="mi-btn mi-btn--secondary">Ir al inicio</a>
+    </div>
+  </div>
+
+  <div class="mi-toast" id="miToast"></div>
+
+  <footer class="ca-footer">
+    <div class="ca-footer-grid">
+      <div class="ca-footer-col">
+        <h3>Plataforma</h3>
+        <a href="/">Volver al foro</a>
+        <a href="/about">Acerca de UdelarHITS</a>
+      </div>
+      <div class="ca-footer-col">
+        <h3>Centro de ayuda</h3>
+        <a href="/central/moderation/moderation-policy.html">Política de moderación</a>
+        <a href="/central/info/normas.html">Normas de la comunidad</a>
+        <a href="/central/ayuda/faq.html">Preguntas frecuentes</a>
+      </div>
+      <div class="ca-footer-col">
+        <h3>Legal</h3>
+        <a href="/central/legal/terminos.html">Términos de uso</a>
+        <a href="/central/legal/privacidad.html">Política de privacidad</a>
+        <a href="/central/legal/cookies.html">Política de cookies</a>
+        <a href="/central/info/preservacion.html">Preservación de contenido</a>
+      </div>
+      <div class="ca-footer-col">
+        <h3>Contacto</h3>
+        <a href="mailto:udelarhits@gmail.com">udelarhits@gmail.com</a>
+      </div>
+    </div>
+    <div class="ca-footer-bottom">
+      <span>© 2026 UdelarHITS · Hecho por estudiantes, para estudiantes</span>
+      <span>Proyecto independiente sin afiliación oficial con la Universidad de la República</span>
+    </div>
+  </footer>
+
+  <script src="/central/shared/escape.js"></script>
+  <script src="/central/shared/api.js"></script>
+  <script src="/central/cuenta/delete-account.js"></script>
+</body>
+</html>

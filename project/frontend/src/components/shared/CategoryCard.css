@@ -1,0 +1,106 @@
+/* ── CATEGORY CARD ── */
+.category-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s;
+}
+
+.category-card:hover {
+  border-color: var(--border-strong);
+}
+
+.category-card:hover .category-title {
+  color: var(--accent);
+}
+
+.category-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.category-title {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+  transition: color 0.12s;
+}
+
+.category-stats {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.category-description {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.category-description .bio-link {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+}
+.category-description .bio-link:hover {
+  text-decoration: underline;
+}
+
+.category-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* ── LAST ACTIVITY ── */
+.last-activity {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.last-activity-label {
+  color: var(--text-muted);
+}
+
+.last-activity-title {
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.last-activity-meta {
+  color: var(--text-muted);
+}
+
+.no-activity {
+  color: var(--text-muted);
+  font-style: italic;
+}

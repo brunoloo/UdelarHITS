@@ -16,7 +16,7 @@ const findByEmailOrNickname = async ({ nickname, email }) => {
 
 const findByEmailOrNicknameForLogin = async ({ nickname, email }) => {
   let q = `
-    SELECT id, nickname, nombre, email, password_hash, biografia, url_imagen, estado
+    SELECT id, nickname, nombre, email, password_hash, biografia, url_imagen, estado, rol
     FROM usuario
   `;
   const values = [];
@@ -48,7 +48,7 @@ const createUser = async ({ nickname, nombre, email, passwordHash, rol = 'user' 
 
 const getUsers = async () => {
   const q = `
-    SELECT id, nickname, email, estado
+    SELECT id, nickname, nombre, email, rol, url_imagen, estado, fecha_creacion
     FROM usuario
     ORDER BY id ASC
   `;

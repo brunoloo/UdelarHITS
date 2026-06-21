@@ -1,0 +1,12 @@
+/* ── PAGE LAYOUT ── */
+.page {
+  margin-left: 200px;
+  padding: calc(var(--header-h) + 24px) 210px 24px 30px;
+  display: flex;
+  gap: 24px;
+}
+
+.page > main {
+  flex: 1;
+  min-width: 0;
+}
