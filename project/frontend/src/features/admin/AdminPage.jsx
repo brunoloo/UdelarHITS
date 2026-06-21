@@ -45,7 +45,6 @@ export function AdminPage() {
     <div className="admin-page">
       <div className="admin-header">
         <h1 className="admin-title">Panel de Administración</h1>
-        <span className="admin-subtitle">@{user?.nickname}</span>
       </div>
 
       <div className="admin-tabs">

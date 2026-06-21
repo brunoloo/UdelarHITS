@@ -96,7 +96,7 @@ const reporteLimiter = rateLimit({
 app.use('/api/reports', limiterIf(reporteLimiter));
 
 // La Central — capa institucional (HTML estático, siempre light)
-app.use('/central', express.static(path.join(__dirname, '..', '..', 'src-central')));
+app.use('/central', express.static(path.join(__dirname, '..', '..', 'central')));
 
 // React SPA build (Vite dist)
 app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')));
@@ -105,7 +105,7 @@ app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')));
 app.use("/api", API);
 
 // SPA fallback: cualquier ruta que no sea /api ni /central devuelve el index.html de React
-app.get('*', (req, res) => {
+app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'));
 });
 
