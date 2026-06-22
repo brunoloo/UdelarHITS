@@ -11,6 +11,8 @@ import {
   isFollowing, updateAvatarById, searchUsers, updateBannerById, 
   deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getPasswordHashById, 
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy } from '../repositories/user.repository.js';
+import { createNotification, notificationExists } from '../repositories/notification.repository.js';
+import pool from '../config/db.js';
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
 
@@ -332,7 +334,29 @@ const followUserService = async (seguidorId, seguidoNickname) => {
     err.code = 'BAD_REQUEST';
     throw err;
   }
-  await followUser(seguidorId, seguido.id);
+  const inserted = await followUser(seguidorId, seguido.id);
+
+  // Notificar al seguido (solo si fue un follow nuevo, no re-follow idempotente).
+  // Nunca a uno mismo (ya validado arriba). Dedup para que unfollow/re-follow
+  // no duplique la notificación.
+  if (inserted) {
+    const dup = await notificationExists({
+      tipo: 'nuevo_seguidor', actor_id: seguidorId, usuario_id: seguido.id,
+    });
+    if (!dup) {
+      const { rows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [seguidorId]);
+      const nick = rows[0]?.nickname;
+      await createNotification({
+        usuario_id: seguido.id,
+        tipo: 'nuevo_seguidor',
+        mensaje: `${nick} te empezó a seguir`,
+        contenido_id: null,
+        actor_id: seguidorId,
+        url: `/user/${nick}`,
+      });
+    }
+  }
+
   const followers = await getFollowersByUserId(seguido.id);
   return { seguidores: followers.length };
 };
