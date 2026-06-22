@@ -13,6 +13,7 @@ import { CommentForm } from './CommentForm'
 import { ReportModal } from './ReportModal'
 import { Modal } from '../ui/Modal'
 import { timeAgo } from '../../utils/timeAgo'
+import { ReactionButtons } from './ReactionButtons'
 import './CommentCard.css'
 
 export function CommentCard({
@@ -217,6 +218,13 @@ export function CommentCard({
               <ReadMore text={comment.cuerpo} maxLength={500} />
             </div>
             <div className="comment-actions">
+              <ReactionButtons
+                contenidoId={comment.id}
+                likes={comment.likes}
+                dislikes={comment.dislikes}
+                mi_reaccion={comment.mi_reaccion}
+                invalidateKey={invalidateKey}
+              />
               <button
                 className="comment-action-btn"
                 type="button"

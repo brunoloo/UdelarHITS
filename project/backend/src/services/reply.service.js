@@ -79,12 +79,12 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
   });
 };
 
-const getRepliesByCategoryIdService = async (categoriaId) => {
-  return await getRepliesByCategoryId(categoriaId);
+const getRepliesByCategoryIdService = async (categoriaId, userId = null) => {
+  return await getRepliesByCategoryId(categoriaId, userId);
 };
 
-const getRepliesByTopicIdService = async (topicId) => {
-  return await getRepliesByTopicId(topicId);
+const getRepliesByTopicIdService = async (topicId, userId = null) => {
+  return await getRepliesByTopicId(topicId, userId);
 };
 
 const getReplyByIdService = async (id) => {
@@ -185,8 +185,8 @@ const getRepliesByUserIdService = async (userId) => {
   return await getRepliesByUserId(userId);
 };
 
-const getRepliesByCommentIdService = async (commentId) => {
-  return await getRepliesByCommentId(commentId);
+const getRepliesByCommentIdService = async (commentId, userId = null) => {
+  return await getRepliesByCommentId(commentId, userId);
 };
 
 const updateReplyService = async (userId, userRol, replyId, { cuerpo }) => {

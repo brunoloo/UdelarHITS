@@ -17,7 +17,8 @@ const createReply = async (req, res) => {
 const getRepliesByCategory = async (req, res) => {
   try {
     const { categoriaId } = req.params;
-    const replies = await getRepliesByCategoryIdService(categoriaId);
+    const userId = req.user?.id || null;
+    const replies = await getRepliesByCategoryIdService(categoriaId, userId);
     return res.status(200).json({ ok: true, data: replies });
   } catch (error) {
     return res.status(500).json({ ok: false, message: 'Internal server error' });
@@ -27,7 +28,8 @@ const getRepliesByCategory = async (req, res) => {
 const getRepliesByTopic = async (req, res) => {
   try {
     const { topicId } = req.params;
-    const replies = await getRepliesByTopicIdService(topicId);
+    const userId = req.user?.id || null;
+    const replies = await getRepliesByTopicIdService(topicId, userId);
     return res.status(200).json({ ok: true, data: replies });
   } catch (error) {
     return res.status(500).json({ ok: false, message: 'Internal server error' });
@@ -87,7 +89,8 @@ const getReplyById = async (req, res) => {
 const getRepliesByComment = async (req, res) => {
   try {
     const { id } = req.params;
-    const replies = await getRepliesByCommentIdService(id);
+    const userId = req.user?.id || null;
+    const replies = await getRepliesByCommentIdService(id, userId);
     return res.status(200).json({ ok: true, data: replies });
   } catch (error) {
     return res.status(500).json({ ok: false, message: 'Internal server error' });

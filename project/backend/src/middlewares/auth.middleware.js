@@ -43,7 +43,7 @@ export const isAdmin = (req, res, next) => {
 };
 
 export const optionalAuth = (req, res, next) => {
-  const token = req.cookies?.token;
+  const token = req.cookies?.jwt;
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);

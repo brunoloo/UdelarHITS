@@ -1,0 +1,32 @@
+.reaction-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reaction-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: inherit;
+  transition: color 0.15s;
+}
+
+.reaction-btn:hover {
+  color: var(--accent);
+}
+
+.reaction-btn--active {
+  color: var(--accent);
+}
+
+.reaction-btn--dislike,
+.reaction-btn--dislike:hover {
+  color: var(--danger, #e0245e);
+}

@@ -29,33 +29,39 @@ const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario
   }
 };
 
-const getRepliesByCategoryId = async (categoriaId) => {
+const getRepliesByCategoryId = async (categoriaId, userId = null) => {
   const q = `
-    SELECT com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion, 
+    SELECT com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion,
       con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
-      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
+      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
+      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
+      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'noMeGusta') AS dislikes,
+      (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
     WHERE com.categoria_id = $1 AND com.comentario_padre_id IS NULL
     ORDER BY con.fecha_creacion DESC
   `;
-  const { rows } = await pool.query(q, [categoriaId]);
+  const { rows } = await pool.query(q, [categoriaId, userId]);
   return rows;
 };
 
-const getRepliesByTopicId = async (topicId) => {
+const getRepliesByTopicId = async (topicId, userId = null) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion,
       con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
-      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
+      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
+      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
+      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'noMeGusta') AS dislikes,
+      (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
     WHERE com.tema_id = $1 AND com.comentario_padre_id IS NULL
     ORDER BY con.fecha_creacion DESC
   `;
-  const { rows } = await pool.query(q, [topicId]);
+  const { rows } = await pool.query(q, [topicId, userId]);
   return rows;
 };
 
@@ -144,18 +150,21 @@ const getRepliesByUserId = async (userId) => {
   return rows;
 };
 
-const getRepliesByCommentId = async (commentId) => {
+const getRepliesByCommentId = async (commentId, userId = null) => {
   const q = `
-    SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion, 
+    SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
       con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
-      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas
+      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
+      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
+      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'noMeGusta') AS dislikes,
+      (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
     WHERE com.comentario_padre_id = $1
     ORDER BY con.fecha_creacion DESC
   `;
-  const { rows } = await pool.query(q, [commentId]);
+  const { rows } = await pool.query(q, [commentId, userId]);
   return rows;
 };
 
