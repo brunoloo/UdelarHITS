@@ -12,7 +12,7 @@ import './ReactionButtons.css'
  * update the UI instantly, then reconcile with the response. If the request
  * fails we revert to the previous state.
  */
-export function ReactionButtons({ contenidoId, likes, dislikes, mi_reaccion, invalidateKey }) {
+export function ReactionButtons({ contenidoId, likes, dislikes, mi_reaccion }) {
   const requireAuth = useRequireAuth()
   const { showToast } = useToast()
   const queryClient = useQueryClient()
@@ -34,7 +34,10 @@ export function ReactionButtons({ contenidoId, likes, dislikes, mi_reaccion, inv
           mine: data.mi_reaccion || null,
         })
       }
-      if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
+      // Invalidate every cached comment view (category/topic lists and reply
+      // sublists all live under the 'replies' key) so the same comment shown
+      // in more than one place reflects the new counts immediately.
+      queryClient.invalidateQueries({ queryKey: ['replies'] })
     },
   })
 
@@ -56,6 +59,10 @@ export function ReactionButtons({ contenidoId, likes, dislikes, mi_reaccion, inv
   function react(tipo, e) {
     e.stopPropagation()
     if (!requireAuth('Debes iniciar sesión para reaccionar')) return
+    // Ignore clicks while a toggle is in flight: keeping a single request at a
+    // time avoids out-of-order responses and the backend UNIQUE race that a
+    // rapid double-click would otherwise trigger.
+    if (mutation.isPending) return
 
     const prev = state
 

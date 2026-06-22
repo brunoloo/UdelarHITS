@@ -223,7 +223,6 @@ export function CommentCard({
                 likes={comment.likes}
                 dislikes={comment.dislikes}
                 mi_reaccion={comment.mi_reaccion}
-                invalidateKey={invalidateKey}
               />
               <button
                 className="comment-action-btn"

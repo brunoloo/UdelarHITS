@@ -13,6 +13,14 @@ const toggleReaction = async (userId, contenidoId, tipo) => {
   try {
     await client.query('BEGIN');
 
+    // Serializar toggles concurrentes del mismo usuario sobre el mismo
+    // contenido (p. ej. doble-click). Sin esto, dos requests podrían leer
+    // "sin reacción" a la vez y ambos intentar INSERT, violando el UNIQUE
+    // (usuario_id, contenido_id). El lock se libera al COMMIT/ROLLBACK.
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+      `reaccion:${userId}:${contenidoId}`,
+    ]);
+
     const { rows: existing } = await client.query(
       'SELECT id, tipo FROM reaccion WHERE usuario_id = $1 AND contenido_id = $2',
       [userId, contenidoId]
