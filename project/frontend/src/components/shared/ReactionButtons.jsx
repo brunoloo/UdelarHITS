@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { useToast } from '../../hooks/useToast'
@@ -37,6 +37,21 @@ export function ReactionButtons({ contenidoId, likes, dislikes, mi_reaccion, inv
       if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
     },
   })
+
+  // Keep the local (optimistic) state in sync with the server data whenever it
+  // changes: refetches after navigating, invalidations, or logging in as a
+  // different user. Without this, the buttons keep their initial mount state
+  // and show stale counts / mi_reaccion until a full page reload. We skip the
+  // sync while a toggle is in flight so it doesn't clobber the optimistic UI.
+  useEffect(() => {
+    if (mutation.isPending) return
+    setState({
+      likes: Number(likes) || 0,
+      dislikes: Number(dislikes) || 0,
+      mine: mi_reaccion || null,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [likes, dislikes, mi_reaccion])
 
   function react(tipo, e) {
     e.stopPropagation()
