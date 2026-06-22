@@ -274,6 +274,11 @@ CREATE TABLE notificacion (
   tipo              VARCHAR(50) NOT NULL,
   mensaje           TEXT NOT NULL,
   contenido_id      BIGINT NULL REFERENCES contenido(id) ON DELETE SET NULL,
+  -- actor_id: usuario que generó el evento (quién dio like, respondió, siguió).
+  -- NULL para notificaciones de sistema/moderación. SET NULL si se borra.
+  actor_id          BIGINT NULL REFERENCES usuario(id) ON DELETE SET NULL,
+  -- url: destino al que navega la notificación al clickearla (ej: /topic/5).
+  url               VARCHAR(500) NULL,
   leida             BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
