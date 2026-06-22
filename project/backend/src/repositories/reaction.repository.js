@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { createNotification, notificationExists } from './notification.repository.js';
 
 /**
  * Toggle a reaction on a piece of content.
@@ -44,6 +45,42 @@ const toggleReaction = async (userId, contenidoId, tipo) => {
       await client.query('UPDATE reaccion SET tipo = $1 WHERE id = $2', [tipo, existing[0].id]);
       action = 'changed';
       mi_reaccion = tipo;
+    }
+
+    // Notificar al autor del comentario cuando se crea un nuevo like.
+    // Solo en 'created' (unlike/relike no re-notifican). Nunca self-like.
+    // Dedup por (actor, contenido, tipo) evita spam con like/unlike/like.
+    if (action === 'created') {
+      const { rows: ownerRows } = await client.query(
+        'SELECT autor_id FROM contenido WHERE id = $1', [contenidoId]
+      );
+      const autorId = ownerRows[0]?.autor_id;
+      if (autorId && autorId !== userId) {
+        const dup = await notificationExists(
+          { tipo: 'reaccion_like', actor_id: userId, contenido_id: contenidoId },
+          client
+        );
+        if (!dup) {
+          const { rows: locRows } = await client.query(
+            'SELECT tema_id, categoria_id FROM comentario WHERE contenido_id = $1', [contenidoId]
+          );
+          const loc = locRows[0] || {};
+          const url = loc.tema_id ? `/topic/${loc.tema_id}`
+            : loc.categoria_id ? `/category/${loc.categoria_id}` : null;
+          const { rows: actorRows } = await client.query(
+            'SELECT nickname FROM usuario WHERE id = $1', [userId]
+          );
+          const nick = actorRows[0]?.nickname;
+          await createNotification({
+            usuario_id: autorId,
+            tipo: 'reaccion_like',
+            mensaje: `${nick} le dio me gusta a tu comentario`,
+            contenido_id: contenidoId,
+            actor_id: userId,
+            url,
+          }, client);
+        }
+      }
     }
 
     const { rows: counts } = await client.query(`
