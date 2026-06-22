@@ -320,3 +320,54 @@ describe('Reacciones incluidas en queries de comentarios', () => {
     expect(comment.mi_reaccion).toBeNull();
   });
 });
+
+// ─── Notificaciones de like ───
+
+describe('Notificaciones de like', () => {
+  let userA, userB, cat, reply;
+
+  beforeEach(async () => {
+    userA = await registerAndLogin();
+    userB = await registerAndLogin();
+    cat = await createCategory(userA.cookie);
+    reply = await createReply(userA.cookie, { categoria_id: cat.id });
+  });
+
+  it('crear like genera notificación al autor del comentario', async () => {
+    await request(app)
+      .post(`/api/reactions/${reply.contenido_id}`)
+      .set('Cookie', userB.cookie)
+      .send({ tipo: 'meGusta' });
+
+    const res = await request(app).get('/api/notifications').set('Cookie', userA.cookie);
+    expect(res.status).toBe(200);
+    const notif = res.body.data.find(n => n.tipo === 'reaccion_like');
+    expect(notif).toBeDefined();
+    expect(notif.actor_nickname).toBe(userB.user.nickname);
+    expect(notif.url).toBe(`/category/${cat.id}`);
+  });
+
+  it('like propio no genera notificación', async () => {
+    await request(app)
+      .post(`/api/reactions/${reply.contenido_id}`)
+      .set('Cookie', userA.cookie)
+      .send({ tipo: 'meGusta' });
+
+    const res = await request(app).get('/api/notifications').set('Cookie', userA.cookie);
+    expect(res.body.data.filter(n => n.tipo === 'reaccion_like')).toHaveLength(0);
+  });
+
+  it('like/unlike/like no genera notificación duplicada', async () => {
+    const like = () => request(app)
+      .post(`/api/reactions/${reply.contenido_id}`)
+      .set('Cookie', userB.cookie)
+      .send({ tipo: 'meGusta' });
+
+    await like(); // created → notifica
+    await like(); // removed
+    await like(); // created de nuevo → dedup, no notifica
+
+    const res = await request(app).get('/api/notifications').set('Cookie', userA.cookie);
+    expect(res.body.data.filter(n => n.tipo === 'reaccion_like')).toHaveLength(1);
+  });
+});
