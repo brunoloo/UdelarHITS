@@ -1,6 +1,9 @@
 import cloudinary from '../config/cloudinary.js';
 
 export const uploadToCloudinary = async (buffer, folder, publicId) => {
+  if (process.env.NODE_ENV === 'test') {
+    return 'https://res.cloudinary.com/test/image/upload/fake.jpg';
+  }
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -19,7 +22,9 @@ export const uploadToCloudinary = async (buffer, folder, publicId) => {
 };
 
 export const deleteFromCloudinary = async (folder, publicId) => {
-  console.log(`[CLOUDINARY DELETE] folder=${folder} publicId=${publicId}`, new Error().stack);
+  if (process.env.NODE_ENV === 'test') {
+    return { result: 'ok' };
+  }
   try {
     return await cloudinary.uploader.destroy(
       `${folder}/${publicId}`,
