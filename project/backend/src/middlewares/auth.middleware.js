@@ -25,7 +25,7 @@ export const protect = async (req, res, next) => {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict'
       });
-      return res.status(403).json({ ok: false, message: 'Tu cuenta no está activa' });
+      return res.status(403).json({ ok: false, message: 'Esta cuenta no está activa' });
     }
 
     req.user = { id: rows[0].id, rol: rows[0].rol, nickname: rows[0].nickname };
@@ -38,6 +38,19 @@ export const protect = async (req, res, next) => {
 export const isAdmin = (req, res, next) => {
   if (req.user?.rol !== 'admin') {
     return res.status(403).json({ ok: false, message: 'Acceso denegado' });
+  }
+  next();
+};
+
+export const optionalAuth = (req, res, next) => {
+  const token = req.cookies?.token;
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = { id: decoded.id, rol: decoded.rol, nickname: decoded.nickname };
+    } catch {
+      // Token inválido o expirado — continuar como invitado
+    }
   }
   next();
 };

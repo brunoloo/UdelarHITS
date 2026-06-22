@@ -1,8 +1,10 @@
+import { UserAvatar } from '../../components/shared/UserAvatar'
 import { useState, useEffect, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { apiPatch, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
 import { Modal } from '../../components/ui/Modal'
+import { useAuth } from '../../context/AuthContext'
 import './EditProfileModal.css'
 
 export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
@@ -25,7 +27,7 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
     if (isOpen && profile) {
       setNombre(profile.nombre || '')
       setBio(profile.biografia || '')
-      setAvatarPreview(profile.url_imagen || '/assets/default-user.jpg')
+      setAvatarPreview(profile.url_imagen || '')
       setPendingAvatar(null)
       setRemoveAvatar(false)
       setBannerPreview(profile.url_banner || '')
@@ -56,7 +58,11 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
       if (nombre.trim()) body.nombre = nombre.trim()
       return apiPatch('/users/me', body)
     },
-    onSuccess: () => {
+    onSuccess: async () => {                    // ← async
+      try {
+        const res = await apiGet('/users/me')   // ← refetch fresh user
+        setUser(res.data.user)                  // ← actualiza AuthContext → Header se re-renderiza
+      } catch {}
       showToast('Perfil actualizado', 'success')
       onClose()
       if (onSaved) onSaved()
@@ -75,7 +81,7 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
   function handleRemoveAvatar() {
     setPendingAvatar(null)
     setRemoveAvatar(true)
-    setAvatarPreview('/assets/default-user.jpg')
+    setAvatarPreview('')
     if (avatarRef.current) avatarRef.current.value = ''
   }
 
@@ -146,12 +152,19 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
       {/* Avatar */}
       <div className="edit-avatar-row">
         <div className="edit-avatar-wrap">
-          <img
-            className="edit-avatar-img"
-            src={avatarPreview}
-            alt="Avatar"
-            onError={e => { e.currentTarget.src = '/assets/default-user.jpg' }}
-          />
+          {avatarPreview ? (
+            <img
+              className="edit-avatar-img"
+              src={avatarPreview}
+              alt="Avatar"
+              onError={() => setAvatarPreview('')}
+            />
+          ) : (
+            <UserAvatar
+              nickname={profile?.nickname}
+              className="edit-avatar-img"
+            />
+          )}
           <div className="edit-avatar-buttons">
             <button
               className="edit-avatar-overlay"

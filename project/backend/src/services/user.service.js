@@ -164,7 +164,7 @@ const loginUserService =  async ({nickname ,email, password}) => {
     }
 
     if(existingUser.estado !== 'activo'){
-        const err = new Error('Tu cuenta no está activa');
+        const err = new Error('Esta cuenta no está activa');
         err.code = 'FORBIDDEN';
         throw err;
     }

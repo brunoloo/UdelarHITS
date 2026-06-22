@@ -11,6 +11,7 @@ import ReportRoutes from './report.routes.js'
 import AppealRoutes from './appeal.routes.js'
 import NotificationRoutes from './notification.routes.js'
 import userReportRoutes from './report-user.routes.js';
+import ReactionRoutes from './reaction.routes.js';
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.use('/reports', ReportRoutes);
 router.use('/appeals', AppealRoutes);
 router.use('/notifications',NotificationRoutes);
 router.use('/user-reports', userReportRoutes);
+router.use('/reactions', ReactionRoutes); 
 
 
 router.get('/', (_req, res) => {
