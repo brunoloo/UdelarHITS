@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
+import { UserAvatar } from '../shared/UserAvatar'
 import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import './LeftNav.css'
 
@@ -15,10 +16,45 @@ function notifTimeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-UY')
 }
 
+// Ícono distintivo por tipo de notificación.
+function NotifTypeIcon({ tipo }) {
+  if (tipo === 'reaccion_like') {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+    )
+  }
+  if (tipo === 'respuesta_comentario') {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    )
+  }
+  if (tipo === 'nuevo_seguidor') {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="8.5" cy="7" r="4"/>
+        <line x1="20" y1="8" x2="20" y2="14"/>
+        <line x1="23" y1="11" x2="17" y2="11"/>
+      </svg>
+    )
+  }
+  // moderacion_contenido y demás: escudo
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  )
+}
+
 export function LeftNav() {
   const { user } = useAuth()
   const { showToast } = useToast()
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const isAdmin = user?.rol === 'admin'
 
   const [panelOpen, setPanelOpen] = useState(false)
@@ -88,6 +124,14 @@ export function LeftNav() {
       await apiDelete(`/notifications/${notifId}`)
       setNotifications(prev => prev.filter(n => n.id !== notifId))
     } catch {}
+  }
+
+  // Click en una notificación con destino: navegar y cerrar el panel.
+  // Las notificaciones ya se marcaron como leídas al abrir el panel (read-all).
+  function handleItemClick(n) {
+    if (!n.url) return
+    setPanelOpen(false)
+    navigate(n.url)
   }
 
   function navClass(path) {
@@ -214,29 +258,39 @@ export function LeftNav() {
               const modType = n.mensaje?.includes('categoría') ? 'categoria'
                 : n.mensaje?.includes('tema') ? 'tema'
                 : 'comentario'
+              const clickable = !!n.url
               return (
-                <div key={n.id} className="notif-item">
-                  <div className="notif-icon">
-                    {isMod ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-                        <line x1="4" y1="22" x2="4" y2="15"/>
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/>
-                        <path d="M10 21a2 2 0 0 0 4 0"/>
-                      </svg>
-                    )}
-                  </div>
+                <div
+                  key={n.id}
+                  className={`notif-item notif-item--${n.tipo}${clickable ? ' notif-item--clickable' : ''}`}
+                  onClick={clickable ? () => handleItemClick(n) : undefined}
+                  role={clickable ? 'button' : undefined}
+                  tabIndex={clickable ? 0 : undefined}
+                >
+                  {n.actor_nickname ? (
+                    <div className="notif-actor">
+                      <UserAvatar url_imagen={n.actor_url_imagen} nickname={n.actor_nickname} size={36} />
+                      <span className={`notif-type-dot notif-type-dot--${n.tipo}`}>
+                        <NotifTypeIcon tipo={n.tipo} />
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="notif-icon">
+                      <NotifTypeIcon tipo={n.tipo} />
+                    </div>
+                  )}
                   <div className="notif-content">
                     <p className="notif-message">{n.mensaje}</p>
+                    {n.contenido_preview && (
+                      <p className="notif-preview">{n.contenido_preview}</p>
+                    )}
                     {isMod && (
                       <a
                         href={`/central/moderation/moderation-info.html?tipo=${modType}`}
                         className="notif-link"
                         target="_blank"
                         rel="noreferrer"
+                        onClick={e => e.stopPropagation()}
                       >
                         Leer más
                       </a>
@@ -247,7 +301,7 @@ export function LeftNav() {
                     className="notif-delete"
                     type="button"
                     title="Eliminar notificación"
-                    onClick={() => handleDelete(n.id)}
+                    onClick={e => { e.stopPropagation(); handleDelete(n.id) }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="3 6 5 6 21 6"/>
