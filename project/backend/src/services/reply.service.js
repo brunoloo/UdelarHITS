@@ -2,9 +2,11 @@ import { getTopicById, hardDeleteTopicById, topicHasContent } from '../repositor
 import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCategoryById } from '../repositories/category.repository.js';
 
 
-import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById, 
-  deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, 
+import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
+  deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId,
   updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory } from '../repositories/reply.repository.js';
+import { createNotification } from '../repositories/notification.repository.js';
+import pool from '../config/db.js';
 
 const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, comentario_padre_id }) => {
   if (!cuerpo?.trim()) {
@@ -20,8 +22,9 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
   }
 
   // Si es respuesta a un comentario, heredar el tema/categoría del padre
+  let padre = null;
   if (comentario_padre_id) {
-    const padre = await getReplyById(comentario_padre_id);
+    padre = await getReplyById(comentario_padre_id);
     if (!padre) {
       const err = new Error('Comentario padre no encontrado');
       err.code = 'NOT_FOUND';
@@ -70,13 +73,32 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     await assignParticipantRole(autorId, categoria_id);
   }
 
-  return await createReply({
+  const created = await createReply({
     autor_id: autorId,
     cuerpo: cuerpo.trim(),
     tema_id: tema_id || null,
     categoria_id: categoria_id || null,
     comentario_padre_id: comentario_padre_id || null
   });
+
+  // Notificar al autor del comentario padre que recibió una respuesta.
+  // Cada respuesta es un evento único (sin dedup). Nunca a uno mismo.
+  if (comentario_padre_id && padre && padre.autor_id !== autorId) {
+    const url = padre.tema_id ? `/topic/${padre.tema_id}`
+      : padre.categoria_id ? `/category/${padre.categoria_id}` : null;
+    const { rows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [autorId]);
+    const nick = rows[0]?.nickname;
+    await createNotification({
+      usuario_id: padre.autor_id,
+      tipo: 'respuesta_comentario',
+      mensaje: `${nick} respondió a tu comentario`,
+      contenido_id: created.contenido_id,
+      actor_id: autorId,
+      url,
+    });
+  }
+
+  return created;
 };
 
 const getRepliesByCategoryIdService = async (categoriaId, userId = null) => {
