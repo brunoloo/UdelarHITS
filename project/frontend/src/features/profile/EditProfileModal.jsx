@@ -1,7 +1,7 @@
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { useState, useEffect, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { apiPatch, apiDelete } from '../../api/client'
+import { apiPatch, apiDelete, apiGet } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
 import { Modal } from '../../components/ui/Modal'
 import { useAuth } from '../../context/AuthContext'
@@ -9,6 +9,7 @@ import './EditProfileModal.css'
 
 export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
   const { showToast } = useToast()
+  const { setUser } = useAuth()
 
   const [nombre, setNombre] = useState('')
   const [bio, setBio] = useState('')
