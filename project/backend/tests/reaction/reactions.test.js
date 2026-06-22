@@ -22,20 +22,6 @@ describe('POST /api/reactions/:contenidoId — toggle', () => {
     expect(res.body.data.action).toBe('created');
     expect(res.body.data.mi_reaccion).toBe('meGusta');
     expect(res.body.data.likes).toBe(1);
-    expect(res.body.data.dislikes).toBe(0);
-  });
-
-  it('crea un noMeGusta donde no había reacción', async () => {
-    const res = await request(app)
-      .post(`/api/reactions/${reply.contenido_id}`)
-      .set('Cookie', userA.cookie)
-      .send({ tipo: 'noMeGusta' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.data.action).toBe('created');
-    expect(res.body.data.mi_reaccion).toBe('noMeGusta');
-    expect(res.body.data.likes).toBe(0);
-    expect(res.body.data.dislikes).toBe(1);
   });
 
   it('toggle off: repetir meGusta elimina la reacción', async () => {
@@ -54,59 +40,6 @@ describe('POST /api/reactions/:contenidoId — toggle', () => {
     expect(res.body.data.mi_reaccion).toBeNull();
     expect(res.body.data.likes).toBe(0);
   });
-
-  it('toggle off: repetir noMeGusta elimina la reacción', async () => {
-    await request(app)
-      .post(`/api/reactions/${reply.contenido_id}`)
-      .set('Cookie', userA.cookie)
-      .send({ tipo: 'noMeGusta' });
-
-    const res = await request(app)
-      .post(`/api/reactions/${reply.contenido_id}`)
-      .set('Cookie', userA.cookie)
-      .send({ tipo: 'noMeGusta' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.data.action).toBe('removed');
-    expect(res.body.data.mi_reaccion).toBeNull();
-    expect(res.body.data.dislikes).toBe(0);
-  });
-
-  it('switch: de meGusta a noMeGusta', async () => {
-    await request(app)
-      .post(`/api/reactions/${reply.contenido_id}`)
-      .set('Cookie', userA.cookie)
-      .send({ tipo: 'meGusta' });
-
-    const res = await request(app)
-      .post(`/api/reactions/${reply.contenido_id}`)
-      .set('Cookie', userA.cookie)
-      .send({ tipo: 'noMeGusta' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.data.action).toBe('changed');
-    expect(res.body.data.mi_reaccion).toBe('noMeGusta');
-    expect(res.body.data.likes).toBe(0);
-    expect(res.body.data.dislikes).toBe(1);
-  });
-
-  it('switch: de noMeGusta a meGusta', async () => {
-    await request(app)
-      .post(`/api/reactions/${reply.contenido_id}`)
-      .set('Cookie', userA.cookie)
-      .send({ tipo: 'noMeGusta' });
-
-    const res = await request(app)
-      .post(`/api/reactions/${reply.contenido_id}`)
-      .set('Cookie', userA.cookie)
-      .send({ tipo: 'meGusta' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.data.action).toBe('changed');
-    expect(res.body.data.mi_reaccion).toBe('meGusta');
-    expect(res.body.data.likes).toBe(1);
-    expect(res.body.data.dislikes).toBe(0);
-  });
 });
 
 // ─── Validaciones ───
@@ -124,6 +57,15 @@ describe('POST /api/reactions/:contenidoId — validaciones', () => {
       .post(`/api/reactions/${reply.contenido_id}`)
       .set('Cookie', userA.cookie)
       .send({ tipo: 'invalido' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('rechaza tipo noMeGusta (solo me gusta está habilitado)', async () => {
+    const res = await request(app)
+      .post(`/api/reactions/${reply.contenido_id}`)
+      .set('Cookie', userA.cookie)
+      .send({ tipo: 'noMeGusta' });
 
     expect(res.status).toBe(400);
   });
@@ -164,9 +106,7 @@ describe('POST /api/reactions/:contenidoId — validaciones', () => {
   });
 
   it('rechaza reacción a comentario oculto', async () => {
-    // Ocultar el comentario (eliminar como autor → soft delete si tiene respuestas,
-    // pero este no tiene respuestas así que es hard delete. Necesitamos uno con respuestas.)
-    // Crear una respuesta para que el padre haga soft delete
+    // Crear una respuesta para que el padre haga soft delete (quede oculto)
     const userB = await registerAndLogin();
     const parentReply = await createReply(userA.cookie, { categoria_id: (await createCategory(userA.cookie)).id });
     await createReply(userB.cookie, { comentario_padre_id: parentReply.contenido_id });
@@ -215,27 +155,6 @@ describe('Conteos de reacciones con múltiples usuarios', () => {
       .send({ tipo: 'meGusta' });
 
     expect(res.body.data.likes).toBe(3);
-    expect(res.body.data.dislikes).toBe(0);
-  });
-
-  it('mezcla likes y dislikes correctamente', async () => {
-    await request(app)
-      .post(`/api/reactions/${reply.contenido_id}`)
-      .set('Cookie', userA.cookie)
-      .send({ tipo: 'meGusta' });
-
-    await request(app)
-      .post(`/api/reactions/${reply.contenido_id}`)
-      .set('Cookie', userB.cookie)
-      .send({ tipo: 'noMeGusta' });
-
-    const res = await request(app)
-      .post(`/api/reactions/${reply.contenido_id}`)
-      .set('Cookie', userC.cookie)
-      .send({ tipo: 'meGusta' });
-
-    expect(res.body.data.likes).toBe(2);
-    expect(res.body.data.dislikes).toBe(1);
   });
 
   it('un usuario quita su like, el conteo baja', async () => {
@@ -283,7 +202,6 @@ describe('GET /api/reactions/:contenidoId', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.likes).toBe(1);
-    expect(res.body.data.dislikes).toBe(0);
     expect(res.body.data.mi_reaccion).toBeNull();
   });
 
@@ -326,19 +244,14 @@ describe('Reacciones incluidas en queries de comentarios', () => {
     cat = await createCategory(userA.cookie);
     reply = await createReply(userA.cookie, { categoria_id: cat.id });
 
-    // userA le da like, userB le da dislike
+    // userA le da like a su propio comentario
     await request(app)
       .post(`/api/reactions/${reply.contenido_id}`)
       .set('Cookie', userA.cookie)
       .send({ tipo: 'meGusta' });
-
-    await request(app)
-      .post(`/api/reactions/${reply.contenido_id}`)
-      .set('Cookie', userB.cookie)
-      .send({ tipo: 'noMeGusta' });
   });
 
-  it('GET /replies/category/:id incluye likes, dislikes y mi_reaccion (autenticado)', async () => {
+  it('GET /replies/category/:id incluye likes y mi_reaccion (autenticado)', async () => {
     const res = await request(app)
       .get(`/api/replies/category/${cat.id}`)
       .set('Cookie', userA.cookie);
@@ -347,7 +260,6 @@ describe('Reacciones incluidas en queries de comentarios', () => {
     const comment = res.body.data.find(c => c.id === reply.contenido_id);
     expect(comment).toBeDefined();
     expect(Number(comment.likes)).toBe(1);
-    expect(Number(comment.dislikes)).toBe(1);
     expect(comment.mi_reaccion).toBe('meGusta');
   });
 
@@ -358,7 +270,6 @@ describe('Reacciones incluidas en queries de comentarios', () => {
     expect(res.status).toBe(200);
     const comment = res.body.data.find(c => c.id === reply.contenido_id);
     expect(Number(comment.likes)).toBe(1);
-    expect(Number(comment.dislikes)).toBe(1);
     expect(comment.mi_reaccion).toBeNull();
   });
 
@@ -400,12 +311,12 @@ describe('Reacciones incluidas en queries de comentarios', () => {
   });
 
   it('mi_reaccion refleja la reacción del usuario que consulta, no de otros', async () => {
-    // userB tiene noMeGusta
+    // userA tiene like; userB no reaccionó
     const res = await request(app)
       .get(`/api/replies/category/${cat.id}`)
       .set('Cookie', userB.cookie);
 
     const comment = res.body.data.find(c => c.id === reply.contenido_id);
-    expect(comment.mi_reaccion).toBe('noMeGusta');
+    expect(comment.mi_reaccion).toBeNull();
   });
 });

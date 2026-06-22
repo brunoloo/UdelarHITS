@@ -25,8 +25,3 @@
 .reaction-btn--active {
   color: var(--accent);
 }
-
-.reaction-btn--dislike,
-.reaction-btn--dislike:hover {
-  color: var(--danger, #e0245e);
-}

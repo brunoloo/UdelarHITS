@@ -35,7 +35,6 @@ const getRepliesByCategoryId = async (categoriaId, userId = null) => {
       con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
-      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'noMeGusta') AS dislikes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
@@ -53,7 +52,6 @@ const getRepliesByTopicId = async (topicId, userId = null) => {
       con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
-      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'noMeGusta') AS dislikes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
@@ -156,7 +154,6 @@ const getRepliesByCommentId = async (commentId, userId = null) => {
       con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
-      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'noMeGusta') AS dislikes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id

@@ -6,57 +6,56 @@ import { apiPost } from '../../api/client'
 import './ReactionButtons.css'
 
 /**
- * Like / Dislike buttons with optimistic updates.
+ * Like button with optimistic updates.
  *
- * The server returns the authoritative counts after every toggle, so we
- * update the UI instantly, then reconcile with the response. If the request
- * fails we revert to the previous state.
+ * The server returns the authoritative count after every toggle, so we update
+ * the UI instantly, then reconcile with the response. If the request fails we
+ * revert to the previous state.
  */
-export function ReactionButtons({ contenidoId, likes, dislikes, mi_reaccion }) {
+export function ReactionButtons({ contenidoId, likes, mi_reaccion }) {
   const requireAuth = useRequireAuth()
   const { showToast } = useToast()
   const queryClient = useQueryClient()
 
   const [state, setState] = useState({
     likes: Number(likes) || 0,
-    dislikes: Number(dislikes) || 0,
-    mine: mi_reaccion || null,
+    mine: mi_reaccion === 'meGusta',
   })
 
   const mutation = useMutation({
-    mutationFn: (tipo) => apiPost(`/reactions/${contenidoId}`, { tipo }),
+    mutationFn: () => apiPost(`/reactions/${contenidoId}`, { tipo: 'meGusta' }),
     onSuccess: (res) => {
       const data = res?.data
       if (data) {
         setState({
           likes: Number(data.likes) || 0,
-          dislikes: Number(data.dislikes) || 0,
-          mine: data.mi_reaccion || null,
+          mine: data.mi_reaccion === 'meGusta',
         })
       }
       // Invalidate every cached comment view (category/topic lists and reply
       // sublists all live under the 'replies' key) so the same comment shown
-      // in more than one place reflects the new counts immediately.
+      // in more than one place reflects the new count immediately. Also refresh
+      // the notification badge: a like notifies the comment author.
       queryClient.invalidateQueries({ queryKey: ['replies'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
     },
   })
 
   // Keep the local (optimistic) state in sync with the server data whenever it
   // changes: refetches after navigating, invalidations, or logging in as a
-  // different user. Without this, the buttons keep their initial mount state
-  // and show stale counts / mi_reaccion until a full page reload. We skip the
+  // different user. Without this, the button keeps its initial mount state and
+  // shows a stale count / mi_reaccion until a full page reload. We skip the
   // sync while a toggle is in flight so it doesn't clobber the optimistic UI.
   useEffect(() => {
     if (mutation.isPending) return
     setState({
       likes: Number(likes) || 0,
-      dislikes: Number(dislikes) || 0,
-      mine: mi_reaccion || null,
+      mine: mi_reaccion === 'meGusta',
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [likes, dislikes, mi_reaccion])
+  }, [likes, mi_reaccion])
 
-  function react(tipo, e) {
+  function handleClick(e) {
     e.stopPropagation()
     if (!requireAuth('Debes iniciar sesión para reaccionar')) return
     // Ignore clicks while a toggle is in flight: keeping a single request at a
@@ -66,35 +65,13 @@ export function ReactionButtons({ contenidoId, likes, dislikes, mi_reaccion }) {
 
     const prev = state
 
-    // Compute the optimistic next state following the toggle rules.
-    let likesDelta = 0
-    let dislikesDelta = 0
-    let nextMine
-
-    if (prev.mine === tipo) {
-      // Same reaction → toggle off
-      nextMine = null
-      if (tipo === 'meGusta') likesDelta = -1
-      else dislikesDelta = -1
-    } else if (prev.mine === null) {
-      // No reaction → add
-      nextMine = tipo
-      if (tipo === 'meGusta') likesDelta = 1
-      else dislikesDelta = 1
-    } else {
-      // Switching reaction
-      nextMine = tipo
-      if (tipo === 'meGusta') { likesDelta = 1; dislikesDelta = -1 }
-      else { likesDelta = -1; dislikesDelta = 1 }
-    }
-
+    // Optimistic toggle: like on/off.
     setState({
-      likes: prev.likes + likesDelta,
-      dislikes: prev.dislikes + dislikesDelta,
-      mine: nextMine,
+      likes: prev.likes + (prev.mine ? -1 : 1),
+      mine: !prev.mine,
     })
 
-    mutation.mutate(tipo, {
+    mutation.mutate(undefined, {
       onError: (err) => {
         setState(prev) // revert
         showToast(err.message || 'No se pudo registrar la reacción', 'error')
@@ -106,27 +83,15 @@ export function ReactionButtons({ contenidoId, likes, dislikes, mi_reaccion }) {
     <div className="reaction-buttons">
       <button
         type="button"
-        className={`reaction-btn${state.mine === 'meGusta' ? ' reaction-btn--active' : ''}`}
-        onClick={e => react('meGusta', e)}
-        aria-pressed={state.mine === 'meGusta'}
+        className={`reaction-btn${state.mine ? ' reaction-btn--active' : ''}`}
+        onClick={handleClick}
+        aria-pressed={state.mine}
         aria-label="Me gusta"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill={state.mine === 'meGusta' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill={state.mine ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
         </svg>
         {state.likes}
-      </button>
-      <button
-        type="button"
-        className={`reaction-btn${state.mine === 'noMeGusta' ? ' reaction-btn--active reaction-btn--dislike' : ''}`}
-        onClick={e => react('noMeGusta', e)}
-        aria-pressed={state.mine === 'noMeGusta'}
-        aria-label="No me gusta"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill={state.mine === 'noMeGusta' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
-        </svg>
-        {state.dislikes}
       </button>
     </div>
   )

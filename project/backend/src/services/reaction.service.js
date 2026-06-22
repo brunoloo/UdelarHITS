@@ -1,7 +1,7 @@
 import { toggleReaction, getReactionsByContentId } from '../repositories/reaction.repository.js';
 import pool from '../config/db.js';
 
-const TIPOS_VALIDOS = ['meGusta', 'noMeGusta'];
+const TIPOS_VALIDOS = ['meGusta'];
 
 const toggleReactionService = async (userId, contenidoId, tipo) => {
   const id = Number(contenidoId);

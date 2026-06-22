@@ -6,7 +6,7 @@ import pool from '../config/db.js';
  * - Same type exists    → delete (toggle off)
  * - Different type      → update
  *
- * Returns { action, likes, dislikes, mi_reaccion }
+ * Returns { action, likes, mi_reaccion }
  */
 const toggleReaction = async (userId, contenidoId, tipo) => {
   const client = await pool.connect();
@@ -47,9 +47,7 @@ const toggleReaction = async (userId, contenidoId, tipo) => {
     }
 
     const { rows: counts } = await client.query(`
-      SELECT
-        COUNT(*) FILTER (WHERE tipo = 'meGusta')   AS likes,
-        COUNT(*) FILTER (WHERE tipo = 'noMeGusta') AS dislikes
+      SELECT COUNT(*) FILTER (WHERE tipo = 'meGusta') AS likes
       FROM reaccion
       WHERE contenido_id = $1
     `, [contenidoId]);
@@ -60,7 +58,6 @@ const toggleReaction = async (userId, contenidoId, tipo) => {
       action,
       mi_reaccion,
       likes: parseInt(counts[0].likes),
-      dislikes: parseInt(counts[0].dislikes),
     };
   } catch (err) {
     await client.query('ROLLBACK');
@@ -75,9 +72,7 @@ const toggleReaction = async (userId, contenidoId, tipo) => {
  */
 const getReactionsByContentId = async (contenidoId, userId = null) => {
   const q = `
-    SELECT
-      COUNT(*) FILTER (WHERE tipo = 'meGusta')   AS likes,
-      COUNT(*) FILTER (WHERE tipo = 'noMeGusta') AS dislikes
+    SELECT COUNT(*) FILTER (WHERE tipo = 'meGusta') AS likes
     FROM reaccion
     WHERE contenido_id = $1
   `;
@@ -94,7 +89,6 @@ const getReactionsByContentId = async (contenidoId, userId = null) => {
 
   return {
     likes: parseInt(counts[0].likes),
-    dislikes: parseInt(counts[0].dislikes),
     mi_reaccion,
   };
 };

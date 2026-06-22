@@ -221,7 +221,6 @@ export function CommentCard({
               <ReactionButtons
                 contenidoId={comment.id}
                 likes={comment.likes}
-                dislikes={comment.dislikes}
                 mi_reaccion={comment.mi_reaccion}
               />
               <button
