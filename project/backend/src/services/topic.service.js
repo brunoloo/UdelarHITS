@@ -1,9 +1,11 @@
 import { getCategoryById, assignParticipantRole, getTopicsByCategoryId, categoryHasContent, hardDeleteCategoryById } from '../repositories/category.repository.js';
 
 import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
-  getTopicsByAuthorId, updateTopicById, updateTopicEstado, decrementTopicCount, 
-  incrementTopicCount, getTopicsByUserId, topicHasContent, 
+  getTopicsByAuthorId, updateTopicById, updateTopicEstado, decrementTopicCount,
+  incrementTopicCount, getTopicsByUserId, topicHasContent,
   hardDeleteTopicById, getRecentTopics, getTrendingTopic, getTopicEditHistory } from '../repositories/topic.repository.js';
+import { createNotification } from '../repositories/notification.repository.js';
+import pool from '../config/db.js';
 
 const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => {
   if (!categoria_id) {
@@ -66,6 +68,21 @@ const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => 
   });
 
   await assignParticipantRole(autorId, categoria_id);
+
+  // Notificar al autor de la categoría que se publicó un tema (nunca a uno
+  // mismo). Click → lleva al tema recién creado.
+  if (category.autor_id !== autorId) {
+    const { rows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [autorId]);
+    const nick = rows[0]?.nickname;
+    await createNotification({
+      usuario_id: category.autor_id,
+      tipo: 'tema_en_categoria',
+      mensaje: `${nick} publicó un tema en tu categoría ${category.titulo}`,
+      contenido_id: topic.contenido_id,
+      actor_id: autorId,
+      url: `/topic/${topic.contenido_id}`,
+    });
+  }
 
   return topic;
 };

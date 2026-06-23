@@ -102,6 +102,58 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     });
   }
 
+  // Notificaciones para comentarios de primer nivel (no respuestas a otro
+  // comentario). Cada comentario es un evento único: sin dedup, nunca a uno mismo.
+  if (!comentario_padre_id) {
+    const { rows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [autorId]);
+    const nick = rows[0]?.nickname;
+
+    if (tema_id) {
+      // Comentario en un tema → al autor del tema y al autor de la categoría.
+      // Ambos clicks llevan al comentario dentro del tema.
+      const topic = await getTopicById(tema_id);
+      const urlTema = `/topic/${tema_id}?commentId=${created.contenido_id}`;
+
+      if (topic && topic.autor_id !== autorId) {
+        await createNotification({
+          usuario_id: topic.autor_id,
+          tipo: 'comentario_en_tema',
+          mensaje: `${nick} comentó en tu ${topic.titulo}`,
+          contenido_id: created.contenido_id,
+          actor_id: autorId,
+          url: urlTema,
+        });
+      }
+
+      // Autor de la categoría: solo si es distinto del comentarista y del autor
+      // del tema (para no duplicarle la notificación a la misma persona).
+      const cat = topic ? await getCategoryById(topic.categoria_id) : null;
+      if (cat && cat.autor_id !== autorId && cat.autor_id !== topic.autor_id) {
+        await createNotification({
+          usuario_id: cat.autor_id,
+          tipo: 'comentario_en_tema_categoria',
+          mensaje: `${nick} comentó en un tema de tu categoría ${cat.titulo}`,
+          contenido_id: created.contenido_id,
+          actor_id: autorId,
+          url: urlTema,
+        });
+      }
+    } else if (categoria_id) {
+      // Comentario directo en la categoría → al autor de la categoría.
+      const cat = await getCategoryById(categoria_id);
+      if (cat && cat.autor_id !== autorId) {
+        await createNotification({
+          usuario_id: cat.autor_id,
+          tipo: 'comentario_en_categoria',
+          mensaje: `${nick} comentó en tu categoría ${cat.titulo}`,
+          contenido_id: created.contenido_id,
+          actor_id: autorId,
+          url: `/category/${categoria_id}?tab=comentarios&commentId=${created.contenido_id}`,
+        });
+      }
+    }
+  }
+
   return created;
 };
 
