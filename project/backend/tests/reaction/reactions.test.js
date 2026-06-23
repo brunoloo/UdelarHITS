@@ -344,7 +344,7 @@ describe('Notificaciones de like', () => {
     const notif = res.body.data.find(n => n.tipo === 'reaccion_like');
     expect(notif).toBeDefined();
     expect(notif.actor_nickname).toBe(userB.user.nickname);
-    expect(notif.url).toBe(`/category/${cat.id}`);
+    expect(notif.url).toBe(`/category/${cat.id}?tab=comentarios&commentId=${reply.contenido_id}`);
   });
 
   it('like propio no genera notificación', async () => {

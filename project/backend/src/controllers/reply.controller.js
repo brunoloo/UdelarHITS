@@ -1,6 +1,7 @@
-import { createReplyService, getRepliesByCategoryIdService, 
-  getRepliesByTopicIdService, deleteReplyService, getMyRepliesService, 
-  getRepliesByUserIdService, updateReplyService, getRepliesByCommentIdService, getReplyByIdService, getReplyEditHistoryService } from '../services/reply.service.js';
+import { createReplyService, getRepliesByCategoryIdService,
+  getRepliesByTopicIdService, deleteReplyService, getMyRepliesService,
+  getRepliesByUserIdService, updateReplyService, getRepliesByCommentIdService, getReplyByIdService, getReplyEditHistoryService,
+  getReplyContextService } from '../services/reply.service.js';
 
 const createReply = async (req, res) => {
   try {
@@ -121,5 +122,19 @@ const getReplyEditHistory = async (req, res, next) => {
   }
 };
 
-export { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply, getMyReplies, 
-  getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory };
+const getReplyContext = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id || null;
+    const chain = await getReplyContextService(id, userId);
+    return res.status(200).json({ ok: true, data: chain });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+export { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply, getMyReplies,
+  getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory,
+  getReplyContext };

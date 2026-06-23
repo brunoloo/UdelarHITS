@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
@@ -322,8 +322,11 @@ export function CategoryPage() {
   const { showToast } = useToast()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const [activeTab, setActiveTab] = useState('temas')
+  const tabParam = searchParams.get('tab')
+  const commentIdParam = searchParams.get('commentId')
+  const [activeTab, setActiveTab] = useState(tabParam === 'comentarios' ? 'comentarios' : 'temas')
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -524,6 +527,12 @@ export function CategoryPage() {
             <CommentThread
               comments={replies}
               invalidateKey={['replies', 'category', id]}
+              initialCommentId={commentIdParam}
+              onInitialDrillDone={() => {
+                searchParams.delete('commentId')
+                searchParams.delete('tab')
+                setSearchParams(searchParams, { replace: true })
+              }}
             />
           )}
         </div>

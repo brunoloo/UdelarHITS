@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
@@ -19,6 +19,8 @@ import './topic.css'
 export function TopicPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const commentIdParam = searchParams.get('commentId')
   const { user } = useAuth()
   const { showToast } = useToast()
   const requireAuth = useRequireAuth()
@@ -282,6 +284,11 @@ export function TopicPage() {
         <CommentThread
           comments={replies}
           invalidateKey={['replies', 'topic', id]}
+          initialCommentId={commentIdParam}
+          onInitialDrillDone={() => {
+            searchParams.delete('commentId')
+            setSearchParams(searchParams, { replace: true })
+          }}
         />
       </section>
 

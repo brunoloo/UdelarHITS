@@ -1,15 +1,31 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '../../hooks/useToast'
 import { apiGet, apiPost } from '../../api/client'
 import { CommentCard } from './CommentCard'
 import './CommentCard.css'
 
-export function CommentThread({ comments, invalidateKey }) {
+export function CommentThread({ comments, invalidateKey, initialCommentId, onInitialDrillDone }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
+  const didDrill = useRef(false)
 
   const [stack, setStack] = useState([])
+
+  useEffect(() => {
+    if (!initialCommentId || didDrill.current) return
+    didDrill.current = true
+    apiGet(`/replies/${initialCommentId}/context`)
+      .then(chain => {
+        if (!chain?.data || chain.data.length === 0) return
+        const ancestors = chain.data.slice(0, -1)
+        if (ancestors.length > 0) {
+          setStack(ancestors)
+        }
+        onInitialDrillDone?.()
+      })
+      .catch(() => {})
+  }, [initialCommentId]) // eslint-disable-line react-hooks/exhaustive-deps
   const currentParent = stack.length > 0 ? stack[stack.length - 1] : null
 
   const { data: childReplies = [], isLoading: repliesLoading } = useQuery({

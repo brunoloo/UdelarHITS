@@ -31,21 +31,21 @@ describe('Notificaciones de respuesta a comentario', () => {
     expect(res.body.data.filter(n => n.tipo === 'respuesta_comentario')).toHaveLength(0);
   });
 
-  it('notificación de respuesta tiene url al tema/categoría correcta', async () => {
-    // Comentario padre en categoría → url /category/{id}
-    await createReply(userB.cookie, { comentario_padre_id: parent.contenido_id });
+  it('notificación de respuesta tiene url al tema/categoría correcta con commentId', async () => {
+    // Comentario padre en categoría → url /category/{id}?tab=comentarios&commentId={newReplyId}
+    const childReply = await createReply(userB.cookie, { comentario_padre_id: parent.contenido_id });
     let res = await request(app).get('/api/notifications').set('Cookie', userA.cookie);
     let notif = res.body.data.find(n => n.tipo === 'respuesta_comentario');
-    expect(notif.url).toBe(`/category/${cat.id}`);
+    expect(notif.url).toBe(`/category/${cat.id}?tab=comentarios&commentId=${childReply.contenido_id}`);
 
-    // Comentario padre en tema → url /topic/{id}
+    // Comentario padre en tema → url /topic/{id}?commentId={newReplyId}
     const topic = await createTopic(userA.cookie, { categoria_id: cat.id });
     const topicId = topic.id ?? topic.contenido_id;
     const topicParent = await createReply(userA.cookie, { tema_id: topicId });
-    await createReply(userB.cookie, { comentario_padre_id: topicParent.contenido_id });
+    const topicChild = await createReply(userB.cookie, { comentario_padre_id: topicParent.contenido_id });
 
     res = await request(app).get('/api/notifications').set('Cookie', userA.cookie);
-    notif = res.body.data.find(n => n.tipo === 'respuesta_comentario' && n.url === `/topic/${topicId}`);
+    notif = res.body.data.find(n => n.tipo === 'respuesta_comentario' && n.url === `/topic/${topicId}?commentId=${topicChild.contenido_id}`);
     expect(notif).toBeDefined();
   });
 });

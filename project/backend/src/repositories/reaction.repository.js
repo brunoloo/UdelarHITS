@@ -65,8 +65,11 @@ const toggleReaction = async (userId, contenidoId, tipo) => {
             'SELECT tema_id, categoria_id FROM comentario WHERE contenido_id = $1', [contenidoId]
           );
           const loc = locRows[0] || {};
-          const url = loc.tema_id ? `/topic/${loc.tema_id}`
-            : loc.categoria_id ? `/category/${loc.categoria_id}` : null;
+          const url = loc.tema_id
+            ? `/topic/${loc.tema_id}?commentId=${contenidoId}`
+            : loc.categoria_id
+              ? `/category/${loc.categoria_id}?tab=comentarios&commentId=${contenidoId}`
+              : null;
           const { rows: actorRows } = await client.query(
             'SELECT nickname FROM usuario WHERE id = $1', [userId]
           );

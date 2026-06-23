@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { UserAvatar } from '../shared/UserAvatar'
@@ -55,6 +55,7 @@ export function LeftNav() {
   const { showToast } = useToast()
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const isAdmin = user?.rol === 'admin'
 
   const [panelOpen, setPanelOpen] = useState(false)
@@ -102,6 +103,7 @@ export function LeftNav() {
       const res = await apiGet('/notifications')
       setNotifications(res.data ?? [])
       await apiPatch('/notifications/read-all')
+      queryClient.setQueryData(['notifications', 'unread-count'], 0)
     } catch {
       setNotifications([])
     } finally {

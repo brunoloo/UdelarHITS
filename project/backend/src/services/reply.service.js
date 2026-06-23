@@ -4,7 +4,8 @@ import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCa
 
 import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId,
-  updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory } from '../repositories/reply.repository.js';
+  updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory,
+  getReplyContext } from '../repositories/reply.repository.js';
 import { createNotification } from '../repositories/notification.repository.js';
 import pool from '../config/db.js';
 
@@ -84,8 +85,11 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
   // Notificar al autor del comentario padre que recibió una respuesta.
   // Cada respuesta es un evento único (sin dedup). Nunca a uno mismo.
   if (comentario_padre_id && padre && padre.autor_id !== autorId) {
-    const url = padre.tema_id ? `/topic/${padre.tema_id}`
-      : padre.categoria_id ? `/category/${padre.categoria_id}` : null;
+    const url = padre.tema_id
+      ? `/topic/${padre.tema_id}?commentId=${created.contenido_id}`
+      : padre.categoria_id
+        ? `/category/${padre.categoria_id}?tab=comentarios&commentId=${created.contenido_id}`
+        : null;
     const { rows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [autorId]);
     const nick = rows[0]?.nickname;
     await createNotification({
@@ -252,6 +256,23 @@ const getReplyEditHistoryService = async (replyId) => {
   return await getReplyEditHistory(replyId);
 };
 
-export { createReplyService, getRepliesByCategoryIdService, getRepliesByTopicIdService, 
-  deleteReplyService, getMyRepliesService, getRepliesByUserIdService, updateReplyService, 
-  getReplyByIdService, getRepliesByCommentIdService, getReplyEditHistoryService };
+const getReplyContextService = async (commentId, userId = null) => {
+  const id = Number(commentId);
+  if (!Number.isInteger(id) || id < 1) {
+    const err = new Error('ID inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  const chain = await getReplyContext(commentId, userId);
+  if (chain.length === 0) {
+    const err = new Error('Comentario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  return chain;
+};
+
+export { createReplyService, getRepliesByCategoryIdService, getRepliesByTopicIdService,
+  deleteReplyService, getMyRepliesService, getRepliesByUserIdService, updateReplyService,
+  getReplyByIdService, getRepliesByCommentIdService, getReplyEditHistoryService,
+  getReplyContextService };

@@ -288,6 +288,37 @@ const getReplyEditHistory = async (commentId) => {
   return rows;
 };
 
-export { createReply, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById, 
-  getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies, 
-  hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx, getReplyEditHistory }
+const getReplyContext = async (commentId, userId = null) => {
+  const q = `
+    WITH RECURSIVE ancestors AS (
+      SELECT com.contenido_id, com.comentario_padre_id, 0 AS depth
+      FROM comentario com
+      WHERE com.contenido_id = $1
+      UNION ALL
+      SELECT p.contenido_id, p.comentario_padre_id, a.depth + 1
+      FROM comentario p
+      JOIN ancestors a ON a.comentario_padre_id = p.contenido_id
+    )
+    SELECT
+      a.depth,
+      com.contenido_id AS id, com.estado, com.motivo_inactivacion,
+      con.cuerpo, con.autor_id,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
+      con.fecha_creacion, u.estado AS autor_estado,
+      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
+      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
+      (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion
+    FROM ancestors a
+    JOIN comentario com ON com.contenido_id = a.contenido_id
+    JOIN contenido con ON con.id = com.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
+    ORDER BY a.depth DESC
+  `;
+  const { rows } = await pool.query(q, [commentId, userId]);
+  return rows;
+};
+
+export { createReply, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
+  getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies,
+  hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx, getReplyEditHistory,
+  getReplyContext }
