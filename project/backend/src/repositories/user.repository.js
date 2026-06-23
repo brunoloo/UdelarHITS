@@ -98,7 +98,7 @@ const getFollowersByUserId = async (userId) => {
     SELECT u.id, u.nickname, u.nombre, u.url_imagen
     FROM usuario_seguidor us
     JOIN usuario u ON u.id = us.seguidor_id
-    WHERE us.seguido_id = $1
+    WHERE us.seguido_id = $1 AND us.estado = 'aceptado'
     ORDER BY us.fecha_creacion DESC
   `;
   const { rows } = await pool.query(q, [userId]);
@@ -110,7 +110,7 @@ const getFollowingByUserId = async (userId) => {
     SELECT u.id, u.nickname, u.nombre, u.url_imagen
     FROM usuario_seguidor us
     JOIN usuario u ON u.id = us.seguido_id
-    WHERE us.seguidor_id = $1
+    WHERE us.seguidor_id = $1 AND us.estado = 'aceptado'
     ORDER BY us.fecha_creacion DESC
   `;
   const { rows } = await pool.query(q, [userId]);
@@ -187,14 +187,17 @@ const deleteUserByNickname = async (nickname) => {
   return rows[0] || null;
 };
 
-const followUser = async (seguidorId, seguidoId) => {
+// Inserta la relación de seguimiento con el estado indicado ('aceptado' para
+// cuentas públicas, 'pendiente' para solicitudes a cuentas privadas). Devuelve
+// la fila si fue un alta nueva, o null si ya existía (re-follow idempotente).
+const followUser = async (seguidorId, seguidoId, estado = 'aceptado') => {
   const q = `
-    INSERT INTO usuario_seguidor (seguidor_id, seguido_id)
-    VALUES ($1, $2)
+    INSERT INTO usuario_seguidor (seguidor_id, seguido_id, estado)
+    VALUES ($1, $2, $3)
     ON CONFLICT DO NOTHING
-    RETURNING seguidor_id, seguido_id
+    RETURNING seguidor_id, seguido_id, estado
   `;
-  const { rows } = await pool.query(q, [seguidorId, seguidoId]);
+  const { rows } = await pool.query(q, [seguidorId, seguidoId, estado]);
   return rows[0] || null;
 };
 
@@ -208,14 +211,54 @@ const unfollowUser = async (seguidorId, seguidoId) => {
   return rows[0] || null;
 };
 
+// isFollowing = seguimiento efectivo (aceptado). Las solicitudes pendientes no
+// cuentan como "ya lo sigo".
 const isFollowing = async (seguidorId, seguidoId) => {
   const q = `
     SELECT 1 FROM usuario_seguidor
-    WHERE seguidor_id = $1 AND seguido_id = $2
+    WHERE seguidor_id = $1 AND seguido_id = $2 AND estado = 'aceptado'
     LIMIT 1
   `;
   const { rows } = await pool.query(q, [seguidorId, seguidoId]);
   return rows.length > 0;
+};
+
+// Estado del seguimiento de seguidorId → seguidoId: 'aceptado', 'pendiente' o
+// null si no existe relación. Sirve para que el botón de seguir muestre
+// "Siguiendo" / "Solicitado" / "Seguir".
+const getFollowState = async (seguidorId, seguidoId) => {
+  const q = `
+    SELECT estado FROM usuario_seguidor
+    WHERE seguidor_id = $1 AND seguido_id = $2
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [seguidorId, seguidoId]);
+  return rows[0]?.estado || null;
+};
+
+// Aceptar una solicitud pendiente: pasa la fila a 'aceptado'. Devuelve la fila
+// si había una solicitud pendiente, o null si no (ya aceptada / cancelada).
+const acceptFollowRequest = async (seguidorId, seguidoId) => {
+  const q = `
+    UPDATE usuario_seguidor
+    SET estado = 'aceptado'
+    WHERE seguidor_id = $1 AND seguido_id = $2 AND estado = 'pendiente'
+    RETURNING seguidor_id, seguido_id
+  `;
+  const { rows } = await pool.query(q, [seguidorId, seguidoId]);
+  return rows[0] || null;
+};
+
+// Rechazar una solicitud pendiente: elimina la fila. Devuelve la fila si había
+// una solicitud pendiente, o null si no.
+const rejectFollowRequest = async (seguidorId, seguidoId) => {
+  const q = `
+    DELETE FROM usuario_seguidor
+    WHERE seguidor_id = $1 AND seguido_id = $2 AND estado = 'pendiente'
+    RETURNING seguidor_id, seguido_id
+  `;
+  const { rows } = await pool.query(q, [seguidorId, seguidoId]);
+  return rows[0] || null;
 };
 
 const searchUsers = async (query) => {
@@ -360,6 +403,7 @@ const getPrivacyById = async (id) => {
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, 
-  deleteUserByNickname, followUser, unfollowUser, isFollowing, updateAvatarById, 
-  searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers, 
+  deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,
+  acceptFollowRequest, rejectFollowRequest, updateAvatarById,
+  searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers,
   getMostActiveUsers, getPasswordHashById, updatePasswordHashById, deactivateUser, clearFollows, updatePrivacy, getPrivacyById };

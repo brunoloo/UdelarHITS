@@ -3,8 +3,9 @@ import { fileTypeFromBuffer } from 'file-type';
 import { registerUserService, loginUserService, getUsersService, createUserByAdminService,
     getUserProfileService, showMeService, updateMeService, 
     banUserService, activeUserService, deleteUserService,
-  followUserService, unfollowUserService, isFollowingService, updateAvatarService, 
-  searchUsersService, updateBannerService, 
+  followUserService, unfollowUserService, isFollowingService,
+  acceptFollowRequestService, rejectFollowRequestService, updateAvatarService,
+  searchUsersService, updateBannerService,
   deleteBannerService, deleteAvatarService, getSuggestedUsersService, getMostActiveUsersService, 
   changePasswordService, forgotPasswordService, verifyResetTokenService, 
   resetPasswordService, deactivateAccountService, togglePrivacyService } from '../services/user.service.js';
@@ -186,8 +187,9 @@ const deleteUser = async (req, res) => {
 const followUser = async (req, res) => {
   try {
     const { nickname } = req.params;
-    await followUserService(req.user.id, nickname);
-    return res.status(200).json({ ok: true });
+    const result = await followUserService(req.user.id, nickname);
+    // result.estado: 'aceptado' (cuenta pública) | 'pendiente' (cuenta privada).
+    return res.status(200).json({ ok: true, data: result });
   } catch (error) {
     if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
@@ -200,6 +202,30 @@ const unfollowUser = async (req, res) => {
     const { nickname } = req.params;
     await unfollowUserService(req.user.id, nickname);
     return res.status(200).json({ ok: true });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+// El usuario autenticado acepta la solicitud de seguimiento de :nickname.
+const acceptFollowRequest = async (req, res) => {
+  try {
+    const { nickname } = req.params;
+    const result = await acceptFollowRequestService(req.user.id, nickname);
+    return res.status(200).json({ ok: true, data: result });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+// El usuario autenticado rechaza la solicitud de seguimiento de :nickname.
+const rejectFollowRequest = async (req, res) => {
+  try {
+    const { nickname } = req.params;
+    const result = await rejectFollowRequestService(req.user.id, nickname);
+    return res.status(200).json({ ok: true, data: result });
   } catch (error) {
     if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
     return res.status(500).json({ ok: false, message: 'Internal server error' });
@@ -381,6 +407,6 @@ const togglePrivacy = async (req, res) => {
 
 export { showMe, registerUser, loginUser, logoutUser, getUsers, 
   getUserProfile, updateMe, banUser, 
-  activeUser, deleteUser, followUser, unfollowUser, checkFollowing, updateAvatar, 
+  activeUser, deleteUser, followUser, unfollowUser, acceptFollowRequest, rejectFollowRequest, checkFollowing, updateAvatar,
   searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList, 
   changeUserPassword, forgotPassword, verifyResetToken, resetPassword, deactivateAccount, togglePrivacy }

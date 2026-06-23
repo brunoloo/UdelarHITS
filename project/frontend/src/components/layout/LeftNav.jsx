@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { UserAvatar } from '../shared/UserAvatar'
-import { apiGet, apiPatch, apiDelete } from '../../api/client'
+import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import './LeftNav.css'
 
 function notifTimeAgo(dateStr) {
@@ -32,7 +32,7 @@ function NotifTypeIcon({ tipo }) {
       </svg>
     )
   }
-  if (tipo === 'nuevo_seguidor') {
+  if (tipo === 'nuevo_seguidor' || tipo === 'solicitud_seguimiento' || tipo === 'solicitud_aceptada') {
     return (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -126,6 +126,22 @@ export function LeftNav() {
       await apiDelete(`/notifications/${notifId}`)
       setNotifications(prev => prev.filter(n => n.id !== notifId))
     } catch {}
+  }
+
+  // Aceptar/Rechazar una solicitud de seguimiento desde el panel. En ambos casos
+  // el backend consume la notificación, así que la quitamos de la lista local.
+  async function handleFollowRequest(n, action) {
+    if (!n.actor_nickname) return
+    try {
+      await apiPost(`/users/${encodeURIComponent(n.actor_nickname)}/follow/${action}`, {})
+      setNotifications(prev => prev.filter(x => x.id !== n.id))
+      // El perfil del solicitante puede estar abierto: refrescar contadores/estado.
+      queryClient.invalidateQueries({ queryKey: ['user'] })
+      queryClient.invalidateQueries({ queryKey: ['me'] })
+      showToast(action === 'accept' ? 'Solicitud aceptada' : 'Solicitud rechazada', 'success')
+    } catch (err) {
+      showToast(err.message || 'No se pudo procesar la solicitud', 'error')
+    }
   }
 
   // Click en una notificación con destino: navegar y cerrar el panel.
@@ -260,6 +276,7 @@ export function LeftNav() {
               const modType = n.mensaje?.includes('categoría') ? 'categoria'
                 : n.mensaje?.includes('tema') ? 'tema'
                 : 'comentario'
+              const isFollowRequest = n.tipo === 'solicitud_seguimiento'
               const clickable = !!n.url
               return (
                 <div
@@ -296,6 +313,24 @@ export function LeftNav() {
                       >
                         Leer más
                       </a>
+                    )}
+                    {isFollowRequest && (
+                      <div className="notif-request-actions">
+                        <button
+                          type="button"
+                          className="notif-req-btn notif-req-accept"
+                          onClick={e => { e.stopPropagation(); handleFollowRequest(n, 'accept') }}
+                        >
+                          Aceptar
+                        </button>
+                        <button
+                          type="button"
+                          className="notif-req-btn notif-req-reject"
+                          onClick={e => { e.stopPropagation(); handleFollowRequest(n, 'reject') }}
+                        >
+                          Rechazar
+                        </button>
+                      </div>
                     )}
                     <span className="notif-time">{notifTimeAgo(n.fecha_creacion)}</span>
                   </div>

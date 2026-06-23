@@ -43,19 +43,22 @@ function FollowItem({ user: u, myFollowing, onClose, onFollowChange }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
   const isMe = me && me.nickname === u.nickname
-  const initialFollowing = myFollowing.some(f => f.nickname === u.nickname)
-  const [following, setFollowing] = useState(initialFollowing)
+  // myFollowing solo lista seguimientos aceptados; desde el modal no se conoce
+  // si hay una solicitud pendiente, así que el estado inicial es 'aceptado'/'none'.
+  const initialEstado = myFollowing.some(f => f.nickname === u.nickname) ? 'aceptado' : 'none'
+  const [estado, setEstado] = useState(initialEstado)
   const [hover, setHover] = useState(false)
 
   const mutation = useMutation({
     mutationFn: () =>
-      following
-        ? apiDelete(`/users/${encodeURIComponent(u.nickname)}/follow`)
-        : apiPost(`/users/${encodeURIComponent(u.nickname)}/follow`, {}),
-    onSuccess: () => {
-      const newVal = !following
-      setFollowing(newVal)
-      if (onFollowChange) onFollowChange(u.nickname, newVal)
+      estado === 'none'
+        ? apiPost(`/users/${encodeURIComponent(u.nickname)}/follow`, {})
+        : apiDelete(`/users/${encodeURIComponent(u.nickname)}/follow`),
+    onSuccess: (res) => {
+      // Al seguir, el backend informa 'aceptado' (pública) o 'pendiente' (privada).
+      const newEstado = estado === 'none' ? (res?.data?.estado || 'aceptado') : 'none'
+      setEstado(newEstado)
+      if (onFollowChange) onFollowChange(u.nickname, newEstado === 'aceptado')
       // Invalidate profile caches so follower/following counters refresh and
       // the follow state survives closing and reopening the modal. ['me'] is
       // the source of `myFollowing` when viewing another user's profile, and
@@ -69,9 +72,12 @@ function FollowItem({ user: u, myFollowing, onClose, onFollowChange }) {
   let btnLabel = 'Seguir'
   let btnClass = 'btn-follow-sm'
 
-  if (following) {
+  if (estado === 'aceptado') {
     btnClass = 'btn-follow-sm btn-follow-sm--following'
     btnLabel = hover ? 'Dejar de seguir' : 'Siguiendo'
+  } else if (estado === 'pendiente') {
+    btnClass = 'btn-follow-sm btn-follow-sm--following'
+    btnLabel = hover ? 'Cancelar' : 'Solicitado'
   }
 
   return (

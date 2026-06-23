@@ -85,6 +85,9 @@ CREATE TABLE usuario ( -- Revisado y completo. No modificar
 CREATE TABLE usuario_seguidor ( -- Revisar
   seguidor_id       BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
   seguido_id        BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  -- estado: 'aceptado' = sigue efectivamente; 'pendiente' = solicitud a una
+  -- cuenta privada esperando que el receptor acepte o rechace.
+  estado            VARCHAR(20) NOT NULL DEFAULT 'aceptado' CHECK (estado IN ('pendiente','aceptado')),
   fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (seguidor_id, seguido_id),
   CHECK (seguidor_id <> seguido_id)

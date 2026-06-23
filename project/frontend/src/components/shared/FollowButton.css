@@ -17,6 +17,13 @@
   color: var(--text-primary);
 }
 
+/* Solicitud pendiente: estilo "neutro" como Siguiendo pero atenuado. */
+.btn-follow--pendiente {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
 .btn-follow--unfollow {
   background: var(--status-error-bg);
   border: 1px solid var(--status-error-border);

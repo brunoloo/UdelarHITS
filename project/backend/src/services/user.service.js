@@ -7,11 +7,11 @@ import { createResetToken, findValidToken, markTokenAsUsed } from '../repositori
 import { 
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
-  getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser, 
-  isFollowing, updateAvatarById, searchUsers, updateBannerById, 
-  deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getPasswordHashById, 
+  getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
+  isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, updateAvatarById, searchUsers, updateBannerById,
+  deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getPasswordHashById,
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy } from '../repositories/user.repository.js';
-import { createNotification, notificationExists } from '../repositories/notification.repository.js';
+import { createNotification, notificationExists, deleteNotificationsByActorAndType } from '../repositories/notification.repository.js';
 import pool from '../config/db.js';
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
@@ -210,15 +210,19 @@ const getUserProfileService = async (nickname, viewerId = null) => {
   const followers = await getFollowersByUserId(user.id);
   const following = await getFollowingByUserId(user.id);
 
-  // Whether the authenticated viewer already follows this profile. Resolved
-  // alongside the profile so the follow button renders with the correct state
-  // on first paint (no separate request, no "Seguir" → "Siguiendo" flash).
-  let ya_sigo = false;
+  // Estado del seguimiento del viewer hacia este perfil. Resuelto junto al
+  // perfil para que el botón renderice el estado correcto en el primer paint
+  // (sin request extra, sin flash "Seguir" → "Siguiendo"/"Solicitado").
+  //   'aceptado'  → ya lo sigue
+  //   'pendiente' → solicitud enviada (cuenta privada) esperando respuesta
+  //   'none'      → no lo sigue
+  let mi_estado_seguimiento = 'none';
   if (viewerId && viewerId !== user.id) {
-    ya_sigo = await isFollowing(viewerId, user.id);
+    mi_estado_seguimiento = (await getFollowState(viewerId, user.id)) || 'none';
   }
+  const ya_sigo = mi_estado_seguimiento === 'aceptado';
 
-  return { user , categories, followers, following, ya_sigo };
+  return { user , categories, followers, following, ya_sigo, mi_estado_seguimiento };
 };
 
 const showMeService = async (nickname) => {
@@ -334,22 +338,31 @@ const followUserService = async (seguidorId, seguidoNickname) => {
     err.code = 'BAD_REQUEST';
     throw err;
   }
-  const inserted = await followUser(seguidorId, seguido.id);
 
-  // Notificar al seguido (solo si fue un follow nuevo, no re-follow idempotente).
+  // Cuenta privada → la solicitud queda pendiente hasta que el receptor la
+  // acepte/rechace. Cuenta pública → seguimiento inmediato.
+  const esPrivada = !!seguido.privado;
+  const estado = esPrivada ? 'pendiente' : 'aceptado';
+  const inserted = await followUser(seguidorId, seguido.id, estado);
+
+  // Notificar al seguido (solo si fue un alta nueva, no re-follow idempotente).
   // Nunca a uno mismo (ya validado arriba). Dedup para que unfollow/re-follow
-  // no duplique la notificación.
+  // no duplique la notificación: la notificación persiste hasta que el receptor
+  // la consume (en privadas, al aceptar/rechazar).
   if (inserted) {
+    const tipo = esPrivada ? 'solicitud_seguimiento' : 'nuevo_seguidor';
     const dup = await notificationExists({
-      tipo: 'nuevo_seguidor', actor_id: seguidorId, usuario_id: seguido.id,
+      tipo, actor_id: seguidorId, usuario_id: seguido.id,
     });
     if (!dup) {
       const { rows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [seguidorId]);
       const nick = rows[0]?.nickname;
       await createNotification({
         usuario_id: seguido.id,
-        tipo: 'nuevo_seguidor',
-        mensaje: `${nick} te empezó a seguir`,
+        tipo,
+        mensaje: esPrivada
+          ? `${nick} te envió una solicitud de seguimiento`
+          : `${nick} te empezó a seguir`,
         contenido_id: null,
         actor_id: seguidorId,
         url: `/user/${nick}`,
@@ -358,7 +371,7 @@ const followUserService = async (seguidorId, seguidoNickname) => {
   }
 
   const followers = await getFollowersByUserId(seguido.id);
-  return { seguidores: followers.length };
+  return { estado, seguidores: followers.length };
 };
 
 const unfollowUserService = async (seguidorId, seguidoNickname) => {
@@ -368,9 +381,64 @@ const unfollowUserService = async (seguidorId, seguidoNickname) => {
     err.code = 'NOT_FOUND';
     throw err;
   }
+  // Borra la relación cualquiera sea su estado (deja de seguir o cancela la
+  // solicitud pendiente). No se toca la notificación de solicitud para preservar
+  // el dedup: re-solicitar mientras siga pendiente no genera otra notificación.
   await unfollowUser(seguidorId, seguido.id);
   const followers = await getFollowersByUserId(seguido.id);
   return { seguidores: followers.length };
+};
+
+// El receptor (receptorId) acepta la solicitud de solicitanteNickname.
+const acceptFollowRequestService = async (receptorId, solicitanteNickname) => {
+  const solicitante = await getUserByNickname(solicitanteNickname);
+  if (!solicitante) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  const accepted = await acceptFollowRequest(solicitante.id, receptorId);
+
+  // Consumir la notificación de solicitud (desaparece del panel y reinicia el
+  // dedup para futuras solicitudes).
+  await deleteNotificationsByActorAndType(receptorId, solicitante.id, 'solicitud_seguimiento');
+
+  // Avisar al solicitante que fue aceptado (solo si realmente había una
+  // solicitud pendiente; si la canceló antes, no se notifica nada).
+  if (accepted) {
+    const { rows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [receptorId]);
+    const nick = rows[0]?.nickname;
+    await createNotification({
+      usuario_id: solicitante.id,
+      tipo: 'solicitud_aceptada',
+      mensaje: `${nick} aceptó tu solicitud de seguimiento`,
+      contenido_id: null,
+      actor_id: receptorId,
+      url: `/user/${nick}`,
+    });
+  }
+
+  const followers = await getFollowersByUserId(receptorId);
+  return { aceptada: !!accepted, seguidores: followers.length };
+};
+
+// El receptor (receptorId) rechaza la solicitud de solicitanteNickname.
+const rejectFollowRequestService = async (receptorId, solicitanteNickname) => {
+  const solicitante = await getUserByNickname(solicitanteNickname);
+  if (!solicitante) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  // Elimina la solicitud pendiente (el solicitante verá el botón volver a
+  // "Seguir" al recargar y podrá volver a solicitar). No se notifica el rechazo.
+  const rejected = await rejectFollowRequest(solicitante.id, receptorId);
+
+  // Consumir la notificación de solicitud (desaparece del panel y reinicia el
+  // dedup: un nuevo follow posterior sí generará una notificación nueva).
+  await deleteNotificationsByActorAndType(receptorId, solicitante.id, 'solicitud_seguimiento');
+
+  return { rechazada: !!rejected };
 };
 
 const isFollowingService = async (seguidorId, seguidoNickname) => {
@@ -603,8 +671,9 @@ const togglePrivacyService = async (userId) => {
 
 export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
   updateMeService, banUserService, activeUserService, 
-  deleteUserService, followUserService, unfollowUserService, isFollowingService, 
-  updateAvatarService, searchUsersService, updateBannerService, 
+  deleteUserService, followUserService, unfollowUserService, isFollowingService,
+  acceptFollowRequestService, rejectFollowRequestService,
+  updateAvatarService, searchUsersService, updateBannerService,
   deleteAvatarService, deleteBannerService, getSuggestedUsersService, getMostActiveUsersService, 
   changePasswordService, forgotPasswordService, verifyResetTokenService, resetPasswordService, 
   deactivateAccountService, togglePrivacyService };

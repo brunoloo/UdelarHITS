@@ -193,6 +193,45 @@ button.nav-item {
   text-decoration: underline;
 }
 
+/* Acciones de solicitud de seguimiento (aceptar / rechazar) */
+.notif-request-actions {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 2px;
+}
+
+.notif-req-btn {
+  padding: 5px 14px;
+  border-radius: 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.notif-req-accept {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-color: var(--accent);
+}
+
+.notif-req-accept:hover {
+  filter: brightness(0.95);
+}
+
+.notif-req-reject {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.notif-req-reject:hover {
+  background: var(--status-error-bg);
+  border-color: var(--status-error-border);
+  color: var(--danger);
+}
+
 .notif-time {
   font-size: 12px;
   color: var(--text-muted);

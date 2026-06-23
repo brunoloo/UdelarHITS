@@ -101,6 +101,20 @@ const deleteNotificationById = async (notifId, userId) => {
   return rows[0] || null;
 };
 
+// Borra las notificaciones de un destinatario que coinciden con un actor + tipo.
+// Se usa para "consumir" la solicitud de seguimiento al aceptarla/rechazarla, de
+// modo que desaparezca del panel y el dedup se reinicie (un re-follow posterior
+// vuelve a generar notificación).
+const deleteNotificationsByActorAndType = async (usuario_id, actor_id, tipo) => {
+  const q = `
+    DELETE FROM notificacion
+    WHERE usuario_id = $1 AND actor_id = $2 AND tipo = $3
+    RETURNING id
+  `;
+  const { rows } = await pool.query(q, [usuario_id, actor_id, tipo]);
+  return rows.length;
+};
+
 export {
   createNotification,
   notificationExists,
@@ -109,5 +123,6 @@ export {
   markNotificationAsRead,
   getNotificationById,
   markAllAsReadByUserId,
-  deleteNotificationById
+  deleteNotificationById,
+  deleteNotificationsByActorAndType
 };

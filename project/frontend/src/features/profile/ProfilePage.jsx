@@ -143,7 +143,8 @@ export function ProfilePage() {
 
   // Comes straight from the profile payload, so it's available the moment the
   // card renders — the follow button shows the right state on first paint.
-  const iFollowThem = profileData?.ya_sigo ?? false
+  // 'aceptado' | 'pendiente' | 'none'
+  const miEstadoSeguimiento = profileData?.mi_estado_seguimiento ?? 'none'
 
   // "Te sigue" means the profile user follows ME — i.e. I (me) appear in the
   // profile user's *following* list. (Not their followers list, which would
@@ -214,9 +215,9 @@ export function ProfilePage() {
             </button>
           ) : me && (
             <FollowButton
-              key={nickname}
+              key={`${nickname}:${miEstadoSeguimiento}`}
               nickname={nickname}
-              initialFollowing={iFollowThem}
+              initialState={miEstadoSeguimiento}
               onToggle={handleFollowToggle}
             />
           )}

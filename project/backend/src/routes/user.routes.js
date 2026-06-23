@@ -2,8 +2,9 @@ import { Router } from 'express';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 import { uploadAvatar, uploadBanner } from '../config/multer.js';
 import { showMe, updateMe, getUsers, getUserProfile, changeUserPassword, 
-    banUser, activeUser, deleteUser, followUser, unfollowUser, 
-    checkFollowing, updateAvatar, searchUsers, updateBanner, deleteBanner, 
+    banUser, activeUser, deleteUser, followUser, unfollowUser,
+    acceptFollowRequest, rejectFollowRequest,
+    checkFollowing, updateAvatar, searchUsers, updateBanner, deleteBanner,
     deleteAvatar, getSuggestedUsersList, getMostActiveUsersList, deactivateAccount, togglePrivacy } from '../controllers/user.controller.js';
 
 const router = Router();
@@ -27,8 +28,10 @@ router.get('/most-active', getMostActiveUsersList);              // Lista de usu
 
 router.get('/:nickname', protect, getUserProfile);               // Obtener información del usuario pública
 
-router.post('/:nickname/follow', protect, followUser);           // Seguir otro usuario
-router.delete('/:nickname/follow', protect, unfollowUser);       // Dejar de seguir otro usuario
+router.post('/:nickname/follow', protect, followUser);           // Seguir otro usuario (o solicitar si es privado)
+router.delete('/:nickname/follow', protect, unfollowUser);       // Dejar de seguir / cancelar solicitud
+router.post('/:nickname/follow/accept', protect, acceptFollowRequest); // Aceptar solicitud de :nickname
+router.post('/:nickname/follow/reject', protect, rejectFollowRequest); // Rechazar solicitud de :nickname
 router.get('/:nickname/following', protect, checkFollowing);     // Chequear seguidor
 
 router.patch('/:nickname/ban', protect, isAdmin, banUser);       // Suspender usuario
