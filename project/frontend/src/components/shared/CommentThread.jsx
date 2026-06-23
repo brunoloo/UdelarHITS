@@ -8,20 +8,28 @@ import './CommentCard.css'
 export function CommentThread({ comments, invalidateKey, initialCommentId, onInitialDrillDone }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
-  const didDrill = useRef(false)
+  // Guarda el último id por el que ya hicimos drill-down. Se resetea cuando el
+  // param se limpia, así volver a clickear la misma notificación (estando ya en
+  // la página) vuelve a disparar el drill-down.
+  const lastDrilledId = useRef(null)
 
   const [stack, setStack] = useState([])
 
   useEffect(() => {
-    if (!initialCommentId || didDrill.current) return
-    didDrill.current = true
+    if (!initialCommentId) {
+      lastDrilledId.current = null
+      return
+    }
+    if (lastDrilledId.current === initialCommentId) return
+    lastDrilledId.current = initialCommentId
     apiGet(`/replies/${initialCommentId}/context`)
       .then(chain => {
         if (!chain?.data || chain.data.length === 0) return
+        // La cadena viene raíz→target; quitamos el target y abrimos sus
+        // ancestros. Si es un comentario raíz, ancestors queda vacío y el
+        // stack se resetea a la lista principal donde el target es visible.
         const ancestors = chain.data.slice(0, -1)
-        if (ancestors.length > 0) {
-          setStack(ancestors)
-        }
+        setStack(ancestors)
         onInitialDrillDone?.()
       })
       .catch(() => {})

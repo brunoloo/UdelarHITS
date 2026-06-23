@@ -327,6 +327,13 @@ export function CategoryPage() {
   const tabParam = searchParams.get('tab')
   const commentIdParam = searchParams.get('commentId')
   const [activeTab, setActiveTab] = useState(tabParam === 'comentarios' ? 'comentarios' : 'temas')
+
+  // Si llega ?tab=comentarios (p.ej. al clickear una notificación estando ya en
+  // esta página), cambiamos de tab. El inicializador de useState solo corre al
+  // montar, así que necesitamos reaccionar a cambios posteriores del param.
+  useEffect(() => {
+    if (tabParam === 'comentarios') setActiveTab('comentarios')
+  }, [tabParam])
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
