@@ -118,7 +118,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
         await createNotification({
           usuario_id: topic.autor_id,
           tipo: 'comentario_en_tema',
-          mensaje: `${nick} comentó en tu ${topic.titulo}`,
+          mensaje: `${nick} comentó en tu tema ${topic.titulo}`,
           contenido_id: created.contenido_id,
           actor_id: autorId,
           url: urlTema,
