@@ -1,5 +1,5 @@
 import { createBrowserRouter, Link } from 'react-router-dom'
-import { AppLayout } from './components/layout/AppLayout'
+import { RootWrapper } from './features/landing/RootWrapper'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
 import { FeedPage } from './features/feed/FeedPage'
@@ -32,7 +32,7 @@ function NotFoundPage() {
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <AppLayout />,
+    element: <RootWrapper />,
     children: [
       { index: true, element: <FeedPage /> },
       { path: 'recent', element: <RecentPage /> },
