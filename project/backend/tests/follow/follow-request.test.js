@@ -151,6 +151,61 @@ describe('Solicitudes de seguimiento a cuentas privadas', () => {
     expect(recv.filter(n => n.tipo === 'solicitud_seguimiento')).toHaveLength(1);
   });
 
+  test('pasar la cuenta a pública auto-acepta las solicitudes pendientes y limpia sus notificaciones', async () => {
+    const priv = await registerAndLogin();
+    await makePrivate(priv.user.id);
+    const a = await registerAndLogin();
+    const b = await registerAndLogin();
+
+    await follow(priv.user.nickname, a.cookie);
+    await follow(priv.user.nickname, b.cookie);
+    expect(await followState(a.user.id, priv.user.id)).toBe('pendiente');
+
+    // priv pasa de privada (TRUE) a pública (FALSE)
+    const toggle = await request(app)
+      .patch('/api/users/me/privacy').set('Cookie', priv.cookie);
+    expect(toggle.status).toBe(200);
+    expect(toggle.body.data.privado).toBe(false);
+
+    // Las solicitudes pendientes pasaron a aceptadas.
+    expect(await followState(a.user.id, priv.user.id)).toBe('aceptado');
+    expect(await followState(b.user.id, priv.user.id)).toBe('aceptado');
+
+    // El perfil ya muestra a 'a' como seguidor efectivo.
+    const perfil = await request(app)
+      .get(`/api/users/${priv.user.nickname}`).set('Cookie', a.cookie);
+    expect(perfil.body.data.mi_estado_seguimiento).toBe('aceptado');
+    expect(perfil.body.data.followers).toHaveLength(2);
+
+    // Las notificaciones de solicitud (ya no accionables) se limpiaron.
+    const recv = (await notifs(priv.cookie)).body.data;
+    expect(recv.filter(n => n.tipo === 'solicitud_seguimiento')).toHaveLength(0);
+  });
+
+  test('no se puede borrar a mano una notificación de solicitud; sigue siendo aceptable', async () => {
+    const priv = await registerAndLogin();
+    await makePrivate(priv.user.id);
+    const a = await registerAndLogin();
+
+    await follow(priv.user.nickname, a.cookie);
+    const notif = (await notifs(priv.cookie)).body.data.find(n => n.tipo === 'solicitud_seguimiento');
+    expect(notif).toBeDefined();
+
+    // Intento de borrado manual → rechazado (la notif no es borrable).
+    const del = await request(app)
+      .delete(`/api/notifications/${notif.id}`).set('Cookie', priv.cookie);
+    expect(del.status).toBe(404);
+
+    // La solicitud sigue ahí y se puede aceptar.
+    const stillThere = (await notifs(priv.cookie)).body.data
+      .filter(n => n.tipo === 'solicitud_seguimiento');
+    expect(stillThere).toHaveLength(1);
+
+    const res = await accept(a.user.nickname, priv.cookie);
+    expect(res.body.data.aceptada).toBe(true);
+    expect(await followState(a.user.id, priv.user.id)).toBe('aceptado');
+  });
+
   test('aceptar sin solicitud pendiente no crea relación ni notifica', async () => {
     const priv = await registerAndLogin();
     await makePrivate(priv.user.id);

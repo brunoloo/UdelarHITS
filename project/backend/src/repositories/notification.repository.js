@@ -95,8 +95,16 @@ const markAllAsReadByUserId = async (userId) => {
   return rowCount;
 };
 
+// Borrado manual desde el panel. Las solicitudes de seguimiento NO se pueden
+// borrar acá: la única forma de quitarlas es aceptándolas o rechazándolas, para
+// que el receptor no pierda la posibilidad de responderlas por un borrado
+// accidental.
 const deleteNotificationById = async (notifId, userId) => {
-  const q = `DELETE FROM notificacion WHERE id = $1 AND usuario_id = $2 RETURNING id`;
+  const q = `
+    DELETE FROM notificacion
+    WHERE id = $1 AND usuario_id = $2 AND tipo <> 'solicitud_seguimiento'
+    RETURNING id
+  `;
   const { rows } = await pool.query(q, [notifId, userId]);
   return rows[0] || null;
 };
@@ -115,6 +123,15 @@ const deleteNotificationsByActorAndType = async (usuario_id, actor_id, tipo) => 
   return rows.length;
 };
 
+// Borra todas las notificaciones de un destinatario de un tipo dado. Se usa al
+// pasar una cuenta a pública: las solicitudes pendientes se auto-aceptan y sus
+// notificaciones dejan de ser accionables.
+const deleteNotificationsByType = async (usuario_id, tipo) => {
+  const q = `DELETE FROM notificacion WHERE usuario_id = $1 AND tipo = $2 RETURNING id`;
+  const { rows } = await pool.query(q, [usuario_id, tipo]);
+  return rows.length;
+};
+
 export {
   createNotification,
   notificationExists,
@@ -124,5 +141,6 @@ export {
   getNotificationById,
   markAllAsReadByUserId,
   deleteNotificationById,
-  deleteNotificationsByActorAndType
+  deleteNotificationsByActorAndType,
+  deleteNotificationsByType
 };

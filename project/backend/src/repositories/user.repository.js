@@ -261,6 +261,19 @@ const rejectFollowRequest = async (seguidorId, seguidoId) => {
   return rows[0] || null;
 };
 
+// Acepta en bloque todas las solicitudes pendientes hacia seguidoId. Se usa
+// cuando una cuenta pasa de privada a pública: las solicitudes en espera se
+// vuelven seguimientos efectivos. Devuelve cuántas filas se convirtieron.
+const acceptAllPendingFollowRequests = async (seguidoId) => {
+  const q = `
+    UPDATE usuario_seguidor
+    SET estado = 'aceptado'
+    WHERE seguido_id = $1 AND estado = 'pendiente'
+  `;
+  const { rowCount } = await pool.query(q, [seguidoId]);
+  return rowCount;
+};
+
 const searchUsers = async (query) => {
   const q = `
     SELECT id, nickname, nombre, url_imagen
@@ -404,6 +417,6 @@ export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUs
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, 
   deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,
-  acceptFollowRequest, rejectFollowRequest, updateAvatarById,
+  acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById,
   searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers,
   getMostActiveUsers, getPasswordHashById, updatePasswordHashById, deactivateUser, clearFollows, updatePrivacy, getPrivacyById };

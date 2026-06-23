@@ -8,10 +8,10 @@ import {
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
-  isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, updateAvatarById, searchUsers, updateBannerById,
+  isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, updateBannerById,
   deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getPasswordHashById,
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy } from '../repositories/user.repository.js';
-import { createNotification, notificationExists, deleteNotificationsByActorAndType } from '../repositories/notification.repository.js';
+import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
 import pool from '../config/db.js';
 
 const registerUserService = async ({ nickname, nombre, email, password}) => {
@@ -666,6 +666,15 @@ const togglePrivacyService = async (userId) => {
 
   const newValue = !current.privado;
   const updated = await updatePrivacy(userId, newValue);
+
+  // Al pasar de privada a pública, las solicitudes pendientes se vuelven
+  // seguimientos efectivos automáticamente, y sus notificaciones (que ya no se
+  // pueden aceptar/rechazar) se limpian del panel.
+  if (newValue === false) {
+    await acceptAllPendingFollowRequests(userId);
+    await deleteNotificationsByType(userId, 'solicitud_seguimiento');
+  }
+
   return updated;
 };
 
