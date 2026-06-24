@@ -8,33 +8,57 @@ import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { formatCount } from '../../utils/formatCount'
 import './CategoryCard.css'
+import './CommentCard.css' // reutilizamos los estilos de .comment-card
 
-// Preview (solo visual) del último comentario directo a la categoría. No permite
-// dar like ni responder; al clickear navega al tab de comentarios (en el padre).
+// Preview (solo visual) del último comentario directo a la categoría. Misma
+// estructura que un CommentCard real (avatar + nickname/timeAgo, texto, footer
+// con like y respuestas). No permite dar like ni responder.
 function CommentPreview({ comment }) {
   const autor = resolveAutor(comment)
+  const replyCount = Number(comment.contador_respuestas) || 0
   return (
-    <div className="cat-comment-preview-card">
-      <div className="cat-comment-preview-head">
+    <div className="comment-card comment-card--clickable">
+      <div className="comment-gutter">
         <UserAvatar
           url_imagen={autor.url_imagen}
           nickname={autor.nickname}
-          size="sm"
+          size="md"
           inactive={autor.isInactive}
         />
-        <span className={`cat-comment-preview-author${autor.isInactive ? ' inactive' : ''}`}>
-          {autor.nickname}
-        </span>
-        <span className="cat-comment-preview-time">· {timeAgo(comment.fecha_creacion)}</span>
       </div>
-      <div className="cat-comment-preview-body">
-        <ReadMore text={comment.cuerpo} maxLength={280} />
-      </div>
-      <div className="cat-comment-preview-likes" title={`${comment.likes} me gusta`}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-        {formatCount(comment.likes)}
+      <div className="comment-body">
+        <div className="comment-body-top">
+          <div className="comment-head">
+            {autor.isInactive ? (
+              <span className="inactive-author">{autor.nickname}</span>
+            ) : (
+              <span className="cat-preview-author">{autor.nickname}</span>
+            )}
+            <span>·</span>
+            <span>{timeAgo(comment.fecha_creacion)}</span>
+          </div>
+        </div>
+
+        <div className="comment-text">
+          <ReadMore text={comment.cuerpo} maxLength={280} />
+        </div>
+
+        <div className="comment-actions">
+          {/* Like (thumbs up, mismo SVG que ReactionButtons) — solo visual */}
+          <span className="comment-action-info" title={`${comment.likes} me gusta`}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+            </svg>
+            {formatCount(comment.likes)}
+          </span>
+          {/* Respuestas */}
+          <span className="comment-action-info">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            {replyCount}
+          </span>
+        </div>
       </div>
     </div>
   )
@@ -57,7 +81,17 @@ export function CategoryCard({ category }) {
 
   return (
     <div className="category-card">
-      {/* Zona 1: info de la categoría → /category/:id (tab Temas) */}
+      {/* Zona 2 (arriba): preview del último comentario → ?tab=comentarios */}
+      {ultimo_comentario && (
+        <Link
+          className="category-comment-link"
+          to={`/category/${encodeURIComponent(id)}?tab=comentarios`}
+        >
+          <CommentPreview comment={ultimo_comentario} />
+        </Link>
+      )}
+
+      {/* Zona 1 (abajo): info de la categoría → /category/:id (tab Temas) */}
       <Link className="category-main" to={`/category/${encodeURIComponent(id)}`}>
         <div className="category-icon-wrap">
           <CategoryIcon name={icono} size={22} />
@@ -95,17 +129,6 @@ export function CategoryCard({ category }) {
           )}
         </div>
       </Link>
-
-      {/* Zona 2: preview del último comentario → /category/:id?tab=comentarios */}
-      {ultimo_comentario && (
-        <Link
-          className="category-comment-preview"
-          to={`/category/${encodeURIComponent(id)}?tab=comentarios`}
-        >
-          <span className="cat-comment-preview-label">Último comentario</span>
-          <CommentPreview comment={ultimo_comentario} />
-        </Link>
-      )}
     </div>
   )
 }

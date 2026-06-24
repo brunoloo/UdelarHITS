@@ -4,7 +4,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   margin-bottom: 10px;
-  overflow: hidden;
+  padding: 12px;
   transition: border-color 0.15s;
 }
 
@@ -12,13 +12,37 @@
   border-color: var(--border-strong);
 }
 
-/* Zona principal clickable (ícono + info) → /category/:id */
+/* Preview del comentario (arriba) → ?tab=comentarios. Reutiliza .comment-card. */
+.category-comment-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* El comment-card embebido define la separación con la info de abajo; no hay
+   línea divisoria extra (una sola card fluida). */
+.category-card .comment-card {
+  margin-bottom: 12px;
+}
+
+/* Autor del preview: span (no link, para no anidar anchors) con look de autor. */
+.cat-preview-author {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Zona info de la categoría (abajo) → /category/:id */
 .category-main {
   display: flex;
   gap: 12px;
-  padding: 16px;
+  padding: 4px;
+  border-radius: var(--radius);
   text-decoration: none;
   color: inherit;
+}
+
+.category-main:hover {
+  background: var(--bg);
 }
 
 .category-main:hover .category-title {
@@ -40,73 +64,6 @@
 .category-body {
   flex: 1;
   min-width: 0;
-}
-
-/* ── COMMENT PREVIEW (segunda zona clickable → ?tab=comentarios) ── */
-.category-comment-preview {
-  display: block;
-  padding: 12px 16px 14px;
-  border-top: 1px solid var(--border);
-  text-decoration: none;
-  color: inherit;
-  transition: background 0.12s;
-}
-
-.category-comment-preview:hover {
-  background: var(--accent-light);
-}
-
-.cat-comment-preview-label {
-  display: block;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.cat-comment-preview-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.cat-comment-preview-author {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.cat-comment-preview-author.inactive {
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.cat-comment-preview-time {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.cat-comment-preview-body {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.cat-comment-preview-likes {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.cat-comment-preview-likes svg {
-  color: #e0245e;
 }
 
 .category-header-row {
