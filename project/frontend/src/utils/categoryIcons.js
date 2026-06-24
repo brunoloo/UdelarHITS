@@ -1,7 +1,6 @@
-// Set predefinido de íconos disponibles para las categorías.
+// Set predefinido de íconos disponibles para las categorías (frontend).
 // El valor almacenado en `categoria.icono` es uno de estos nombres (kebab-case,
-// estilo Lucide). Fuente de verdad única compartida entre backend (validación)
-// y frontend (render del ícono y de la grilla del selector).
+// estilo Lucide). Mantener en sync con backend/src/config/categoryIcons.js.
 
 export const DEFAULT_CATEGORY_ICON = 'grid';
 

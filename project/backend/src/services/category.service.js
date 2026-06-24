@@ -5,7 +5,7 @@ import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   getCategoryEditHistory } from '../repositories/category.repository.js';
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
-import { isValidCategoryIcon } from '../../../shared/categoryIcons.js';
+import { isValidCategoryIcon } from '../config/categoryIcons.js';
 
 const ETIQUETAS_VALIDAS = [
   'Facultades','Parciales y exámenes','Becas y trámites','Residencias','Pasantías',

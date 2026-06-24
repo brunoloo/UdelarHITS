@@ -4,9 +4,9 @@ import {
   BarChart3, DollarSign, Globe, Map, Plane, Gamepad2, Trophy, Wrench, Settings, Leaf,
   PawPrint, Utensils, Coffee, Scale, Gavel, Stethoscope,
 } from 'lucide-react'
-import { DEFAULT_CATEGORY_ICON } from '../../../../shared/categoryIcons.js'
+import { DEFAULT_CATEGORY_ICON } from '../../utils/categoryIcons.js'
 
-// Mapa nombre (estilo Lucide, ver shared/categoryIcons.js) → componente Lucide.
+// Mapa nombre (estilo Lucide, ver utils/categoryIcons.js) → componente Lucide.
 const ICON_MAP = {
   'grid': LayoutGrid,
   'code': Code,

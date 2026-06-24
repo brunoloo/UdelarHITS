@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { CategoryIcon } from '../../components/shared/CategoryIcon'
-import { CATEGORY_ICONS } from '../../../../shared/categoryIcons.js'
+import { CATEGORY_ICONS } from '../../utils/categoryIcons.js'
 import './IconPickerModal.css'
 
 // Grilla de íconos disponibles para la categoría. El autor elige uno y confirma
