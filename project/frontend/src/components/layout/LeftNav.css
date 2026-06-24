@@ -139,7 +139,31 @@ button.nav-item {
 .notif-panel-body {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 8px 0;
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* Scrollbar personalizado (mismo estilo que la lista de seguidores) para
+   cuando se acumulan muchas notificaciones, en vez de la barra blanca default. */
+.notif-panel-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notif-panel-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notif-panel-body::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.notif-panel-body::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 /* ── NOTIFICATION ITEMS ── */
