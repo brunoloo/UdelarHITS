@@ -30,7 +30,7 @@
 
 .category-head-link:hover,
 .category-foot-link:hover {
-  background: var(--bg);
+  background: var(--surface-2);
 }
 
 .category-head-link:hover .category-title {
