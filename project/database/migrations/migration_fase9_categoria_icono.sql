@@ -11,7 +11,7 @@
 BEGIN;
 
 -- icono: nombre (estilo Lucide) del ícono de la categoría. Las filas existentes
--- quedan con 'grid' (DEFAULT). Ver shared/categoryIcons.js para el set permitido.
+-- quedan con 'grid' (DEFAULT). Ver backend/src/config/categoryIcons.js para el set permitido.
 ALTER TABLE categoria
   ADD COLUMN IF NOT EXISTS icono VARCHAR(50) NOT NULL DEFAULT 'grid';
 
