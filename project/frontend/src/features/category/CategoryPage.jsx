@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { TopicCard } from '../../components/shared/TopicCard'
 import { CommentThread } from '../../components/shared/CommentThread'
+import { CategoryIcon } from '../../components/shared/CategoryIcon'
+import { IconPickerModal } from './IconPickerModal'
 import { Modal } from '../../components/ui/Modal'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
 import { ReadMore } from '../../components/ui/ReadMore'
@@ -338,6 +340,7 @@ export function CategoryPage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [iconPickerOpen, setIconPickerOpen] = useState(false)
 
   const { data: cat, isLoading: catLoading, isError } = useQuery({
     queryKey: ['category', id],
@@ -358,6 +361,17 @@ export function CategoryPage() {
     onError: (err) => {
       showToast(err.message || 'Error al eliminar', 'error')
     },
+  })
+
+  const iconMutation = useMutation({
+    mutationFn: (icono) => apiPatch(`/categories/${id}`, { icono }),
+    onSuccess: () => {
+      showToast('Ícono actualizado', 'success')
+      setIconPickerOpen(false)
+      queryClient.invalidateQueries({ queryKey: ['category', id] })
+      queryClient.invalidateQueries({ queryKey: ['categories', 'active'] })
+    },
+    onError: (err) => showToast(err.message || 'Error al actualizar el ícono', 'error'),
   })
 
   if (catLoading) {
@@ -444,14 +458,27 @@ export function CategoryPage() {
         ) : (
           <>
             <div className="cat-header-top">
-              <div className="cat-icon-wrap">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-                  <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-                  <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-                  <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-                </svg>
-              </div>
+              {isOwner ? (
+                <button
+                  type="button"
+                  className="cat-icon-wrap cat-icon-editable"
+                  onClick={() => setIconPickerOpen(true)}
+                  title="Cambiar ícono"
+                  aria-label="Cambiar ícono de la categoría"
+                >
+                  <CategoryIcon name={cat.icono} size={28} />
+                  <span className="cat-icon-edit-badge">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 20h9"/>
+                      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                    </svg>
+                  </span>
+                </button>
+              ) : (
+                <div className="cat-icon-wrap">
+                  <CategoryIcon name={cat.icono} size={28} />
+                </div>
+              )}
               <div className="cat-header-info">
                 <h1 className="cat-title">{cat.titulo}</h1>
                 <p className="cat-desc"><ReadMore text={cat.descripcion} maxLength={500} /></p>
@@ -585,6 +612,17 @@ export function CategoryPage() {
       >
         {historyOpen && <HistoryModalBody catId={id} />}
       </Modal>
+
+      {/* Icon picker modal (solo autor) */}
+      {isOwner && (
+        <IconPickerModal
+          isOpen={iconPickerOpen}
+          onClose={() => setIconPickerOpen(false)}
+          current={cat.icono}
+          onConfirm={(icono) => iconMutation.mutate(icono)}
+          isPending={iconMutation.isPending}
+        />
+      )}
     </>
   )
 }

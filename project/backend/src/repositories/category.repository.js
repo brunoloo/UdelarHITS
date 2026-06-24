@@ -46,7 +46,7 @@ const findCategoryByTitulo = async (titulo) => {
 const getCategories = async () => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.autor_id, u.nickname AS autor_nickname,
-      c.estado, c.contador_temas, c.fecha_creacion,
+      c.estado, c.contador_temas, c.fecha_creacion, c.icono,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
     FROM categoria c
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
@@ -60,7 +60,7 @@ const getCategories = async () => {
 
 const getCategoryById = async (id) => {
   const q = `
-    SELECT c.id, c.titulo, c.descripcion, c.autor_id, c.estado, c.fecha_creacion,
+    SELECT c.id, c.titulo, c.descripcion, c.autor_id, c.estado, c.fecha_creacion, c.icono,
       u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
@@ -77,7 +77,7 @@ const getCategoryById = async (id) => {
 
 const getCategoriesByAuthorId = async (autorId) => {
   const q = `
-    SELECT c.id, c.titulo, c.estado, c.fecha_creacion,
+    SELECT c.id, c.titulo, c.estado, c.fecha_creacion, c.icono,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
     FROM categoria c
@@ -131,10 +131,17 @@ const activeCategoryById = async (id) => {
   return rows[0] || null;
 };
 
-const updateCategoryById = async (id, { descripcion, etiquetas }, editorId) => {
+const updateCategoryById = async (id, { descripcion, etiquetas, icono }, editorId) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+
+    if (icono !== undefined) {
+      await client.query(
+        `UPDATE categoria SET icono = $1 WHERE id = $2`,
+        [icono, id]
+      );
+    }
 
     if (descripcion !== undefined) {
       // Obtener descripción actual antes de sobreescribir
@@ -177,7 +184,7 @@ const updateCategoryById = async (id, { descripcion, etiquetas }, editorId) => {
     await client.query('COMMIT');
 
     const { rows } = await client.query(
-      `SELECT c.id, c.titulo, c.descripcion, c.estado,
+      `SELECT c.id, c.titulo, c.descripcion, c.estado, c.icono,
         ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
        FROM categoria c
        LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
@@ -219,7 +226,7 @@ const assignParticipantRole = async (userId, categoriaId) => {
 const getActiveCategories = async () => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
-      c.fecha_creacion, u.nickname AS autor_nickname,
+      c.fecha_creacion, c.icono, u.nickname AS autor_nickname,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas,
       (
         SELECT json_build_object(
@@ -233,7 +240,28 @@ const getActiveCategories = async () => {
         WHERE t.categoria_id = c.id AND t.estado = 'activo'
         ORDER BY con.fecha_creacion DESC
         LIMIT 1
-      ) AS ultimo_tema
+      ) AS ultimo_tema,
+      (
+        -- Último comentario directo a la categoría (sin padre, visible) para el
+        -- preview en la CategoryCard del Home. NULL si no hay comentarios.
+        SELECT json_build_object(
+          'id', com.contenido_id,
+          'cuerpo', con2.cuerpo,
+          'autor_nickname', u3.nickname,
+          'autor_url_imagen', u3.url_imagen,
+          'autor_estado', u3.estado,
+          'fecha_creacion', con2.fecha_creacion,
+          'likes', (SELECT COUNT(*) FROM reaccion r WHERE r.contenido_id = com.contenido_id AND r.tipo = 'meGusta')
+        )
+        FROM comentario com
+        JOIN contenido con2 ON con2.id = com.contenido_id
+        JOIN usuario u3 ON u3.id = con2.autor_id
+        WHERE com.categoria_id = c.id
+          AND com.comentario_padre_id IS NULL
+          AND com.estado = 'visible'
+        ORDER BY con2.fecha_creacion DESC
+        LIMIT 1
+      ) AS ultimo_comentario
     FROM categoria c
     JOIN usuario u ON u.id = c.autor_id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id

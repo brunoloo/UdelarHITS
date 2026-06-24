@@ -40,6 +40,35 @@
   color: var(--accent);
   flex-shrink: 0;
 }
+
+/* Variante editable (autor de la categoría): clickable, con badge de lápiz. */
+.cat-icon-editable {
+  position: relative;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.12s, transform 0.06s;
+}
+.cat-icon-editable:hover {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+.cat-icon-editable:active {
+  transform: scale(0.96);
+}
+.cat-icon-edit-badge {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--surface);
+}
 .cat-header-info {
   flex: 1;
   min-width: 0;

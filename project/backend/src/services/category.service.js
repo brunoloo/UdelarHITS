@@ -5,6 +5,7 @@ import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   getCategoryEditHistory } from '../repositories/category.repository.js';
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
+import { isValidCategoryIcon } from '../../../shared/categoryIcons.js';
 
 const ETIQUETAS_VALIDAS = [
   'Facultades','Parciales y exámenes','Becas y trámites','Residencias','Pasantías',
@@ -178,8 +179,8 @@ const activeCategoryService = async (userId, userRol, categoryId) => {
   return await activeCategoryById(categoryId);
 };
 
-const updateCategoryService = async (userId, userRol, categoryId, { descripcion, etiquetas }) => {
-  if (!descripcion && !etiquetas?.length) {
+const updateCategoryService = async (userId, userRol, categoryId, { descripcion, etiquetas, icono }) => {
+  if (!descripcion && !etiquetas?.length && icono === undefined) {
     const err = new Error('No hay campos para actualizar');
     err.code = 'BAD_REQUEST';
     throw err;
@@ -213,7 +214,13 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
     }
   }
 
-  return await updateCategoryById(categoryId, { descripcion, etiquetas }, userId);
+  if (icono !== undefined && !isValidCategoryIcon(icono)) {
+    const err = new Error('Ícono inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  return await updateCategoryById(categoryId, { descripcion, etiquetas, icono }, userId);
 };
 
 const getActiveCategoriesService = async () => {

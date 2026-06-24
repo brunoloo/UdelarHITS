@@ -103,6 +103,8 @@ CREATE TABLE categoria ( -- Revisado y completo. No modificar
   autor_id                    BIGINT NOT NULL REFERENCES usuario(id) ON DELETE RESTRICT,
   contador_temas              INTEGER NOT NULL DEFAULT 0 CHECK (contador_temas >= 0),
   estado                      estado_cat NOT NULL DEFAULT 'activa',
+  -- icono: nombre (estilo Lucide) del ícono de la categoría. Ver shared/categoryIcons.js
+  icono                       VARCHAR(50) NOT NULL DEFAULT 'grid',
   -- Fase 4.A: previsto para reporte de categorías (aún no usado en 4.A)
   motivo_inactivacion         motivo_inactivacion NULL,
   fecha_inactivacion          TIMESTAMPTZ NULL,
