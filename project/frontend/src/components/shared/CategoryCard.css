@@ -12,17 +12,39 @@
   border-color: var(--border-strong);
 }
 
-/* Preview del comentario (arriba) → ?tab=comentarios. Reutiliza .comment-card. */
+/* Las 3 zonas son Links hermanos (no anidados). Las de categoría (head/foot)
+   van a /category/:id; el preview va a ?tab=comentarios. */
+.category-head-link,
+.category-foot-link,
 .category-comment-link {
   display: block;
   text-decoration: none;
   color: inherit;
 }
 
-/* El comment-card embebido define la separación con la info de abajo; no hay
-   línea divisoria extra (una sola card fluida). */
+.category-head-link,
+.category-foot-link {
+  padding: 4px;
+  border-radius: var(--radius);
+}
+
+.category-head-link:hover,
+.category-foot-link:hover {
+  background: var(--bg);
+}
+
+.category-head-link:hover .category-title {
+  color: var(--accent);
+}
+
+/* Preview embebido (entre descripción y tags). Reutiliza .comment-card; el
+   margen vertical lo da este wrapper, sin línea divisoria (una sola card). */
+.category-comment-link {
+  margin: 10px 0;
+}
+
 .category-card .comment-card {
-  margin-bottom: 12px;
+  margin: 0;
 }
 
 /* Autor del preview: span (no link, para no anidar anchors) con look de autor. */
@@ -31,24 +53,7 @@
   font-weight: 600;
 }
 
-/* Zona info de la categoría (abajo) → /category/:id */
-.category-main {
-  display: flex;
-  gap: 12px;
-  padding: 4px;
-  border-radius: var(--radius);
-  text-decoration: none;
-  color: inherit;
-}
-
-.category-main:hover {
-  background: var(--bg);
-}
-
-.category-main:hover .category-title {
-  color: var(--accent);
-}
-
+/* (1) Header: ícono + título + conteo en una fila */
 .category-icon-wrap {
   width: 40px;
   height: 40px;
@@ -61,20 +66,16 @@
   flex-shrink: 0;
 }
 
-.category-body {
-  flex: 1;
-  min-width: 0;
-}
-
 .category-header-row {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 8px;
 }
 
 .category-title {
+  flex: 1;
+  min-width: 0;
   font-size: 16px;
   font-weight: 500;
   line-height: 1.3;
@@ -85,13 +86,13 @@
   font-size: 12px;
   color: var(--text-muted);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .category-description {
   font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.5;
-  margin-bottom: 8px;
   white-space: pre-wrap;
   word-wrap: break-word;
 }

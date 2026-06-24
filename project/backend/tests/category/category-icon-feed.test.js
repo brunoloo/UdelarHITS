@@ -120,5 +120,18 @@ describe('Último comentario directo en el feed del Home', () => {
     // El preview sigue siendo el comentario directo, no la respuesta anidada.
     expect(Number(found.ultimo_comentario.id)).toBe(Number(directo.contenido_id));
     expect(found.ultimo_comentario.cuerpo).toBe('comentario directo');
+    // Y el comentario directo refleja 1 respuesta.
+    expect(Number(found.ultimo_comentario.contador_respuestas)).toBe(1);
+  });
+
+  test('contador_respuestas es 0 cuando el comentario no tiene respuestas', async () => {
+    const autorCat = await registerAndLogin();
+    const comentarista = await registerAndLogin();
+    const cat = await createCategory(autorCat.cookie);
+    await createReply(comentarista.cookie, { categoria_id: cat.id, cuerpo: 'sin respuestas' });
+
+    const feed = await getActive();
+    const found = feed.find(c => c.id === cat.id);
+    expect(Number(found.ultimo_comentario.contador_respuestas)).toBe(0);
   });
 });

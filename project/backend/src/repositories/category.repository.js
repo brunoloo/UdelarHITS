@@ -251,7 +251,8 @@ const getActiveCategories = async () => {
           'autor_url_imagen', u3.url_imagen,
           'autor_estado', u3.estado,
           'fecha_creacion', con2.fecha_creacion,
-          'likes', (SELECT COUNT(*) FROM reaccion r WHERE r.contenido_id = com.contenido_id AND r.tipo = 'meGusta')
+          'likes', (SELECT COUNT(*) FROM reaccion r WHERE r.contenido_id = com.contenido_id AND r.tipo = 'meGusta'),
+          'contador_respuestas', (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible')
         )
         FROM comentario com
         JOIN contenido con2 ON con2.id = com.contenido_id

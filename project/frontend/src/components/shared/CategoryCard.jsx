@@ -56,7 +56,7 @@ function CommentPreview({ comment }) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
-            {replyCount}
+            {formatCount(replyCount)}
           </span>
         </div>
       </div>
@@ -78,56 +78,53 @@ export function CategoryCard({ category }) {
 
   const tags = parseEtiquetas(etiquetas).slice(0, 3)
   const count = Number(contador_temas) || 0
+  const catUrl = `/category/${encodeURIComponent(id)}`
 
   return (
     <div className="category-card">
-      {/* Zona 2 (arriba): preview del último comentario → ?tab=comentarios */}
+      {/* (1) Ícono + título + conteo + descripción → /category/:id */}
+      <Link className="category-head-link" to={catUrl}>
+        <div className="category-header-row">
+          <div className="category-icon-wrap">
+            <CategoryIcon name={icono} size={20} />
+          </div>
+          <div className="category-title">{titulo}</div>
+          <div className="category-stats">{count} {count === 1 ? 'tema' : 'temas'}</div>
+        </div>
+        {descripcion && (
+          <div className="category-description">
+            <ReadMore text={descripcion} maxLength={500} />
+          </div>
+        )}
+      </Link>
+
+      {/* (2) Preview del último comentario embebido → ?tab=comentarios */}
       {ultimo_comentario && (
-        <Link
-          className="category-comment-link"
-          to={`/category/${encodeURIComponent(id)}?tab=comentarios`}
-        >
+        <Link className="category-comment-link" to={`${catUrl}?tab=comentarios`}>
           <CommentPreview comment={ultimo_comentario} />
         </Link>
       )}
 
-      {/* Zona 1 (abajo): info de la categoría → /category/:id (tab Temas) */}
-      <Link className="category-main" to={`/category/${encodeURIComponent(id)}`}>
-        <div className="category-icon-wrap">
-          <CategoryIcon name={icono} size={22} />
-        </div>
-        <div className="category-body">
-          <div className="category-header-row">
-            <div className="category-title">{titulo}</div>
-            <div className="category-stats">{count} {count === 1 ? 'tema' : 'temas'}</div>
+      {/* (3) Tags + (4) footer "Último tema" → /category/:id */}
+      <Link className="category-foot-link" to={catUrl}>
+        {tags.length > 0 && (
+          <div className="category-footer">
+            {tags.map(tag => <Tag key={tag} label={tag} />)}
           </div>
-
-          {descripcion && (
-            <div className="category-description">
-              <ReadMore text={descripcion} maxLength={500} />
-            </div>
-          )}
-
-          {tags.length > 0 && (
-            <div className="category-footer">
-              {tags.map(tag => <Tag key={tag} label={tag} />)}
-            </div>
-          )}
-
-          {ultimo_tema ? (
-            <div className="last-activity">
-              <span className="last-activity-label">Último tema:</span>
-              <span className="last-activity-title">{ultimo_tema.titulo}</span>
-              <span className="last-activity-meta">
-                por {ultimo_tema.autor} · {timeAgo(ultimo_tema.fecha)}
-              </span>
-            </div>
-          ) : (
-            <div className="last-activity no-activity">
-              Todavía no hay temas publicados
-            </div>
-          )}
-        </div>
+        )}
+        {ultimo_tema ? (
+          <div className="last-activity">
+            <span className="last-activity-label">Último tema:</span>
+            <span className="last-activity-title">{ultimo_tema.titulo}</span>
+            <span className="last-activity-meta">
+              por {ultimo_tema.autor} · {timeAgo(ultimo_tema.fecha)}
+            </span>
+          </div>
+        ) : (
+          <div className="last-activity no-activity">
+            Todavía no hay temas publicados
+          </div>
+        )}
       </Link>
     </div>
   )
