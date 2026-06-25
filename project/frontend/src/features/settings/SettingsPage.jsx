@@ -218,7 +218,7 @@ export function SettingsPage() {
                 <div className="settings-row">
                   <div className="settings-row-info">
                     <h3>Mis me gusta</h3>
-                    <p>Oculta el contenido al que le das like. La tab "Me gusta" de tu perfil sigue visible, pero otros usuarios no verán a qué le diste me gusta.</p>
+                    <p>Oculta el contenido al que le das like.</p>
                   </div>
                   <div className="settings-row-control">
                     <label className="toggle-switch">
