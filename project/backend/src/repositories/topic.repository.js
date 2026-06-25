@@ -174,9 +174,14 @@ const decrementTopicCount = async (categoriaId) => {
 
 const getTopicsByUserId = async (userId) => {
   const q = `
-    SELECT t.contenido_id AS id, t.titulo, t.estado, t.categoria_id,
+    SELECT t.contenido_id AS id, t.titulo, t.estado, t.categoria_id, con.cuerpo,
       CASE WHEN c.estado = 'inactiva' THEN NULL ELSE c.titulo END AS categoria_titulo,
-      c.estado AS categoria_estado, con.fecha_creacion
+      c.estado AS categoria_estado, con.fecha_creacion,
+      (SELECT COUNT(*) FROM comentario com
+          WHERE com.tema_id = t.contenido_id
+            AND com.estado = 'visible'
+            AND com.comentario_padre_id IS NULL
+        ) AS contador_comentarios
     FROM tema t
     JOIN contenido con ON con.id = t.contenido_id
     JOIN categoria c ON c.id = t.categoria_id

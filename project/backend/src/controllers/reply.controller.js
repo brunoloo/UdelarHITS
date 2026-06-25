@@ -69,7 +69,7 @@ const getRepliesByUser = async (req, res) => {
     if (!/^\d+$/.test(userId)) {
       return res.status(400).json({ ok: false, message: 'userId inválido' });
     }
-    const replies = await getRepliesByUserIdService(userId);
+    const replies = await getRepliesByUserIdService(userId, req.user?.id || null);
     return res.status(200).json({ ok: true, data: replies });
   } catch (error) {
     return res.status(500).json({ ok: false, message: 'Internal server error' });

@@ -119,10 +119,15 @@ const getRepliesByAuthorId = async (autorId) => {
   return rows;
 };
 
-const getRepliesByUserId = async (userId) => {
+const getRepliesByUserId = async (userId, viewerId = null) => {
+  // Devuelve la forma completa que consume CommentCard (autor, likes,
+  // mi_reaccion, contador_respuestas, estado) además de los datos de destino
+  // (tema/categoría) para construir el deep-link al comentario en su contexto.
   const q = `
-    SELECT com.contenido_id AS id, con.cuerpo, con.fecha_creacion,
-      CASE 
+    SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
+      con.cuerpo, con.fecha_creacion, con.autor_id,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
+      CASE
         WHEN com.tema_id IS NOT NULL THEN 'tema'
         ELSE 'categoria'
       END AS tipo,
@@ -135,16 +140,20 @@ const getRepliesByUserId = async (userId) => {
         WHEN com.tema_id IS NOT NULL THEN tc.estado
         ELSE cat.estado
       END AS categoria_estado,
-      t.estado AS tema_estado
+      t.estado AS tema_estado,
+      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
+      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
+      (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
     LEFT JOIN tema t ON t.contenido_id = com.tema_id
     LEFT JOIN categoria tc ON tc.id = t.categoria_id
     LEFT JOIN categoria cat ON cat.id = com.categoria_id
     WHERE con.autor_id = $1
     ORDER BY con.fecha_creacion DESC
   `;
-  const { rows } = await pool.query(q, [userId]);
+  const { rows } = await pool.query(q, [userId, viewerId]);
   return rows;
 };
 

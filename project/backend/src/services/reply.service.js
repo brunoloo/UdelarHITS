@@ -259,8 +259,8 @@ const getMyRepliesService = async (autorId) => {
   return await getRepliesByAuthorId(autorId);
 };
 
-const getRepliesByUserIdService = async (userId) => {
-  return await getRepliesByUserId(userId);
+const getRepliesByUserIdService = async (userId, viewerId = null) => {
+  return await getRepliesByUserId(userId, viewerId);
 };
 
 const getRepliesByCommentIdService = async (commentId, userId = null) => {

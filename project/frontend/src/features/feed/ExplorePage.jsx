@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet, apiPost } from '../../api/client'
 import { UserAvatar } from '../../components/shared/UserAvatar'
+import { CategoryCardMini } from '../../components/shared/CategoryCardMini'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { timeAgo } from '../../utils/timeAgo'
 import { useToast } from '../../hooks/useToast'
@@ -219,26 +220,6 @@ function SuggestedUsers({ users }) {
   )
 }
 
-// ── Category mini card ──
-function CatMiniCard({ category }) {
-  const etiquetas = parseEtiquetas(category.etiquetas).slice(0, 2)
-  const count = Number(category.contador_temas) || 0
-  return (
-    <Link className="cat-mini-card" to={`/category/${encodeURIComponent(category.id)}`}>
-      <div className="cat-mini-title">{category.titulo}</div>
-      {category.descripcion && <div className="cat-mini-desc">{category.descripcion}</div>}
-      <div className="cat-mini-footer">
-        <span>{count} {count === 1 ? 'tema' : 'temas'}</span>
-        {etiquetas.length > 0 && (
-          <div className="cat-mini-tags">
-            {etiquetas.map(e => <span key={e} className="tag">{e}</span>)}
-          </div>
-        )}
-      </div>
-    </Link>
-  )
-}
-
 // ── Category suggestions by tag ──
 function CategorySuggestions({ allCats, myCats }) {
   const myIds = new Set((myCats || []).map(c => c.id))
@@ -282,7 +263,9 @@ function CategorySuggestions({ allCats, myCats }) {
         <div key={tag} style={{ marginBottom: 16 }}>
           <div className="cat-group-label">{tag}</div>
           <Carousel>
-            {cats.slice(0, 8).map(c => <CatMiniCard key={c.id} category={c} />)}
+            {cats.slice(0, 8).map(c => (
+              <CategoryCardMini key={c.id} category={c} className="category-mini-card--carousel" />
+            ))}
           </Carousel>
         </div>
       ))}

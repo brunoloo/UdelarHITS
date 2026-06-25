@@ -227,61 +227,18 @@
   gap: 10px;
 }
 
-.cat {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  text-decoration: none;
-  color: inherit;
-  transition: border-color 0.15s;
-}
-
-.cat:hover {
-  border-color: var(--border-strong);
-}
-
-.cat-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: var(--accent-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.cat-text .t {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.cat-text .s {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-/* ── Items list (topics + comments) ── */
-.list {
+/* ── Feed list (temas + comentarios): header "en [destino]" + card ── */
+.profile-feed-list {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 16px;
 }
 
-.item {
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.item:last-child {
-  border-bottom: none;
+/* Las cards internas (TopicCardMini / CommentCard) ya espacian con el gap del
+   contenedor, así que anulamos su margin propio para no duplicar. */
+.profile-feed-item .topic-mini-card,
+.profile-feed-item .comment-card {
+  margin-bottom: 0;
 }
 
 .item-head {
@@ -302,24 +259,6 @@
 
 .item-head a:hover {
   text-decoration: underline;
-}
-
-.item-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin: 0 0 4px;
-}
-
-.item-body {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin: 0;
 }
 
 .empty-panel {

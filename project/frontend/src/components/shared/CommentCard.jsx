@@ -22,6 +22,7 @@ export function CommentCard({
   showThreadLine = false,
   onReply,
   onDrillDown,
+  onCardClick,
   invalidateKey,
 }) {
   const { user } = useAuth()
@@ -70,12 +71,16 @@ export function CommentCard({
     const cardClasses = ['comment-card', 'comment-card--hidden']
     if (role === 'ancestor') cardClasses.push('comment-card--ancestor')
     if (role === 'ancestor' && showThreadLine) cardClasses.push('comment-card--has-line')
-    if (role === 'reply' && replyCount > 0) cardClasses.push('comment-card--clickable')
+    if (onCardClick || (role === 'reply' && replyCount > 0)) cardClasses.push('comment-card--clickable')
+
+    const hiddenOnClick = onCardClick
+      ? () => onCardClick(comment)
+      : (role === 'reply' && replyCount > 0 && onDrillDown ? () => onDrillDown(comment) : undefined)
 
     return (
       <div
         className={cardClasses.join(' ')}
-        onClick={role === 'reply' && replyCount > 0 && onDrillDown ? () => onDrillDown(comment) : undefined}
+        onClick={hiddenOnClick}
       >
         <div className="comment-gutter">
           <div className="comment-avatar comment-avatar--empty" />
@@ -111,8 +116,11 @@ export function CommentCard({
   if (role === 'reply') cardClasses.push('comment-card--clickable')
 
   function handleCardClick(e) {
-    if (role !== 'reply' || !onDrillDown) return
     if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.inline-reply-panel')) return
+    // Navegación directa al comentario (p. ej. desde el perfil) tiene prioridad
+    // sobre el drill-down inline de los hilos.
+    if (onCardClick) { onCardClick(comment); return }
+    if (role !== 'reply' || !onDrillDown) return
     onDrillDown(comment)
   }
 

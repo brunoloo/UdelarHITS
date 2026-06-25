@@ -80,7 +80,7 @@ const getUserIdByNickname = async (nickname) => {
 
 const getCategoriesByUserId = async (userId) => {
   const q = `
-    SELECT c.id, c.titulo, c.descripcion, c.fecha_creacion,
+    SELECT c.id, c.titulo, c.descripcion, c.fecha_creacion, c.icono,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
     FROM categoria c

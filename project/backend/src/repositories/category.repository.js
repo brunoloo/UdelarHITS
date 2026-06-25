@@ -77,7 +77,7 @@ const getCategoryById = async (id) => {
 
 const getCategoriesByAuthorId = async (autorId) => {
   const q = `
-    SELECT c.id, c.titulo, c.estado, c.fecha_creacion, c.icono,
+    SELECT c.id, c.titulo, c.descripcion, c.estado, c.fecha_creacion, c.icono,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
     FROM categoria c

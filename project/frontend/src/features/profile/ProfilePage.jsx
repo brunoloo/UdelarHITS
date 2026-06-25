@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
-import { apiGet } from '../../api/client'
+import { apiGet, apiPost } from '../../api/client'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { FollowButton } from '../../components/shared/FollowButton'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
-import { CategoryCard } from '../../components/shared/CategoryCard'
-import { TopicCard } from '../../components/shared/TopicCard'
+import { CategoryCardMini } from '../../components/shared/CategoryCardMini'
+import { TopicCardMini } from '../../components/shared/TopicCardMini'
+import { CommentCard } from '../../components/shared/CommentCard'
 import { BioText } from '../../utils/renderBioWithLinks'
 import { EditProfileModal } from './EditProfileModal'
 import { FollowersModal } from './FollowersModal'
@@ -170,6 +171,22 @@ export function ProfilePage() {
     queryClient.invalidateQueries({ queryKey: profileQueryKey })
   }
 
+  // Permite responder un comentario directamente desde la tab de comentarios
+  // (la CommentCard completa incluye el botón "Responder"). Crea una respuesta
+  // anidada y refresca el feed del perfil.
+  const replyMutation = useMutation({
+    mutationFn: ({ parentId, cuerpo }) =>
+      apiPost('/replies/create', { cuerpo, comentario_padre_id: parentId }),
+    onSuccess: () => {
+      showToast('Respuesta publicada', 'success')
+      queryClient.invalidateQueries({ queryKey: ['replies', 'user', profile?.id] })
+    },
+    onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
+  })
+
+  const handleReply = (parentId, text) =>
+    replyMutation.mutateAsync({ parentId, cuerpo: text })
+
   const privateMessage = (
     <div className="empty-panel" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '32px 16px' }}>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: 8 }}>
@@ -324,17 +341,7 @@ export function ProfilePage() {
           ) : (
             <div className="cat-grid">
               {categories.map(c => (
-                <Link key={c.id} to={`/category/${encodeURIComponent(c.id)}`} className="cat">
-                  <div className="cat-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M4 4h12l4 4v12H4z"/><path d="M16 4v4h4"/>
-                    </svg>
-                  </div>
-                  <div className="cat-text">
-                    <div className="t">{c.titulo}</div>
-                    <div className="s">{parseInt(c.contador_temas) || 0} {parseInt(c.contador_temas) === 1 ? 'tema' : 'temas'}</div>
-                  </div>
-                </Link>
+                <CategoryCardMini key={c.id} category={c} />
               ))}
             </div>
           )}
@@ -346,22 +353,17 @@ export function ProfilePage() {
           {!canViewContent ? privateMessage : topics.length === 0 ? (
             <div className="empty-panel">Sin temas aún</div>
           ) : (
-            <div className="list">
+            <div className="profile-feed-list">
               {topics.map(t => (
-                <article key={t.id} className="item">
+                <div key={t.id} className="profile-feed-item">
                   <div className="item-head">
                     <span>en</span>
                     <Link to={`/category/${encodeURIComponent(t.categoria_id)}`}>
                       {t.categoria_estado === 'inactiva' ? 'Categoría inactiva' : t.categoria_titulo}
                     </Link>
                   </div>
-                  <h3 className="item-title">
-                    <Link to={`/topic/${encodeURIComponent(t.id)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                      {t.titulo}
-                    </Link>
-                  </h3>
-                  <p className="item-body">{t.cuerpo}</p>
-                </article>
+                  <TopicCardMini topic={t} />
+                </div>
               ))}
             </div>
           )}
@@ -373,11 +375,13 @@ export function ProfilePage() {
           {!canViewContent ? privateMessage : replies.length === 0 ? (
             <div className="empty-panel">Sin comentarios aún</div>
           ) : (
-            <div className="list">
+            <div className="profile-feed-list">
               {replies.map(r => {
-                const href = r.tipo === 'tema'
+                const destinoHref = r.tipo === 'tema'
                   ? `/topic/${encodeURIComponent(r.destino_id)}`
                   : `/category/${encodeURIComponent(r.destino_id)}`
+                // Deep-link al comentario en su contexto (drill-down vía ?commentId).
+                const commentHref = `${destinoHref}?commentId=${encodeURIComponent(r.id)}`
 
                 let destinoLabel
                 if (r.tipo === 'tema' && r.tema_estado === 'inactivo') {
@@ -389,13 +393,19 @@ export function ProfilePage() {
                 }
 
                 return (
-                  <article key={r.id} className="item">
+                  <div key={r.id} className="profile-feed-item">
                     <div className="item-head">
                       <span>en</span>
-                      <Link to={href}>{destinoLabel}</Link>
+                      <Link to={destinoHref}>{destinoLabel}</Link>
                     </div>
-                    <p className="item-body">{r.cuerpo}</p>
-                  </article>
+                    <CommentCard
+                      comment={r}
+                      role="reply"
+                      onCardClick={() => navigate(commentHref)}
+                      onReply={handleReply}
+                      invalidateKey={['replies', 'user', profile.id]}
+                    />
+                  </div>
                 )
               })}
             </div>

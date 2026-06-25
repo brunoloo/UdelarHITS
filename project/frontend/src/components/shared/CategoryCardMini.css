@@ -1,0 +1,96 @@
+/* ── CATEGORY CARD (versión reducida) ── */
+.category-mini-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s;
+}
+
+.category-mini-card:hover {
+  border-color: var(--border-strong);
+}
+
+.category-mini-card:hover .category-mini-title {
+  color: var(--accent);
+}
+
+.category-mini-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.category-mini-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--accent-light);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.category-mini-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.12s;
+}
+
+.category-mini-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 10px;
+}
+
+.category-mini-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.category-mini-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.category-mini-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.category-mini-tags .tag {
+  font-size: 10px;
+  padding: 1px 6px;
+}
+
+/* Variante para carruseles horizontales (ancho fijo, no se encoge). */
+.category-mini-card--carousel {
+  width: 240px;
+  flex-shrink: 0;
+}
