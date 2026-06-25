@@ -147,12 +147,25 @@ button.nav-item {
   scrollbar-color: var(--border-strong) transparent;
 }
 
+/* El panel de guardados es un poco más ancho para que las cards de comentario
+   (con sus acciones) no queden apretadas. */
+.notif-panel.saved-panel {
+  width: 420px;
+}
+
 /* Lista de guardados: cards con separación vertical y aire lateral. */
 .saved-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: 8px 12px;
+}
+
+/* En el espacio acotado del panel, las acciones del comentario pueden envolver
+   con menos separación en vez de desbordar. */
+.saved-list .comment-actions {
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 /* Scrollbar personalizado (mismo estilo que la lista de seguidores) para

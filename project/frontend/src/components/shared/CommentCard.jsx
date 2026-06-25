@@ -230,14 +230,6 @@ export function CommentCard({
               <ReadMore text={comment.cuerpo} maxLength={500} />
             </div>
             <div className="comment-actions">
-              <button
-                className="comment-action-btn"
-                type="button"
-                title={comentarioGuardado ? 'Quitar de guardados' : 'Guardar'}
-                onClick={e => { e.stopPropagation(); toggleSaved('comentario', comment.id) }}
-              >
-                <BookmarkIcon filled={comentarioGuardado} size={14} />
-              </button>
               <ReactionButtons
                 contenidoId={comment.id}
                 likes={comment.likes}
@@ -261,6 +253,14 @@ export function CommentCard({
                   {replyCount} {replyCount === 1 ? 'respuesta' : 'respuestas'}
                 </span>
               )}
+              <button
+                className="comment-action-btn comment-action-btn--bookmark"
+                type="button"
+                title={comentarioGuardado ? 'Quitar de guardados' : 'Guardar'}
+                onClick={e => { e.stopPropagation(); toggleSaved('comentario', comment.id) }}
+              >
+                <BookmarkIcon filled={comentarioGuardado} size={14} />
+              </button>
             </div>
           </>
         )}

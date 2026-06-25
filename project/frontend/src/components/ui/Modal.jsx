@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import './Modal.css'
 
 export function Modal({ isOpen, onClose, title, children, headerAction, className = '' }) {
@@ -11,7 +12,10 @@ export function Modal({ isOpen, onClose, title, children, headerAction, classNam
     return () => document.removeEventListener('keydown', handleKey)
   }, [isOpen, onClose])
 
-  return (
+  // Se renderiza en document.body para que el modal quede centrado en la pantalla
+  // aunque su origen esté dentro de un contenedor con transform (p. ej. el panel
+  // de guardados/notificaciones, que usa translateX para deslizarse).
+  return createPortal(
     <div
       className={`modal-backdrop${isOpen ? ' open' : ''}`}
       onClick={onClose}
@@ -31,6 +35,7 @@ export function Modal({ isOpen, onClose, title, children, headerAction, classNam
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

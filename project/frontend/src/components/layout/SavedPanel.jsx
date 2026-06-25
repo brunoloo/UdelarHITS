@@ -36,7 +36,7 @@ export function SavedPanel({ open, panelRef, onClose }) {
   const handleReply = (parentId, text) => replyMutation.mutateAsync({ parentId, cuerpo: text })
 
   return (
-    <div className={`notif-panel${open ? ' open' : ''}`} ref={panelRef}>
+    <div className={`notif-panel saved-panel${open ? ' open' : ''}`} ref={panelRef}>
       <div className="notif-panel-head">
         <h3>Guardados</h3>
         <button className="notif-panel-close" type="button" onClick={onClose}>

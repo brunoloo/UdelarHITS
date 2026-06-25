@@ -97,6 +97,11 @@
   margin-top: 4px;
 }
 
+/* Guardado: a la derecha del todo, para distribuir los botones a lo ancho. */
+.comment-action-btn--bookmark {
+  margin-left: auto;
+}
+
 .comment-action-btn {
   display: inline-flex;
   align-items: center;
