@@ -4,6 +4,8 @@ import {generateToken} from '../utils/generateToken.js'
 import crypto from 'crypto';
 import { sendEmail } from '../utils/sendEmail.js';
 import { createResetToken, findValidToken, markTokenAsUsed } from '../repositories/token.repository.js';
+import { createVerification, findValidVerification, incrementVerificationAttempts, markVerificationUsed } from '../repositories/verification.repository.js';
+import { isAllowedEmailDomain } from '../config/emailDomains.js';
 import { 
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
@@ -15,8 +17,34 @@ import {
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
 import pool from '../config/db.js';
 
-const registerUserService = async ({ nickname, nombre, email, password}) => {
+// Valida unicidad de nickname/email y lanza el error correspondiente.
+const assertNicknameEmailFree = async (normalizedNickname, normalizedEmail) => {
+  const existing = await findByEmailOrNickname({
+    nickname: normalizedNickname,
+    email: normalizedEmail,
+  });
 
+  if (existing.nicknameTaken && existing.emailTaken) {
+    const err = new Error('El nickname y el email ya están en uso');
+    err.code = 'USER_EXISTS';
+    throw err;
+  }
+  if (existing.nicknameTaken) {
+    const err = new Error('El nickname ya está en uso');
+    err.code = 'NICKNAME_EXISTS';
+    throw err;
+  }
+  if (existing.emailTaken) {
+    const err = new Error('El email ya está en uso');
+    err.code = 'EMAIL_EXISTS';
+    throw err;
+  }
+};
+
+// Paso 1 del registro: valida los datos, verifica el dominio del email, y envía
+// un código de 6 dígitos al correo. NO crea la cuenta todavía: guarda los datos
+// como una verificación pendiente hasta que se confirme el código.
+const requestRegistrationService = async ({ nickname, nombre, email, password }) => {
   const normalizedNickname = nickname?.trim().toLowerCase();
   const normalizedEmail = email?.trim().toLowerCase();
   const normalizedNombre = nombre?.trim().toLowerCase();
@@ -41,7 +69,7 @@ const registerUserService = async ({ nickname, nombre, email, password}) => {
   }
 
   // Chequeo de password > 8 caracteres
-  if(password.length < 8){
+  if (password.length < 8) {
     const err = new Error('La contraseña debe tener al menos 8 caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
@@ -51,48 +79,105 @@ const registerUserService = async ({ nickname, nombre, email, password}) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(normalizedEmail)) {
     const err = new Error('Email inválido');
-    err.code = "BAD_REQUEST";
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  // Solo dominios de correo conocidos (bloquea correos temporales/desechables)
+  if (!isAllowedEmailDomain(normalizedEmail)) {
+    const err = new Error('Usá un email de un proveedor conocido (Gmail, Outlook, Proton, etc.). No se permiten correos temporales.');
+    err.code = 'BAD_REQUEST';
     throw err;
   }
 
   // Chequeo de existencia
-  const existing = await findByEmailOrNickname({ 
-    nickname: normalizedNickname, 
-    email: normalizedEmail 
-  });
+  await assertNicknameEmailFree(normalizedNickname, normalizedEmail);
 
-  if (existing.nicknameTaken && existing.emailTaken) {
-  const err = new Error('El nickname y el email ya están en uso');
-  err.code = 'USER_EXISTS';
-  throw err;
-  }
-
-  if (existing.nicknameTaken) {
-    const err = new Error('El nickname ya está en uso');
-    err.code = 'NICKNAME_EXISTS';
-    throw err;
-  }
-
-  if (existing.emailTaken) {
-    const err = new Error('El email ya está en uso');
-    err.code = 'EMAIL_EXISTS';
-    throw err;
-  }
-
-  // Hash de password
+  // Hash de password (se guarda en la verificación pendiente, no en texto plano)
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(password, salt);
 
-  const rol = 'user';
+  // Código de 6 dígitos, válido por 15 minutos
+  const codigo = crypto.randomInt(100000, 1000000).toString();
+  const expiraEn = new Date(Date.now() + 15 * 60 * 1000);
 
-  // Crear usuario
-  const user = await createUser({
-    rol,
+  await createVerification({
+    email: normalizedEmail,
+    codigo,
     nickname: normalizedNickname,
     nombre: normalizedNombre,
-    email: normalizedEmail,
     passwordHash,
+    expiraEn,
   });
+
+  await sendEmail({
+    to: normalizedEmail,
+    subject: 'Tu código de verificación — UdelarHITS',
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 20px;">
+        <h2 style="font-size: 20px; margin-bottom: 16px;">Confirmá tu correo</h2>
+        <p style="font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 24px;">
+          Usá este código para terminar de crear tu cuenta en UdelarHITS.
+          Si no fuiste vos, podés ignorar este mensaje.
+        </p>
+        <div style="font-size: 34px; font-weight: 700; letter-spacing: 8px; text-align: center;
+                    background: #f3f4f6; border-radius: 10px; padding: 18px 0; color: #111;">
+          ${codigo}
+        </div>
+        <p style="font-size: 13px; color: #999; margin-top: 24px; line-height: 1.5;">
+          Este código expira en 15 minutos.
+        </p>
+      </div>
+    `,
+  });
+
+  return { email: normalizedEmail };
+};
+
+// Paso 2 del registro: confirma el código y recién ahí crea la cuenta con los
+// datos guardados en la verificación pendiente.
+const verifyRegistrationService = async ({ email, codigo }) => {
+  const normalizedEmail = email?.trim().toLowerCase();
+  const normalizedCodigo = String(codigo ?? '').trim();
+
+  if (!normalizedEmail || !normalizedCodigo) {
+    const err = new Error('Faltan campos obligatorios');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const pending = await findValidVerification(normalizedEmail);
+  if (!pending) {
+    const err = new Error('El código expiró o no es válido. Solicitá uno nuevo.');
+    err.code = 'INVALID_CODE';
+    throw err;
+  }
+
+  if (pending.codigo !== normalizedCodigo) {
+    const intentos = await incrementVerificationAttempts(pending.id);
+    if (intentos >= 5) {
+      await markVerificationUsed(pending.id);
+      const err = new Error('Demasiados intentos. Solicitá un código nuevo.');
+      err.code = 'INVALID_CODE';
+      throw err;
+    }
+    const err = new Error('Código incorrecto');
+    err.code = 'INVALID_CODE';
+    throw err;
+  }
+
+  // Reconfirmar unicidad por si alguien tomó el nickname/email entre medio.
+  await assertNicknameEmailFree(pending.nickname, normalizedEmail);
+
+  const user = await createUser({
+    rol: 'user',
+    nickname: pending.nickname,
+    nombre: pending.nombre,
+    email: normalizedEmail,
+    passwordHash: pending.password_hash,
+  });
+
+  await markVerificationUsed(pending.id);
 
   return user;
 };
@@ -692,7 +777,7 @@ const toggleLikesPrivacyService = async (userId) => {
   return await updateLikesPrivacy(userId, newValue);
 };
 
-export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService,
+export { showMeService , requestRegistrationService, verifyRegistrationService, loginUserService, getUsersService, getUserProfileService,
   updateMeService, banUserService, activeUserService, 
   deleteUserService, followUserService, unfollowUserService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService,

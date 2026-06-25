@@ -1,6 +1,6 @@
 import { fileTypeFromBuffer } from 'file-type';
 
-import { registerUserService, loginUserService, getUsersService, createUserByAdminService,
+import { requestRegistrationService, verifyRegistrationService, loginUserService, getUsersService, createUserByAdminService,
     getUserProfileService, showMeService, updateMeService, 
     banUserService, activeUserService, deleteUserService,
   followUserService, unfollowUserService, isFollowingService,
@@ -25,19 +25,16 @@ const showMe = async (req, res) => {
   }
 };
 
+// Paso 1: valida los datos y envía el código de verificación al email.
+// No crea la cuenta todavía.
 const registerUser = async (req, res) => {
   try {
-    const result = await registerUserService(req.body);
-    return res.status(201).json({
-        ok: true,
-        message: 'Usuario registrado correctamente',
-        data: {
-            id: result.id,
-            nickname: result.nickname,
-            nombre: result.nombre,
-            email: result.email,
-            rol: result.rol
-        }
+    const result = await requestRegistrationService(req.body);
+    return res.status(200).json({
+      ok: true,
+      message: 'Te enviamos un código de verificación a tu correo.',
+      requiresVerification: true,
+      data: { email: result.email }
     })
   } catch (error) {
     if (error.code === 'USER_EXISTS') {
@@ -48,6 +45,35 @@ const registerUser = async (req, res) => {
     }
     if (error.code === 'EMAIL_EXISTS') {
       return res.status(409).json({ ok: false, message: error.message });
+    }
+    if (error.code === 'BAD_REQUEST') {
+      return res.status(400).json({ ok: false, message: error.message });
+    }
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+// Paso 2: confirma el código y crea la cuenta.
+const verifyEmail = async (req, res) => {
+  try {
+    const result = await verifyRegistrationService(req.body);
+    return res.status(201).json({
+      ok: true,
+      message: 'Cuenta creada correctamente',
+      data: {
+        id: result.id,
+        nickname: result.nickname,
+        nombre: result.nombre,
+        email: result.email,
+        rol: result.rol
+      }
+    })
+  } catch (error) {
+    if (error.code === 'USER_EXISTS' || error.code === 'NICKNAME_EXISTS' || error.code === 'EMAIL_EXISTS') {
+      return res.status(409).json({ ok: false, message: error.message });
+    }
+    if (error.code === 'INVALID_CODE') {
+      return res.status(400).json({ ok: false, message: error.message });
     }
     if (error.code === 'BAD_REQUEST') {
       return res.status(400).json({ ok: false, message: error.message });
@@ -415,7 +441,7 @@ const toggleLikesPrivacy = async (req, res) => {
   }
 };
 
-export { showMe, registerUser, loginUser, logoutUser, getUsers,
+export { showMe, registerUser, verifyEmail, loginUser, logoutUser, getUsers,
   getUserProfile, updateMe, banUser,
   activeUser, deleteUser, followUser, unfollowUser, acceptFollowRequest, rejectFollowRequest, checkFollowing, updateAvatar,
   searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList,

@@ -9,23 +9,49 @@ export const makeUser = (over = {}) => {
   return {
     nickname: 'user_' + rand,
     nombre: 'Test User',
-    email: rand + '@test.com',
+    // Dominio permitido por el allowlist de registro (ver config/emailDomains.js).
+    email: rand + '@gmail.com',
     password: 'Password123',
     ...over,
   };
 };
 
-// Registra y loguea un usuario. Devuelve { user, cookie, raw }.
-// - user: el objeto user que devuelve el login (id, rol, nickname, etc.)
-// - cookie: el header set-cookie para mandar en requests autenticados
-// - raw: los datos crudos usados para registrar (por si necesitás el password)
-export async function registerAndLogin(over = {}) {
+// Verificación de registro: en test no se envía email real, así que leemos el
+// código directamente de la tabla de verificaciones pendientes.
+export async function getVerificationCode(email) {
+  const { rows } = await pool.query(
+    `SELECT codigo FROM verificacion_registro WHERE email = $1 AND usado = FALSE ORDER BY id DESC LIMIT 1`,
+    [email.trim().toLowerCase()]
+  );
+  return rows[0]?.codigo || null;
+}
+
+// Hace el registro completo en dos pasos (pedir código → verificar). Devuelve la
+// respuesta del verify (201 con data del usuario).
+export async function registerVerified(over = {}) {
   const data = makeUser(over);
 
   const reg = await request(app).post('/api/auth/register').send(data);
   if (reg.status >= 400) {
     throw new Error(`register falló (${reg.status}): ${JSON.stringify(reg.body)}`);
   }
+
+  const codigo = await getVerificationCode(data.email);
+  const ver = await request(app).post('/api/auth/verify-email').send({ email: data.email, codigo });
+  if (ver.status >= 400) {
+    throw new Error(`verify-email falló (${ver.status}): ${JSON.stringify(ver.body)}`);
+  }
+
+  return { data, res: ver };
+}
+
+// Registra y loguea un usuario. Devuelve { user, cookie, raw }.
+// - user: el objeto user que devuelve el login (id, rol, nickname, etc.)
+// - cookie: el header set-cookie para mandar en requests autenticados
+// - raw: los datos crudos usados para registrar (por si necesitás el password)
+export async function registerAndLogin(over = {}) {
+  // El registro requiere verificación por email (dos pasos).
+  const { data } = await registerVerified(over);
 
   const log = await request(app).post('/api/auth/login')
     .send({ email: data.email, password: data.password });

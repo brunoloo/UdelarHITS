@@ -23,7 +23,7 @@ function EyeOffIcon() {
 }
 
 export function RegisterPage() {
-  const { register } = useAuth()
+  const { register, verifyEmail } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
 
@@ -39,11 +39,16 @@ export function RegisterPage() {
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  // Registro en dos pasos: 'form' (datos) → 'verify' (código enviado al email).
+  const [step, setStep] = useState('form')
+  const [code, setCode] = useState('')
+
   function handleChange(e) {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
   }
 
+  // Paso 1: valida y pide el código de verificación al email.
   async function handleSubmit(e) {
     e.preventDefault()
 
@@ -76,10 +81,47 @@ export function RegisterPage() {
         email: form.email,
         password: form.password,
       })
+      setStep('verify')
+      showToast('Te enviamos un código de verificación a tu correo.', 'success')
+    } catch (err) {
+      showToast(err.message || 'Error al registrarse.', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Paso 2: confirma el código y crea la cuenta.
+  async function handleVerify(e) {
+    e.preventDefault()
+    if (!/^\d{6}$/.test(code.trim())) {
+      showToast('Ingresá el código de 6 dígitos que te enviamos.', 'error')
+      return
+    }
+    setLoading(true)
+    try {
+      await verifyEmail({ email: form.email, codigo: code.trim() })
       showToast('¡Cuenta creada exitosamente! Bienvenido/a a UdelarHITS', 'success')
       setTimeout(() => navigate('/login'), 1500)
     } catch (err) {
-      showToast(err.message || 'Error al registrarse.', 'error')
+      showToast(err.message || 'No pudimos verificar el código.', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Reenvía un código nuevo al mismo email.
+  async function handleResend() {
+    setLoading(true)
+    try {
+      await register({
+        nombre: form.nombre,
+        nickname: form.nickname,
+        email: form.email,
+        password: form.password,
+      })
+      showToast('Te reenviamos un código nuevo.', 'success')
+    } catch (err) {
+      showToast(err.message || 'No pudimos reenviar el código.', 'error')
     } finally {
       setLoading(false)
     }
@@ -91,9 +133,14 @@ export function RegisterPage() {
         <Link to="/" className="auth-brand">
           Udelar<span>HITS</span>
         </Link>
-        <h1 className="auth-title">Crear cuenta</h1>
-        <p className="auth-subtitle">Únete a la comunidad de Udelar</p>
+        <h1 className="auth-title">{step === 'form' ? 'Crear cuenta' : 'Verificá tu correo'}</h1>
+        <p className="auth-subtitle">
+          {step === 'form'
+            ? 'Únete a la comunidad de Udelar'
+            : <>Ingresá el código que enviamos a <strong>{form.email}</strong></>}
+        </p>
 
+        {step === 'form' && (
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label className="form-label" htmlFor="nombre">Nombre completo</label>
@@ -215,6 +262,44 @@ export function RegisterPage() {
             {loading ? 'Procesando...' : 'Crear cuenta'}
           </button>
         </form>
+        )}
+
+        {step === 'verify' && (
+        <form className="auth-form" onSubmit={handleVerify} noValidate>
+          <div className="form-group">
+            <label className="form-label" htmlFor="codigo">Código de verificación</label>
+            <input
+              className="form-input"
+              id="codigo"
+              name="codigo"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              placeholder="Código de 6 dígitos"
+              value={code}
+              onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
+              autoFocus
+              required
+            />
+          </div>
+
+          <button type="submit" className="auth-btn" disabled={loading}>
+            {loading ? 'Verificando...' : 'Verificar y crear cuenta'}
+          </button>
+
+          <p className="auth-footer" style={{ marginTop: 16 }}>
+            ¿No te llegó?{' '}
+            <button type="button" className="auth-link-btn" onClick={handleResend} disabled={loading}>
+              Reenviar código
+            </button>
+            {' · '}
+            <button type="button" className="auth-link-btn" onClick={() => setStep('form')} disabled={loading}>
+              Cambiar datos
+            </button>
+          </p>
+        </form>
+        )}
 
         <hr className="auth-divider" />
         <p className="auth-footer">

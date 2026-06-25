@@ -25,8 +25,15 @@ export function AuthProvider({ children }) {
     return res
   }
 
+  // Paso 1 del registro: solicita el código de verificación al email.
   async function register(data) {
     const res = await apiPost('/auth/register', data)
+    return res
+  }
+
+  // Paso 2 del registro: confirma el código y crea la cuenta.
+  async function verifyEmail(payload) {
+    const res = await apiPost('/auth/verify-email', payload)
     return res
   }
 
@@ -37,7 +44,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, verifyEmail, logout }}>
       {children}
     </AuthContext.Provider>
   )

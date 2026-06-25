@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../src/app.js';
 import pool from '../../src/config/db.js';
-import { makeUser, registerAndLogin } from '../helpers.js';
+import { makeUser, registerAndLogin, registerVerified } from '../helpers.js';
 
 const register = (body) => request(app).post('/api/auth/register').send(body);
 const login = (body) => request(app).post('/api/auth/login').send(body);
@@ -25,23 +25,28 @@ describe('register — caminos de error', () => {
   });
 
   test('nickname duplicado → 409', async () => {
-    const base = makeUser();
-    await register(base);
+    const { data: base } = await registerVerified();
     // mismo nickname, distinto email
     const res = await register(makeUser({ nickname: base.nickname }));
     expect(res.status).toBe(409);
   });
 
   test('email duplicado → 409', async () => {
-    const base = makeUser();
-    await register(base);
+    const { data: base } = await registerVerified();
     // mismo email, distinto nickname
     const res = await register(makeUser({ email: base.email }));
     expect(res.status).toBe(409);
   });
 
-  test('registro exitoso devuelve 201 con los datos en data', async () => {
+  test('paso 1 (solicitar código) devuelve 200 y requiresVerification', async () => {
     const res = await register(makeUser());
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.requiresVerification).toBe(true);
+  });
+
+  test('verificación exitosa devuelve 201 con los datos en data', async () => {
+    const { res } = await registerVerified();
     expect(res.status).toBe(201);
     expect(res.body.data).toHaveProperty('nickname');
     expect(res.body.data).toHaveProperty('email');
@@ -70,8 +75,7 @@ describe('login — caminos de error', () => {
 
 describe('seguridad — password almacenado', () => {
   test('el password se guarda hasheado, nunca en texto plano', async () => {
-    const data = makeUser();
-    await register(data);
+    const { data } = await registerVerified();
     const { rows } = await pool.query(
       'SELECT password_hash FROM usuario WHERE email = $1',
       [data.email.trim().toLowerCase()]

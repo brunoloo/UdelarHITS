@@ -15,6 +15,7 @@
     "db:migrate:fase8": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase8_solicitud_seguimiento.sql",
     "db:migrate:fase9": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase9_categoria_icono.sql",
     "db:migrate:fase10": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase10_me_gusta_privado.sql",
+    "db:migrate:fase11": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase11_verificacion_registro.sql",
     "db:test:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits_test;\"",
     "db:test:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits_test OWNER brunoloo;\"",
     "db:test:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits_test -f ../database/schema.sql",

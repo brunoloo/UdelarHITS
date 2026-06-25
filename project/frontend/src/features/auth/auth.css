@@ -236,6 +236,19 @@
 
 .auth-footer a:hover { text-decoration: underline; }
 
+/* Botón con apariencia de link (reenviar código / cambiar datos). */
+.auth-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  font-weight: 500;
+  cursor: pointer;
+}
+.auth-link-btn:hover:not(:disabled) { text-decoration: underline; }
+.auth-link-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* ── FORGOT PASSWORD ── */
 .auth-forgot {
   text-align: left;

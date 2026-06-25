@@ -301,6 +301,23 @@ CREATE TABLE token_reset_password (
   fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Verificación de email durante el registro: guarda los datos de la cuenta
+-- pendiente + un código de 6 dígitos enviado por mail. El usuario recién se
+-- crea (tabla usuario) cuando el código se confirma.
+CREATE TABLE verificacion_registro (
+  id BIGSERIAL PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  codigo VARCHAR(6) NOT NULL,
+  nickname VARCHAR(50) NOT NULL,
+  nombre VARCHAR(120) NOT NULL,
+  password_hash TEXT NOT NULL,
+  intentos INT NOT NULL DEFAULT 0,
+  usado BOOLEAN NOT NULL DEFAULT FALSE,
+  expira_en TIMESTAMPTZ NOT NULL,
+  fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_verificacion_registro_email ON verificacion_registro(email);
+
 -- -----------------------------
 -- REPORTAR
 -- -----------------------------
