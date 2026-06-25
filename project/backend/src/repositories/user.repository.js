@@ -58,7 +58,7 @@ const getUsers = async () => {
 
 const getUserByNickname = async (nickname) => {
   const q = `
-    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado
+    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado, me_gusta_privado
     FROM usuario
     WHERE LOWER(nickname) = LOWER($1)
     LIMIT 1
@@ -413,10 +413,27 @@ const getPrivacyById = async (id) => {
   return rows[0] || null;
 };
 
+const updateLikesPrivacy = async (id, value) => {
+  const q = `
+    UPDATE usuario SET me_gusta_privado = $1
+    WHERE id = $2
+    RETURNING id, me_gusta_privado
+  `;
+  const { rows } = await pool.query(q, [value, id]);
+  return rows[0] || null;
+};
+
+const getLikesPrivacyById = async (id) => {
+  const q = `SELECT me_gusta_privado FROM usuario WHERE id = $1`;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0] || null;
+};
+
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, 
   deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,
   acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById,
   searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers,
-  getMostActiveUsers, getPasswordHashById, updatePasswordHashById, deactivateUser, clearFollows, updatePrivacy, getPrivacyById };
+  getMostActiveUsers, getPasswordHashById, updatePasswordHashById, deactivateUser, clearFollows, updatePrivacy, getPrivacyById,
+  updateLikesPrivacy, getLikesPrivacyById };

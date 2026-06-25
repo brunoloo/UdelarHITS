@@ -102,6 +102,16 @@ export function ProfilePage() {
     enabled: !!profile && canView(),
   })
 
+  // La tab "me gusta" es pública, pero si el dueño tiene los me gusta privados
+  // solo él puede ver la lista (el resto ve un placeholder, sin pedir el feed).
+  const likesPrivate = !isOwnProfile && !!profile?.me_gusta_privado
+
+  const { data: likedComments = [] } = useQuery({
+    queryKey: ['replies', 'liked', profile?.id],
+    queryFn: () => apiGet(`/replies/liked/${profile.id}`).then(r => r.data),
+    enabled: !!profile && canView() && !likesPrivate,
+  })
+
   // Permite responder un comentario directamente desde la tab de comentarios
   // (la CommentCard completa incluye el botón "Responder"). Crea una respuesta
   // anidada y refresca el feed del perfil. Debe declararse antes de cualquier
@@ -198,6 +208,66 @@ export function ProfilePage() {
       </p>
     </div>
   )
+
+  const likesPrivateMessage = (
+    <div className="empty-panel" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '32px 16px' }}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: 8 }}>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>
+        @{profile.nickname} tiene los me gusta privados.
+      </p>
+    </div>
+  )
+
+  // Render compartido de una fila de comentario (tabs "comentarios" y "me gusta").
+  // invalidateKey decide qué query refrescar al reaccionar/responder en la card.
+  const renderCommentRow = (r, invalidateKey) => {
+    // Base del destino. Para comentarios en categoría abrimos su tab de
+    // comentarios; si no, el drill-down no encuentra el comentario.
+    const base = r.tipo === 'tema'
+      ? `/topic/${encodeURIComponent(r.destino_id)}`
+      : `/category/${encodeURIComponent(r.destino_id)}?tab=comentarios`
+    const sep = base.includes('?') ? '&' : '?'
+    const commentHref = `${base}${sep}commentId=${encodeURIComponent(r.id)}`
+
+    // Header contextual: respuesta / tema / categoría.
+    const isReply = !!r.comentario_padre_id
+    let prefix, titleText, titleHref
+    if (isReply) {
+      prefix = 'en respuesta al comentario de'
+      titleText = r.padre_autor_nickname || 'usuario'
+      titleHref = r.padre_autor_nickname
+        ? `/user/${encodeURIComponent(r.padre_autor_nickname)}`
+        : null
+    } else if (r.tipo === 'tema') {
+      prefix = 'en tema'
+      if (r.tema_estado === 'inactivo') { titleText = 'inactivo'; titleHref = null }
+      else { titleText = r.destino_titulo; titleHref = base }
+    } else {
+      prefix = 'en categoría'
+      if (r.categoria_estado === 'inactiva') { titleText = 'inactiva'; titleHref = null }
+      else { titleText = r.destino_titulo; titleHref = base }
+    }
+
+    return (
+      <div key={r.id} className="profile-feed-item">
+        <div className="item-head">
+          <span>{prefix}</span>
+          {titleHref
+            ? <Link to={titleHref}>{titleText}</Link>
+            : <span className="item-head-inactive">{titleText}</span>}
+        </div>
+        <CommentCard
+          comment={r}
+          role="reply"
+          onCardClick={() => navigate(commentHref)}
+          onReply={handleReply}
+          invalidateKey={invalidateKey}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="profile-page">
@@ -332,6 +402,16 @@ export function ProfilePage() {
           </svg>
           Comentarios <span className="count">{canViewContent ? replies.length : '—'}</span>
         </button>
+        <button
+          className={`tab${activeTab === 'megusta' ? ' active' : ''}`}
+          role="tab"
+          onClick={() => setActiveTab('megusta')}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          Me gusta <span className="count">{canViewContent && !likesPrivate ? likedComments.length : '—'}</span>
+        </button>
       </nav>
 
       {/* Tab panels */}
@@ -377,59 +457,23 @@ export function ProfilePage() {
             <div className="empty-panel">Sin comentarios aún</div>
           ) : (
             <div className="profile-feed-list">
-              {replies.map(r => {
-                // Base del destino. Para comentarios en categoría abrimos su tab
-                // de comentarios; si no, el drill-down no encuentra el comentario.
-                const base = r.tipo === 'tema'
-                  ? `/topic/${encodeURIComponent(r.destino_id)}`
-                  : `/category/${encodeURIComponent(r.destino_id)}?tab=comentarios`
-                const sep = base.includes('?') ? '&' : '?'
-                // Click en la card → deep-link al comentario propio en su contexto.
-                const commentHref = `${base}${sep}commentId=${encodeURIComponent(r.id)}`
-
-                // Header contextual según el tipo de comentario:
-                //  - respuesta a otro comentario → "en respuesta al comentario de [nick]"
-                //  - directo a un tema           → "en tema [titulo]"
-                //  - directo a una categoría     → "en categoría [titulo]"
-                const isReply = !!r.comentario_padre_id
-                let prefix, titleText, titleHref
-                if (isReply) {
-                  prefix = 'en respuesta al comentario de'
-                  titleText = r.padre_autor_nickname || 'usuario'
-                  // El nickname enlaza al perfil del autor del comentario padre.
-                  titleHref = r.padre_autor_nickname
-                    ? `/user/${encodeURIComponent(r.padre_autor_nickname)}`
-                    : null
-                } else if (r.tipo === 'tema') {
-                  prefix = 'en tema'
-                  if (r.tema_estado === 'inactivo') { titleText = 'inactivo'; titleHref = null }
-                  else { titleText = r.destino_titulo; titleHref = base }
-                } else {
-                  prefix = 'en categoría'
-                  if (r.categoria_estado === 'inactiva') { titleText = 'inactiva'; titleHref = null }
-                  else { titleText = r.destino_titulo; titleHref = base }
-                }
-
-                return (
-                  <div key={r.id} className="profile-feed-item">
-                    <div className="item-head">
-                      <span>{prefix}</span>
-                      {titleHref
-                        ? <Link to={titleHref}>{titleText}</Link>
-                        : <span className="item-head-inactive">{titleText}</span>}
-                    </div>
-                    <CommentCard
-                      comment={r}
-                      role="reply"
-                      onCardClick={() => navigate(commentHref)}
-                      onReply={handleReply}
-                      invalidateKey={['replies', 'user', profile.id]}
-                    />
-                  </div>
-                )
-              })}
+              {replies.map(r => renderCommentRow(r, ['replies', 'user', profile.id]))}
             </div>
           )}
+        </section>
+      )}
+
+      {activeTab === 'megusta' && (
+        <section className="section-panel active">
+          {!canViewContent ? privateMessage
+            : likesPrivate ? likesPrivateMessage
+            : likedComments.length === 0 ? (
+              <div className="empty-panel">Sin me gusta aún</div>
+            ) : (
+              <div className="profile-feed-list">
+                {likedComments.map(r => renderCommentRow(r, ['replies', 'liked', profile.id]))}
+              </div>
+            )}
         </section>
       )}
 

@@ -88,6 +88,18 @@ export function SettingsPage() {
     },
   })
 
+  const likesPrivacyMutation = useMutation({
+    mutationFn: () => apiPatch('/users/me/likes-privacy', {}),
+    onSuccess: (res) => {
+      const isPrivate = res.data.me_gusta_privado
+      setUser(prev => ({ ...prev, me_gusta_privado: isPrivate }))
+      showToast(isPrivate ? 'Tus me gusta ahora son privados' : 'Tus me gusta ahora son públicos', 'success')
+    },
+    onError: () => {
+      showToast('Error al cambiar la privacidad', 'error')
+    },
+  })
+
   return (
     <>
       <div className="page--column">
@@ -197,6 +209,24 @@ export function SettingsPage() {
                         checked={!!user?.privado}
                         disabled={privacyMutation.isPending}
                         onChange={() => privacyMutation.mutate()}
+                      />
+                      <span className="toggle-slider" />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="settings-row">
+                  <div className="settings-row-info">
+                    <h3>Mis me gusta</h3>
+                    <p>Oculta el contenido al que le das like. La tab "Me gusta" de tu perfil sigue visible, pero otros usuarios no verán a qué le diste me gusta.</p>
+                  </div>
+                  <div className="settings-row-control">
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={!!user?.me_gusta_privado}
+                        disabled={likesPrivacyMutation.isPending}
+                        onChange={() => likesPrivacyMutation.mutate()}
                       />
                       <span className="toggle-slider" />
                     </label>

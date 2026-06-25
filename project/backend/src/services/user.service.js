@@ -10,7 +10,8 @@ import {
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
   isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, updateBannerById,
   deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getPasswordHashById,
-  updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy } from '../repositories/user.repository.js';
+  updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy,
+  getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
 import pool from '../config/db.js';
 
@@ -238,7 +239,8 @@ const showMeService = async (nickname) => {
     url_imagen: user.url_imagen,
     url_banner: user.url_banner,
     fecha_creacion: user.fecha_creacion,
-    privado: user.privado 
+    privado: user.privado,
+    me_gusta_privado: user.me_gusta_privado
   };
 
   return { user: safeUser, categories, followers, following };
@@ -678,13 +680,25 @@ const togglePrivacyService = async (userId) => {
   return updated;
 };
 
-export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService, 
+const toggleLikesPrivacyService = async (userId) => {
+  const current = await getLikesPrivacyById(userId);
+  if (!current) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  const newValue = !current.me_gusta_privado;
+  return await updateLikesPrivacy(userId, newValue);
+};
+
+export { showMeService ,registerUserService, loginUserService, getUsersService, getUserProfileService,
   updateMeService, banUserService, activeUserService, 
   deleteUserService, followUserService, unfollowUserService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService,
   updateAvatarService, searchUsersService, updateBannerService,
   deleteAvatarService, deleteBannerService, getSuggestedUsersService, getMostActiveUsersService, 
   changePasswordService, forgotPasswordService, verifyResetTokenService, resetPasswordService, 
-  deactivateAccountService, togglePrivacyService };
+  deactivateAccountService, togglePrivacyService, toggleLikesPrivacyService };
 
 

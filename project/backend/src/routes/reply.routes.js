@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply,
     getMyReplies, getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory,
-    getReplyContext } from '../controllers/reply.controller.js';
+    getReplyContext, getLikedReplies } from '../controllers/reply.controller.js';
 import { protect, isAdmin, optionalAuth } from '../middlewares/auth.middleware.js';
 
 const router = Router();
@@ -18,7 +18,9 @@ router.get('/:id', getReplyById);                                    // Listar c
 
 router.get('/:id/replies', optionalAuth, getRepliesByComment);       // Listar comentarios de un comentario dado un id
 
-router.get('/user/:userId', protect, getRepliesByUser);              // Obtener respuestas de usuario         
+router.get('/user/:userId', protect, getRepliesByUser);              // Obtener respuestas de usuario
+
+router.get('/liked/:userId', protect, getLikedReplies);              // Comentarios a los que el usuario dio me gusta
 
 router.patch('/update/:id', protect, updateReply);                   // Editar comentario 
 

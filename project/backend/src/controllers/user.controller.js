@@ -8,7 +8,7 @@ import { registerUserService, loginUserService, getUsersService, createUserByAdm
   searchUsersService, updateBannerService,
   deleteBannerService, deleteAvatarService, getSuggestedUsersService, getMostActiveUsersService, 
   changePasswordService, forgotPasswordService, verifyResetTokenService, 
-  resetPasswordService, deactivateAccountService, togglePrivacyService } from '../services/user.service.js';
+  resetPasswordService, deactivateAccountService, togglePrivacyService, toggleLikesPrivacyService } from '../services/user.service.js';
 
 const showMe = async (req, res) => {
   try {
@@ -405,8 +405,18 @@ const togglePrivacy = async (req, res) => {
   }
 };
 
-export { showMe, registerUser, loginUser, logoutUser, getUsers, 
-  getUserProfile, updateMe, banUser, 
+const toggleLikesPrivacy = async (req, res) => {
+  try {
+    const updated = await toggleLikesPrivacyService(req.user.id);
+    return res.status(200).json({ ok: true, data: updated });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
+
+export { showMe, registerUser, loginUser, logoutUser, getUsers,
+  getUserProfile, updateMe, banUser,
   activeUser, deleteUser, followUser, unfollowUser, acceptFollowRequest, rejectFollowRequest, checkFollowing, updateAvatar,
-  searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList, 
-  changeUserPassword, forgotPassword, verifyResetToken, resetPassword, deactivateAccount, togglePrivacy }
+  searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList,
+  changeUserPassword, forgotPassword, verifyResetToken, resetPassword, deactivateAccount, togglePrivacy, toggleLikesPrivacy }

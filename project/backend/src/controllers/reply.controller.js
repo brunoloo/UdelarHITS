@@ -1,7 +1,7 @@
 import { createReplyService, getRepliesByCategoryIdService,
   getRepliesByTopicIdService, deleteReplyService, getMyRepliesService,
   getRepliesByUserIdService, updateReplyService, getRepliesByCommentIdService, getReplyByIdService, getReplyEditHistoryService,
-  getReplyContextService } from '../services/reply.service.js';
+  getReplyContextService, getLikedCommentsByUserIdService } from '../services/reply.service.js';
 
 const createReply = async (req, res) => {
   try {
@@ -76,6 +76,20 @@ const getRepliesByUser = async (req, res) => {
   }
 };
 
+const getLikedReplies = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!/^\d+$/.test(userId)) {
+      return res.status(400).json({ ok: false, message: 'userId inválido' });
+    }
+    const replies = await getLikedCommentsByUserIdService(userId, req.user?.id || null);
+    return res.status(200).json({ ok: true, data: replies });
+  } catch (error) {
+    if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 const getReplyById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -137,4 +151,4 @@ const getReplyContext = async (req, res) => {
 
 export { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply, getMyReplies,
   getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory,
-  getReplyContext };
+  getReplyContext, getLikedReplies };

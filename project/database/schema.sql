@@ -78,6 +78,7 @@ CREATE TABLE usuario ( -- Revisado y completo. No modificar
   url_banner        TEXT,
   estado            estado_usr   NOT NULL DEFAULT 'activo',
   privado BOOLEAN NOT NULL DEFAULT FALSE,
+  me_gusta_privado BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_creacion    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 

@@ -5,7 +5,8 @@ import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCa
 import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId,
   updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory,
-  getReplyContext } from '../repositories/reply.repository.js';
+  getReplyContext, getLikedCommentsByUserId } from '../repositories/reply.repository.js';
+import { getLikesPrivacyById } from '../repositories/user.repository.js';
 import { createNotification } from '../repositories/notification.repository.js';
 import pool from '../config/db.js';
 
@@ -263,6 +264,18 @@ const getRepliesByUserIdService = async (userId, viewerId = null) => {
   return await getRepliesByUserId(userId, viewerId);
 };
 
+const getLikedCommentsByUserIdService = async (userId, viewerId = null) => {
+  // Si el dueño tiene los "me gusta" privados, solo él puede ver la lista.
+  // El resto recibe FORBIDDEN (el frontend muestra el placeholder).
+  const privacy = await getLikesPrivacyById(userId);
+  if (privacy?.me_gusta_privado && Number(viewerId) !== Number(userId)) {
+    const err = new Error('Este usuario tiene sus me gusta privados');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+  return await getLikedCommentsByUserId(userId, viewerId);
+};
+
 const getRepliesByCommentIdService = async (commentId, userId = null) => {
   return await getRepliesByCommentId(commentId, userId);
 };
@@ -327,4 +340,4 @@ const getReplyContextService = async (commentId, userId = null) => {
 export { createReplyService, getRepliesByCategoryIdService, getRepliesByTopicIdService,
   deleteReplyService, getMyRepliesService, getRepliesByUserIdService, updateReplyService,
   getReplyByIdService, getRepliesByCommentIdService, getReplyEditHistoryService,
-  getReplyContextService };
+  getReplyContextService, getLikedCommentsByUserIdService };

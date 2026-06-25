@@ -5,7 +5,7 @@ import { showMe, updateMe, getUsers, getUserProfile, changeUserPassword,
     banUser, activeUser, deleteUser, followUser, unfollowUser,
     acceptFollowRequest, rejectFollowRequest,
     checkFollowing, updateAvatar, searchUsers, updateBanner, deleteBanner,
-    deleteAvatar, getSuggestedUsersList, getMostActiveUsersList, deactivateAccount, togglePrivacy } from '../controllers/user.controller.js';
+    deleteAvatar, getSuggestedUsersList, getMostActiveUsersList, deactivateAccount, togglePrivacy, toggleLikesPrivacy } from '../controllers/user.controller.js';
 
 const router = Router();
 
@@ -18,6 +18,7 @@ router.patch('/me/banner', protect, uploadBanner.single('banner'), updateBanner)
 router.delete('/me/banner', protect, deleteBanner);              // Eliminar banner
 router.delete('/me/avatar', protect, deleteAvatar);              // Eliminar avatar          
 router.patch('/me/privacy', protect, togglePrivacy);             // Perfil privado
+router.patch('/me/likes-privacy', protect, toggleLikesPrivacy);  // Me gusta privados
 router.post('/me/deactivate', protect, deactivateAccount);       // Desactivar cuenta
 router.put('/change-password', protect, changeUserPassword);     // Actualizar contraseña
 
