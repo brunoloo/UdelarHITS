@@ -20,6 +20,7 @@
   display: block;
   text-decoration: none;
   color: inherit;
+  cursor: pointer;
 }
 
 .category-head-link,

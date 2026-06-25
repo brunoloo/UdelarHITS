@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Tag } from '../ui/Tag'
 import { ReadMore } from '../ui/ReadMore'
 import { UserAvatar } from './UserAvatar'
@@ -79,11 +79,20 @@ export function CategoryCard({ category }) {
   const tags = parseEtiquetas(etiquetas).slice(0, 3)
   const count = Number(contador_temas) || 0
   const catUrl = `/category/${encodeURIComponent(id)}`
+  const navigate = useNavigate()
+
+  // Las zonas de la card navegan como un Link, pero usamos <div> + onClick para
+  // no anidar <a> dentro de <a> (la descripción y el preview autolinkean URLs,
+  // que ya son <a>). Un click sobre un link interno respeta ese link.
+  const goTo = (url) => (e) => {
+    if (e.target.closest('a')) return
+    navigate(url)
+  }
 
   return (
     <div className="category-card">
       {/* (1) Ícono + título + conteo + descripción → /category/:id */}
-      <Link className="category-head-link" to={catUrl}>
+      <div className="category-head-link" onClick={goTo(catUrl)}>
         <div className="category-header-row">
           <div className="category-icon-wrap">
             <CategoryIcon name={icono} size={20} />
@@ -96,17 +105,17 @@ export function CategoryCard({ category }) {
             <ReadMore text={descripcion} maxLength={500} />
           </div>
         )}
-      </Link>
+      </div>
 
       {/* (2) Preview del último comentario embebido → ?tab=comentarios */}
       {ultimo_comentario && (
-        <Link className="category-comment-link" to={`${catUrl}?tab=comentarios`}>
+        <div className="category-comment-link" onClick={goTo(`${catUrl}?tab=comentarios`)}>
           <CommentPreview comment={ultimo_comentario} />
-        </Link>
+        </div>
       )}
 
       {/* (3) Tags + (4) footer "Último tema" → /category/:id */}
-      <Link className="category-foot-link" to={catUrl}>
+      <div className="category-foot-link" onClick={goTo(catUrl)}>
         {tags.length > 0 && (
           <div className="category-footer">
             {tags.map(tag => <Tag key={tag} label={tag} />)}
@@ -125,7 +134,7 @@ export function CategoryCard({ category }) {
             Todavía no hay temas publicados
           </div>
         )}
-      </Link>
+      </div>
     </div>
   )
 }
