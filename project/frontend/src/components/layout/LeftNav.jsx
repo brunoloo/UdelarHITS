@@ -289,6 +289,14 @@ export function LeftNav() {
                 : 'comentario'
               const isFollowRequest = n.tipo === 'solicitud_seguimiento'
               const clickable = !!n.url
+              // Cuenta inactiva → se anonimiza el nombre del actor (avatar y
+              // mensaje, que viene con el nickname al inicio). 'ban' queda público.
+              const actorInactive = n.actor_estado === 'inactivo'
+              const actorName = actorInactive ? 'Usuario inactivo' : n.actor_nickname
+              let message = n.mensaje
+              if (actorInactive && n.actor_nickname && message?.startsWith(n.actor_nickname)) {
+                message = 'Usuario inactivo' + message.slice(n.actor_nickname.length)
+              }
               return (
                 <div
                   key={n.id}
@@ -299,7 +307,7 @@ export function LeftNav() {
                 >
                   {n.actor_nickname ? (
                     <div className="notif-actor">
-                      <UserAvatar url_imagen={n.actor_url_imagen} nickname={n.actor_nickname} size={36} />
+                      <UserAvatar url_imagen={actorInactive ? null : n.actor_url_imagen} nickname={actorName} size={36} inactive={actorInactive} />
                       <span className={`notif-type-dot notif-type-dot--${n.tipo}`}>
                         <NotifTypeIcon tipo={n.tipo} />
                       </span>
@@ -310,7 +318,7 @@ export function LeftNav() {
                     </div>
                   )}
                   <div className="notif-content">
-                    <p className="notif-message">{n.mensaje}</p>
+                    <p className="notif-message">{message}</p>
                     {n.contenido_preview && (
                       <p className="notif-preview">{n.contenido_preview}</p>
                     )}

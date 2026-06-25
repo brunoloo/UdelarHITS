@@ -47,7 +47,7 @@ const notificationExists = async (
 const getNotificationsByUserId = async (userId, limit = 30) => {
   const q = `
     SELECT n.id, n.tipo, n.mensaje, n.contenido_id, n.leida, n.fecha_creacion, n.url,
-      a.nickname AS actor_nickname, a.url_imagen AS actor_url_imagen,
+      a.nickname AS actor_nickname, a.url_imagen AS actor_url_imagen, a.estado AS actor_estado,
       LEFT(c.cuerpo, 100) AS contenido_preview
     FROM notificacion n
     LEFT JOIN usuario a ON a.id = n.actor_id

@@ -146,6 +146,10 @@ const getRepliesByUserId = async (userId, viewerId = null) => {
          FROM contenido con_p
          JOIN usuario u_p ON u_p.id = con_p.autor_id
         WHERE con_p.id = com.comentario_padre_id) AS padre_autor_nickname,
+      (SELECT u_p.estado
+         FROM contenido con_p
+         JOIN usuario u_p ON u_p.id = con_p.autor_id
+        WHERE con_p.id = com.comentario_padre_id) AS padre_autor_estado,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion
@@ -189,6 +193,10 @@ const getLikedCommentsByUserId = async (userId, viewerId = null) => {
          FROM contenido con_p
          JOIN usuario u_p ON u_p.id = con_p.autor_id
         WHERE con_p.id = com.comentario_padre_id) AS padre_autor_nickname,
+      (SELECT u_p.estado
+         FROM contenido con_p
+         JOIN usuario u_p ON u_p.id = con_p.autor_id
+        WHERE con_p.id = com.comentario_padre_id) AS padre_autor_estado,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion

@@ -226,7 +226,7 @@ const assignParticipantRole = async (userId, categoriaId) => {
 const getActiveCategories = async () => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
-      c.fecha_creacion, c.icono, u.nickname AS autor_nickname,
+      c.fecha_creacion, c.icono, u.nickname AS autor_nickname, u.estado AS autor_estado,
       ARRAY_AGG(ce.etiqueta_valor) AS etiquetas,
       (
         SELECT json_build_object(
@@ -267,7 +267,7 @@ const getActiveCategories = async () => {
     JOIN usuario u ON u.id = c.autor_id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
     WHERE c.estado = 'activa'
-    GROUP BY c.id, u.nickname
+    GROUP BY c.id, u.nickname, u.estado
     ORDER BY c.titulo DESC
   `;
   const { rows } = await pool.query(q);

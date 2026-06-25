@@ -24,7 +24,10 @@ function Skeleton() {
 function RecentCategoryCard({ category }) {
   const etiquetas = parseEtiquetas(category.etiquetas).slice(0, 3)
   const count = Number(category.contador_temas) || 0
-  const author = category.autor_nickname || category.autor || ''
+  // Cuenta inactiva → se anonimiza. (Las cuentas 'ban' siguen siendo públicas.)
+  const author = category.autor_estado === 'inactivo'
+    ? 'Usuario inactivo'
+    : (category.autor_nickname || category.autor || '')
   return (
     <Link className="recent-cat-card" to={`/category/${encodeURIComponent(category.id)}`}>
       <div className="recent-cat-header">

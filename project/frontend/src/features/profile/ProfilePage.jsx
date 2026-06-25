@@ -236,8 +236,10 @@ export function ProfilePage() {
     let prefix, titleText, titleHref
     if (isReply) {
       prefix = 'en respuesta al comentario de'
-      titleText = r.padre_autor_nickname || 'usuario'
-      titleHref = r.padre_autor_nickname
+      // Cuenta inactiva → se anonimiza (sin link). 'ban' queda público.
+      const padreInactivo = r.padre_autor_estado === 'inactivo'
+      titleText = padreInactivo ? 'Usuario inactivo' : (r.padre_autor_nickname || 'usuario')
+      titleHref = (!padreInactivo && r.padre_autor_nickname)
         ? `/user/${encodeURIComponent(r.padre_autor_nickname)}`
         : null
     } else if (r.tipo === 'tema') {
