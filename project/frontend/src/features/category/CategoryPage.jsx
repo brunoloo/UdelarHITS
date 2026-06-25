@@ -377,6 +377,29 @@ export function CategoryPage() {
     onError: (err) => showToast(err.message || 'Error al actualizar el ícono', 'error'),
   })
 
+  // Fijar/desanclar (moderador): comentario directo y tema de la categoría.
+  const pinCommentMutation = useMutation({
+    mutationFn: (comment) => comment.fijado
+      ? apiDelete(`/categories/${id}/pin/comentario`)
+      : apiPost(`/categories/${id}/pin`, { tipo: 'comentario', item_id: comment.id }),
+    onSuccess: (_data, comment) => {
+      showToast(comment.fijado ? 'Comentario desanclado' : 'Comentario fijado', 'success')
+      queryClient.invalidateQueries({ queryKey: ['replies', 'category', id] })
+    },
+    onError: (err) => showToast(err.message || 'No se pudo fijar', 'error'),
+  })
+
+  const pinTopicMutation = useMutation({
+    mutationFn: (topic) => topic.fijado
+      ? apiDelete(`/categories/${id}/pin/tema`)
+      : apiPost(`/categories/${id}/pin`, { tipo: 'tema', item_id: topic.contenido_id }),
+    onSuccess: (_data, topic) => {
+      showToast(topic.fijado ? 'Tema desanclado' : 'Tema fijado', 'success')
+      queryClient.invalidateQueries({ queryKey: ['category', id] })
+    },
+    onError: (err) => showToast(err.message || 'No se pudo fijar', 'error'),
+  })
+
   if (catLoading) {
     return (
       <div>
@@ -555,7 +578,14 @@ export function CategoryPage() {
               Todavía no hay temas en esta categoría. ¡Sé el primero en crear uno!
             </div>
           ) : (
-            cat.topics.map(t => <TopicCard key={t.contenido_id} topic={t} />)
+            cat.topics.map(t => (
+              <TopicCard
+                key={t.contenido_id}
+                topic={t}
+                canPin={isOwner}
+                onTogglePin={() => pinTopicMutation.mutate(t)}
+              />
+            ))
           )}
         </div>
       )}
@@ -571,6 +601,8 @@ export function CategoryPage() {
               comments={replies}
               invalidateKey={['replies', 'category', id]}
               initialCommentId={commentIdParam}
+              canPin={isOwner}
+              onTogglePin={(c) => pinCommentMutation.mutate(c)}
               onInitialDrillDone={() => {
                 searchParams.delete('commentId')
                 searchParams.delete('tab')

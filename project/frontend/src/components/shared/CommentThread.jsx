@@ -5,7 +5,7 @@ import { apiGet, apiPost } from '../../api/client'
 import { CommentCard } from './CommentCard'
 import './CommentCard.css'
 
-export function CommentThread({ comments, invalidateKey, initialCommentId, onInitialDrillDone }) {
+export function CommentThread({ comments, invalidateKey, initialCommentId, onInitialDrillDone, canPin = false, onTogglePin }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
   // Guarda el último id por el que ya hicimos drill-down. Se resetea cuando el
@@ -127,6 +127,8 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
               onDrillDown={drillDown}
               onReply={handleReply}
               invalidateKey={invalidateKey}
+              canPin={canPin && !currentParent}
+              onTogglePin={onTogglePin}
             />
           ))
         )}

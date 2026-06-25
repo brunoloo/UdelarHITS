@@ -2,7 +2,8 @@ import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
   updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas, 
   hardDeleteCategoryById, categoryHasContent, getPopularCategories,
-  getCategoryEditHistory } from '../repositories/category.repository.js';
+  getCategoryEditHistory, pinCategoryComment, unpinCategoryComment,
+  pinCategoryTopic, unpinCategoryTopic } from '../repositories/category.repository.js';
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
 import { isValidCategoryIcon } from '../config/categoryIcons.js';
@@ -270,7 +271,56 @@ const getCategoryEditHistoryService = async (categoryId) => {
   return await getCategoryEditHistory(categoryId);
 };
 
-export { createCategoryService, getCategoriesService, getCategoryByIdService, deactivateCategoryById, 
-  deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService, 
-  getActiveCategoriesService, getParticipantsByCategoryIdService, getEtiquetasService, 
-  getPopularCategoriesService, getCategoryEditHistoryService };
+// ── Fijar/desanclar en una categoría (solo el creador o un admin) ──
+const assertCategoryModerator = async (userId, userRol, categoryId) => {
+  const category = await getCategoryById(categoryId);
+  if (!category) {
+    const err = new Error('Categoría no encontrada');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  if (category.autor_id !== userId && userRol !== 'admin') {
+    const err = new Error('No tenés permisos para fijar en esta categoría');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+};
+
+const pinCategoryItemService = async (userId, userRol, categoryId, tipo, itemId) => {
+  await assertCategoryModerator(userId, userRol, categoryId);
+  if (!/^\d+$/.test(String(itemId))) {
+    const err = new Error('Id inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  let res;
+  if (tipo === 'comentario') res = await pinCategoryComment(categoryId, itemId);
+  else if (tipo === 'tema') res = await pinCategoryTopic(categoryId, itemId);
+  else {
+    const err = new Error('Tipo inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  if (!res) {
+    const err = new Error('El elemento no pertenece a la categoría o no es válido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+};
+
+const unpinCategoryItemService = async (userId, userRol, categoryId, tipo) => {
+  await assertCategoryModerator(userId, userRol, categoryId);
+  if (tipo === 'comentario') await unpinCategoryComment(categoryId);
+  else if (tipo === 'tema') await unpinCategoryTopic(categoryId);
+  else {
+    const err = new Error('Tipo inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+};
+
+export { createCategoryService, getCategoriesService, getCategoryByIdService, deactivateCategoryById,
+  deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService,
+  getActiveCategoriesService, getParticipantsByCategoryIdService, getEtiquetasService,
+  getPopularCategoriesService, getCategoryEditHistoryService,
+  pinCategoryItemService, unpinCategoryItemService };

@@ -94,16 +94,18 @@ const getTopicsByCategoryId = async (categoryId) => {
   const q = `
     SELECT t.contenido_id, t.titulo, t.estado, c.fecha_creacion, c.autor_id, c.cuerpo,
       u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
-      (SELECT COUNT(*) FROM comentario com 
-          WHERE com.tema_id = t.contenido_id 
+      (SELECT COUNT(*) FROM comentario com
+          WHERE com.tema_id = t.contenido_id
             AND com.estado = 'visible'
             AND com.comentario_padre_id IS NULL
-        ) AS contador_comentarios
+        ) AS contador_comentarios,
+      COALESCE(t.contenido_id = cat.tema_fijado_id, false) AS fijado
     FROM tema t
     JOIN contenido c ON c.id = t.contenido_id
     JOIN usuario u ON u.id = c.autor_id
+    JOIN categoria cat ON cat.id = t.categoria_id
     WHERE t.categoria_id = $1 AND t.estado = 'activo'
-    ORDER BY c.fecha_creacion DESC
+    ORDER BY (t.contenido_id = cat.tema_fijado_id) DESC, c.fecha_creacion DESC
   `;
   const { rows } = await pool.query(q, [categoryId]);
   return rows;
@@ -352,6 +354,43 @@ const getPopularCategories = async (days = 7, limit = 20) => {
 
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
-  updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId, 
+  updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId,
   getEtiquetas, categoryHasContent, hardDeleteCategoryById, getPopularCategories,
-  getCategoryEditHistory };
+  getCategoryEditHistory, pinCategoryComment, unpinCategoryComment, pinCategoryTopic, unpinCategoryTopic };
+
+// ── Fijados (moderador = creador de la categoría) ──
+// Cada columna admite a lo sumo un id; sobreescribir auto-desancla el anterior.
+// El guard EXISTS valida que el item pertenezca a la categoría.
+
+async function pinCategoryComment(categoriaId, comentarioId) {
+  const q = `
+    UPDATE categoria SET comentario_fijado_id = $2
+    WHERE id = $1 AND EXISTS (
+      SELECT 1 FROM comentario WHERE contenido_id = $2 AND categoria_id = $1
+        AND comentario_padre_id IS NULL AND estado = 'visible'
+    )
+    RETURNING id
+  `;
+  const { rows } = await pool.query(q, [categoriaId, comentarioId]);
+  return rows[0] || null;
+}
+
+async function unpinCategoryComment(categoriaId) {
+  await pool.query(`UPDATE categoria SET comentario_fijado_id = NULL WHERE id = $1`, [categoriaId]);
+}
+
+async function pinCategoryTopic(categoriaId, temaId) {
+  const q = `
+    UPDATE categoria SET tema_fijado_id = $2
+    WHERE id = $1 AND EXISTS (
+      SELECT 1 FROM tema WHERE contenido_id = $2 AND categoria_id = $1 AND estado = 'activo'
+    )
+    RETURNING id
+  `;
+  const { rows } = await pool.query(q, [categoriaId, temaId]);
+  return rows[0] || null;
+}
+
+async function unpinCategoryTopic(categoriaId) {
+  await pool.query(`UPDATE categoria SET tema_fijado_id = NULL WHERE id = $1`, [categoriaId]);
+}

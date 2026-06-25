@@ -89,6 +89,17 @@
   text-decoration: underline;
 }
 
+/* ── Pinned badge ── */
+.comment-pinned-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
 /* ── Actions row ── */
 .comment-actions {
   display: flex;
@@ -97,9 +108,12 @@
   margin-top: 4px;
 }
 
-/* Guardado: a la derecha del todo, para distribuir los botones a lo ancho. */
+/* Guardado: a la derecha del todo, para distribuir los botones a lo ancho.
+   El margin-right lo alinea verticalmente con el botón de 3 puntos de arriba
+   (que tiene padding propio y queda algo inset respecto al borde). */
 .comment-action-btn--bookmark {
   margin-left: auto;
+  margin-right: 5px;
 }
 
 .comment-action-btn {

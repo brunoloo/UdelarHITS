@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory, 
-    getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, 
-    getEtiquetasList, getPopularCategoriesList, getCategoryEditHistory } from '../controllers/category.controller.js';
+import { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
+    getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory,
+    getEtiquetasList, getPopularCategoriesList, getCategoryEditHistory,
+    pinCategoryItem, unpinCategoryItem } from '../controllers/category.controller.js';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 
 const router = Router();
@@ -21,7 +22,10 @@ router.get('/:id', getCategoryById);                     // Ver categoría por i
 router.get('/:id/participants', protect, getParticipantsByCategory); // Obtener los participantes de mi categoría
 
 router.delete('/:id/delete', protect, deleteCategory)     // Desactiva la categoría
-router.patch('/:id/activar', protect, activeCategory)    // Activa la categoría 
+router.patch('/:id/activar', protect, activeCategory)    // Activa la categoría
+
+router.post('/:id/pin', protect, pinCategoryItem);          // Fijar tema/comentario (moderador)
+router.delete('/:id/pin/:tipo', protect, unpinCategoryItem); // Desanclar tema/comentario
 
 
 export default router;

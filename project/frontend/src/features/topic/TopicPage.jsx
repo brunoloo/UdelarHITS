@@ -85,6 +85,18 @@ export function TopicPage() {
     onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
   })
 
+  // Fijar/desanclar un comentario del tema (solo el creador del tema).
+  const pinCommentMutation = useMutation({
+    mutationFn: (comment) => comment.fijado
+      ? apiDelete(`/topics/${id}/pin`)
+      : apiPost(`/topics/${id}/pin`, { item_id: comment.id }),
+    onSuccess: (_data, comment) => {
+      showToast(comment.fijado ? 'Comentario desanclado' : 'Comentario fijado', 'success')
+      queryClient.invalidateQueries({ queryKey: ['replies', 'topic', id] })
+    },
+    onError: (err) => showToast(err.message || 'No se pudo fijar', 'error'),
+  })
+
   function handleCommentSubmit() {
     if (!requireAuth('Debes iniciar sesión para comentar')) return
     if (commentText.trim().length < 1 || commentMutation.isPending) return
@@ -295,6 +307,8 @@ export function TopicPage() {
           comments={replies}
           invalidateKey={['replies', 'topic', id]}
           initialCommentId={commentIdParam}
+          canPin={isAuthor || isAdmin}
+          onTogglePin={(c) => pinCommentMutation.mutate(c)}
           onInitialDrillDone={() => {
             searchParams.delete('commentId')
             setSearchParams(searchParams, { replace: true })

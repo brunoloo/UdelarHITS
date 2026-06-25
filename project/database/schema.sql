@@ -106,6 +106,10 @@ CREATE TABLE categoria ( -- Revisado y completo. No modificar
   estado                      estado_cat NOT NULL DEFAULT 'activa',
   -- icono: nombre (estilo Lucide) del ícono de la categoría. Ver backend/src/config/categoryIcons.js
   icono                       VARCHAR(50) NOT NULL DEFAULT 'grid',
+  -- Fijados por el moderador (creador): hasta 1 tema y 1 comentario directo.
+  -- (Las FK a contenido se agregan al final: contenido se crea después.)
+  tema_fijado_id              BIGINT,
+  comentario_fijado_id        BIGINT,
   -- Fase 4.A: previsto para reporte de categorías (aún no usado en 4.A)
   motivo_inactivacion         motivo_inactivacion NULL,
   fecha_inactivacion          TIMESTAMPTZ NULL,
@@ -160,6 +164,8 @@ CREATE TABLE tema (
   motivo_inactivacion  motivo_inactivacion NULL,
   fecha_inactivacion   TIMESTAMPTZ NULL,
   inactivado_directo   BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Comentario fijado por el moderador (creador) del tema.
+  comentario_fijado_id BIGINT REFERENCES contenido(id) ON DELETE SET NULL,
   CHECK (char_length(titulo) > 0),
   UNIQUE (categoria_id, titulo) -- título de tema único dentro de categoría
 );
@@ -373,3 +379,9 @@ CREATE INDEX idx_comentario_moderacion
 -- Notificaciones
 CREATE INDEX idx_notificacion_usuario ON notificacion(usuario_id, fecha_creacion DESC);
 CREATE INDEX idx_notificacion_no_leida ON notificacion(usuario_id) WHERE leida = FALSE;
+
+-- FK de fijados de categoría (se agregan acá porque contenido se crea después
+-- que categoria). Tema ya referencia contenido inline (se crea después).
+ALTER TABLE categoria
+  ADD CONSTRAINT fk_categoria_tema_fijado FOREIGN KEY (tema_fijado_id) REFERENCES contenido(id) ON DELETE SET NULL,
+  ADD CONSTRAINT fk_categoria_comentario_fijado FOREIGN KEY (comentario_fijado_id) REFERENCES contenido(id) ON DELETE SET NULL;

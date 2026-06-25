@@ -388,4 +388,23 @@ export { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById, ge
   updateTopicById, updateTopicEstado, incrementTopicCount, decrementTopicCount, 
   getTopicsByUserId, topicHasContent, hardDeleteTopicById, cleanupInactiveTopics, 
   getRecentTopics, getTrendingTopic, moderateDeactivateTopicTx, moderateHideTopicRepliesTx, 
-  decrementTopicCountTx, reactivateTopicTx, restoreDraggedRepliesTx, hardDeleteTopicTreeTx, deleteReportsByContenidoTx, getTopicEditHistory };
+  decrementTopicCountTx, reactivateTopicTx, restoreDraggedRepliesTx, hardDeleteTopicTreeTx, deleteReportsByContenidoTx, getTopicEditHistory,
+  pinTopicComment, unpinTopicComment };
+
+// ── Comentario fijado por el moderador (creador) del tema ──
+async function pinTopicComment(temaId, comentarioId) {
+  const q = `
+    UPDATE tema SET comentario_fijado_id = $2
+    WHERE contenido_id = $1 AND EXISTS (
+      SELECT 1 FROM comentario WHERE contenido_id = $2 AND tema_id = $1
+        AND comentario_padre_id IS NULL AND estado = 'visible'
+    )
+    RETURNING contenido_id
+  `;
+  const { rows } = await pool.query(q, [temaId, comentarioId]);
+  return rows[0] || null;
+}
+
+async function unpinTopicComment(temaId) {
+  await pool.query(`UPDATE tema SET comentario_fijado_id = NULL WHERE contenido_id = $1`, [temaId]);
+}

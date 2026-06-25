@@ -2,7 +2,8 @@ import { createCategoryService, getCategoriesService, getCategoryByIdService,
   deleteCategoryService, activeCategoryService, getMyCategoriesService, 
   updateCategoryService, getActiveCategoriesService, 
   getParticipantsByCategoryIdService, getEtiquetasService, 
-  getPopularCategoriesService, getCategoryEditHistoryService } from '../services/category.service.js';
+  getPopularCategoriesService, getCategoryEditHistoryService,
+  pinCategoryItemService, unpinCategoryItemService } from '../services/category.service.js';
 
 const createCategory = async (req, res) => {
   try {
@@ -145,6 +146,33 @@ const getCategoryEditHistory = async (req, res) => {
   }
 };
 
-export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory, 
-  getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, getEtiquetasList, 
-  getPopularCategoriesList, getCategoryEditHistory };
+const pinCategoryItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tipo, item_id } = req.body;
+    await pinCategoryItemService(req.user.id, req.user.rol, id, tipo, item_id);
+    return res.status(200).json({ ok: true, message: 'Fijado' });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const unpinCategoryItem = async (req, res) => {
+  try {
+    const { id, tipo } = req.params;
+    await unpinCategoryItemService(req.user.id, req.user.rol, id, tipo);
+    return res.status(200).json({ ok: true, message: 'Desanclado' });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
+  getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, getEtiquetasList,
+  getPopularCategoriesList, getCategoryEditHistory, pinCategoryItem, unpinCategoryItem };

@@ -3,7 +3,8 @@ import { getCategoryById, assignParticipantRole, getTopicsByCategoryId, category
 import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
   getTopicsByAuthorId, updateTopicById, updateTopicEstado, decrementTopicCount,
   incrementTopicCount, getTopicsByUserId, topicHasContent,
-  hardDeleteTopicById, getRecentTopics, getTrendingTopic, getTopicEditHistory } from '../repositories/topic.repository.js';
+  hardDeleteTopicById, getRecentTopics, getTrendingTopic, getTopicEditHistory,
+  pinTopicComment, unpinTopicComment } from '../repositories/topic.repository.js';
 import { createNotification } from '../repositories/notification.repository.js';
 import pool from '../config/db.js';
 
@@ -252,6 +253,42 @@ const getTopicEditHistoryService = async (topicId) => {
   return await getTopicEditHistory(topicId);
 };
 
-export { createTopicService, getTopicsService ,getTopicByIdService, getMyTopicsService, 
-  updateTopicService, activeTopicService, deleteTopicService, getTopicsByCategoryIdService, 
-  getTopicsByUserIdService, getRecentTopicsService, getTrendingTopicService, getTopicEditHistoryService };
+// ── Fijar/desanclar un comentario en un tema (solo el creador o un admin) ──
+const assertTopicModerator = async (userId, userRol, topicId) => {
+  const topic = await getTopicById(topicId);
+  if (!topic) {
+    const err = new Error('Tema no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  if (topic.autor_id !== userId && userRol !== 'admin') {
+    const err = new Error('No tenés permisos para fijar en este tema');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+};
+
+const pinTopicCommentService = async (userId, userRol, topicId, comentarioId) => {
+  await assertTopicModerator(userId, userRol, topicId);
+  if (!/^\d+$/.test(String(comentarioId))) {
+    const err = new Error('Id inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  const res = await pinTopicComment(topicId, comentarioId);
+  if (!res) {
+    const err = new Error('El comentario no pertenece al tema o no es válido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+};
+
+const unpinTopicCommentService = async (userId, userRol, topicId) => {
+  await assertTopicModerator(userId, userRol, topicId);
+  await unpinTopicComment(topicId);
+};
+
+export { createTopicService, getTopicsService ,getTopicByIdService, getMyTopicsService,
+  updateTopicService, activeTopicService, deleteTopicService, getTopicsByCategoryIdService,
+  getTopicsByUserIdService, getRecentTopicsService, getTrendingTopicService, getTopicEditHistoryService,
+  pinTopicCommentService, unpinTopicCommentService };

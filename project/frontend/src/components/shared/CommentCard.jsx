@@ -15,6 +15,7 @@ import { Modal } from '../ui/Modal'
 import { timeAgo } from '../../utils/timeAgo'
 import { ReactionButtons } from './ReactionButtons'
 import { BookmarkIcon } from './BookmarkIcon'
+import { PinIcon } from './PinIcon'
 import { useSaved } from '../../hooks/useSaved'
 import './CommentCard.css'
 
@@ -26,6 +27,8 @@ export function CommentCard({
   onDrillDown,
   onCardClick,
   invalidateKey,
+  canPin = false,
+  onTogglePin,
 }) {
   const { user } = useAuth()
   const { showToast } = useToast()
@@ -131,6 +134,15 @@ export function CommentCard({
   // Dropdown items
   const menuItems = []
 
+  // Fijar/desanclar (solo visible para el moderador de la categoría/tema).
+  if (canPin) {
+    menuItems.push({
+      label: comment.fijado ? 'Desanclar' : 'Fijar',
+      icon: <PinIcon filled={comment.fijado} size={14} />,
+      onClick: () => onTogglePin?.(comment),
+    })
+  }
+
   menuItems.push({
     label: 'Reportar',
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>,
@@ -181,6 +193,12 @@ export function CommentCard({
         />
       </div>
       <div className="comment-body">
+        {comment.fijado && (
+          <div className="comment-pinned-badge">
+            <PinIcon filled size={12} />
+            Fijado
+          </div>
+        )}
         <div className="comment-body-top">
           <div className="comment-head">
             {autor.isInactive ? (
