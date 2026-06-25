@@ -358,10 +358,10 @@ export function ProfilePage() {
               {topics.map(t => (
                 <div key={t.id} className="profile-feed-item">
                   <div className="item-head">
-                    <span>en</span>
-                    <Link to={`/category/${encodeURIComponent(t.categoria_id)}`}>
-                      {t.categoria_estado === 'inactiva' ? 'Categoría inactiva' : t.categoria_titulo}
-                    </Link>
+                    <span>en categoría</span>
+                    {t.categoria_estado === 'inactiva'
+                      ? <span className="item-head-inactive">inactiva</span>
+                      : <Link to={`/category/${encodeURIComponent(t.categoria_id)}`}>{t.categoria_titulo}</Link>}
                   </div>
                   <TopicCardMini topic={t} />
                 </div>
@@ -378,26 +378,43 @@ export function ProfilePage() {
           ) : (
             <div className="profile-feed-list">
               {replies.map(r => {
-                const destinoHref = r.tipo === 'tema'
+                // Base del destino. Para comentarios en categoría abrimos su tab
+                // de comentarios; si no, el drill-down no encuentra el comentario.
+                const base = r.tipo === 'tema'
                   ? `/topic/${encodeURIComponent(r.destino_id)}`
-                  : `/category/${encodeURIComponent(r.destino_id)}`
-                // Deep-link al comentario en su contexto (drill-down vía ?commentId).
-                const commentHref = `${destinoHref}?commentId=${encodeURIComponent(r.id)}`
+                  : `/category/${encodeURIComponent(r.destino_id)}?tab=comentarios`
+                const sep = base.includes('?') ? '&' : '?'
+                // Click en la card → deep-link al comentario propio en su contexto.
+                const commentHref = `${base}${sep}commentId=${encodeURIComponent(r.id)}`
 
-                let destinoLabel
-                if (r.tipo === 'tema' && r.tema_estado === 'inactivo') {
-                  destinoLabel = 'Tema inactivo'
-                } else if (r.tipo === 'categoria' && r.categoria_estado === 'inactiva') {
-                  destinoLabel = 'Categoría inactiva'
+                // Header contextual según el tipo de comentario:
+                //  - respuesta a otro comentario → "en respuesta al comentario de [nick]"
+                //  - directo a un tema           → "en tema [titulo]"
+                //  - directo a una categoría     → "en categoría [titulo]"
+                const isReply = !!r.comentario_padre_id
+                let prefix, titleText, titleHref
+                if (isReply) {
+                  prefix = 'en respuesta al comentario de'
+                  titleText = r.padre_autor_nickname || 'usuario'
+                  // El header lleva al comentario padre en su contexto.
+                  titleHref = `${base}${sep}commentId=${encodeURIComponent(r.comentario_padre_id)}`
+                } else if (r.tipo === 'tema') {
+                  prefix = 'en tema'
+                  if (r.tema_estado === 'inactivo') { titleText = 'inactivo'; titleHref = null }
+                  else { titleText = r.destino_titulo; titleHref = base }
                 } else {
-                  destinoLabel = r.destino_titulo
+                  prefix = 'en categoría'
+                  if (r.categoria_estado === 'inactiva') { titleText = 'inactiva'; titleHref = null }
+                  else { titleText = r.destino_titulo; titleHref = base }
                 }
 
                 return (
                   <div key={r.id} className="profile-feed-item">
                     <div className="item-head">
-                      <span>en</span>
-                      <Link to={destinoHref}>{destinoLabel}</Link>
+                      <span>{prefix}</span>
+                      {titleHref
+                        ? <Link to={titleHref}>{titleText}</Link>
+                        : <span className="item-head-inactive">{titleText}</span>}
                     </div>
                     <CommentCard
                       comment={r}

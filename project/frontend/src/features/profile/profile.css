@@ -221,10 +221,17 @@
 }
 
 /* ── Category grid ── */
+/* minmax(0, 1fr) (en vez de 1fr → minmax(auto, 1fr)) evita que contenido largo
+   o sin espacios expanda la columna: todas las cards quedan del mismo ancho. */
 .cat-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  align-items: stretch;
+}
+
+.cat-grid > .category-mini-card {
+  min-width: 0;
 }
 
 /* ── Feed list (temas + comentarios): header "en [destino]" + card ── */
@@ -259,6 +266,11 @@
 
 .item-head a:hover {
   text-decoration: underline;
+}
+
+.item-head-inactive {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .empty-panel {

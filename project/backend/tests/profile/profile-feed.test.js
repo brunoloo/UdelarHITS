@@ -80,6 +80,35 @@ describe('Perfil — forma de datos del feed reducido', () => {
     expect(r2.mi_reaccion).toBeNull();
   });
 
+  test('una respuesta expone comentario_padre_id y padre_autor_nickname', async () => {
+    const padreAutor = await registerAndLogin();
+    const respondedor = await registerAndLogin();
+    const topic = await createTopic(padreAutor.cookie);
+    const padre = await createReply(padreAutor.cookie, { tema_id: topicId(topic), cuerpo: 'comentario padre' });
+    const respuesta = await createReply(respondedor.cookie, {
+      comentario_padre_id: padre.contenido_id,
+      tema_id: topicId(topic),
+      cuerpo: 'mi respuesta',
+    });
+
+    const res = await request(app).get(`/api/replies/user/${respondedor.user.id}`).set('Cookie', respondedor.cookie);
+    const r = res.body.data.find(x => Number(x.id) === Number(respuesta.contenido_id));
+    expect(r).toBeDefined();
+    expect(Number(r.comentario_padre_id)).toBe(Number(padre.contenido_id));
+    expect(r.padre_autor_nickname).toBe(padreAutor.user.nickname);
+  });
+
+  test('un comentario directo (no respuesta) tiene comentario_padre_id null', async () => {
+    const autor = await registerAndLogin();
+    const topic = await createTopic(autor.cookie);
+    const comment = await createReply(autor.cookie, { tema_id: topicId(topic), cuerpo: 'directo' });
+
+    const res = await request(app).get(`/api/replies/user/${autor.user.id}`).set('Cookie', autor.cookie);
+    const r = res.body.data.find(x => Number(x.id) === Number(comment.contenido_id));
+    expect(r.comentario_padre_id).toBeNull();
+    expect(r.padre_autor_nickname).toBeNull();
+  });
+
   test('comentario directo a categoría tiene tipo "categoria" y destino la categoría', async () => {
     const autor = await registerAndLogin();
     const cat = await createCategory(autor.cookie);
