@@ -25,7 +25,7 @@ export function ReportsSection() {
     mutationFn: ({ id, decision }) => apiPatch(`/user-reports/${id}/resolve`, { decision }),
     onSuccess: (_, { decision }) => {
       showToast(
-        decision === 'levantar' ? 'Reporte levantado' : 'Cuenta inactivada',
+        decision === 'levantar' ? 'Reporte levantado' : 'Cuenta baneada',
         'success'
       )
       queryClient.invalidateQueries({ queryKey: ['user-reports', 'pending'] })
@@ -41,14 +41,14 @@ export function ReportsSection() {
     resolveMutation.mutate({ id: report.id, decision: 'levantar' })
   }
 
-  function handleInactivar(report) {
+  function handleBan(report) {
     setConfirm(report)
   }
 
-  function handleConfirmInactivar() {
+  function handleConfirmBan() {
     if (!confirm) return
     setFading(prev => new Set([...prev, confirm.id]))
-    resolveMutation.mutate({ id: confirm.id, decision: 'inactivar' })
+    resolveMutation.mutate({ id: confirm.id, decision: 'ban' })
   }
 
   if (isLoading) {
@@ -104,9 +104,9 @@ export function ReportsSection() {
                 </button>
                 <button
                   className="admin-btn admin-btn--danger"
-                  onClick={() => handleInactivar(r)}
+                  onClick={() => handleBan(r)}
                 >
-                  Inactivar cuenta
+                  Banear cuenta
                 </button>
               </div>
             </div>
@@ -117,10 +117,10 @@ export function ReportsSection() {
       <ConfirmDialog
         isOpen={!!confirm}
         onClose={() => setConfirm(null)}
-        onConfirm={handleConfirmInactivar}
-        title="¿Inactivar cuenta?"
-        message={`¿Inactivar la cuenta de @${confirm?.reportado_nickname}? El usuario no podrá iniciar sesión.`}
-        confirmText="Inactivar"
+        onConfirm={handleConfirmBan}
+        title="¿Banear cuenta?"
+        message={`¿Banear la cuenta de @${confirm?.reportado_nickname}? El usuario no podrá iniciar sesión.`}
+        confirmText="Banear"
         danger
       />
     </div>

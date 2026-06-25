@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPatch } from '../../api/client'
 import { UserAvatar } from '../../components/shared/UserAvatar'
@@ -107,7 +108,16 @@ export function UsersSection() {
                   <td>
                     <UserAvatar url_imagen={u.url_imagen} nickname={u.nickname} size={32} />
                   </td>
-                  <td className="admin-nick">@{u.nickname}</td>
+                  <td className="admin-nick">
+                    <Link
+                      to={`/user/${encodeURIComponent(u.nickname)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="admin-nick-link"
+                    >
+                      @{u.nickname}
+                    </Link>
+                  </td>
                   <td>{u.nombre || '—'}</td>
                   <td>{u.email}</td>
                   <td>

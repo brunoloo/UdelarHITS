@@ -46,6 +46,9 @@ const registerUser = async (req, res) => {
     if (error.code === 'EMAIL_EXISTS') {
       return res.status(409).json({ ok: false, message: error.message });
     }
+    if (error.code === 'RATE_LIMITED') {
+      return res.status(429).json({ ok: false, message: error.message });
+    }
     if (error.code === 'BAD_REQUEST') {
       return res.status(400).json({ ok: false, message: error.message });
     }
@@ -67,19 +70,27 @@ const resendCode = async (req, res) => {
   });
 };
 
-// Paso 2: confirma el código y crea la cuenta.
+// Paso 2: confirma el código, crea la cuenta e inicia sesión (setea la cookie).
 const verifyEmail = async (req, res) => {
   try {
-    const result = await verifyRegistrationService(req.body);
+    const { user, token } = await verifyRegistrationService(req.body);
+    res.cookie('jwt', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: (1000 * 60 * 60 * 24) * 7 // 7 días
+    });
     return res.status(201).json({
       ok: true,
       message: 'Cuenta creada correctamente',
       data: {
-        id: result.id,
-        nickname: result.nickname,
-        nombre: result.nombre,
-        email: result.email,
-        rol: result.rol
+        id: user.id,
+        nickname: user.nickname,
+        nombre: user.nombre,
+        email: user.email,
+        rol: user.rol,
+        biografia: user.biografia ?? null,
+        url_imagen: user.url_imagen ?? null
       }
     })
   } catch (error) {

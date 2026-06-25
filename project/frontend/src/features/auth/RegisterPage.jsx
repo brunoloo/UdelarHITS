@@ -142,7 +142,7 @@ export function RegisterPage() {
       await verifyEmail({ email: form.email, codigo: code.trim() })
       clearPending()
       showToast('¡Cuenta creada exitosamente! Bienvenido/a a UdelarHITS', 'success')
-      setTimeout(() => navigate('/login'), 1500)
+      navigate('/')
     } catch (err) {
       showToast(err.message || 'No pudimos verificar el código.', 'error')
     } finally {

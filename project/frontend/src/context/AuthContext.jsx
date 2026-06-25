@@ -31,9 +31,11 @@ export function AuthProvider({ children }) {
     return res
   }
 
-  // Paso 2 del registro: confirma el código y crea la cuenta.
+  // Paso 2 del registro: confirma el código, crea la cuenta e inicia sesión.
   async function verifyEmail(payload) {
     const res = await apiPost('/auth/verify-email', payload)
+    queryClient.clear()
+    setUser(res.data)
     return res
   }
 

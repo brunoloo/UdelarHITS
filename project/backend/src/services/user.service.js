@@ -6,6 +6,11 @@ import { sendEmail } from '../utils/sendEmail.js';
 import { createResetToken, findValidToken, markTokenAsUsed } from '../repositories/token.repository.js';
 import { createVerification, findValidVerification, incrementVerificationAttempts, markVerificationUsed } from '../repositories/verification.repository.js';
 import { isAllowedEmailDomain } from '../config/emailDomains.js';
+import { createRateLimiter } from '../utils/rateLimiter.js';
+
+// Límite de envío de mails: como máximo 5 por dirección cada 15 minutos
+// (cubre registro/verificación/reenvío y recuperación de contraseña).
+const emailSendLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 5 });
 import { 
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
@@ -117,6 +122,13 @@ const requestRegistrationService = async ({ nickname, nombre, email, password })
   // Chequeo de existencia
   await assertNicknameEmailFree(normalizedNickname, normalizedEmail);
 
+  // Rate limit de envío de mails a esta dirección
+  if (!emailSendLimiter.check(`reg:${normalizedEmail}`)) {
+    const err = new Error('Enviamos demasiados códigos a este correo. Esperá unos minutos.');
+    err.code = 'RATE_LIMITED';
+    throw err;
+  }
+
   // Hash de password (se guarda en la verificación pendiente, no en texto plano)
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(password, salt);
@@ -184,7 +196,9 @@ const verifyRegistrationService = async ({ email, codigo }) => {
 
   await markVerificationUsed(pending.id);
 
-  return user;
+  // Token para iniciar sesión automáticamente al verificar.
+  const token = generateToken(user.id);
+  return { user, token };
 };
 
 // Reenvía el código a un registro pendiente, reusando los datos ya guardados
@@ -197,6 +211,9 @@ const resendRegistrationCodeService = async ({ email }) => {
 
   const pending = await findValidVerification(normalizedEmail);
   if (!pending) return; // No hay nada pendiente: silencioso (sin fuga de info).
+
+  // Rate limit compartido con el registro (mismo destino).
+  if (!emailSendLimiter.check(`reg:${normalizedEmail}`)) return;
 
   const codigo = crypto.randomInt(100000, 1000000).toString();
   const expiraEn = new Date(Date.now() + 15 * 60 * 1000);
@@ -667,6 +684,9 @@ const forgotPasswordService = async (email) => {
 
   // Si está baneado o inactivo, tampoco enviamos
   if (user.estado !== 'activo') return;
+
+  // Rate limit de envío de mails a esta dirección (silencioso, sin fuga)
+  if (!emailSendLimiter.check(`forgot:${normalizedEmail}`)) return;
 
   // Generar token seguro
   const token = crypto.randomBytes(32).toString('hex');

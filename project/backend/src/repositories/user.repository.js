@@ -177,6 +177,17 @@ const updateUserEstado = async (nickname, estado) => {
   return rows[0] || null;
 };
 
+const updateUserEstadoById = async (userId, estado) => {
+  const q = `
+    UPDATE usuario
+    SET estado = $1
+    WHERE id = $2
+    RETURNING id, nickname, estado
+  `;
+  const { rows } = await pool.query(q, [estado, userId]);
+  return rows[0] || null;
+};
+
 const deleteUserByNickname = async (nickname) => {
   const q = `
     DELETE FROM usuario
@@ -431,7 +442,7 @@ const getLikesPrivacyById = async (id) => {
 
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
-  getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, 
+  getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, updateUserEstadoById,
   deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,
   acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById,
   searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers,

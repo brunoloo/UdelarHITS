@@ -1,7 +1,5 @@
 import { createUserReport, hasAlreadyReported, getPendingUserReports, resolveUserReport, getReportById, deleteUserReport } from '../repositories/report-user.repository.js';
-import { getUserByNickname, updateUserEstado } from '../repositories/user.repository.js';
-import { deactivateUser, clearFollows } from '../repositories/user.repository.js';
-import { deleteFromCloudinary } from '../utils/uploadToCloudinary.js';
+import { getUserByNickname, updateUserEstadoById } from '../repositories/user.repository.js';
 
 const reportUserService = async (reportadorId, nickname, motivo) => {
   if (!motivo || motivo.trim().length < 10) {
@@ -44,7 +42,7 @@ const getPendingReportsService = async () => {
 };
 
 const resolveReportService = async (reportId, decision) => {
-  if (!['levantar', 'inactivar'].includes(decision)) {
+  if (!['levantar', 'ban'].includes(decision)) {
     const err = new Error('Decisión inválida');
     err.code = 'BAD_REQUEST';
     throw err;
@@ -62,14 +60,10 @@ const resolveReportService = async (reportId, decision) => {
     return { id: reportId, decision: 'levantar' };
   }
 
-  // decision === 'inactivar'
+  // decision === 'ban': solo cambia el estado del usuario a 'ban'. Se conserva
+  // su contenido, avatar/banner y seguidores (a diferencia de la baja de cuenta).
   const resolved = await resolveUserReport(reportId, decision);
-
-  const userId = report.usuario_reportado_id;
-  await deleteFromCloudinary('avatars', `avatar_${userId}`);
-  await deleteFromCloudinary('banners', `banner_${userId}`);
-  await clearFollows(userId);
-  await deactivateUser(userId);
+  await updateUserEstadoById(report.usuario_reportado_id, 'ban');
 
   return resolved;
 };

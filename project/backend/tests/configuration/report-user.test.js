@@ -147,7 +147,7 @@ describe('User Reports', () => {
       expect(login.status).toBe(200);
     });
 
-    it('inactivar desactiva la cuenta del usuario', async () => {
+    it('ban deja la cuenta del usuario en estado ban y bloquea el login', async () => {
       const admin = await createAdmin();
       const reporter = await registerAndLogin();
       const reported = await registerAndLogin();
@@ -160,22 +160,22 @@ describe('User Reports', () => {
       const res = await request(app)
         .patch(`/api/user-reports/${report.body.data.id}/resolve`)
         .set('Cookie', admin.cookie)
-        .send({ decision: 'inactivar' });
+        .send({ decision: 'ban' });
 
       expect(res.status).toBe(200);
 
-      // Usuario no puede loguearse
+      // Usuario baneado no puede loguearse
       const login = await request(app)
         .post('/api/auth/login')
         .send({ email: reported.raw.email, password: reported.raw.password });
 
       expect(login.status).toBe(403);
 
-      // Estado es inactivo
+      // Estado es ban
       const { rows } = await pool.query(
         'SELECT estado FROM usuario WHERE id = $1', [reported.user.id]
       );
-      expect(rows[0].estado).toBe('inactivo');
+      expect(rows[0].estado).toBe('ban');
     });
 
     it('rechaza decisión inválida (400)', async () => {

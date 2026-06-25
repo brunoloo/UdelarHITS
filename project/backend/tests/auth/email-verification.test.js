@@ -32,6 +32,8 @@ describe('Registro con verificación de email', () => {
     expect(res.status).toBe(201);
     expect(res.body.data.nickname).toBe(data.nickname.toLowerCase());
     expect(await countUsers(data.email)).toBe(1);
+    // Auto-login: verify ya setea la cookie jwt.
+    expect(String(res.headers['set-cookie'])).toMatch(/jwt=/);
 
     const log = await login({ email: data.email, password: data.password });
     expect(log.status).toBe(200);
@@ -110,6 +112,18 @@ describe('Reenviar código de verificación', () => {
     await register(makeUser({ email }));
     await resend(email);
     expect(await countUsers(email)).toBe(0);
+  });
+});
+
+describe('Rate limit de envío de mails', () => {
+  test('tras 5 envíos al mismo email, el siguiente → 429', async () => {
+    const email = `rl_${Math.random().toString(36).slice(2, 8)}@gmail.com`;
+    for (let i = 0; i < 5; i++) {
+      const res = await register(makeUser({ email }));
+      expect(res.status).toBe(200);
+    }
+    const sexto = await register(makeUser({ email }));
+    expect(sexto.status).toBe(429);
   });
 });
 
