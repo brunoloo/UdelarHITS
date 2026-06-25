@@ -1,8 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import './auth.css'
+
+// Clave en localStorage para retomar el paso de verificación si el usuario sale
+// de la pantalla del código. Guardamos SOLO el email (no la contraseña ni el
+// código), válido durante la misma ventana de 15 min del backend.
+const PENDING_KEY = 'udelarhits:pendingVerification'
+const PENDING_TTL_MS = 15 * 60 * 1000
+
+function savePending(email) {
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify({ email, expiresAt: Date.now() + PENDING_TTL_MS }))
+  } catch { /* localStorage no disponible */ }
+}
+function readPending() {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed?.email || !parsed?.expiresAt || Date.now() > parsed.expiresAt) {
+      localStorage.removeItem(PENDING_KEY)
+      return null
+    }
+    return parsed
+  } catch {
+    return null
+  }
+}
+function clearPending() {
+  try { localStorage.removeItem(PENDING_KEY) } catch { /* noop */ }
+}
 
 function EyeIcon() {
   return (
@@ -23,7 +52,7 @@ function EyeOffIcon() {
 }
 
 export function RegisterPage() {
-  const { register, verifyEmail } = useAuth()
+  const { register, verifyEmail, resendCode } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
 
@@ -42,6 +71,16 @@ export function RegisterPage() {
   // Registro en dos pasos: 'form' (datos) → 'verify' (código enviado al email).
   const [step, setStep] = useState('form')
   const [code, setCode] = useState('')
+
+  // Si quedó una verificación pendiente (el usuario salió de la pantalla del
+  // código y volvió dentro de los 15 min), retomamos directamente ese paso.
+  useEffect(() => {
+    const pending = readPending()
+    if (pending) {
+      setForm(prev => ({ ...prev, email: pending.email }))
+      setStep('verify')
+    }
+  }, [])
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -81,6 +120,7 @@ export function RegisterPage() {
         email: form.email,
         password: form.password,
       })
+      savePending(form.email)
       setStep('verify')
       showToast('Te enviamos un código de verificación a tu correo.', 'success')
     } catch (err) {
@@ -100,6 +140,7 @@ export function RegisterPage() {
     setLoading(true)
     try {
       await verifyEmail({ email: form.email, codigo: code.trim() })
+      clearPending()
       showToast('¡Cuenta creada exitosamente! Bienvenido/a a UdelarHITS', 'success')
       setTimeout(() => navigate('/login'), 1500)
     } catch (err) {
@@ -109,22 +150,26 @@ export function RegisterPage() {
     }
   }
 
-  // Reenvía un código nuevo al mismo email.
+  // Reenvía un código nuevo al mismo email (solo necesita el email: sirve aunque
+  // el usuario haya salido y vuelto, sin la contraseña en memoria).
   async function handleResend() {
     setLoading(true)
     try {
-      await register({
-        nombre: form.nombre,
-        nickname: form.nickname,
-        email: form.email,
-        password: form.password,
-      })
-      showToast('Te reenviamos un código nuevo.', 'success')
+      await resendCode(form.email)
+      savePending(form.email) // renueva la ventana local
+      showToast('Si hay un registro pendiente, te reenviamos un código.', 'success')
     } catch (err) {
       showToast(err.message || 'No pudimos reenviar el código.', 'error')
     } finally {
       setLoading(false)
     }
+  }
+
+  // Vuelve al formulario para cambiar los datos (descarta la verificación local).
+  function handleChangeData() {
+    clearPending()
+    setCode('')
+    setStep('form')
   }
 
   return (
@@ -294,7 +339,7 @@ export function RegisterPage() {
               Reenviar código
             </button>
             {' · '}
-            <button type="button" className="auth-link-btn" onClick={() => setStep('form')} disabled={loading}>
+            <button type="button" className="auth-link-btn" onClick={handleChangeData} disabled={loading}>
               Cambiar datos
             </button>
           </p>

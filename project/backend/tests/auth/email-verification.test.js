@@ -79,6 +79,40 @@ describe('Registro con verificación de email', () => {
   });
 });
 
+describe('Reenviar código de verificación', () => {
+  const resend = (email) => request(app).post('/api/auth/resend-code').send({ email });
+
+  test('reenvía un código nuevo a un registro pendiente e invalida el anterior', async () => {
+    const data = makeUser();
+    await register(data);
+    const primerCodigo = await getVerificationCode(data.email);
+
+    const res = await resend(data.email);
+    expect(res.status).toBe(200);
+
+    const nuevoCodigo = await getVerificationCode(data.email);
+    expect(nuevoCodigo).toMatch(/^\d{6}$/);
+    expect(nuevoCodigo).not.toBe(primerCodigo);
+
+    // El viejo ya no verifica; el nuevo sí.
+    expect((await verify({ email: data.email, codigo: primerCodigo })).status).toBe(400);
+    expect((await verify({ email: data.email, codigo: nuevoCodigo })).status).toBe(201);
+  });
+
+  test('reenviar a un email sin registro pendiente responde 200 genérico (sin fuga)', async () => {
+    const res = await resend('inexistente_' + Math.random().toString(36).slice(2, 8) + '@gmail.com');
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+  });
+
+  test('reenviar NO crea una cuenta por sí solo', async () => {
+    const email = 'pendiente_' + Math.random().toString(36).slice(2, 8) + '@gmail.com';
+    await register(makeUser({ email }));
+    await resend(email);
+    expect(await countUsers(email)).toBe(0);
+  });
+});
+
 describe('Allowlist de dominios de email', () => {
   test('dominio de correo temporal/desechable → 400', async () => {
     for (const email of ['x@mailinator.com', 'x@tempmail.com', 'x@guerrillamail.com', 'x@10minutemail.com']) {

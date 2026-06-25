@@ -37,6 +37,12 @@ export function AuthProvider({ children }) {
     return res
   }
 
+  // Reenvía el código a un registro pendiente (solo necesita el email).
+  async function resendCode(email) {
+    const res = await apiPost('/auth/resend-code', { email })
+    return res
+  }
+
   async function logout() {
     await apiPost('/auth/logout')
     queryClient.clear()
@@ -44,7 +50,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, verifyEmail, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, verifyEmail, resendCode, logout }}>
       {children}
     </AuthContext.Provider>
   )

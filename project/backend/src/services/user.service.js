@@ -44,6 +44,30 @@ const assertNicknameEmailFree = async (normalizedNickname, normalizedEmail) => {
 // Paso 1 del registro: valida los datos, verifica el dominio del email, y envía
 // un código de 6 dígitos al correo. NO crea la cuenta todavía: guarda los datos
 // como una verificación pendiente hasta que se confirme el código.
+// Envía el email con el código de verificación de 6 dígitos.
+const sendVerificationCodeEmail = async (to, codigo) => {
+  await sendEmail({
+    to,
+    subject: 'Tu código de verificación — UdelarHITS',
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 20px;">
+        <h2 style="font-size: 20px; margin-bottom: 16px;">Confirmá tu correo</h2>
+        <p style="font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 24px;">
+          Usá este código para terminar de crear tu cuenta en UdelarHITS.
+          Si no fuiste vos, podés ignorar este mensaje.
+        </p>
+        <div style="font-size: 34px; font-weight: 700; letter-spacing: 8px; text-align: center;
+                    background: #f3f4f6; border-radius: 10px; padding: 18px 0; color: #111;">
+          ${codigo}
+        </div>
+        <p style="font-size: 13px; color: #999; margin-top: 24px; line-height: 1.5;">
+          Este código expira en 15 minutos.
+        </p>
+      </div>
+    `,
+  });
+};
+
 const requestRegistrationService = async ({ nickname, nombre, email, password }) => {
   const normalizedNickname = nickname?.trim().toLowerCase();
   const normalizedEmail = email?.trim().toLowerCase();
@@ -110,26 +134,7 @@ const requestRegistrationService = async ({ nickname, nombre, email, password })
     expiraEn,
   });
 
-  await sendEmail({
-    to: normalizedEmail,
-    subject: 'Tu código de verificación — UdelarHITS',
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 20px;">
-        <h2 style="font-size: 20px; margin-bottom: 16px;">Confirmá tu correo</h2>
-        <p style="font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 24px;">
-          Usá este código para terminar de crear tu cuenta en UdelarHITS.
-          Si no fuiste vos, podés ignorar este mensaje.
-        </p>
-        <div style="font-size: 34px; font-weight: 700; letter-spacing: 8px; text-align: center;
-                    background: #f3f4f6; border-radius: 10px; padding: 18px 0; color: #111;">
-          ${codigo}
-        </div>
-        <p style="font-size: 13px; color: #999; margin-top: 24px; line-height: 1.5;">
-          Este código expira en 15 minutos.
-        </p>
-      </div>
-    `,
-  });
+  await sendVerificationCodeEmail(normalizedEmail, codigo);
 
   return { email: normalizedEmail };
 };
@@ -180,6 +185,34 @@ const verifyRegistrationService = async ({ email, codigo }) => {
   await markVerificationUsed(pending.id);
 
   return user;
+};
+
+// Reenvía el código a un registro pendiente, reusando los datos ya guardados
+// (incluido el password_hash; nunca el texto plano). Pensado para que el usuario
+// pueda retomar la verificación sin re-tipear sus datos. Responde de forma
+// genérica desde el controller: nunca revela si existe un registro pendiente.
+const resendRegistrationCodeService = async ({ email }) => {
+  const normalizedEmail = email?.trim().toLowerCase();
+  if (!normalizedEmail) return;
+
+  const pending = await findValidVerification(normalizedEmail);
+  if (!pending) return; // No hay nada pendiente: silencioso (sin fuga de info).
+
+  const codigo = crypto.randomInt(100000, 1000000).toString();
+  const expiraEn = new Date(Date.now() + 15 * 60 * 1000);
+
+  // createVerification invalida la fila anterior e inserta una nueva con código
+  // fresco (y contador de intentos en cero, como cualquier OTP nuevo).
+  await createVerification({
+    email: normalizedEmail,
+    codigo,
+    nickname: pending.nickname,
+    nombre: pending.nombre,
+    passwordHash: pending.password_hash,
+    expiraEn,
+  });
+
+  await sendVerificationCodeEmail(normalizedEmail, codigo);
 };
 
 // Crear usuario admin
@@ -777,7 +810,7 @@ const toggleLikesPrivacyService = async (userId) => {
   return await updateLikesPrivacy(userId, newValue);
 };
 
-export { showMeService , requestRegistrationService, verifyRegistrationService, loginUserService, getUsersService, getUserProfileService,
+export { showMeService , requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, getUsersService, getUserProfileService,
   updateMeService, banUserService, activeUserService, 
   deleteUserService, followUserService, unfollowUserService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService,

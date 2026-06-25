@@ -1,6 +1,6 @@
 import { fileTypeFromBuffer } from 'file-type';
 
-import { requestRegistrationService, verifyRegistrationService, loginUserService, getUsersService, createUserByAdminService,
+import { requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, getUsersService, createUserByAdminService,
     getUserProfileService, showMeService, updateMeService, 
     banUserService, activeUserService, deleteUserService,
   followUserService, unfollowUserService, isFollowingService,
@@ -51,6 +51,20 @@ const registerUser = async (req, res) => {
     }
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }
+};
+
+// Reenvía el código a un registro pendiente. Respuesta genérica siempre: no
+// revela si el email tiene (o no) un registro en curso.
+const resendCode = async (req, res) => {
+  try {
+    await resendRegistrationCodeService(req.body);
+  } catch (error) {
+    // Falla silenciosa (p. ej. error de envío): no exponemos detalles.
+  }
+  return res.status(200).json({
+    ok: true,
+    message: 'Si hay un registro pendiente para ese correo, te reenviamos un código.'
+  });
 };
 
 // Paso 2: confirma el código y crea la cuenta.
@@ -441,7 +455,7 @@ const toggleLikesPrivacy = async (req, res) => {
   }
 };
 
-export { showMe, registerUser, verifyEmail, loginUser, logoutUser, getUsers,
+export { showMe, registerUser, verifyEmail, resendCode, loginUser, logoutUser, getUsers,
   getUserProfile, updateMe, banUser,
   activeUser, deleteUser, followUser, unfollowUser, acceptFollowRequest, rejectFollowRequest, checkFollowing, updateAvatar,
   searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList,
