@@ -102,6 +102,23 @@ export function ProfilePage() {
     enabled: !!profile && canView(),
   })
 
+  // Permite responder un comentario directamente desde la tab de comentarios
+  // (la CommentCard completa incluye el botón "Responder"). Crea una respuesta
+  // anidada y refresca el feed del perfil. Debe declararse antes de cualquier
+  // early return para no romper el orden de los hooks.
+  const replyMutation = useMutation({
+    mutationFn: ({ parentId, cuerpo }) =>
+      apiPost('/replies/create', { cuerpo, comentario_padre_id: parentId }),
+    onSuccess: () => {
+      showToast('Respuesta publicada', 'success')
+      queryClient.invalidateQueries({ queryKey: ['replies', 'user', profile?.id] })
+    },
+    onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
+  })
+
+  const handleReply = (parentId, text) =>
+    replyMutation.mutateAsync({ parentId, cuerpo: text })
+
   function canView() {
     if (!profile) return false
     if (profile.estado === 'inactivo') return false
@@ -170,22 +187,6 @@ export function ProfilePage() {
   function handleFollowToggle() {
     queryClient.invalidateQueries({ queryKey: profileQueryKey })
   }
-
-  // Permite responder un comentario directamente desde la tab de comentarios
-  // (la CommentCard completa incluye el botón "Responder"). Crea una respuesta
-  // anidada y refresca el feed del perfil.
-  const replyMutation = useMutation({
-    mutationFn: ({ parentId, cuerpo }) =>
-      apiPost('/replies/create', { cuerpo, comentario_padre_id: parentId }),
-    onSuccess: () => {
-      showToast('Respuesta publicada', 'success')
-      queryClient.invalidateQueries({ queryKey: ['replies', 'user', profile?.id] })
-    },
-    onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
-  })
-
-  const handleReply = (parentId, text) =>
-    replyMutation.mutateAsync({ parentId, cuerpo: text })
 
   const privateMessage = (
     <div className="empty-panel" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '32px 16px' }}>
