@@ -8,7 +8,7 @@ import './CategoryCardMini.css'
 // + cantidad de temas. Se reutiliza en cada listado de categorías en forma
 // compacta (perfil, explorar, etc.). La versión ampliada (Home) es CategoryCard.
 // `className` permite variantes de contenedor (p. ej. ancho fijo en carrusel).
-export function CategoryCardMini({ category, className = '' }) {
+export function CategoryCardMini({ category, className = '', onNavigate }) {
   const { id, titulo, descripcion, etiquetas, contador_temas, icono } = category
   const tags = parseEtiquetas(etiquetas).slice(0, 3)
   const count = Number(contador_temas) || 0
@@ -17,6 +17,7 @@ export function CategoryCardMini({ category, className = '' }) {
     <Link
       className={`category-mini-card${className ? ' ' + className : ''}`}
       to={`/category/${encodeURIComponent(id)}`}
+      onClick={onNavigate}
     >
       <div className="category-mini-head">
         <div className="category-mini-icon">

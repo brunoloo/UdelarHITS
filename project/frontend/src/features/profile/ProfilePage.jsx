@@ -10,7 +10,7 @@ import { FollowButton } from '../../components/shared/FollowButton'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
 import { CategoryCardMini } from '../../components/shared/CategoryCardMini'
 import { TopicCardMini } from '../../components/shared/TopicCardMini'
-import { CommentCard } from '../../components/shared/CommentCard'
+import { CommentEntry } from '../../components/shared/CommentEntry'
 import { BioText } from '../../utils/renderBioWithLinks'
 import { EditProfileModal } from './EditProfileModal'
 import { FollowersModal } from './FollowersModal'
@@ -222,54 +222,9 @@ export function ProfilePage() {
 
   // Render compartido de una fila de comentario (tabs "comentarios" y "me gusta").
   // invalidateKey decide qué query refrescar al reaccionar/responder en la card.
-  const renderCommentRow = (r, invalidateKey) => {
-    // Base del destino. Para comentarios en categoría abrimos su tab de
-    // comentarios; si no, el drill-down no encuentra el comentario.
-    const base = r.tipo === 'tema'
-      ? `/topic/${encodeURIComponent(r.destino_id)}`
-      : `/category/${encodeURIComponent(r.destino_id)}?tab=comentarios`
-    const sep = base.includes('?') ? '&' : '?'
-    const commentHref = `${base}${sep}commentId=${encodeURIComponent(r.id)}`
-
-    // Header contextual: respuesta / tema / categoría.
-    const isReply = !!r.comentario_padre_id
-    let prefix, titleText, titleHref
-    if (isReply) {
-      prefix = 'en respuesta al comentario de'
-      // Cuenta inactiva → se anonimiza (sin link). 'ban' queda público.
-      const padreInactivo = r.padre_autor_estado === 'inactivo'
-      titleText = padreInactivo ? 'Usuario inactivo' : (r.padre_autor_nickname || 'usuario')
-      titleHref = (!padreInactivo && r.padre_autor_nickname)
-        ? `/user/${encodeURIComponent(r.padre_autor_nickname)}`
-        : null
-    } else if (r.tipo === 'tema') {
-      prefix = 'en tema'
-      if (r.tema_estado === 'inactivo') { titleText = 'inactivo'; titleHref = null }
-      else { titleText = r.destino_titulo; titleHref = base }
-    } else {
-      prefix = 'en categoría'
-      if (r.categoria_estado === 'inactiva') { titleText = 'inactiva'; titleHref = null }
-      else { titleText = r.destino_titulo; titleHref = base }
-    }
-
-    return (
-      <div key={r.id} className="profile-feed-item">
-        <div className="item-head">
-          <span>{prefix}</span>
-          {titleHref
-            ? <Link to={titleHref}>{titleText}</Link>
-            : <span className="item-head-inactive">{titleText}</span>}
-        </div>
-        <CommentCard
-          comment={r}
-          role="reply"
-          onCardClick={() => navigate(commentHref)}
-          onReply={handleReply}
-          invalidateKey={invalidateKey}
-        />
-      </div>
-    )
-  }
+  const renderCommentRow = (r, invalidateKey) => (
+    <CommentEntry key={r.id} comment={r} invalidateKey={invalidateKey} onReply={handleReply} />
+  )
 
   return (
     <div className="profile-page">

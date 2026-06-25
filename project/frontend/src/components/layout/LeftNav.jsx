@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { UserAvatar } from '../shared/UserAvatar'
+import { SavedPanel } from './SavedPanel'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import './LeftNav.css'
 
@@ -69,11 +70,16 @@ export function LeftNav() {
   const queryClient = useQueryClient()
   const isAdmin = user?.rol === 'admin'
 
-  const [panelOpen, setPanelOpen] = useState(false)
+  // Solo un panel abierto a la vez: 'notif' | 'saved' | null.
+  const [activePanel, setActivePanel] = useState(null)
+  const panelOpen = activePanel === 'notif'
+  const savedOpen = activePanel === 'saved'
   const [notifications, setNotifications] = useState(null)
   const [notifLoading, setNotifLoading] = useState(false)
   const panelRef = useRef(null)
   const notifBtnRef = useRef(null)
+  const savedPanelRef = useRef(null)
+  const savedBtnRef = useRef(null)
 
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ['notifications', 'unread-count'],
@@ -83,17 +89,14 @@ export function LeftNav() {
   })
 
   useEffect(() => {
-    if (!panelOpen) return
+    if (!activePanel) return
     function handleClick(e) {
-      if (
-        panelRef.current && !panelRef.current.contains(e.target) &&
-        notifBtnRef.current && !notifBtnRef.current.contains(e.target)
-      ) {
-        setPanelOpen(false)
-      }
+      const inNotif = panelRef.current?.contains(e.target) || notifBtnRef.current?.contains(e.target)
+      const inSaved = savedPanelRef.current?.contains(e.target) || savedBtnRef.current?.contains(e.target)
+      if (!inNotif && !inSaved) setActivePanel(null)
     }
     function handleKey(e) {
-      if (e.key === 'Escape') setPanelOpen(false)
+      if (e.key === 'Escape') setActivePanel(null)
     }
     document.addEventListener('click', handleClick)
     document.addEventListener('keydown', handleKey)
@@ -101,10 +104,10 @@ export function LeftNav() {
       document.removeEventListener('click', handleClick)
       document.removeEventListener('keydown', handleKey)
     }
-  }, [panelOpen])
+  }, [activePanel])
 
   async function openPanel() {
-    setPanelOpen(true)
+    setActivePanel('notif')
     if (!user) {
       setNotifications([])
       return
@@ -126,10 +129,16 @@ export function LeftNav() {
     e.preventDefault()
     e.stopPropagation()
     if (panelOpen) {
-      setPanelOpen(false)
+      setActivePanel(null)
     } else {
       openPanel()
     }
+  }
+
+  function handleSavedClick(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    setActivePanel(prev => (prev === 'saved' ? null : 'saved'))
   }
 
   async function handleDelete(notifId) {
@@ -159,7 +168,7 @@ export function LeftNav() {
   // Las notificaciones ya se marcaron como leídas al abrir el panel (read-all).
   function handleItemClick(n) {
     if (!n.url) return
-    setPanelOpen(false)
+    setActivePanel(null)
     navigate(n.url)
   }
 
@@ -228,6 +237,18 @@ export function LeftNav() {
           Recientes
         </Link>
 
+        <button
+          ref={savedBtnRef}
+          className={`nav-item${savedOpen ? ' active' : ''}`}
+          id="nav-guardados"
+          onClick={handleSavedClick}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+          Guardados
+        </button>
+
         {isAdmin && (
           <>
             <div className="nav-divider" />
@@ -264,7 +285,7 @@ export function LeftNav() {
           <button
             className="notif-panel-close"
             type="button"
-            onClick={() => setPanelOpen(false)}
+            onClick={() => setActivePanel(null)}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"/>
@@ -375,6 +396,12 @@ export function LeftNav() {
           )}
         </div>
       </div>
+
+      <SavedPanel
+        open={savedOpen}
+        panelRef={savedPanelRef}
+        onClose={() => setActivePanel(null)}
+      />
     </>
   )
 }

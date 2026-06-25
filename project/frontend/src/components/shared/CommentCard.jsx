@@ -14,6 +14,8 @@ import { ReportModal } from './ReportModal'
 import { Modal } from '../ui/Modal'
 import { timeAgo } from '../../utils/timeAgo'
 import { ReactionButtons } from './ReactionButtons'
+import { BookmarkIcon } from './BookmarkIcon'
+import { useSaved } from '../../hooks/useSaved'
 import './CommentCard.css'
 
 export function CommentCard({
@@ -29,6 +31,8 @@ export function CommentCard({
   const { showToast } = useToast()
   const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
+  const { isSaved, toggleSaved } = useSaved()
+  const comentarioGuardado = isSaved('comentario', comment.id)
 
   const [editing, setEditing] = useState(false)
   const [editText, setEditText] = useState('')
@@ -226,6 +230,14 @@ export function CommentCard({
               <ReadMore text={comment.cuerpo} maxLength={500} />
             </div>
             <div className="comment-actions">
+              <button
+                className="comment-action-btn"
+                type="button"
+                title={comentarioGuardado ? 'Quitar de guardados' : 'Guardar'}
+                onClick={e => { e.stopPropagation(); toggleSaved('comentario', comment.id) }}
+              >
+                <BookmarkIcon filled={comentarioGuardado} size={14} />
+              </button>
               <ReactionButtons
                 contenidoId={comment.id}
                 likes={comment.likes}

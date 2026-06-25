@@ -9,6 +9,8 @@ import { resolveAutor } from '../../components/shared/AuthorDisplay'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { ReadMore } from '../../components/ui/ReadMore'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
+import { useSaved } from '../../hooks/useSaved'
+import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
 import { Modal } from '../../components/ui/Modal'
 import { CommentThread } from '../../components/shared/CommentThread'
 import { ReportModal } from '../../components/shared/ReportModal'
@@ -23,6 +25,7 @@ export function TopicPage() {
   const commentIdParam = searchParams.get('commentId')
   const { user } = useAuth()
   const { showToast } = useToast()
+  const { isSaved, toggleSaved } = useSaved()
   const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
 
@@ -105,7 +108,14 @@ export function TopicPage() {
   const isAdmin = user && user.rol === 'admin'
   const canManage = (isAuthor || isAdmin) && !isInactive
 
+  const temaGuardado = isSaved('tema', id)
   const menuItems = []
+
+  menuItems.push({
+    label: temaGuardado ? 'Quitar de guardados' : 'Guardar',
+    icon: <BookmarkIcon filled={temaGuardado} size={14} />,
+    onClick: () => toggleSaved('tema', id),
+  })
 
   menuItems.push({
     label: 'Reportar',

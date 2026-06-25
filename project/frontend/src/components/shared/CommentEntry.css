@@ -1,0 +1,29 @@
+.comment-entry-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.comment-entry-head a {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.comment-entry-head a:hover {
+  text-decoration: underline;
+}
+
+.comment-entry-inactive {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* La card interna espacia con el gap del contenedor; sin margin propio. */
+.comment-entry .comment-card {
+  margin-bottom: 0;
+}

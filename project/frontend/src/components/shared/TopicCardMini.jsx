@@ -4,7 +4,7 @@ import './TopicCardMini.css'
 // Versión reducida de la TopicCard: título + descripción + cantidad de
 // comentarios. Sin autor ni avatar (el contexto de quién lo publicó lo da el
 // listado, p. ej. el perfil). Al clickear lleva al tema.
-export function TopicCardMini({ topic }) {
+export function TopicCardMini({ topic, onNavigate }) {
   const navigate = useNavigate()
   const id = topic.id ?? topic.contenido_id
   const count = Number(topic.contador_comentarios) || 0
@@ -12,7 +12,7 @@ export function TopicCardMini({ topic }) {
   return (
     <div
       className="topic-mini-card"
-      onClick={() => navigate(`/topic/${encodeURIComponent(id)}`)}
+      onClick={() => { onNavigate?.(); navigate(`/topic/${encodeURIComponent(id)}`) }}
     >
       <div className="topic-mini-title">{topic.titulo}</div>
 

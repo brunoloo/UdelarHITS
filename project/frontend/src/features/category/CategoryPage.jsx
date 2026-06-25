@@ -9,6 +9,8 @@ import { CategoryIcon } from '../../components/shared/CategoryIcon'
 import { IconPickerModal } from './IconPickerModal'
 import { Modal } from '../../components/ui/Modal'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
+import { useSaved } from '../../hooks/useSaved'
+import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
 import { ReadMore } from '../../components/ui/ReadMore'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
@@ -325,6 +327,7 @@ export function CategoryPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
+  const { isSaved, toggleSaved } = useSaved()
 
   const tabParam = searchParams.get('tab')
   const commentIdParam = searchParams.get('commentId')
@@ -397,9 +400,15 @@ export function CategoryPage() {
   const topicCount = cat.topics?.length ?? Number(cat.contador_temas) ?? 0
   const commentCount = replies.length
 
+  const catGuardada = isSaved('categoria', cat.id)
   const dropdownItems = []
 
   dropdownItems.push(
+    {
+      label: catGuardada ? 'Quitar de guardados' : 'Guardar',
+      icon: <BookmarkIcon filled={catGuardada} size={14} />,
+      onClick: () => toggleSaved('categoria', cat.id),
+    },
     {
       label: 'Reportar',
       icon: (

@@ -147,6 +147,14 @@ button.nav-item {
   scrollbar-color: var(--border-strong) transparent;
 }
 
+/* Lista de guardados: cards con separación vertical y aire lateral. */
+.saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 12px;
+}
+
 /* Scrollbar personalizado (mismo estilo que la lista de seguidores) para
    cuando se acumulan muchas notificaciones, en vez de la barra blanca default. */
 .notif-panel-body::-webkit-scrollbar {
