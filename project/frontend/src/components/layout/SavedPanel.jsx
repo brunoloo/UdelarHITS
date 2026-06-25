@@ -52,7 +52,7 @@ export function SavedPanel({ open, panelRef, onClose }) {
         ) : isLoading ? (
           <div className="notif-loading">Cargando...</div>
         ) : items.length === 0 ? (
-          <div className="notif-empty">Todavía no guardaste nada</div>
+          <div className="notif-empty">Todavía no hay guardados</div>
         ) : (
           <div className="saved-list">
             {items.map(item => {
