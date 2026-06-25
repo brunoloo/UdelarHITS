@@ -396,8 +396,10 @@ export function ProfilePage() {
                 if (isReply) {
                   prefix = 'en respuesta al comentario de'
                   titleText = r.padre_autor_nickname || 'usuario'
-                  // El header lleva al comentario padre en su contexto.
-                  titleHref = `${base}${sep}commentId=${encodeURIComponent(r.comentario_padre_id)}`
+                  // El nickname enlaza al perfil del autor del comentario padre.
+                  titleHref = r.padre_autor_nickname
+                    ? `/user/${encodeURIComponent(r.padre_autor_nickname)}`
+                    : null
                 } else if (r.tipo === 'tema') {
                   prefix = 'en tema'
                   if (r.tema_estado === 'inactivo') { titleText = 'inactivo'; titleHref = null }
