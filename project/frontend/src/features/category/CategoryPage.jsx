@@ -551,7 +551,7 @@ export function CategoryPage() {
               <span className="cat-meta-item">
                 creada <strong>{timeAgo(cat.fecha_creacion)}</strong>
               </span>
-              {user && !isOwner && (
+              {user && user.id !== cat.autor_id && (
                 <button
                   className={`cat-bell${suscrito ? ' active' : ''}`}
                   type="button"
