@@ -35,8 +35,16 @@ export const deleteFromCloudinary = async (folder, publicId) => {
   }
 };
 
-// Sube un adjunto de comentario. Imágenes como 'image' (con auto quality/format),
-// documentos como 'raw'. Devuelve { url, public_id } (public_id para borrarlo luego).
+// Inserta la optimización de entrega (f_auto,q_auto) en la URL de una imagen, así
+// Cloudinary sirve el mejor formato/calidad sin tocar parámetros de subida (que es
+// lo que rompía el upload de imágenes, p. ej. .webp → 500).
+const optimizeImageUrl = (url) =>
+  url.includes('/image/upload/')
+    ? url.replace('/image/upload/', '/image/upload/f_auto,q_auto/')
+    : url;
+
+// Sube un adjunto de comentario. Imágenes como 'image', documentos como 'raw'.
+// Devuelve { url, public_id } (public_id para borrarlo luego).
 export const uploadAttachment = async (buffer, tipo) => {
   const isImage = tipo === 'imagen';
   if (process.env.NODE_ENV === 'test') {
@@ -46,15 +54,16 @@ export const uploadAttachment = async (buffer, tipo) => {
     };
   }
   return new Promise((resolve, reject) => {
-    const options = {
-      folder: 'udelarhits/adjuntos',
-      resource_type: isImage ? 'image' : 'raw',
-    };
-    if (isImage) { options.quality = 'auto'; options.fetch_format = 'auto'; }
-    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
-      if (error) reject(error);
-      else resolve({ url: result.secure_url, public_id: result.public_id });
-    });
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'udelarhits/adjuntos', resource_type: isImage ? 'image' : 'raw' },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve({
+          url: isImage ? optimizeImageUrl(result.secure_url) : result.secure_url,
+          public_id: result.public_id,
+        });
+      }
+    );
     stream.end(buffer);
   });
 };

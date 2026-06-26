@@ -14,7 +14,7 @@ import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
 import { Modal } from '../../components/ui/Modal'
 import { CommentThread } from '../../components/shared/CommentThread'
 import { ReportModal } from '../../components/shared/ReportModal'
-import { AttachmentPicker } from '../../components/shared/AttachmentPicker'
+import { AttachmentButton, AttachmentPreviews } from '../../components/shared/AttachmentPicker'
 import { buildReplyFormData } from '../../utils/attachments'
 import { timeAgo } from '../../utils/timeAgo'
 import '../category/category.css'
@@ -105,7 +105,7 @@ export function TopicPage() {
 
   function handleCommentSubmit() {
     if (!requireAuth('Debes iniciar sesión para comentar')) return
-    if (commentText.trim().length < 1 || commentMutation.isPending) return
+    if ((commentText.trim().length < 1 && commentFiles.length === 0) || commentMutation.isPending) return
     commentMutation.mutate(commentText.trim())
   }
 
@@ -285,10 +285,11 @@ export function TopicPage() {
                         autoFocus
                       />
                     </div>
-                    <AttachmentPicker files={commentFiles} onChange={setCommentFiles} disabled={commentMutation.isPending} />
+                    <AttachmentPreviews files={commentFiles} onChange={setCommentFiles} />
                   </div>
                 </div>
                 <div className="create-cat-panel-footer">
+                  <AttachmentButton files={commentFiles} onChange={setCommentFiles} disabled={commentMutation.isPending} />
                   <button
                     className="cc-cancel"
                     type="button"
@@ -299,7 +300,7 @@ export function TopicPage() {
                   <button
                     className="save-btn"
                     type="button"
-                    disabled={commentText.trim().length < 1 || commentMutation.isPending}
+                    disabled={(commentText.trim().length < 1 && commentFiles.length === 0) || commentMutation.isPending}
                     onClick={handleCommentSubmit}
                   >
                     {commentMutation.isPending ? 'Publicando...' : 'Comentar'}

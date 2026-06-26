@@ -1,21 +1,14 @@
-/* ── Zona de adjuntos (selector + previews) ── */
-.attach-zone {
-  margin-top: 8px;
-}
-
-.attach-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
+/* ── Adjuntos: botón de clip (va en la barra de acciones) + previews ── */
+/* margin-right:auto empuja el clip a la izquierda y deja Cancelar/Enviar a la
+   derecha, todo en la misma fila (la card no crece de alto). */
 .attach-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   padding: 0;
+  margin-right: auto;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface);

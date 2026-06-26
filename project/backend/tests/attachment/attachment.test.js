@@ -43,6 +43,26 @@ describe('Adjuntos en comentarios', () => {
     expect(await adjuntosEnBD(res.body.data.contenido_id)).toBe(2);
   });
 
+  test('permite publicar solo con adjunto, sin texto → 201', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const res = await request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('categoria_id', String(cat.id))
+      .attach('archivos', png, { filename: 'sola.png', contentType: 'image/png' });
+    expect(res.status).toBe(201);
+    expect(res.body.data.adjuntos).toHaveLength(1);
+  });
+
+  test('sin texto y sin adjuntos → 400', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const res = await request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('categoria_id', String(cat.id));
+    expect(res.status).toBe(400);
+  });
+
   test('tipo de archivo no permitido (.exe) → 400', async () => {
     const a = await registerAndLogin();
     const cat = await createCategory(a.cookie);

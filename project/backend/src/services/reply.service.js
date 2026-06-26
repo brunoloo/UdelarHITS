@@ -13,8 +13,11 @@ import { uploadAttachment, deleteAttachmentFromCloudinary } from '../utils/uploa
 import pool from '../config/db.js';
 
 const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, comentario_padre_id }, files = []) => {
-  if (!cuerpo?.trim()) {
-    const err = new Error('El contenido no puede estar vacío');
+  const cuerpoLimpio = cuerpo?.trim() || '';
+
+  // Un comentario puede ir sin texto si lleva al menos un adjunto (imagen/archivo).
+  if (!cuerpoLimpio && files.length === 0) {
+    const err = new Error('El comentario no puede estar vacío');
     err.code = 'BAD_REQUEST';
     throw err;
   }
@@ -41,7 +44,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     }
   }
 
-  if (cuerpo.trim().length > 5000) {
+  if (cuerpoLimpio.length > 5000) {
     const err = new Error('El comentario superó el máximo de 5000 caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
@@ -79,7 +82,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
 
   const created = await createReply({
     autor_id: autorId,
-    cuerpo: cuerpo.trim(),
+    cuerpo: cuerpoLimpio,
     tema_id: tema_id || null,
     categoria_id: categoria_id || null,
     comentario_padre_id: comentario_padre_id || null

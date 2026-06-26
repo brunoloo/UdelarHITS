@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AttachmentPicker } from './AttachmentPicker'
+import { AttachmentButton, AttachmentPreviews } from './AttachmentPicker'
 import './CommentForm.css'
 
 export function CommentForm({
@@ -16,7 +16,8 @@ export function CommentForm({
   const [files, setFiles] = useState([])
   const [submitting, setSubmitting] = useState(false)
 
-  const canSubmit = text.trim().length >= minLength
+  // Se puede enviar con texto suficiente o con al menos un adjunto.
+  const canSubmit = text.trim().length >= minLength || files.length > 0
 
   async function handleSubmit() {
     if (!canSubmit || submitting) return
@@ -47,8 +48,9 @@ export function CommentForm({
           autoFocus={autoFocus}
         />
       </div>
-      <AttachmentPicker files={files} onChange={setFiles} disabled={submitting} />
+      <AttachmentPreviews files={files} onChange={setFiles} />
       <div className="inline-reply-actions">
+        <AttachmentButton files={files} onChange={setFiles} disabled={submitting} />
         {onCancel && (
           <button className="cc-cancel" type="button" onClick={onCancel}>
             Cancelar

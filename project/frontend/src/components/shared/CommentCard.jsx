@@ -249,9 +249,11 @@ export function CommentCard({
           </div>
         ) : (
           <>
-            <div className="comment-text">
-              <ReadMore text={comment.cuerpo} maxLength={500} />
-            </div>
+            {comment.cuerpo?.trim() && (
+              <div className="comment-text">
+                <ReadMore text={comment.cuerpo} maxLength={500} />
+              </div>
+            )}
             <CommentAttachments adjuntos={comment.adjuntos} />
             <div className="comment-actions">
               <ReactionButtons

@@ -20,7 +20,7 @@ import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { CreateTopicPanel } from '../topic/CreateTopicPanel'
 import { ReportModal } from '../../components/shared/ReportModal'
 import { UserAvatar } from '../../components/shared/UserAvatar'
-import { AttachmentPicker } from '../../components/shared/AttachmentPicker'
+import { AttachmentButton, AttachmentPreviews } from '../../components/shared/AttachmentPicker'
 import { buildReplyFormData } from '../../utils/attachments'
 import './category.css'
 
@@ -77,7 +77,7 @@ function CreateCommentPanel({ categoryId, user }) {
     mutation.reset()
   }
 
-  const canSubmit = cuerpo.trim().length >= 1
+  const canSubmit = cuerpo.trim().length >= 1 || files.length > 0
 
   function handleSubmit() {
     if (!requireAuth('Debes iniciar sesión para comentar')) return
@@ -126,10 +126,11 @@ function CreateCommentPanel({ categoryId, user }) {
                 autoFocus
               />
             </div>
-            <AttachmentPicker files={files} onChange={setFiles} disabled={mutation.isPending} />
+            <AttachmentPreviews files={files} onChange={setFiles} />
           </div>
         </div>
         <div className="create-cat-panel-footer">
+          <AttachmentButton files={files} onChange={setFiles} disabled={mutation.isPending} />
           <button className="cc-cancel" type="button" onClick={closePanel}>Cancelar</button>
           <button
             className="save-btn"
