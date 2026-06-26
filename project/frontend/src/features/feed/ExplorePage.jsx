@@ -331,10 +331,10 @@ export function ExplorePage() {
             <span className="explore-section-title">Categorías para vos</span>
           </div>
           <div className="explore-empty">
-            Creá una cuenta para que podamos recomendarte categorías basadas en tus intereses.
+            Inicia sesión para que podamos recomendarte categorías basadas en tus intereses.
             <div style={{ marginTop: 12, textAlign: 'center' }}>
               <Link
-                to="/register"
+                to="/login"
                 style={{
                   display: 'inline-block',
                   marginTop: 12,
@@ -347,7 +347,7 @@ export function ExplorePage() {
                   fontWeight: 600,
                 }}
               >
-                Crear cuenta
+                Iniciar sesión
               </Link>
             </div>
           </div>
