@@ -20,7 +20,7 @@ function iconForName(name) {
 
 // Botón de clip + input oculto. Pensado para ir dentro de la barra de acciones,
 // a la misma altura que Cancelar/Enviar.
-export function AttachmentButton({ files, onChange, disabled = false }) {
+export function AttachmentButton({ files, onChange, disabled = false, className = '' }) {
   const inputRef = useRef(null)
   const { showToast } = useToast()
 
@@ -49,7 +49,7 @@ export function AttachmentButton({ files, onChange, disabled = false }) {
     <>
       <button
         type="button"
-        className="attach-btn"
+        className={`attach-btn${className ? ` ${className}` : ''}`}
         title="Adjuntar archivos"
         disabled={disabled || files.length >= MAX_ARCHIVOS}
         onClick={() => inputRef.current?.click()}

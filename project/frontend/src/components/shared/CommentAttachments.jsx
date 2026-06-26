@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { FileText, FileSpreadsheet, Archive, File } from 'lucide-react'
 import { formatBytes } from '../../utils/formatBytes'
+import { ImageLightbox } from './ImageLightbox'
 import './CommentAttachments.css'
 
 function iconForName(name = '') {
@@ -10,9 +12,11 @@ function iconForName(name = '') {
   return File
 }
 
-// Renderiza los adjuntos de un comentario: imágenes clickeables y documentos
-// como links de descarga.
+// Renderiza los adjuntos de un comentario: imágenes que abren en un visor (modal)
+// dentro del sitio y documentos como links de descarga.
 export function CommentAttachments({ adjuntos }) {
+  const [lightbox, setLightbox] = useState(null)
+
   if (!adjuntos || adjuntos.length === 0) return null
 
   const imagenes = adjuntos.filter(a => a.tipo === 'imagen')
@@ -23,16 +27,15 @@ export function CommentAttachments({ adjuntos }) {
       {imagenes.length > 0 && (
         <div className="ca-images">
           {imagenes.map(a => (
-            <a
+            <button
               key={a.id}
-              href={a.url}
-              target="_blank"
-              rel="noopener noreferrer"
+              type="button"
               className="ca-image-link"
               title={a.nombre_original}
+              onClick={() => setLightbox({ src: a.url, alt: a.nombre_original })}
             >
               <img src={a.url} alt={a.nombre_original} loading="lazy" />
-            </a>
+            </button>
           ))}
         </div>
       )}
@@ -56,6 +59,14 @@ export function CommentAttachments({ adjuntos }) {
           </a>
         )
       })}
+
+      {lightbox && (
+        <ImageLightbox
+          src={lightbox.src}
+          alt={lightbox.alt}
+          onClose={() => setLightbox(null)}
+        />
+      )}
     </div>
   )
 }

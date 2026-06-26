@@ -68,7 +68,7 @@ describe('subida y borrado de banner — flujo válido', () => {
       .set('Cookie', u.cookie)
       .attach('banner', PNG_VALIDO, 'banner.png');
     expect(uploadToCloudinary).toHaveBeenCalledWith(
-      expect.any(Buffer), 'banners', `banner_${u.user.id}`
+      expect.any(Buffer), 'udelarhits/banners', `banner_${u.user.id}`
     );
   });
 

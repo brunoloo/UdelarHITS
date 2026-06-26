@@ -590,7 +590,7 @@ const updateAvatarService = async (userId, fileBuffer, mimetype) => {
     err.code = 'BAD_REQUEST';
     throw err;
   }
-  const url = await uploadToCloudinary(fileBuffer, 'avatars', `avatar_${userId}`);
+  const url = await uploadToCloudinary(fileBuffer, 'udelarhits/avatars', `avatar_${userId}`);
   const updated = await updateAvatarById(userId, url);
   return updated;
 };
@@ -608,19 +608,19 @@ const updateBannerService = async (userId, fileBuffer, mimetype) => {
     err.code = 'BAD_REQUEST';
     throw err;
   }
-  const url = await uploadToCloudinary(fileBuffer, 'banners', `banner_${userId}`);
+  const url = await uploadToCloudinary(fileBuffer, 'udelarhits/banners', `banner_${userId}`);
   const updated = await updateBannerById(userId, url);
   return updated;
 };
 
 const deleteBannerService = async (userId) => {
   // Intentar borrar en Cloudinary, pero no romper si falla
-  await deleteFromCloudinary('banners', `banner_${userId}`);
+  await deleteFromCloudinary('udelarhits/banners', `banner_${userId}`);
   return await deleteBannerById(userId);
 };
 
 const deleteAvatarService = async (userId) => {
-  await deleteFromCloudinary('avatars', `avatar_${userId}`);
+  await deleteFromCloudinary('udelarhits/avatars', `avatar_${userId}`);
   return await deleteAvatarById(userId);
 };
 
@@ -786,8 +786,8 @@ const deactivateAccountService = async (userId, password) => {
   }
 
   // Borrar avatar y banner de Cloudinary
-  await deleteFromCloudinary('avatars', `avatar_${userId}`);
-  await deleteFromCloudinary('banners', `banner_${userId}`);
+  await deleteFromCloudinary('udelarhits/avatars', `avatar_${userId}`);
+  await deleteFromCloudinary('udelarhits/banners', `banner_${userId}`);
 
   // Limpiar seguidores en ambas direcciones
   await clearFollows(userId);

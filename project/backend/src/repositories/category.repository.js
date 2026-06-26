@@ -244,8 +244,8 @@ const getActiveCategories = async () => {
         LIMIT 1
       ) AS ultimo_tema,
       (
-        -- Último comentario directo a la categoría (sin padre, visible) para el
-        -- preview en la CategoryCard del Home. NULL si no hay comentarios.
+        -- Comentario que la categoría expone en su CategoryCard del Home: si hay
+        -- uno fijado, ése (mayor peso); si no, el más reciente directo y visible.
         SELECT json_build_object(
           'id', com.contenido_id,
           'cuerpo', con2.cuerpo,
@@ -254,7 +254,11 @@ const getActiveCategories = async () => {
           'autor_estado', u3.estado,
           'fecha_creacion', con2.fecha_creacion,
           'likes', (SELECT COUNT(*) FROM reaccion r WHERE r.contenido_id = com.contenido_id AND r.tipo = 'meGusta'),
-          'contador_respuestas', (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible')
+          'contador_respuestas', (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible'),
+          'adjuntos', (
+            SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json)
+            FROM adjunto a WHERE a.contenido_id = com.contenido_id
+          )
         )
         FROM comentario com
         JOIN contenido con2 ON con2.id = com.contenido_id
@@ -262,7 +266,8 @@ const getActiveCategories = async () => {
         WHERE com.categoria_id = c.id
           AND com.comentario_padre_id IS NULL
           AND com.estado = 'visible'
-        ORDER BY con2.fecha_creacion DESC
+        ORDER BY COALESCE(com.contenido_id = c.comentario_fijado_id, false) DESC,
+                 con2.fecha_creacion DESC
         LIMIT 1
       ) AS ultimo_comentario
     FROM categoria c

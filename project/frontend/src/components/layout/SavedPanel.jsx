@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { apiGet, apiPost } from '../../api/client'
+import { buildReplyFormData } from '../../utils/attachments'
 import { CategoryCardMini } from '../shared/CategoryCardMini'
 import { TopicCardMini } from '../shared/TopicCardMini'
 import { CommentEntry } from '../shared/CommentEntry'
@@ -25,15 +26,15 @@ export function SavedPanel({ open, panelRef, onClose }) {
 
   // Permite responder un comentario guardado desde el panel.
   const replyMutation = useMutation({
-    mutationFn: ({ parentId, cuerpo }) =>
-      apiPost('/replies/create', { cuerpo, comentario_padre_id: parentId }),
+    mutationFn: ({ parentId, cuerpo, files }) =>
+      apiPost('/replies/create', buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files)),
     onSuccess: () => {
       showToast('Respuesta publicada', 'success')
       queryClient.invalidateQueries({ queryKey: ['saved'] })
     },
     onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
   })
-  const handleReply = (parentId, text) => replyMutation.mutateAsync({ parentId, cuerpo: text })
+  const handleReply = (parentId, text, files) => replyMutation.mutateAsync({ parentId, cuerpo: text, files })
 
   return (
     <div className={`notif-panel saved-panel${open ? ' open' : ''}`} ref={panelRef}>

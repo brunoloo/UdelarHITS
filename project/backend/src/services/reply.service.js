@@ -180,7 +180,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
   // Adjuntos: subir cada archivo a Cloudinary e insertarlo en la tabla `adjunto`.
   if (files.length > 0) {
     for (const f of files) {
-      const { url, public_id } = await uploadAttachment(f.buffer, f.tipo);
+      const { url, public_id } = await uploadAttachment(f.buffer, f.tipo, f.originalname);
       await createAttachment({
         contenidoId: created.contenido_id,
         url,
@@ -216,11 +216,21 @@ const getReplyByIdService = async (id) => {
   return reply;
 };
 
+// Borra de Cloudinary los adjuntos de un comentario antes de eliminar su fila
+// (las filas de `adjunto` se van por cascade; los archivos no).
+async function deleteCommentAttachments(contenidoId) {
+  const adjuntos = await getAttachmentsForDeletion(contenidoId);
+  for (const a of adjuntos) {
+    await deleteAttachmentFromCloudinary(a.public_id, a.tipo);
+  }
+}
+
 async function cleanupOrphanedParents(commentId) {
   const hasReplies = await replyHasReplies(commentId);
   if (hasReplies) return; // todavía tiene otras respuestas, no borrar
 
   const parentInfo = await getParentComment(commentId);
+  await deleteCommentAttachments(commentId);
   await deleteReplyById(commentId);
 
   // Seguir subiendo si el padre también está oculto y sin respuestas
@@ -266,10 +276,7 @@ const deleteReplyService = async (userId, userRol, replyId) => {
 
   // Borrar los adjuntos de Cloudinary (las filas se van por cascade al borrar
   // el contenido). replyId es el contenido_id del comentario.
-  const adjuntos = await getAttachmentsForDeletion(replyId);
-  for (const a of adjuntos) {
-    await deleteAttachmentFromCloudinary(a.public_id, a.tipo);
-  }
+  await deleteCommentAttachments(replyId);
 
   await deleteReplyById(replyId);
 

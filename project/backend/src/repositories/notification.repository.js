@@ -52,7 +52,9 @@ const getNotificationsByUserId = async (userId, limit = 30) => {
       COALESCE(
         (SELECT t.titulo FROM tema t WHERE t.contenido_id = n.contenido_id),
         LEFT(c.cuerpo, 100)
-      ) AS contenido_preview
+      ) AS contenido_preview,
+      -- El front muestra "[foto]" sin sobrecargar el panel con la imagen real.
+      EXISTS(SELECT 1 FROM adjunto a WHERE a.contenido_id = n.contenido_id AND a.tipo = 'imagen') AS tiene_imagen
     FROM notificacion n
     LEFT JOIN usuario a ON a.id = n.actor_id
     LEFT JOIN contenido c ON c.id = n.contenido_id

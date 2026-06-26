@@ -106,6 +106,27 @@ describe('Último comentario directo en el feed del Home', () => {
     expect(found.ultimo_comentario).toHaveProperty('autor_url_imagen');
   });
 
+  test('si hay un comentario fijado, ése es el que expone el preview (no el más reciente)', async () => {
+    const autorCat = await registerAndLogin();
+    const comentarista = await registerAndLogin();
+    const cat = await createCategory(autorCat.cookie);
+
+    const fijado = await createReply(comentarista.cookie, { categoria_id: cat.id, cuerpo: 'comentario a fijar' });
+    // Un comentario posterior (sería el "último" por fecha si no hubiera fijado).
+    await createReply(comentarista.cookie, { categoria_id: cat.id, cuerpo: 'comentario mas reciente' });
+
+    // El creador de la categoría fija el primero.
+    await request(app)
+      .post(`/api/categories/${cat.id}/pin`)
+      .set('Cookie', autorCat.cookie)
+      .send({ tipo: 'comentario', item_id: fijado.contenido_id });
+
+    const feed = await getActive();
+    const found = feed.find(c => c.id === cat.id);
+    expect(Number(found.ultimo_comentario.id)).toBe(Number(fijado.contenido_id));
+    expect(found.ultimo_comentario.cuerpo).toBe('comentario a fijar');
+  });
+
   test('una respuesta anidada no cuenta como comentario directo del preview', async () => {
     const autorCat = await registerAndLogin();
     const comentarista = await registerAndLogin();

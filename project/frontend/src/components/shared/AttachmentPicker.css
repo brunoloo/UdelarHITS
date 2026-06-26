@@ -27,6 +27,12 @@
   cursor: not-allowed;
 }
 
+/* En el composer de categoría el avatar empuja el textarea hacia la derecha;
+   indentamos el clip para que arranque donde arranca el campo de comentario. */
+.attach-btn--indent {
+  margin-left: 46px;
+}
+
 .attach-previews {
   display: flex;
   flex-wrap: wrap;

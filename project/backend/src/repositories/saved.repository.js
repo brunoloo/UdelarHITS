@@ -105,6 +105,8 @@ const getSavedComentarios = async (usuarioId) => {
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $1 LIMIT 1) AS mi_reaccion,
+      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json)
+       FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
       g.fecha_creacion AS fecha_guardado
     FROM guardado g
     JOIN comentario com ON com.contenido_id = g.contenido_id

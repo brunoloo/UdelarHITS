@@ -345,8 +345,15 @@ export function LeftNav() {
                   )}
                   <div className="notif-content">
                     <p className="notif-message">{message}</p>
-                    {n.contenido_preview && (
-                      <p className="notif-preview">{n.contenido_preview}</p>
+                    {(n.contenido_preview || n.tiene_imagen) && (
+                      <p className="notif-preview">
+                        {n.contenido_preview}
+                        {n.tiene_imagen && (
+                          <span className="notif-preview-photo">
+                            {n.contenido_preview ? ' ' : ''}[foto]
+                          </span>
+                        )}
+                      </p>
                     )}
                     {isMod && (
                       <a

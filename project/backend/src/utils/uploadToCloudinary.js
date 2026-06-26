@@ -43,9 +43,21 @@ const optimizeImageUrl = (url) =>
     ? url.replace('/image/upload/', '/image/upload/f_auto,q_auto/')
     : url;
 
+// Genera un public_id para documentos que conserva el nombre y la extensión
+// original (sanitizados). Para 'raw', el public_id ES el nombre del archivo en la
+// URL: sin extensión, el navegador descarga algo "sin formato" (parece sospechoso).
+const documentPublicId = (originalname = '') => {
+  const dot = originalname.lastIndexOf('.');
+  const rawBase = dot > 0 ? originalname.slice(0, dot) : originalname;
+  const ext = dot > 0 ? originalname.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+  const safeBase = (rawBase || 'archivo').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 60);
+  const suffix = Math.random().toString(36).slice(2, 8);
+  return ext ? `${safeBase}_${suffix}.${ext}` : `${safeBase}_${suffix}`;
+};
+
 // Sube un adjunto de comentario. Imágenes como 'image', documentos como 'raw'.
 // Devuelve { url, public_id } (public_id para borrarlo luego).
-export const uploadAttachment = async (buffer, tipo) => {
+export const uploadAttachment = async (buffer, tipo, originalname = '') => {
   const isImage = tipo === 'imagen';
   if (process.env.NODE_ENV === 'test') {
     return {
@@ -54,16 +66,15 @@ export const uploadAttachment = async (buffer, tipo) => {
     };
   }
   return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder: 'udelarhits/adjuntos', resource_type: isImage ? 'image' : 'raw' },
-      (error, result) => {
-        if (error) reject(error);
-        else resolve({
-          url: isImage ? optimizeImageUrl(result.secure_url) : result.secure_url,
-          public_id: result.public_id,
-        });
-      }
-    );
+    const options = { folder: 'udelarhits/adjuntos', resource_type: isImage ? 'image' : 'raw' };
+    if (!isImage) options.public_id = documentPublicId(originalname);
+    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) reject(error);
+      else resolve({
+        url: isImage ? optimizeImageUrl(result.secure_url) : result.secure_url,
+        public_id: result.public_id,
+      });
+    });
     stream.end(buffer);
   });
 };

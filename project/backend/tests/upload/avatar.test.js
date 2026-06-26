@@ -75,7 +75,7 @@ describe('subida y borrado de avatar — flujo válido', () => {
       .attach('avatar', PNG_VALIDO, 'foto.png');
     // se llamó con folder 'avatars' y public_id 'avatar_<userId>'
     expect(uploadToCloudinary).toHaveBeenCalledWith(
-      expect.any(Buffer), 'avatars', `avatar_${u.user.id}`
+      expect.any(Buffer), 'udelarhits/avatars', `avatar_${u.user.id}`
     );
   });
 

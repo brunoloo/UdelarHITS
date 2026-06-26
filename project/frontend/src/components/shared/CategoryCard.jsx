@@ -4,6 +4,7 @@ import { ReadMore } from '../ui/ReadMore'
 import { UserAvatar } from './UserAvatar'
 import { CategoryIcon } from './CategoryIcon'
 import { resolveAutor } from './AuthorDisplay'
+import { CommentAttachments } from './CommentAttachments'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { formatCount } from '../../utils/formatCount'
@@ -39,9 +40,13 @@ function CommentPreview({ comment }) {
           </div>
         </div>
 
-        <div className="comment-text">
-          <ReadMore text={comment.cuerpo} maxLength={280} />
-        </div>
+        {comment.cuerpo?.trim() && (
+          <div className="comment-text">
+            <ReadMore text={comment.cuerpo} maxLength={280} />
+          </div>
+        )}
+
+        <CommentAttachments adjuntos={comment.adjuntos} />
 
         <div className="comment-actions">
           {/* Like (thumbs up, mismo SVG que ReactionButtons) — solo visual */}

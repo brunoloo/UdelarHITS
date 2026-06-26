@@ -130,7 +130,7 @@ function CreateCommentPanel({ categoryId, user }) {
           </div>
         </div>
         <div className="create-cat-panel-footer">
-          <AttachmentButton files={files} onChange={setFiles} disabled={mutation.isPending} />
+          <AttachmentButton files={files} onChange={setFiles} disabled={mutation.isPending} className="attach-btn--indent" />
           <button className="cc-cancel" type="button" onClick={closePanel}>Cancelar</button>
           <button
             className="save-btn"

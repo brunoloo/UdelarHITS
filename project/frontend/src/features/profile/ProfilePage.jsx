@@ -4,6 +4,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { apiGet, apiPost } from '../../api/client'
+import { buildReplyFormData } from '../../utils/attachments'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { FollowButton } from '../../components/shared/FollowButton'
@@ -117,8 +118,8 @@ export function ProfilePage() {
   // anidada y refresca el feed del perfil. Debe declararse antes de cualquier
   // early return para no romper el orden de los hooks.
   const replyMutation = useMutation({
-    mutationFn: ({ parentId, cuerpo }) =>
-      apiPost('/replies/create', { cuerpo, comentario_padre_id: parentId }),
+    mutationFn: ({ parentId, cuerpo, files }) =>
+      apiPost('/replies/create', buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files)),
     onSuccess: () => {
       showToast('Respuesta publicada', 'success')
       queryClient.invalidateQueries({ queryKey: ['replies', 'user', profile?.id] })
@@ -126,8 +127,8 @@ export function ProfilePage() {
     onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
   })
 
-  const handleReply = (parentId, text) =>
-    replyMutation.mutateAsync({ parentId, cuerpo: text })
+  const handleReply = (parentId, text, files) =>
+    replyMutation.mutateAsync({ parentId, cuerpo: text, files })
 
   function canView() {
     if (!profile) return false
