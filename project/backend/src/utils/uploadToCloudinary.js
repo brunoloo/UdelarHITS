@@ -55,6 +55,20 @@ const documentPublicId = (originalname = '') => {
   return ext ? `${safeBase}_${suffix}.${ext}` : `${safeBase}_${suffix}`;
 };
 
+// URL de entrega para documentos: firmada (sign_url) + fl_attachment. Cloudinary
+// bloquea por defecto la entrega de PDF y ZIP por seguridad; las URLs firmadas SÍ
+// se permiten para esos tipos. fl_attachment fuerza la descarga (Content-Disposition:
+// attachment), evitando que el visor del navegador intente renderizar el PDF y falle.
+const signedDocumentUrl = (publicId, version) =>
+  cloudinary.url(publicId, {
+    resource_type: 'raw',
+    type: 'upload',
+    secure: true,
+    sign_url: true,
+    flags: 'attachment',
+    ...(version ? { version } : {}),
+  });
+
 // Sube un adjunto de comentario. Imágenes como 'image', documentos como 'raw'.
 // Devuelve { url, public_id } (public_id para borrarlo luego).
 export const uploadAttachment = async (buffer, tipo, originalname = '') => {
@@ -71,7 +85,7 @@ export const uploadAttachment = async (buffer, tipo, originalname = '') => {
     const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
       if (error) reject(error);
       else resolve({
-        url: isImage ? optimizeImageUrl(result.secure_url) : result.secure_url,
+        url: isImage ? optimizeImageUrl(result.secure_url) : signedDocumentUrl(result.public_id, result.version),
         public_id: result.public_id,
       });
     });

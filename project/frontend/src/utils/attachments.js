@@ -49,7 +49,9 @@ export function buildReplyFormData(fields, files = []) {
 // "error al cargar el documento PDF").
 export function documentDownloadUrl(url) {
   if (!url) return url
-  if (url.includes('/raw/upload/fl_attachment')) return url // ya transformada
+  // Si ya viene firmada (s--…) o con fl_attachment desde el backend, no la tocamos
+  // (reescribirla rompería la firma de Cloudinary).
+  if (url.includes('fl_attachment') || url.includes('/s--')) return url
   return url.includes('/raw/upload/')
     ? url.replace('/raw/upload/', '/raw/upload/fl_attachment/')
     : url
