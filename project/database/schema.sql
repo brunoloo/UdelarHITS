@@ -361,6 +361,33 @@ CREATE TABLE adjunto (
 );
 CREATE INDEX idx_adjunto_contenido ON adjunto(contenido_id);
 
+-- Encuestas de un comentario. Un comentario tiene a lo sumo una encuesta.
+CREATE TABLE encuesta (
+  id             BIGSERIAL PRIMARY KEY,
+  contenido_id   BIGINT NOT NULL REFERENCES contenido(id) ON DELETE CASCADE,
+  fecha_cierre   TIMESTAMPTZ NOT NULL,
+  fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX idx_encuesta_contenido ON encuesta(contenido_id);
+
+CREATE TABLE encuesta_opcion (
+  id          BIGSERIAL PRIMARY KEY,
+  encuesta_id BIGINT NOT NULL REFERENCES encuesta(id) ON DELETE CASCADE,
+  texto       VARCHAR(80) NOT NULL,
+  orden       SMALLINT NOT NULL
+);
+CREATE INDEX idx_encuesta_opcion_encuesta ON encuesta_opcion(encuesta_id);
+
+CREATE TABLE encuesta_voto (
+  id             BIGSERIAL PRIMARY KEY,
+  encuesta_id    BIGINT NOT NULL REFERENCES encuesta(id) ON DELETE CASCADE,
+  opcion_id      BIGINT NOT NULL REFERENCES encuesta_opcion(id) ON DELETE CASCADE,
+  usuario_id     BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (encuesta_id, usuario_id)
+);
+CREATE INDEX idx_encuesta_voto_opcion ON encuesta_voto(opcion_id);
+
 -- -----------------------------
 -- REPORTAR
 -- -----------------------------

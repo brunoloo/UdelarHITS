@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { AttachmentButton, AttachmentPreviews } from './AttachmentPicker'
+import { PollButton, PollEditor } from './PollEditor'
+import { nuevaEncuesta, pollValido } from '../../utils/poll'
 import './CommentForm.css'
 
 export function CommentForm({
@@ -14,18 +16,21 @@ export function CommentForm({
 }) {
   const [text, setText] = useState('')
   const [files, setFiles] = useState([])
+  const [poll, setPoll] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
-  // Se puede enviar con texto suficiente o con al menos un adjunto.
-  const canSubmit = text.trim().length >= minLength || files.length > 0
+  // Se puede enviar con texto, con adjuntos o con una encuesta válida.
+  const canSubmit =
+    text.trim().length >= minLength || files.length > 0 || pollValido(poll)
 
   async function handleSubmit() {
     if (!canSubmit || submitting) return
     setSubmitting(true)
     try {
-      await onSubmit(text.trim(), files)
+      await onSubmit(text.trim(), files, poll)
       setText('')
       setFiles([])
+      setPoll(null)
     } finally {
       setSubmitting(false)
     }
@@ -49,8 +54,10 @@ export function CommentForm({
         />
       </div>
       <AttachmentPreviews files={files} onChange={setFiles} />
+      <PollEditor poll={poll} onChange={setPoll} onRemove={() => setPoll(null)} />
       <div className="inline-reply-actions">
         <AttachmentButton files={files} onChange={setFiles} disabled={submitting} />
+        <PollButton active={!!poll} onActivate={() => setPoll(nuevaEncuesta())} disabled={submitting} />
         {onCancel && (
           <button className="cc-cancel" type="button" onClick={onCancel}>
             Cancelar

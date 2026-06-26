@@ -1,3 +1,5 @@
+import { buildPollPayload } from './poll'
+
 // Configuración compartida para adjuntos en comentarios.
 export const MAX_ARCHIVOS = 3
 export const MAX_TAMANO = 10 * 1024 * 1024 // 10 MB
@@ -34,12 +36,15 @@ export function validarArchivo(file) {
 
 // Construye el FormData para POST /replies/create. `fields` solo incluye las
 // claves con valor; `files` van bajo la clave 'archivos'.
-export function buildReplyFormData(fields, files = []) {
+// `poll` es el estado del editor ({ opciones, dias, horas, minutos }); se
+// convierte al payload del backend ({ opciones, duracion_segundos }).
+export function buildReplyFormData(fields, files = [], poll = null) {
   const fd = new FormData()
   for (const [k, v] of Object.entries(fields)) {
     if (v !== undefined && v !== null && v !== '') fd.append(k, v)
   }
   for (const f of files) fd.append('archivos', f)
+  if (poll) fd.append('encuesta', JSON.stringify(buildPollPayload(poll)))
   return fd
 }
 

@@ -13,6 +13,7 @@ import NotificationRoutes from './notification.routes.js'
 import userReportRoutes from './report-user.routes.js';
 import ReactionRoutes from './reaction.routes.js';
 import SavedRoutes from './saved.routes.js';
+import PollRoutes from './encuesta.routes.js';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ router.use('/notifications',NotificationRoutes);
 router.use('/user-reports', userReportRoutes);
 router.use('/reactions', ReactionRoutes);
 router.use('/saved', SavedRoutes);
+router.use('/polls', PollRoutes);
 
 
 router.get('/', (_req, res) => {

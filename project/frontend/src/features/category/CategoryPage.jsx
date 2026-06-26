@@ -21,7 +21,9 @@ import { CreateTopicPanel } from '../topic/CreateTopicPanel'
 import { ReportModal } from '../../components/shared/ReportModal'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { AttachmentButton, AttachmentPreviews } from '../../components/shared/AttachmentPicker'
+import { PollButton, PollEditor } from '../../components/shared/PollEditor'
 import { buildReplyFormData } from '../../utils/attachments'
+import { nuevaEncuesta, pollValido } from '../../utils/poll'
 import './category.css'
 
 // ── SKELETONS ──────────────────────────────────────────────────────────────────
@@ -49,6 +51,7 @@ function CreateCommentPanel({ categoryId, user }) {
   const [open, setOpen] = useState(false)
   const [cuerpo, setCuerpo] = useState('')
   const [files, setFiles] = useState([])
+  const [poll, setPoll] = useState(null)
   const { showToast } = useToast()
   const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
@@ -57,12 +60,14 @@ function CreateCommentPanel({ categoryId, user }) {
     mutationFn: () => apiPost('/replies/create', buildReplyFormData(
       { cuerpo: cuerpo.trim(), categoria_id: categoryId },
       files,
+      poll,
     )),
     onSuccess: () => {
       showToast('Comentario publicado', 'success')
       setOpen(false)
       setCuerpo('')
       setFiles([])
+      setPoll(null)
       queryClient.invalidateQueries({ queryKey: ['replies', 'category', categoryId] })
     },
     onError: (err) => {
@@ -74,10 +79,11 @@ function CreateCommentPanel({ categoryId, user }) {
     setOpen(false)
     setCuerpo('')
     setFiles([])
+    setPoll(null)
     mutation.reset()
   }
 
-  const canSubmit = cuerpo.trim().length >= 1 || files.length > 0
+  const canSubmit = cuerpo.trim().length >= 1 || files.length > 0 || pollValido(poll)
 
   function handleSubmit() {
     if (!requireAuth('Debes iniciar sesión para comentar')) return
@@ -127,10 +133,12 @@ function CreateCommentPanel({ categoryId, user }) {
               />
             </div>
             <AttachmentPreviews files={files} onChange={setFiles} />
+            <PollEditor poll={poll} onChange={setPoll} onRemove={() => setPoll(null)} />
           </div>
         </div>
         <div className="create-cat-panel-footer">
           <AttachmentButton files={files} onChange={setFiles} disabled={mutation.isPending} className="attach-btn--indent" />
+          <PollButton active={!!poll} onActivate={() => setPoll(nuevaEncuesta())} disabled={mutation.isPending} />
           <button className="cc-cancel" type="button" onClick={closePanel}>Cancelar</button>
           <button
             className="save-btn"

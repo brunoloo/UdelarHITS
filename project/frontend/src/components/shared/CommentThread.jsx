@@ -44,8 +44,8 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
   })
 
   const replyMutation = useMutation({
-    mutationFn: ({ parentId, cuerpo, files }) => apiPost('/replies/create',
-      buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files)
+    mutationFn: ({ parentId, cuerpo, files, poll }) => apiPost('/replies/create',
+      buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files, poll)
     ),
     onSuccess: () => {
       showToast('Respuesta publicada', 'success')
@@ -68,8 +68,8 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
     })
   }
 
-  function handleReply(parentId, text, files) {
-    return replyMutation.mutateAsync({ parentId, cuerpo: text, files })
+  function handleReply(parentId, text, files, poll) {
+    return replyMutation.mutateAsync({ parentId, cuerpo: text, files, poll })
   }
 
   const visibleComments = currentParent ? childReplies : comments

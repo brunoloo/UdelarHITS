@@ -1,0 +1,155 @@
+/* ── Botón de encuesta (junto al clip) ── */
+/* margin-right:auto: clip + encuesta quedan agrupados a la izquierda y
+   Cancelar/Enviar a la derecha, todo en la misma fila. */
+.poll-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  margin-right: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.poll-btn:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.poll-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.poll-btn:disabled {
+  cursor: default;
+}
+
+/* ── Editor de encuesta ── */
+.poll-editor {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.poll-editor-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.poll-option-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.poll-option-input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface);
+  box-sizing: border-box;
+}
+
+.poll-option-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.poll-option-remove,
+.poll-option-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.poll-option-remove:hover {
+  background: var(--danger, #e23);
+  color: #fff;
+}
+
+.poll-option-add {
+  color: var(--accent);
+}
+
+.poll-option-add:hover {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.poll-duration {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.poll-duration-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.poll-duration-selects {
+  display: flex;
+  gap: 10px;
+}
+
+.poll-duration-selects label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.poll-duration-selects select {
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.poll-remove {
+  margin-top: 12px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--danger, #e23);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.poll-remove:hover {
+  background: color-mix(in srgb, var(--danger, #e23) 12%, transparent);
+}

@@ -8,11 +8,28 @@ const createReply = async (req, res) => {
   try {
     // En multipart, los campos vienen como strings ('' → undefined).
     const clean = (v) => (v === undefined || v === '' ? undefined : v);
+
+    // La encuesta llega como string JSON (multipart) o como objeto (JSON body).
+    let encuesta;
+    const rawEncuesta = req.body.encuesta;
+    if (rawEncuesta !== undefined && rawEncuesta !== null && rawEncuesta !== '') {
+      if (typeof rawEncuesta === 'string') {
+        try {
+          encuesta = JSON.parse(rawEncuesta);
+        } catch {
+          return res.status(400).json({ ok: false, message: 'Encuesta con formato inválido' });
+        }
+      } else {
+        encuesta = rawEncuesta;
+      }
+    }
+
     const fields = {
       cuerpo: req.body.cuerpo,
       tema_id: clean(req.body.tema_id),
       categoria_id: clean(req.body.categoria_id),
       comentario_padre_id: clean(req.body.comentario_padre_id),
+      encuesta,
     };
 
     // Validar cada archivo por sus magic numbers (no por mimetype, spoofeable).

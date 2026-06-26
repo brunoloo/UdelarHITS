@@ -11,6 +11,7 @@ import { ReadMore } from '../ui/ReadMore'
 import { DropdownMenu } from '../ui/DropdownMenu'
 import { CommentForm } from './CommentForm'
 import { CommentAttachments } from './CommentAttachments'
+import { PollDisplay } from './PollDisplay'
 import { ReportModal } from './ReportModal'
 import { Modal } from '../ui/Modal'
 import { timeAgo } from '../../utils/timeAgo'
@@ -255,6 +256,7 @@ export function CommentCard({
               </div>
             )}
             <CommentAttachments adjuntos={comment.adjuntos} />
+            {comment.encuesta && <PollDisplay encuesta={comment.encuesta} />}
             <div className="comment-actions">
               <ReactionButtons
                 contenidoId={comment.id}
@@ -297,10 +299,10 @@ export function CommentCard({
             submitLabel="Responder"
             autoFocus
             onCancel={() => setReplyOpen(false)}
-            onSubmit={async (text, files) => {
+            onSubmit={async (text, files, poll) => {
               if (!requireAuth('Debes iniciar sesión para responder')) return
               if (onReply) {
-                await onReply(comment.id, text, files)
+                await onReply(comment.id, text, files, poll)
                 setReplyOpen(false)
               }
             }}

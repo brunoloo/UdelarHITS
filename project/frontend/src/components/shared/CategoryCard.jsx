@@ -5,6 +5,7 @@ import { UserAvatar } from './UserAvatar'
 import { CategoryIcon } from './CategoryIcon'
 import { resolveAutor } from './AuthorDisplay'
 import { CommentAttachments } from './CommentAttachments'
+import { PollDisplay } from './PollDisplay'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { formatCount } from '../../utils/formatCount'
@@ -47,6 +48,8 @@ function CommentPreview({ comment }) {
         )}
 
         <CommentAttachments adjuntos={comment.adjuntos} />
+
+        {comment.encuesta && <PollDisplay encuesta={comment.encuesta} readOnly />}
 
         <div className="comment-actions">
           {/* Like (thumbs up, mismo SVG que ReactionButtons) — solo visual */}

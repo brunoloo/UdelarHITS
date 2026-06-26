@@ -118,8 +118,8 @@ export function ProfilePage() {
   // anidada y refresca el feed del perfil. Debe declararse antes de cualquier
   // early return para no romper el orden de los hooks.
   const replyMutation = useMutation({
-    mutationFn: ({ parentId, cuerpo, files }) =>
-      apiPost('/replies/create', buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files)),
+    mutationFn: ({ parentId, cuerpo, files, poll }) =>
+      apiPost('/replies/create', buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files, poll)),
     onSuccess: () => {
       showToast('Respuesta publicada', 'success')
       queryClient.invalidateQueries({ queryKey: ['replies', 'user', profile?.id] })
@@ -127,8 +127,8 @@ export function ProfilePage() {
     onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
   })
 
-  const handleReply = (parentId, text, files) =>
-    replyMutation.mutateAsync({ parentId, cuerpo: text, files })
+  const handleReply = (parentId, text, files, poll) =>
+    replyMutation.mutateAsync({ parentId, cuerpo: text, files, poll })
 
   function canView() {
     if (!profile) return false

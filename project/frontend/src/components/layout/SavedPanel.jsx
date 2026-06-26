@@ -26,15 +26,15 @@ export function SavedPanel({ open, panelRef, onClose }) {
 
   // Permite responder un comentario guardado desde el panel.
   const replyMutation = useMutation({
-    mutationFn: ({ parentId, cuerpo, files }) =>
-      apiPost('/replies/create', buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files)),
+    mutationFn: ({ parentId, cuerpo, files, poll }) =>
+      apiPost('/replies/create', buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files, poll)),
     onSuccess: () => {
       showToast('Respuesta publicada', 'success')
       queryClient.invalidateQueries({ queryKey: ['saved'] })
     },
     onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
   })
-  const handleReply = (parentId, text, files) => replyMutation.mutateAsync({ parentId, cuerpo: text, files })
+  const handleReply = (parentId, text, files, poll) => replyMutation.mutateAsync({ parentId, cuerpo: text, files, poll })
 
   return (
     <div className={`notif-panel saved-panel${open ? ' open' : ''}`} ref={panelRef}>

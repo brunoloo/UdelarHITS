@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { encuestaSubquery } from './encuesta.repository.js';
 
 // Guarda un item. Idempotente y valida que el id corresponda al tipo declarado.
 const saveItem = async (usuarioId, tipo, id) => {
@@ -107,6 +108,7 @@ const getSavedComentarios = async (usuarioId) => {
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $1 LIMIT 1) AS mi_reaccion,
       (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json)
        FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
+      ${encuestaSubquery('$1')} AS encuesta,
       g.fecha_creacion AS fecha_guardado
     FROM guardado g
     JOIN comentario com ON com.contenido_id = g.contenido_id

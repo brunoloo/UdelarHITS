@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { encuestaSubquery } from './encuesta.repository.js';
 
 const createCategory = async ({ titulo, descripcion, autor_id, etiquetas }) => {
   const client = await pool.connect();
@@ -258,7 +259,8 @@ const getActiveCategories = async () => {
           'adjuntos', (
             SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json)
             FROM adjunto a WHERE a.contenido_id = com.contenido_id
-          )
+          ),
+          'encuesta', ${encuestaSubquery('NULL::bigint')}
         )
         FROM comentario com
         JOIN contenido con2 ON con2.id = com.contenido_id

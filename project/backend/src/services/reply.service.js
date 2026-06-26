@@ -9,14 +9,38 @@ import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
 import { getLikesPrivacyById } from '../repositories/user.repository.js';
 import { createNotification } from '../repositories/notification.repository.js';
 import { createAttachment, getAttachmentsByContenidoId, getAttachmentsForDeletion } from '../repositories/adjunto.repository.js';
+import { createPoll, getPollByContenidoId } from '../repositories/encuesta.repository.js';
 import { uploadAttachment, deleteAttachmentFromCloudinary } from '../utils/uploadToCloudinary.js';
 import pool from '../config/db.js';
 
-const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, comentario_padre_id }, files = []) => {
-  const cuerpoLimpio = cuerpo?.trim() || '';
+const ENCUESTA_DUR_MIN = 60;            // 1 minuto
+const ENCUESTA_DUR_MAX = 7 * 24 * 3600; // 1 semana
 
-  // Un comentario puede ir sin texto si lleva al menos un adjunto (imagen/archivo).
-  if (!cuerpoLimpio && files.length === 0) {
+// Valida y normaliza la encuesta recibida del cliente. Devuelve { opciones,
+// duracionSegundos } o lanza BAD_REQUEST. null si no hay encuesta.
+const validarEncuesta = (encuesta) => {
+  if (encuesta == null) return null;
+  const bad = (msg) => { const e = new Error(msg); e.code = 'BAD_REQUEST'; throw e; };
+
+  const opciones = (Array.isArray(encuesta.opciones) ? encuesta.opciones : [])
+    .map((o) => (typeof o === 'string' ? o.trim() : ''))
+    .filter((o) => o.length > 0);
+  if (opciones.length < 2 || opciones.length > 5) bad('La encuesta debe tener entre 2 y 5 opciones');
+  if (opciones.some((o) => o.length > 80)) bad('Cada opción de la encuesta admite hasta 80 caracteres');
+
+  const dur = Number(encuesta.duracion_segundos);
+  if (!Number.isFinite(dur) || dur < ENCUESTA_DUR_MIN || dur > ENCUESTA_DUR_MAX) {
+    bad('La duración de la encuesta debe ser entre 1 minuto y 1 semana');
+  }
+  return { opciones, duracionSegundos: Math.floor(dur) };
+};
+
+const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, comentario_padre_id, encuesta }, files = []) => {
+  const cuerpoLimpio = cuerpo?.trim() || '';
+  const encuestaValidada = validarEncuesta(encuesta);
+
+  // Un comentario puede ir sin texto si lleva al menos un adjunto o una encuesta.
+  if (!cuerpoLimpio && files.length === 0 && !encuestaValidada) {
     const err = new Error('El comentario no puede estar vacío');
     err.code = 'BAD_REQUEST';
     throw err;
@@ -198,6 +222,19 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     created.adjuntos = await getAttachmentsByContenidoId(created.contenido_id);
   } else {
     created.adjuntos = [];
+  }
+
+  // Encuesta: crear la encuesta y sus opciones; fecha_cierre = ahora + duración.
+  if (encuestaValidada) {
+    const fechaCierre = new Date(Date.now() + encuestaValidada.duracionSegundos * 1000);
+    await createPoll({
+      contenidoId: created.contenido_id,
+      fechaCierre,
+      opciones: encuestaValidada.opciones,
+    });
+    created.encuesta = await getPollByContenidoId(created.contenido_id, autorId);
+  } else {
+    created.encuesta = null;
   }
 
   return created;

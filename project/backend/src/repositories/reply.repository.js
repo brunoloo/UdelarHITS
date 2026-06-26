@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { encuestaSubquery } from './encuesta.repository.js';
 
 const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario_padre_id }) => {
   const client = await pool.connect();
@@ -37,7 +38,8 @@ const getRepliesByCategoryId = async (categoriaId, userId = null) => {
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
       COALESCE(com.contenido_id = c.comentario_fijado_id, false) AS fijado,
-      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos
+      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
+      ${encuestaSubquery('$2')} AS encuesta
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
@@ -57,7 +59,8 @@ const getRepliesByTopicId = async (topicId, userId = null) => {
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
       COALESCE(com.contenido_id = t.comentario_fijado_id, false) AS fijado,
-      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos
+      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
+      ${encuestaSubquery('$2')} AS encuesta
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
@@ -159,7 +162,8 @@ const getRepliesByUserId = async (userId, viewerId = null) => {
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
-      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos
+      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
+      ${encuestaSubquery('$2')} AS encuesta
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
@@ -207,7 +211,8 @@ const getLikedCommentsByUserId = async (userId, viewerId = null) => {
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
-      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos
+      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
+      ${encuestaSubquery('$2')} AS encuesta
     FROM reaccion r
     JOIN comentario com ON com.contenido_id = r.contenido_id
     JOIN contenido con ON con.id = com.contenido_id
@@ -229,7 +234,8 @@ const getRepliesByCommentId = async (commentId, userId = null) => {
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
-      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos
+      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
+      ${encuestaSubquery('$2')} AS encuesta
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id

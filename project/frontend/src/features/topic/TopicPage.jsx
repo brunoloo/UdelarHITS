@@ -15,7 +15,9 @@ import { Modal } from '../../components/ui/Modal'
 import { CommentThread } from '../../components/shared/CommentThread'
 import { ReportModal } from '../../components/shared/ReportModal'
 import { AttachmentButton, AttachmentPreviews } from '../../components/shared/AttachmentPicker'
+import { PollButton, PollEditor } from '../../components/shared/PollEditor'
 import { buildReplyFormData } from '../../utils/attachments'
+import { nuevaEncuesta, pollValido } from '../../utils/poll'
 import { timeAgo } from '../../utils/timeAgo'
 import '../category/category.css'
 import './topic.css'
@@ -39,6 +41,7 @@ export function TopicPage() {
   const [historyIndex, setHistoryIndex] = useState(0)
   const [commentText, setCommentText] = useState('')
   const [commentFiles, setCommentFiles] = useState([])
+  const [commentPoll, setCommentPoll] = useState(null)
   const [commentFormOpen, setCommentFormOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
 
@@ -79,12 +82,13 @@ export function TopicPage() {
 
   const commentMutation = useMutation({
     mutationFn: (cuerpo) => apiPost('/replies/create',
-      buildReplyFormData({ cuerpo, tema_id: id }, commentFiles)
+      buildReplyFormData({ cuerpo, tema_id: id }, commentFiles, commentPoll)
     ),
     onSuccess: () => {
       showToast('Comentario publicado', 'success')
       setCommentText('')
       setCommentFiles([])
+      setCommentPoll(null)
       setCommentFormOpen(false)
       queryClient.invalidateQueries({ queryKey: ['replies', 'topic', id] })
     },
@@ -105,7 +109,8 @@ export function TopicPage() {
 
   function handleCommentSubmit() {
     if (!requireAuth('Debes iniciar sesión para comentar')) return
-    if ((commentText.trim().length < 1 && commentFiles.length === 0) || commentMutation.isPending) return
+    const vacio = commentText.trim().length < 1 && commentFiles.length === 0 && !pollValido(commentPoll)
+    if (vacio || commentMutation.isPending) return
     commentMutation.mutate(commentText.trim())
   }
 
@@ -286,21 +291,23 @@ export function TopicPage() {
                       />
                     </div>
                     <AttachmentPreviews files={commentFiles} onChange={setCommentFiles} />
+                    <PollEditor poll={commentPoll} onChange={setCommentPoll} onRemove={() => setCommentPoll(null)} />
                   </div>
                 </div>
                 <div className="create-cat-panel-footer">
                   <AttachmentButton files={commentFiles} onChange={setCommentFiles} disabled={commentMutation.isPending} />
+                  <PollButton active={!!commentPoll} onActivate={() => setCommentPoll(nuevaEncuesta())} disabled={commentMutation.isPending} />
                   <button
                     className="cc-cancel"
                     type="button"
-                    onClick={() => { setCommentFormOpen(false); setCommentText(''); setCommentFiles([]) }}
+                    onClick={() => { setCommentFormOpen(false); setCommentText(''); setCommentFiles([]); setCommentPoll(null) }}
                   >
                     Cancelar
                   </button>
                   <button
                     className="save-btn"
                     type="button"
-                    disabled={(commentText.trim().length < 1 && commentFiles.length === 0) || commentMutation.isPending}
+                    disabled={(commentText.trim().length < 1 && commentFiles.length === 0 && !pollValido(commentPoll)) || commentMutation.isPending}
                     onClick={handleCommentSubmit}
                   >
                     {commentMutation.isPending ? 'Publicando...' : 'Comentar'}
