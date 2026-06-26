@@ -2,10 +2,31 @@ import { createReplyService, getRepliesByCategoryIdService,
   getRepliesByTopicIdService, deleteReplyService, getMyRepliesService,
   getRepliesByUserIdService, updateReplyService, getRepliesByCommentIdService, getReplyByIdService, getReplyEditHistoryService,
   getReplyContextService, getLikedCommentsByUserIdService } from '../services/reply.service.js';
+import { detectAttachmentType } from '../utils/validateAttachment.js';
 
 const createReply = async (req, res) => {
   try {
-    const reply = await createReplyService(req.user.id, req.body);
+    // En multipart, los campos vienen como strings ('' → undefined).
+    const clean = (v) => (v === undefined || v === '' ? undefined : v);
+    const fields = {
+      cuerpo: req.body.cuerpo,
+      tema_id: clean(req.body.tema_id),
+      categoria_id: clean(req.body.categoria_id),
+      comentario_padre_id: clean(req.body.comentario_padre_id),
+    };
+
+    // Validar cada archivo por sus magic numbers (no por mimetype, spoofeable).
+    const files = req.files || [];
+    const validados = [];
+    for (const f of files) {
+      const tipo = await detectAttachmentType(f.buffer);
+      if (!tipo) {
+        return res.status(400).json({ ok: false, message: `Tipo de archivo no permitido: ${f.originalname}` });
+      }
+      validados.push({ buffer: f.buffer, originalname: f.originalname, size: f.size, tipo });
+    }
+
+    const reply = await createReplyService(req.user.id, fields, validados);
     return res.status(201).json({ ok: true, data: reply });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });

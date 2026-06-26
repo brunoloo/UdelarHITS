@@ -14,6 +14,8 @@ import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
 import { Modal } from '../../components/ui/Modal'
 import { CommentThread } from '../../components/shared/CommentThread'
 import { ReportModal } from '../../components/shared/ReportModal'
+import { AttachmentPicker } from '../../components/shared/AttachmentPicker'
+import { buildReplyFormData } from '../../utils/attachments'
 import { timeAgo } from '../../utils/timeAgo'
 import '../category/category.css'
 import './topic.css'
@@ -36,6 +38,7 @@ export function TopicPage() {
   const [historyEntries, setHistoryEntries] = useState([])
   const [historyIndex, setHistoryIndex] = useState(0)
   const [commentText, setCommentText] = useState('')
+  const [commentFiles, setCommentFiles] = useState([])
   const [commentFormOpen, setCommentFormOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
 
@@ -75,10 +78,13 @@ export function TopicPage() {
   })
 
   const commentMutation = useMutation({
-    mutationFn: (cuerpo) => apiPost('/replies/create', { cuerpo, tema_id: id }),
+    mutationFn: (cuerpo) => apiPost('/replies/create',
+      buildReplyFormData({ cuerpo, tema_id: id }, commentFiles)
+    ),
     onSuccess: () => {
       showToast('Comentario publicado', 'success')
       setCommentText('')
+      setCommentFiles([])
       setCommentFormOpen(false)
       queryClient.invalidateQueries({ queryKey: ['replies', 'topic', id] })
     },
@@ -279,13 +285,14 @@ export function TopicPage() {
                         autoFocus
                       />
                     </div>
+                    <AttachmentPicker files={commentFiles} onChange={setCommentFiles} disabled={commentMutation.isPending} />
                   </div>
                 </div>
                 <div className="create-cat-panel-footer">
                   <button
                     className="cc-cancel"
                     type="button"
-                    onClick={() => { setCommentFormOpen(false); setCommentText('') }}
+                    onClick={() => { setCommentFormOpen(false); setCommentText(''); setCommentFiles([]) }}
                   >
                     Cancelar
                   </button>

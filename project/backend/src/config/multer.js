@@ -23,3 +23,10 @@ export const uploadBanner = multer({
   limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
   fileFilter
 });
+
+// Adjuntos de comentarios: hasta 3 archivos, 10 MB c/u. El tipo real se valida
+// por magic numbers en el controller (no por mimetype, que es spoofeable).
+export const uploadAttachments = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024, files: 3 },
+});

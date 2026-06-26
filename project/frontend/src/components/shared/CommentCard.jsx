@@ -10,6 +10,7 @@ import { UserAvatar } from './UserAvatar'
 import { ReadMore } from '../ui/ReadMore'
 import { DropdownMenu } from '../ui/DropdownMenu'
 import { CommentForm } from './CommentForm'
+import { CommentAttachments } from './CommentAttachments'
 import { ReportModal } from './ReportModal'
 import { Modal } from '../ui/Modal'
 import { timeAgo } from '../../utils/timeAgo'
@@ -251,6 +252,7 @@ export function CommentCard({
             <div className="comment-text">
               <ReadMore text={comment.cuerpo} maxLength={500} />
             </div>
+            <CommentAttachments adjuntos={comment.adjuntos} />
             <div className="comment-actions">
               <ReactionButtons
                 contenidoId={comment.id}
@@ -293,10 +295,10 @@ export function CommentCard({
             submitLabel="Responder"
             autoFocus
             onCancel={() => setReplyOpen(false)}
-            onSubmit={async (text) => {
+            onSubmit={async (text, files) => {
               if (!requireAuth('Debes iniciar sesión para responder')) return
               if (onReply) {
-                await onReply(comment.id, text)
+                await onReply(comment.id, text, files)
                 setReplyOpen(false)
               }
             }}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AttachmentPicker } from './AttachmentPicker'
 import './CommentForm.css'
 
 export function CommentForm({
@@ -12,6 +13,7 @@ export function CommentForm({
   onCancel,
 }) {
   const [text, setText] = useState('')
+  const [files, setFiles] = useState([])
   const [submitting, setSubmitting] = useState(false)
 
   const canSubmit = text.trim().length >= minLength
@@ -20,8 +22,9 @@ export function CommentForm({
     if (!canSubmit || submitting) return
     setSubmitting(true)
     try {
-      await onSubmit(text.trim())
+      await onSubmit(text.trim(), files)
       setText('')
+      setFiles([])
     } finally {
       setSubmitting(false)
     }
@@ -44,6 +47,7 @@ export function CommentForm({
           autoFocus={autoFocus}
         />
       </div>
+      <AttachmentPicker files={files} onChange={setFiles} disabled={submitting} />
       <div className="inline-reply-actions">
         {onCancel && (
           <button className="cc-cancel" type="button" onClick={onCancel}>

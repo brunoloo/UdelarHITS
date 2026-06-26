@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '../../hooks/useToast'
 import { apiGet, apiPost } from '../../api/client'
+import { buildReplyFormData } from '../../utils/attachments'
 import { CommentCard } from './CommentCard'
 import './CommentCard.css'
 
@@ -43,10 +44,9 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
   })
 
   const replyMutation = useMutation({
-    mutationFn: ({ parentId, cuerpo }) => apiPost('/replies/create', {
-      cuerpo,
-      comentario_padre_id: parentId,
-    }),
+    mutationFn: ({ parentId, cuerpo, files }) => apiPost('/replies/create',
+      buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files)
+    ),
     onSuccess: () => {
       showToast('Respuesta publicada', 'success')
       if (currentParent) {
@@ -68,8 +68,8 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
     })
   }
 
-  function handleReply(parentId, text) {
-    return replyMutation.mutateAsync({ parentId, cuerpo: text })
+  function handleReply(parentId, text, files) {
+    return replyMutation.mutateAsync({ parentId, cuerpo: text, files })
   }
 
   const visibleComments = currentParent ? childReplies : comments

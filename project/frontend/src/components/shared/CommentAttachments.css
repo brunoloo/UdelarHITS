@@ -1,0 +1,76 @@
+/* ── Adjuntos renderizados en la card de comentario ── */
+.comment-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.ca-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ca-image-link {
+  display: block;
+  line-height: 0;
+}
+
+.ca-image-link img {
+  max-width: 200px;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: opacity .15s;
+}
+
+.ca-image-link:hover img {
+  opacity: .9;
+}
+
+.ca-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 320px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  text-decoration: none;
+  transition: border-color .15s, background .15s;
+}
+
+.ca-doc:hover {
+  border-color: var(--accent);
+  background: var(--bg);
+}
+
+.ca-doc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.ca-doc-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ca-doc-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ca-doc-size {
+  font-size: 11px;
+  color: var(--text-secondary);
+}

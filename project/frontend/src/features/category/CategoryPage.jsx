@@ -20,6 +20,8 @@ import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { CreateTopicPanel } from '../topic/CreateTopicPanel'
 import { ReportModal } from '../../components/shared/ReportModal'
 import { UserAvatar } from '../../components/shared/UserAvatar'
+import { AttachmentPicker } from '../../components/shared/AttachmentPicker'
+import { buildReplyFormData } from '../../utils/attachments'
 import './category.css'
 
 // ── SKELETONS ──────────────────────────────────────────────────────────────────
@@ -46,19 +48,21 @@ function TopicSkeleton() {
 function CreateCommentPanel({ categoryId, user }) {
   const [open, setOpen] = useState(false)
   const [cuerpo, setCuerpo] = useState('')
+  const [files, setFiles] = useState([])
   const { showToast } = useToast()
   const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
-    mutationFn: () => apiPost('/replies/create', {
-      cuerpo: cuerpo.trim(),
-      categoria_id: categoryId,
-    }),
+    mutationFn: () => apiPost('/replies/create', buildReplyFormData(
+      { cuerpo: cuerpo.trim(), categoria_id: categoryId },
+      files,
+    )),
     onSuccess: () => {
       showToast('Comentario publicado', 'success')
       setOpen(false)
       setCuerpo('')
+      setFiles([])
       queryClient.invalidateQueries({ queryKey: ['replies', 'category', categoryId] })
     },
     onError: (err) => {
@@ -69,6 +73,7 @@ function CreateCommentPanel({ categoryId, user }) {
   function closePanel() {
     setOpen(false)
     setCuerpo('')
+    setFiles([])
     mutation.reset()
   }
 
@@ -121,6 +126,7 @@ function CreateCommentPanel({ categoryId, user }) {
                 autoFocus
               />
             </div>
+            <AttachmentPicker files={files} onChange={setFiles} disabled={mutation.isPending} />
           </div>
         </div>
         <div className="create-cat-panel-footer">

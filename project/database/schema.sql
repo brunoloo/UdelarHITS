@@ -348,6 +348,19 @@ CREATE TABLE suscripcion_categoria (
   PRIMARY KEY (usuario_id, categoria_id)
 );
 
+-- Adjuntos de un comentario (imágenes/documentos subidos a Cloudinary).
+CREATE TABLE adjunto (
+  id              BIGSERIAL PRIMARY KEY,
+  contenido_id    BIGINT NOT NULL REFERENCES contenido(id) ON DELETE CASCADE,
+  url             TEXT NOT NULL,
+  public_id       TEXT NOT NULL,           -- para borrar de Cloudinary
+  nombre_original VARCHAR(255) NOT NULL,
+  tipo            VARCHAR(20) NOT NULL,     -- 'imagen' o 'documento'
+  tamano          INTEGER NOT NULL,         -- bytes
+  fecha_creacion  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_adjunto_contenido ON adjunto(contenido_id);
+
 -- -----------------------------
 -- REPORTAR
 -- -----------------------------

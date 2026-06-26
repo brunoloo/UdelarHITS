@@ -8,9 +8,11 @@ import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   getReplyContext, getLikedCommentsByUserId } from '../repositories/reply.repository.js';
 import { getLikesPrivacyById } from '../repositories/user.repository.js';
 import { createNotification } from '../repositories/notification.repository.js';
+import { createAttachment, getAttachmentsByContenidoId, getAttachmentsForDeletion } from '../repositories/adjunto.repository.js';
+import { uploadAttachment, deleteAttachmentFromCloudinary } from '../utils/uploadToCloudinary.js';
 import pool from '../config/db.js';
 
-const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, comentario_padre_id }) => {
+const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, comentario_padre_id }, files = []) => {
   if (!cuerpo?.trim()) {
     const err = new Error('El contenido no puede estar vacío');
     err.code = 'BAD_REQUEST';
@@ -172,6 +174,24 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     }
   }
 
+  // Adjuntos: subir cada archivo a Cloudinary e insertarlo en la tabla `adjunto`.
+  if (files.length > 0) {
+    for (const f of files) {
+      const { url, public_id } = await uploadAttachment(f.buffer, f.tipo);
+      await createAttachment({
+        contenidoId: created.contenido_id,
+        url,
+        publicId: public_id,
+        nombreOriginal: f.originalname,
+        tipo: f.tipo,
+        tamano: f.size,
+      });
+    }
+    created.adjuntos = await getAttachmentsByContenidoId(created.contenido_id);
+  } else {
+    created.adjuntos = [];
+  }
+
   return created;
 };
 
@@ -240,6 +260,13 @@ const deleteReplyService = async (userId, userRol, replyId) => {
 
   // Antes de eliminar, guardar info del padre
   const parentInfo = await getParentComment(replyId);
+
+  // Borrar los adjuntos de Cloudinary (las filas se van por cascade al borrar
+  // el contenido). replyId es el contenido_id del comentario.
+  const adjuntos = await getAttachmentsForDeletion(replyId);
+  for (const a of adjuntos) {
+    await deleteAttachmentFromCloudinary(a.public_id, a.tipo);
+  }
 
   await deleteReplyById(replyId);
 
