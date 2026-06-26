@@ -192,6 +192,11 @@ export function CommentCard({
           inactive={autor.isInactive}
         />
       </div>
+      {/* Menú anclado a la esquina sup. derecha de la card: así el badge
+          "Fijado" no lo desplaza hacia abajo. */}
+      <div className="comment-card-menu">
+        <DropdownMenu items={menuItems} />
+      </div>
       <div className="comment-body">
         {comment.fijado && (
           <div className="comment-pinned-badge">
@@ -211,7 +216,6 @@ export function CommentCard({
             <span>·</span>
             <span>{timeAgo(comment.fecha_creacion)}</span>
           </div>
-          <DropdownMenu items={menuItems} />
         </div>
 
         {editing ? (

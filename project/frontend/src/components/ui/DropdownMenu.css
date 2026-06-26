@@ -9,7 +9,7 @@
 }
 .comment-menu-btn:hover { background: var(--bg); color: var(--text-primary); }
 .comment-dropdown {
-  position: absolute; top: 100%; right: 0;
+  position: absolute; top: 100%; right: 6px;
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); box-shadow: var(--shadow-2);
   min-width: 180px; z-index: 100; overflow: hidden;

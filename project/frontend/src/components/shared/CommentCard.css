@@ -47,6 +47,17 @@
   align-items: flex-start;
   gap: 8px;
   margin-bottom: 4px;
+  /* Espacio para el menú anclado en la esquina sup. derecha. */
+  padding-right: 26px;
+}
+
+/* Menú de 3 puntos anclado a la esquina superior derecha de la card, así el
+   badge "Fijado" no lo empuja hacia abajo y siempre queda alineado arriba. */
+.comment-card-menu {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
 }
 
 .comment-head {
