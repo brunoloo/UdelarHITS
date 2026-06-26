@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { FileText, FileSpreadsheet, Archive, File } from 'lucide-react'
 import { formatBytes } from '../../utils/formatBytes'
+import { documentDownloadUrl } from '../../utils/attachments'
 import { ImageLightbox } from './ImageLightbox'
 import './CommentAttachments.css'
 
@@ -45,8 +46,7 @@ export function CommentAttachments({ adjuntos }) {
         return (
           <a
             key={a.id}
-            href={a.url}
-            target="_blank"
+            href={documentDownloadUrl(a.url)}
             rel="noopener noreferrer"
             download={a.nombre_original}
             className="ca-doc"

@@ -42,3 +42,15 @@ export function buildReplyFormData(fields, files = []) {
   for (const f of files) fd.append('archivos', f)
   return fd
 }
+
+// URL de descarga para documentos: agrega fl_attachment para que Cloudinary
+// devuelva Content-Disposition: attachment. Así el navegador descarga el archivo
+// en vez de intentar renderizarlo inline (que con los PDF fallaba con
+// "error al cargar el documento PDF").
+export function documentDownloadUrl(url) {
+  if (!url) return url
+  if (url.includes('/raw/upload/fl_attachment')) return url // ya transformada
+  return url.includes('/raw/upload/')
+    ? url.replace('/raw/upload/', '/raw/upload/fl_attachment/')
+    : url
+}

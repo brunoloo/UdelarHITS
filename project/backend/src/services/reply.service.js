@@ -177,10 +177,15 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     }
   }
 
-  // Adjuntos: subir cada archivo a Cloudinary e insertarlo en la tabla `adjunto`.
+  // Adjuntos: subir a Cloudinary (en paralelo, que es la parte lenta) e insertar
+  // en la tabla `adjunto` respetando el orden de selección.
   if (files.length > 0) {
-    for (const f of files) {
-      const { url, public_id } = await uploadAttachment(f.buffer, f.tipo, f.originalname);
+    const subidos = await Promise.all(
+      files.map((f) => uploadAttachment(f.buffer, f.tipo, f.originalname))
+    );
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const { url, public_id } = subidos[i];
       await createAttachment({
         contenidoId: created.contenido_id,
         url,
