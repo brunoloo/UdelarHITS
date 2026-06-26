@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
     getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory,
     getEtiquetasList, getPopularCategoriesList, getCategoryEditHistory,
-    pinCategoryItem, unpinCategoryItem } from '../controllers/category.controller.js';
+    pinCategoryItem, unpinCategoryItem,
+    subscribeCategory, unsubscribeCategory, getCategorySubscription } from '../controllers/category.controller.js';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 
 const router = Router();
@@ -26,6 +27,10 @@ router.patch('/:id/activar', protect, activeCategory)    // Activa la categoría
 
 router.post('/:id/pin', protect, pinCategoryItem);          // Fijar tema/comentario (moderador)
 router.delete('/:id/pin/:tipo', protect, unpinCategoryItem); // Desanclar tema/comentario
+
+router.get('/:id/subscription', protect, getCategorySubscription); // ¿Estoy suscrito?
+router.post('/:id/subscribe', protect, subscribeCategory);          // Suscribirse (campanita)
+router.delete('/:id/subscribe', protect, unsubscribeCategory);     // Desuscribirse
 
 
 export default router;

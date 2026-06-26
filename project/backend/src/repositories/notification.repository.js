@@ -48,7 +48,11 @@ const getNotificationsByUserId = async (userId, limit = 30) => {
   const q = `
     SELECT n.id, n.tipo, n.mensaje, n.contenido_id, n.leida, n.fecha_creacion, n.url,
       a.nickname AS actor_nickname, a.url_imagen AS actor_url_imagen, a.estado AS actor_estado,
-      LEFT(c.cuerpo, 100) AS contenido_preview
+      -- Si el contenido es un tema, mostramos su título; si es comentario, el cuerpo.
+      COALESCE(
+        (SELECT t.titulo FROM tema t WHERE t.contenido_id = n.contenido_id),
+        LEFT(c.cuerpo, 100)
+      ) AS contenido_preview
     FROM notificacion n
     LEFT JOIN usuario a ON a.id = n.actor_id
     LEFT JOIN contenido c ON c.id = n.contenido_id

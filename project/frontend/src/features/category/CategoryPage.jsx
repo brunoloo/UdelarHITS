@@ -11,6 +11,7 @@ import { Modal } from '../../components/ui/Modal'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
 import { useSaved } from '../../hooks/useSaved'
 import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
+import { BellIcon } from '../../components/shared/BellIcon'
 import { ReadMore } from '../../components/ui/ReadMore'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
@@ -400,6 +401,25 @@ export function CategoryPage() {
     onError: (err) => showToast(err.message || 'No se pudo fijar', 'error'),
   })
 
+  // Suscripción (campanita): notificarse de temas y comentarios directos nuevos.
+  const { data: subData } = useQuery({
+    queryKey: ['category', id, 'subscription'],
+    queryFn: () => apiGet(`/categories/${id}/subscription`).then(r => r.data),
+    enabled: !!user,
+  })
+  const suscrito = !!subData?.suscrito
+
+  const subscribeMutation = useMutation({
+    mutationFn: () => suscrito
+      ? apiDelete(`/categories/${id}/subscribe`)
+      : apiPost(`/categories/${id}/subscribe`, {}),
+    onSuccess: (res) => {
+      queryClient.setQueryData(['category', id, 'subscription'], { suscrito: !!res.suscrito })
+      showToast(res.suscrito ? 'Te suscribiste a la categoría' : 'Cancelaste la suscripción', 'success')
+    },
+    onError: (err) => showToast(err.message || 'No se pudo actualizar la suscripción', 'error'),
+  })
+
   if (catLoading) {
     return (
       <div>
@@ -531,6 +551,17 @@ export function CategoryPage() {
               <span className="cat-meta-item">
                 creada <strong>{timeAgo(cat.fecha_creacion)}</strong>
               </span>
+              {user && !isOwner && (
+                <button
+                  className={`cat-bell${suscrito ? ' active' : ''}`}
+                  type="button"
+                  title={suscrito ? 'Dejar de seguir esta categoría' : 'Seguir esta categoría'}
+                  disabled={subscribeMutation.isPending}
+                  onClick={() => subscribeMutation.mutate()}
+                >
+                  <BellIcon filled={suscrito} size={16} />
+                </button>
+              )}
               {isOwner && (
                 <button className="btn-ghost" type="button" onClick={() => setEditOpen(true)}>
                   Editar categoría

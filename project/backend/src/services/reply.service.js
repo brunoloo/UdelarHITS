@@ -1,5 +1,5 @@
 import { getTopicById, hardDeleteTopicById, topicHasContent } from '../repositories/topic.repository.js';
-import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCategoryById } from '../repositories/category.repository.js';
+import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCategoryById, getCategorySubscribers } from '../repositories/category.repository.js';
 
 
 import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
@@ -151,6 +151,23 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
           actor_id: autorId,
           url: `/category/${categoria_id}?tab=comentarios&commentId=${created.contenido_id}`,
         });
+      }
+
+      // Suscriptores de la categoría (campanita), excepto el actor y el autor
+      // (que ya recibió la suya). Solo aplica a comentarios directos de 1er nivel.
+      if (cat) {
+        const url = `/category/${categoria_id}?tab=comentarios&commentId=${created.contenido_id}`;
+        const subs = await getCategorySubscribers(categoria_id, [autorId, cat.autor_id]);
+        for (const subId of subs) {
+          await createNotification({
+            usuario_id: subId,
+            tipo: 'comentario_categoria_seguida',
+            mensaje: `${nick} publicó un comentario en ${cat.titulo}`,
+            contenido_id: created.contenido_id,
+            actor_id: autorId,
+            url,
+          });
+        }
       }
     }
   }

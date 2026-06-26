@@ -1,4 +1,4 @@
-import { getCategoryById, assignParticipantRole, getTopicsByCategoryId, categoryHasContent, hardDeleteCategoryById } from '../repositories/category.repository.js';
+import { getCategoryById, assignParticipantRole, getTopicsByCategoryId, categoryHasContent, hardDeleteCategoryById, getCategorySubscribers } from '../repositories/category.repository.js';
 
 import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
   getTopicsByAuthorId, updateTopicById, updateTopicEstado, decrementTopicCount,
@@ -70,15 +70,30 @@ const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => 
 
   await assignParticipantRole(autorId, categoria_id);
 
-  // Notificar al autor de la categoría que se publicó un tema (nunca a uno
-  // mismo). Click → lleva al tema recién creado.
+  // Notificaciones del nuevo tema (nunca a uno mismo).
+  const { rows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [autorId]);
+  const nick = rows[0]?.nickname;
+
+  // Autor de la categoría → "publicó un tema en tu categoría". Click → al tema.
   if (category.autor_id !== autorId) {
-    const { rows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [autorId]);
-    const nick = rows[0]?.nickname;
     await createNotification({
       usuario_id: category.autor_id,
       tipo: 'tema_en_categoria',
       mensaje: `${nick} publicó un tema en tu categoría ${category.titulo}`,
+      contenido_id: topic.contenido_id,
+      actor_id: autorId,
+      url: `/topic/${topic.contenido_id}`,
+    });
+  }
+
+  // Suscriptores de la categoría (campanita), excepto el actor y el autor (que
+  // ya recibió la suya). Click → al tema; el preview muestra el título.
+  const subs = await getCategorySubscribers(categoria_id, [autorId, category.autor_id]);
+  for (const subId of subs) {
+    await createNotification({
+      usuario_id: subId,
+      tipo: 'tema_categoria_seguida',
+      mensaje: `${nick} creó un tema en ${category.titulo}`,
       contenido_id: topic.contenido_id,
       actor_id: autorId,
       url: `/topic/${topic.contenido_id}`,

@@ -18,6 +18,7 @@
     "db:migrate:fase11": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase11_verificacion_registro.sql",
     "db:migrate:fase12": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase12_guardados.sql",
     "db:migrate:fase13": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase13_fijados.sql",
+    "db:migrate:fase14": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase14_suscripcion_categoria.sql",
     "db:test:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits_test;\"",
     "db:test:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits_test OWNER brunoloo;\"",
     "db:test:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits_test -f ../database/schema.sql",

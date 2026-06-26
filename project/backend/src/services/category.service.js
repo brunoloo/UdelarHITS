@@ -3,7 +3,8 @@ import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas, 
   hardDeleteCategoryById, categoryHasContent, getPopularCategories,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment,
-  pinCategoryTopic, unpinCategoryTopic } from '../repositories/category.repository.js';
+  pinCategoryTopic, unpinCategoryTopic,
+  subscribeCategory, unsubscribeCategory, isSubscribedCategory } from '../repositories/category.repository.js';
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
 import { isValidCategoryIcon } from '../config/categoryIcons.js';
@@ -319,8 +320,33 @@ const unpinCategoryItemService = async (userId, userRol, categoryId, tipo) => {
   }
 };
 
+// ── Suscripción a categoría (campanita) ──
+const assertCategoryExists = async (categoryId) => {
+  const category = await getCategoryById(categoryId);
+  if (!category) {
+    const err = new Error('Categoría no encontrada');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  return category;
+};
+
+const subscribeCategoryService = async (userId, categoryId) => {
+  await assertCategoryExists(categoryId);
+  await subscribeCategory(userId, categoryId);
+};
+
+const unsubscribeCategoryService = async (userId, categoryId) => {
+  await unsubscribeCategory(userId, categoryId);
+};
+
+const isSubscribedCategoryService = async (userId, categoryId) => {
+  return await isSubscribedCategory(userId, categoryId);
+};
+
 export { createCategoryService, getCategoriesService, getCategoryByIdService, deactivateCategoryById,
   deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService,
   getActiveCategoriesService, getParticipantsByCategoryIdService, getEtiquetasService,
   getPopularCategoriesService, getCategoryEditHistoryService,
-  pinCategoryItemService, unpinCategoryItemService };
+  pinCategoryItemService, unpinCategoryItemService,
+  subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService };

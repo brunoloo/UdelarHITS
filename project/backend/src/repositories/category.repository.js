@@ -356,7 +356,43 @@ export { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
   updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId,
   getEtiquetas, categoryHasContent, hardDeleteCategoryById, getPopularCategories,
-  getCategoryEditHistory, pinCategoryComment, unpinCategoryComment, pinCategoryTopic, unpinCategoryTopic };
+  getCategoryEditHistory, pinCategoryComment, unpinCategoryComment, pinCategoryTopic, unpinCategoryTopic,
+  subscribeCategory, unsubscribeCategory, isSubscribedCategory, getCategorySubscribers };
+
+// ── Suscripción a categoría (campanita) ──
+async function subscribeCategory(usuarioId, categoriaId) {
+  await pool.query(
+    `INSERT INTO suscripcion_categoria (usuario_id, categoria_id)
+     VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+    [usuarioId, categoriaId]
+  );
+}
+
+async function unsubscribeCategory(usuarioId, categoriaId) {
+  await pool.query(
+    `DELETE FROM suscripcion_categoria WHERE usuario_id = $1 AND categoria_id = $2`,
+    [usuarioId, categoriaId]
+  );
+}
+
+async function isSubscribedCategory(usuarioId, categoriaId) {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM suscripcion_categoria WHERE usuario_id = $1 AND categoria_id = $2`,
+    [usuarioId, categoriaId]
+  );
+  return rows.length > 0;
+}
+
+// Ids de los suscriptores de una categoría, excluyendo opcionalmente algunos
+// (el actor del evento y el autor de la categoría, que se notifican aparte).
+async function getCategorySubscribers(categoriaId, excludeIds = []) {
+  const { rows } = await pool.query(
+    `SELECT usuario_id FROM suscripcion_categoria
+     WHERE categoria_id = $1 AND usuario_id <> ALL($2::bigint[])`,
+    [categoriaId, excludeIds]
+  );
+  return rows.map(r => r.usuario_id);
+}
 
 // ── Fijados (moderador = creador de la categoría) ──
 // Cada columna admite a lo sumo un id; sobreescribir auto-desancla el anterior.

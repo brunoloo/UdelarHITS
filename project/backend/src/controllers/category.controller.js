@@ -3,7 +3,8 @@ import { createCategoryService, getCategoriesService, getCategoryByIdService,
   updateCategoryService, getActiveCategoriesService, 
   getParticipantsByCategoryIdService, getEtiquetasService, 
   getPopularCategoriesService, getCategoryEditHistoryService,
-  pinCategoryItemService, unpinCategoryItemService } from '../services/category.service.js';
+  pinCategoryItemService, unpinCategoryItemService,
+  subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService } from '../services/category.service.js';
 
 const createCategory = async (req, res) => {
   try {
@@ -173,6 +174,35 @@ const unpinCategoryItem = async (req, res) => {
   }
 };
 
+const subscribeCategory = async (req, res) => {
+  try {
+    await subscribeCategoryService(req.user.id, req.params.id);
+    return res.status(200).json({ ok: true, suscrito: true });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const unsubscribeCategory = async (req, res) => {
+  try {
+    await unsubscribeCategoryService(req.user.id, req.params.id);
+    return res.status(200).json({ ok: true, suscrito: false });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const getCategorySubscription = async (req, res) => {
+  try {
+    const suscrito = await isSubscribedCategoryService(req.user.id, req.params.id);
+    return res.status(200).json({ ok: true, data: { suscrito } });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
   getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, getEtiquetasList,
-  getPopularCategoriesList, getCategoryEditHistory, pinCategoryItem, unpinCategoryItem };
+  getPopularCategoriesList, getCategoryEditHistory, pinCategoryItem, unpinCategoryItem,
+  subscribeCategory, unsubscribeCategory, getCategorySubscription };
