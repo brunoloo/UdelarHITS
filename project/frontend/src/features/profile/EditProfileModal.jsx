@@ -1,4 +1,5 @@
 import { UserAvatar } from '../../components/shared/UserAvatar'
+import { ImageCropperModal } from '../../components/shared/ImageCropperModal'
 import { useState, useEffect, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { apiPatch, apiDelete, apiGet } from '../../api/client'
@@ -24,6 +25,9 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
   const [removeBanner, setRemoveBanner] = useState(false)
   const bannerRef = useRef(null)
 
+  const [cropperSrc, setCropperSrc] = useState('')
+  const [cropperType, setCropperType] = useState(null)
+
   useEffect(() => {
     if (isOpen && profile) {
       setNombre(profile.nombre || '')
@@ -41,7 +45,7 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
     mutationFn: async () => {
       if (pendingAvatar) {
         const fd = new FormData()
-        fd.append('avatar', pendingAvatar)
+        fd.append('avatar', pendingAvatar, 'avatar.jpg')
         await apiPatch('/users/me/avatar', fd)
       } else if (removeAvatar) {
         await apiDelete('/users/me/avatar')
@@ -49,7 +53,7 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
 
       if (pendingBanner) {
         const fd = new FormData()
-        fd.append('banner', pendingBanner)
+        fd.append('banner', pendingBanner, 'banner.jpg')
         await apiPatch('/users/me/banner', fd)
       } else if (removeBanner) {
         await apiDelete('/users/me/banner')
@@ -74,9 +78,17 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
   function handleAvatarChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setPendingAvatar(file)
+    setCropperSrc(URL.createObjectURL(file))
+    setCropperType('avatar')
+    if (avatarRef.current) avatarRef.current.value = ''
+  }
+
+  function handleAvatarCropped(blob) {
+    setPendingAvatar(blob)
     setRemoveAvatar(false)
-    setAvatarPreview(URL.createObjectURL(file))
+    setAvatarPreview(URL.createObjectURL(blob))
+    setCropperType(null)
+    setCropperSrc('')
   }
 
   function handleRemoveAvatar() {
@@ -89,9 +101,17 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
   function handleBannerChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setPendingBanner(file)
+    setCropperSrc(URL.createObjectURL(file))
+    setCropperType('banner')
+    if (bannerRef.current) bannerRef.current.value = ''
+  }
+
+  function handleBannerCropped(blob) {
+    setPendingBanner(blob)
     setRemoveBanner(false)
-    setBannerPreview(URL.createObjectURL(file))
+    setBannerPreview(URL.createObjectURL(blob))
+    setCropperType(null)
+    setCropperSrc('')
   }
 
   function handleRemoveBanner() {
@@ -99,6 +119,11 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
     setRemoveBanner(true)
     setBannerPreview('')
     if (bannerRef.current) bannerRef.current.value = ''
+  }
+
+  function handleCropperClose() {
+    setCropperType(null)
+    setCropperSrc('')
   }
 
   const bannerBg = bannerPreview
@@ -220,6 +245,24 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
           />
         </div>
       </div>
+
+      <ImageCropperModal
+        isOpen={cropperType === 'avatar'}
+        onClose={handleCropperClose}
+        imageSrc={cropperSrc}
+        aspect={1}
+        circularCrop
+        onConfirm={handleAvatarCropped}
+      />
+
+      <ImageCropperModal
+        isOpen={cropperType === 'banner'}
+        onClose={handleCropperClose}
+        imageSrc={cropperSrc}
+        aspect={3}
+        circularCrop={false}
+        onConfirm={handleBannerCropped}
+      />
     </Modal>
   )
 }

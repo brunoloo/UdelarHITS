@@ -1,0 +1,105 @@
+import { useState, useRef, useCallback } from 'react'
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
+import { Modal } from '../ui/Modal'
+import './ImageCropperModal.css'
+
+function getCenteredCrop(mediaWidth, mediaHeight, aspect) {
+  return centerCrop(
+    makeAspectCrop({ unit: '%', width: 90 }, aspect, mediaWidth, mediaHeight),
+    mediaWidth,
+    mediaHeight
+  )
+}
+
+function cropImageToBlob(image, crop, outputWidth, outputHeight) {
+  const canvas = document.createElement('canvas')
+  canvas.width = outputWidth
+  canvas.height = outputHeight
+  const ctx = canvas.getContext('2d')
+
+  const scaleX = image.naturalWidth / image.width
+  const scaleY = image.naturalHeight / image.height
+
+  ctx.drawImage(
+    image,
+    crop.x * scaleX,
+    crop.y * scaleY,
+    crop.width * scaleX,
+    crop.height * scaleY,
+    0,
+    0,
+    outputWidth,
+    outputHeight
+  )
+
+  return new Promise(resolve => {
+    canvas.toBlob(resolve, 'image/jpeg', 0.92)
+  })
+}
+
+export function ImageCropperModal({ isOpen, onClose, imageSrc, aspect = 1, circularCrop = false, onConfirm }) {
+  const [crop, setCrop] = useState()
+  const [completedCrop, setCompletedCrop] = useState(null)
+  const [uploading, setUploading] = useState(false)
+  const imgRef = useRef(null)
+
+  const outputWidth = aspect >= 3 ? 1200 : 400
+  const outputHeight = aspect >= 3 ? 400 : 400
+
+  const onImageLoad = useCallback((e) => {
+    const { width, height } = e.currentTarget
+    imgRef.current = e.currentTarget
+    const centered = getCenteredCrop(width, height, aspect)
+    setCrop(centered)
+    setCompletedCrop(centered)
+  }, [aspect])
+
+  async function handleConfirm() {
+    if (!completedCrop || !imgRef.current) return
+    setUploading(true)
+    try {
+      const blob = await cropImageToBlob(imgRef.current, completedCrop, outputWidth, outputHeight)
+      await onConfirm(blob)
+      onClose()
+    } catch {
+      setUploading(false)
+    }
+  }
+
+  function handleClose() {
+    if (!uploading) onClose()
+  }
+
+  return (
+    <Modal isOpen={isOpen} onClose={handleClose} title="Recortar imagen" className="image-cropper-modal">
+      <div className="cropper-area">
+        {imageSrc && (
+          <ReactCrop
+            crop={crop}
+            onChange={c => setCrop(c)}
+            onComplete={c => setCompletedCrop(c)}
+            aspect={aspect}
+            circularCrop={circularCrop}
+            keepSelection
+          >
+            <img
+              src={imageSrc}
+              alt="Recortar"
+              onLoad={onImageLoad}
+              className="cropper-image"
+            />
+          </ReactCrop>
+        )}
+      </div>
+      <div className="cropper-actions">
+        <button className="cropper-btn cropper-btn--cancel" type="button" onClick={handleClose} disabled={uploading}>
+          Cancelar
+        </button>
+        <button className="cropper-btn cropper-btn--confirm" type="button" onClick={handleConfirm} disabled={uploading || !completedCrop}>
+          {uploading ? 'Subiendo...' : 'Recortar y subir'}
+        </button>
+      </div>
+    </Modal>
+  )
+}
