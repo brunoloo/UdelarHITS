@@ -339,6 +339,7 @@ CREATE TABLE guardado (
 CREATE UNIQUE INDEX uq_guardado_categoria ON guardado(usuario_id, categoria_id) WHERE categoria_id IS NOT NULL;
 CREATE UNIQUE INDEX uq_guardado_contenido ON guardado(usuario_id, contenido_id) WHERE contenido_id IS NOT NULL;
 
+
 -- Suscripción a una categoría: el usuario quiere notificarse de los temas nuevos
 -- y los comentarios directos (primer nivel) de esa categoría.
 CREATE TABLE suscripcion_categoria (
