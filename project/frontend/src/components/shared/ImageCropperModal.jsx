@@ -41,7 +41,6 @@ function cropImageToBlob(image, crop, outputWidth, outputHeight) {
 export function ImageCropperModal({ isOpen, onClose, imageSrc, aspect = 1, circularCrop = false, onConfirm }) {
   const [crop, setCrop] = useState()
   const [completedCrop, setCompletedCrop] = useState(null)
-  const [uploading, setUploading] = useState(false)
   const imgRef = useRef(null)
 
   const outputWidth = aspect >= 3 ? 1200 : 400
@@ -57,22 +56,12 @@ export function ImageCropperModal({ isOpen, onClose, imageSrc, aspect = 1, circu
 
   async function handleConfirm() {
     if (!completedCrop || !imgRef.current) return
-    setUploading(true)
-    try {
-      const blob = await cropImageToBlob(imgRef.current, completedCrop, outputWidth, outputHeight)
-      await onConfirm(blob)
-      onClose()
-    } catch {
-      setUploading(false)
-    }
-  }
-
-  function handleClose() {
-    if (!uploading) onClose()
+    const blob = await cropImageToBlob(imgRef.current, completedCrop, outputWidth, outputHeight)
+    onConfirm(blob)
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Recortar imagen" className="image-cropper-modal">
+    <Modal isOpen={isOpen} onClose={onClose} title="Recortar imagen" className="image-cropper-modal" closeOnBackdrop={false}>
       <div className="cropper-area">
         {imageSrc && (
           <ReactCrop
@@ -93,11 +82,11 @@ export function ImageCropperModal({ isOpen, onClose, imageSrc, aspect = 1, circu
         )}
       </div>
       <div className="cropper-actions">
-        <button className="cropper-btn cropper-btn--cancel" type="button" onClick={handleClose} disabled={uploading}>
+        <button className="cropper-btn cropper-btn--cancel" type="button" onClick={onClose}>
           Cancelar
         </button>
-        <button className="cropper-btn cropper-btn--confirm" type="button" onClick={handleConfirm} disabled={uploading || !completedCrop}>
-          {uploading ? 'Subiendo...' : 'Recortar y subir'}
+        <button className="cropper-btn cropper-btn--confirm" type="button" onClick={handleConfirm} disabled={!completedCrop}>
+          Aceptar
         </button>
       </div>
     </Modal>

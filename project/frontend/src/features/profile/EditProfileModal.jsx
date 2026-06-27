@@ -130,121 +130,125 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
     ? `url(${bannerPreview}) center/cover`
     : 'linear-gradient(135deg, var(--accent) 0%, #4a5687 50%, #6b5d8e 100%)'
 
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Editar perfil"
-      className="edit-profile-modal"
-      headerAction={
-        <button
-          className="save-btn"
-          type="button"
-          disabled={!nombre.trim() || saveMutation.isPending}
-          onClick={() => saveMutation.mutate()}
-        >
-          {saveMutation.isPending ? 'Guardando...' : 'Guardar'}
-        </button>
-      }
-    >
-      {/* Banner */}
-      <div className="edit-banner" style={{ background: bannerBg }}>
-        <div className="edit-banner-overlay">
-          <button
-            className="icon-circle"
-            type="button"
-            onClick={() => bannerRef.current?.click()}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
-          </button>
-          <button className="icon-circle" type="button" onClick={handleRemoveBanner}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 6 6 18M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-        <input
-          ref={bannerRef}
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={handleBannerChange}
-        />
-      </div>
+  const cropperOpen = cropperType !== null
 
-      {/* Avatar */}
-      <div className="edit-avatar-row">
-        <div className="edit-avatar-wrap">
-          {avatarPreview ? (
-            <img
-              className="edit-avatar-img"
-              src={avatarPreview}
-              alt="Avatar"
-              onError={() => setAvatarPreview('')}
-            />
-          ) : (
-            <UserAvatar
-              nickname={profile?.nickname}
-              className="edit-avatar-img"
-            />
-          )}
-          <div className="edit-avatar-buttons">
+  return (
+    <>
+      <Modal
+        isOpen={isOpen && !cropperOpen}
+        onClose={onClose}
+        title="Editar perfil"
+        className="edit-profile-modal"
+        headerAction={
+          <button
+            className="save-btn"
+            type="button"
+            disabled={!nombre.trim() || saveMutation.isPending}
+            onClick={() => saveMutation.mutate()}
+          >
+            {saveMutation.isPending ? 'Guardando...' : 'Guardar'}
+          </button>
+        }
+      >
+        {/* Banner */}
+        <div className="edit-banner" style={{ background: bannerBg }}>
+          <div className="edit-banner-overlay">
             <button
-              className="edit-avatar-overlay"
+              className="icon-circle"
               type="button"
-              onClick={() => avatarRef.current?.click()}
+              onClick={() => bannerRef.current?.click()}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
                 <circle cx="12" cy="13" r="4"/>
               </svg>
             </button>
-            <button className="edit-avatar-remove" type="button" onClick={handleRemoveAvatar}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <button className="icon-circle" type="button" onClick={handleRemoveBanner}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6 6 18M6 6l12 12"/>
               </svg>
             </button>
           </div>
           <input
-            ref={avatarRef}
+            ref={bannerRef}
             type="file"
             accept="image/*"
             hidden
-            onChange={handleAvatarChange}
+            onChange={handleBannerChange}
           />
         </div>
-      </div>
 
-      {/* Fields */}
-      <div className="edit-body">
-        <div className="edit-field">
-          <div className="edit-field-label">
-            <span>Nombre</span>
-            <span className="edit-field-counter">{nombre.length} / 50</span>
+        {/* Avatar */}
+        <div className="edit-avatar-row">
+          <div className="edit-avatar-wrap">
+            {avatarPreview ? (
+              <img
+                className="edit-avatar-img"
+                src={avatarPreview}
+                alt="Avatar"
+                onError={() => setAvatarPreview('')}
+              />
+            ) : (
+              <UserAvatar
+                nickname={profile?.nickname}
+                className="edit-avatar-img"
+              />
+            )}
+            <div className="edit-avatar-buttons">
+              <button
+                className="edit-avatar-overlay"
+                type="button"
+                onClick={() => avatarRef.current?.click()}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </button>
+              <button className="edit-avatar-remove" type="button" onClick={handleRemoveAvatar}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <input
+              ref={avatarRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleAvatarChange}
+            />
           </div>
-          <input
-            type="text"
-            maxLength={50}
-            value={nombre}
-            onChange={e => setNombre(e.target.value)}
-          />
         </div>
-        <div className="edit-field">
-          <div className="edit-field-label">
-            <span>Biografía</span>
-            <span className="edit-field-counter">{bio.length} / 160</span>
+
+        {/* Fields */}
+        <div className="edit-body">
+          <div className="edit-field">
+            <div className="edit-field-label">
+              <span>Nombre</span>
+              <span className="edit-field-counter">{nombre.length} / 50</span>
+            </div>
+            <input
+              type="text"
+              maxLength={50}
+              value={nombre}
+              onChange={e => setNombre(e.target.value)}
+            />
           </div>
-          <textarea
-            maxLength={160}
-            rows={3}
-            value={bio}
-            onChange={e => setBio(e.target.value)}
-          />
+          <div className="edit-field">
+            <div className="edit-field-label">
+              <span>Biografía</span>
+              <span className="edit-field-counter">{bio.length} / 160</span>
+            </div>
+            <textarea
+              maxLength={160}
+              rows={3}
+              value={bio}
+              onChange={e => setBio(e.target.value)}
+            />
+          </div>
         </div>
-      </div>
+      </Modal>
 
       <ImageCropperModal
         isOpen={cropperType === 'avatar'}
@@ -263,6 +267,6 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
         circularCrop={false}
         onConfirm={handleBannerCropped}
       />
-    </Modal>
+    </>
   )
 }
