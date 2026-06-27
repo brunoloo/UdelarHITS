@@ -55,6 +55,21 @@ describe('Notificación: comentario directo en una categoría', () => {
     const notifs = await getNotifs(dueño.cookie);
     expect(notifs.filter(n => n.tipo === 'comentario_en_categoria')).toHaveLength(0);
   });
+
+  test('la notificación marca tiene_encuesta cuando el comentario lleva encuesta', async () => {
+    const dueño = await registerAndLogin();
+    const otro = await registerAndLogin();
+    const cat = await createCategory(dueño.cookie);
+
+    await request(app).post('/api/replies/create').set('Cookie', otro.cookie)
+      .field('categoria_id', String(cat.id))
+      .field('encuesta', JSON.stringify({ opciones: ['A', 'B'], duracion_segundos: 3600 }));
+
+    const notif = (await getNotifs(dueño.cookie)).find(n => n.tipo === 'comentario_en_categoria');
+    expect(notif).toBeDefined();
+    expect(notif.tiene_encuesta).toBe(true);
+    expect(notif.tiene_imagen).toBe(false);
+  });
 });
 
 // ─── #4: comentar en un tema (doble notificación) ───

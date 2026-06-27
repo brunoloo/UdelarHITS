@@ -345,12 +345,17 @@ export function LeftNav() {
                   )}
                   <div className="notif-content">
                     <p className="notif-message">{message}</p>
-                    {(n.contenido_preview || n.tiene_imagen) && (
+                    {(n.contenido_preview || n.tiene_imagen || n.tiene_encuesta) && (
                       <p className="notif-preview">
                         {n.contenido_preview}
                         {n.tiene_imagen && (
                           <span className="notif-preview-photo">
                             {n.contenido_preview ? ' ' : ''}[foto]
+                          </span>
+                        )}
+                        {n.tiene_encuesta && (
+                          <span className="notif-preview-photo">
+                            {(n.contenido_preview || n.tiene_imagen) ? ' ' : ''}[encuesta]
                           </span>
                         )}
                       </p>
