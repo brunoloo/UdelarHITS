@@ -36,6 +36,7 @@ export function ChatPage() {
   const [search, setSearch] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
+  const [convError, setConvError] = useState(null)
 
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
@@ -55,9 +56,11 @@ export function ChatPage() {
       setActiveConv(null)
       setOtherUser(null)
       setMessages([])
+      setConvError(null)
       return
     }
-    let cancelled = false;
+    let cancelled = false
+    setConvError(null);
     (async () => {
       try {
         const res = await apiGet(`/chat/conversations/${encodeURIComponent(nickname)}`)
@@ -68,10 +71,13 @@ export function ChatPage() {
         setHasMore(true)
       } catch (err) {
         if (cancelled) return
+        console.error('Error al cargar conversación:', err)
         const is404 = err.message?.includes('no encontrado')
         const isSelf = err.message?.includes('vos mismo')
         if (is404 || isSelf) {
           navigate('/chat', { replace: true })
+        } else {
+          setConvError(err.message || 'No se pudo cargar la conversación')
         }
       }
     })()
@@ -155,7 +161,9 @@ export function ChatPage() {
       setMessages(prev => [...prev, res.data])
       setText('')
       fetchConversations()
-    } catch {}
+    } catch (err) {
+      console.error('Error al enviar mensaje:', err)
+    }
     setSending(false)
   }
 
@@ -255,6 +263,15 @@ export function ChatPage() {
             </svg>
             <p>Seleccioná una conversación</p>
           </div>
+        ) : convError ? (
+          <div className="chat-empty">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p>Error: {convError}</p>
+          </div>
         ) : (
           <>
             <div className="chat-header">
@@ -306,7 +323,7 @@ export function ChatPage() {
                 className="chat-send-btn"
                 type="button"
                 onClick={handleSend}
-                disabled={!text.trim() || sending}
+                disabled={!text.trim() || sending || !activeConv}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="22" y1="2" x2="11" y2="13"/>

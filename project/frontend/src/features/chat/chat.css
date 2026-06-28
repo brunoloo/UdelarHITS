@@ -186,6 +186,7 @@
   flex-direction: column;
   background: var(--bg);
   min-width: 0;
+  overflow: hidden;
 }
 
 .chat-empty {
