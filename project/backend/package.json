@@ -21,6 +21,7 @@
     "db:migrate:fase14": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase14_suscripcion_categoria.sql",
     "db:migrate:fase15": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase15_adjuntos.sql",
     "db:migrate:fase16": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase16_encuestas.sql",
+    "db:migrate:chat": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_chat.sql",
     "db:test:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits_test;\"",
     "db:test:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits_test OWNER brunoloo;\"",
     "db:test:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits_test -f ../database/schema.sql",
