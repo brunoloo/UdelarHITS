@@ -26,6 +26,13 @@ function NotifTypeIcon({ tipo }) {
       </svg>
     )
   }
+  if (tipo === 'mencion_comentario') {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/>
+      </svg>
+    )
+  }
   if (tipo === 'respuesta_comentario' || tipo === 'comentario_en_categoria' ||
       tipo === 'comentario_en_tema' || tipo === 'comentario_en_tema_categoria' ||
       tipo === 'comentario_categoria_seguida') {

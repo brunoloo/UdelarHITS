@@ -201,6 +201,47 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     }
   }
 
+  // Menciones (@nickname): notificar a cada usuario mencionado, sin duplicar
+  // al autor ni a usuarios que ya recibieron notificación por otro motivo.
+  if (cuerpoLimpio) {
+    const mentionRegex = /@(\w[\w.-]{0,29})/g
+    const mentionedNicks = [...new Set(
+      Array.from(cuerpoLimpio.matchAll(mentionRegex), m => m[1].toLowerCase())
+    )];
+    if (mentionedNicks.length > 0) {
+      const { rows: nickRows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [autorId]);
+      const actorNick = nickRows[0]?.nickname;
+      const placeholders = mentionedNicks.map((_, i) => `$${i + 1}`).join(', ');
+      const { rows: mentionedUsers } = await pool.query(
+        `SELECT id, nickname FROM usuario WHERE estado = 'activo' AND LOWER(nickname) IN (${placeholders})`,
+        mentionedNicks
+      );
+
+      const alreadyNotified = new Set();
+      alreadyNotified.add(autorId);
+      if (comentario_padre_id && padre) alreadyNotified.add(padre.autor_id);
+
+      const commentUrl = created.tema_id
+        ? `/topic/${created.tema_id}?commentId=${created.contenido_id}`
+        : created.categoria_id
+          ? `/category/${created.categoria_id}?tab=comentarios&commentId=${created.contenido_id}`
+          : null;
+
+      for (const mu of mentionedUsers) {
+        if (alreadyNotified.has(mu.id)) continue;
+        alreadyNotified.add(mu.id);
+        await createNotification({
+          usuario_id: mu.id,
+          tipo: 'mencion_comentario',
+          mensaje: `${actorNick} te mencionó en un comentario`,
+          contenido_id: created.contenido_id,
+          actor_id: autorId,
+          url: commentUrl,
+        });
+      }
+    }
+  }
+
   // Adjuntos: subir a Cloudinary (en paralelo, que es la parte lenta) e insertar
   // en la tabla `adjunto` respetando el orden de selección.
   if (files.length > 0) {

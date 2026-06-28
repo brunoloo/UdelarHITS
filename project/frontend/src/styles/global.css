@@ -12,3 +12,13 @@ body {
 .no-transitions * {
   transition-duration: 0s !important;
 }
+
+/* @mention links */
+a.mention-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+a.mention-link:hover {
+  text-decoration: underline;
+}

@@ -1,17 +1,22 @@
 // Returns an array of React elements: plain text segments, <br> for newlines,
-// and <a className="bio-link"> for detected URLs.
+// <a className="bio-link"> for detected URLs, and <a className="mention-link">
+// for @mentions.
 // React escapes all string content automatically — no manual escapeHtml needed.
+import { Link } from 'react-router-dom'
+
 const URL_REGEX = /(https?:\/\/[^\s]+)/g
+const MENTION_REGEX = /@(\w[\w.-]{0,29})/g
+const COMBINED_REGEX = /(https?:\/\/[^\s]+|@\w[\w.-]{0,29})/g
 
 export function renderBioWithLinks(text) {
   if (!text) return null
 
-  // split() with a capturing group includes the matched URLs in the result array
-  const parts = text.split(URL_REGEX)
+  const parts = text.split(COMBINED_REGEX)
   const elements = []
   let key = 0
 
   for (const part of parts) {
+    if (!part) continue
     if (URL_REGEX.test(part)) {
       URL_REGEX.lastIndex = 0
       elements.push(
@@ -24,6 +29,19 @@ export function renderBioWithLinks(text) {
         >
           {part}
         </a>
+      )
+    } else if (part.startsWith('@') && MENTION_REGEX.test(part)) {
+      MENTION_REGEX.lastIndex = 0
+      const nickname = part.slice(1)
+      elements.push(
+        <Link
+          key={key++}
+          to={`/user/${encodeURIComponent(nickname)}`}
+          className="mention-link"
+          onClick={e => e.stopPropagation()}
+        >
+          {part}
+        </Link>
       )
     } else {
       const lines = part.split('\n')
