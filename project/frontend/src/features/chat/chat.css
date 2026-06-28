@@ -1,7 +1,12 @@
+/* ── Override page padding — chat uses the full width ── */
+.page:has(.chat-layout) {
+  padding-right: 30px;
+}
+
 /* ── Chat Layout ── */
 .chat-layout {
   display: flex;
-  height: calc(100vh - 64px);
+  height: calc(100vh - var(--header-h) - 48px);
   background: var(--bg);
   border-radius: 16px 16px 0 0;
   overflow: hidden;
