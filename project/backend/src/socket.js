@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import cookie from 'cookie';
+import { parse as parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import pool from './config/db.js';
 
@@ -15,7 +15,7 @@ export function initSocket(httpServer, app) {
 
   io.use(async (socket, next) => {
     try {
-      const cookies = cookie.parse(socket.handshake.headers.cookie || '');
+      const cookies = parseCookie(socket.handshake.headers.cookie || '');
       const token = cookies.jwt;
       if (!token) return next(new Error('No autenticado'));
 
