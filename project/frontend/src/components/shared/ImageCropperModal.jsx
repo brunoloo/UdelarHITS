@@ -43,8 +43,8 @@ export function ImageCropperModal({ isOpen, onClose, imageSrc, aspect = 1, circu
   const [completedCrop, setCompletedCrop] = useState(null)
   const imgRef = useRef(null)
 
-  const outputWidth = aspect >= 3 ? 1200 : 400
-  const outputHeight = aspect >= 3 ? 400 : 400
+  const outputWidth = aspect > 1 ? Math.round(400 * aspect) : 400
+  const outputHeight = 400
 
   const onImageLoad = useCallback((e) => {
     const { width, height } = e.currentTarget

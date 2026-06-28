@@ -263,7 +263,7 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
         isOpen={cropperType === 'banner'}
         onClose={handleCropperClose}
         imageSrc={cropperSrc}
-        aspect={3}
+        aspect={4}
         circularCrop={false}
         onConfirm={handleBannerCropped}
       />
