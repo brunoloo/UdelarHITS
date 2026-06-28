@@ -24,8 +24,11 @@
 }
 
 .chat-sidebar-header {
-  padding: 16px 20px 12px;
+  padding: 12px 20px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  min-height: 36px;
 }
 
 .chat-sidebar-header h3 {
