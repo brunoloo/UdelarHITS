@@ -87,7 +87,7 @@ export function Header() {
   return (
     <header>
       <Link to="/" className="logo">
-        Udelar<span>HITS</span> (BETA)
+        Udelar<span>HITS</span> 
       </Link>
 
       <div className="search-bar" ref={searchRef}>
