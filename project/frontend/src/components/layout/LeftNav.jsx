@@ -6,6 +6,7 @@ import { useToast } from '../../hooks/useToast'
 import { UserAvatar } from '../shared/UserAvatar'
 import { SavedPanel } from './SavedPanel'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
+import { useSocket } from '../../context/SocketContext'
 import './LeftNav.css'
 
 function notifTimeAgo(dateStr) {
@@ -76,7 +77,33 @@ export function LeftNav() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const socket = useSocket()
   const isAdmin = user?.rol === 'admin'
+
+  const [chatUnread, setChatUnread] = useState(0)
+
+  useEffect(() => {
+    if (!user) return
+    apiGet('/chat/conversations').then(res => {
+      const total = (res.data || []).reduce((sum, c) => sum + (c.no_leidos || 0), 0)
+      setChatUnread(total)
+    }).catch(() => {})
+  }, [user])
+
+  useEffect(() => {
+    if (pathname.startsWith('/chat')) setChatUnread(0)
+  }, [pathname])
+
+  useEffect(() => {
+    if (!socket) return
+    function handleNewMsg() {
+      if (!pathname.startsWith('/chat')) {
+        setChatUnread(prev => prev + 1)
+      }
+    }
+    socket.on('mensaje:nuevo', handleNewMsg)
+    return () => { socket.off('mensaje:nuevo', handleNewMsg) }
+  }, [socket, pathname])
 
   // Solo un panel abierto a la vez: 'notif' | 'saved' | null.
   const [activePanel, setActivePanel] = useState(null)
@@ -224,12 +251,15 @@ export function LeftNav() {
           )}
         </button>
 
-        <button className="nav-item" id="nav-chat" onClick={() => showToast('El chat estará disponible próximamente', 'info')}>
+        <Link to="/chat" className={navClass('/chat')} id="nav-chat">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
           Chat
-        </button>
+          {chatUnread > 0 && (
+            <span className="notif-badge">{chatUnread > 9 ? '+9' : chatUnread}</span>
+          )}
+        </Link>
 
         <div className="nav-divider" />
 

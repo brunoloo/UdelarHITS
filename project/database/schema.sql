@@ -405,6 +405,33 @@ CREATE TABLE reporte_usuario (
 );
 
 -- -----------------------------
+-- CHAT 1:1
+-- -----------------------------
+CREATE TABLE conversacion (
+  id                BIGSERIAL PRIMARY KEY,
+  usuario1_id       BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  usuario2_id       BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  ultimo_mensaje_at TIMESTAMPTZ,
+  fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (usuario1_id < usuario2_id),
+  UNIQUE (usuario1_id, usuario2_id)
+);
+
+CREATE TABLE mensaje (
+  id                BIGSERIAL PRIMARY KEY,
+  conversacion_id   BIGINT NOT NULL REFERENCES conversacion(id) ON DELETE CASCADE,
+  autor_id          BIGINT NOT NULL REFERENCES usuario(id) ON DELETE RESTRICT,
+  cuerpo            TEXT NOT NULL,
+  leido             BOOLEAN NOT NULL DEFAULT FALSE,
+  fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_mensaje_conversacion ON mensaje(conversacion_id, fecha_creacion DESC);
+CREATE INDEX idx_mensaje_autor ON mensaje(autor_id);
+CREATE INDEX idx_conversacion_usuario1 ON conversacion(usuario1_id);
+CREATE INDEX idx_conversacion_usuario2 ON conversacion(usuario2_id);
+
+-- -----------------------------
 -- ÍNDICES ÚTILES
 -- -----------------------------
 CREATE INDEX idx_contenido_autor ON contenido(autor_id);

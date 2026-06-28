@@ -1,14 +1,19 @@
 import 'dotenv/config';
+import http from 'http';
 import app from './app.js';
 import pool from './config/db.js';
+import { initSocket } from './socket.js';
 
 const PORT = Number(process.env.PORT || 5001);
 
-const server = app.listen(PORT,'0.0.0.0', () => {
+const server = http.createServer(app);
+initSocket(server, app);
+
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-// Manejo de señales para cierre 
+// Manejo de señales para cierre
 
 let isShuttingDown = false;
 

@@ -1,0 +1,317 @@
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import { useSocket } from '../../context/SocketContext'
+import { apiGet, apiPost, apiPatch } from '../../api/client'
+import { UserAvatar } from '../../components/shared/UserAvatar'
+import './chat.css'
+
+function timeLabel(dateStr) {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const diff = now - d
+  if (diff < 86400000 && d.getDate() === now.getDate()) {
+    return d.toLocaleTimeString('es-UY', { hour: '2-digit', minute: '2-digit' })
+  }
+  if (diff < 604800000) {
+    return d.toLocaleDateString('es-UY', { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+  }
+  return d.toLocaleDateString('es-UY', { day: 'numeric', month: 'short' })
+}
+
+export function ChatPage() {
+  const { nickname } = useParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const socket = useSocket()
+
+  const [conversations, setConversations] = useState([])
+  const [activeConv, setActiveConv] = useState(null)
+  const [otherUser, setOtherUser] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [text, setText] = useState('')
+  const [sending, setSending] = useState(false)
+  const [loadingMsgs, setLoadingMsgs] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [search, setSearch] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searching, setSearching] = useState(false)
+
+  const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
+  const searchTimeout = useRef(null)
+
+  const fetchConversations = useCallback(async () => {
+    try {
+      const res = await apiGet('/chat/conversations')
+      setConversations(res.data)
+    } catch {}
+  }, [])
+
+  useEffect(() => { fetchConversations() }, [fetchConversations])
+
+  useEffect(() => {
+    if (!nickname) {
+      setActiveConv(null)
+      setOtherUser(null)
+      setMessages([])
+      return
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiGet(`/chat/conversations/${encodeURIComponent(nickname)}`)
+        if (cancelled) return
+        setActiveConv(res.data.conversacion_id)
+        setOtherUser(res.data.usuario)
+        setMessages([])
+        setHasMore(true)
+      } catch {
+        if (!cancelled) navigate('/chat', { replace: true })
+      }
+    })()
+    return () => { cancelled = true }
+  }, [nickname, navigate])
+
+  useEffect(() => {
+    if (!activeConv) return
+    let cancelled = false;
+    (async () => {
+      setLoadingMsgs(true)
+      try {
+        const res = await apiGet(`/chat/conversations/${activeConv}/messages`)
+        if (!cancelled) {
+          setMessages(res.data)
+          setHasMore(res.data.length >= 50)
+        }
+      } catch {}
+      if (!cancelled) setLoadingMsgs(false)
+    })()
+    return () => { cancelled = true }
+  }, [activeConv])
+
+  useEffect(() => {
+    if (!activeConv) return
+    apiPatch(`/chat/conversations/${activeConv}/read`).catch(() => {})
+    setConversations(prev => prev.map(c =>
+      c.id === activeConv ? { ...c, no_leidos: 0 } : c
+    ))
+  }, [activeConv, messages.length])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  useEffect(() => {
+    if (!socket) return
+    function handleNew(msg) {
+      if (msg.conversacion_id === activeConv) {
+        setMessages(prev => [...prev, msg])
+        apiPatch(`/chat/conversations/${activeConv}/read`).catch(() => {})
+      } else {
+        setConversations(prev => prev.map(c =>
+          c.id === msg.conversacion_id
+            ? { ...c, no_leidos: (c.no_leidos || 0) + 1, ultimo_mensaje: msg.cuerpo, ultimo_mensaje_at: msg.fecha_creacion }
+            : c
+        ))
+      }
+      fetchConversations()
+    }
+    function handleRead({ conversacion_id }) {
+      if (conversacion_id === activeConv) {
+        setMessages(prev => prev.map(m => ({ ...m, leido: true })))
+      }
+    }
+    socket.on('mensaje:nuevo', handleNew)
+    socket.on('mensaje:leido', handleRead)
+    return () => {
+      socket.off('mensaje:nuevo', handleNew)
+      socket.off('mensaje:leido', handleRead)
+    }
+  }, [socket, activeConv, fetchConversations])
+
+  async function loadMore() {
+    if (!hasMore || loadingMsgs || messages.length === 0) return
+    const oldest = messages[0]
+    setLoadingMsgs(true)
+    try {
+      const res = await apiGet(`/chat/conversations/${activeConv}/messages?before=${oldest.id}`)
+      setMessages(prev => [...res.data, ...prev])
+      setHasMore(res.data.length >= 50)
+    } catch {}
+    setLoadingMsgs(false)
+  }
+
+  async function handleSend() {
+    if (!text.trim() || sending || !activeConv) return
+    setSending(true)
+    try {
+      const res = await apiPost(`/chat/conversations/${activeConv}/messages`, { cuerpo: text.trim() })
+      setMessages(prev => [...prev, res.data])
+      setText('')
+      fetchConversations()
+    } catch {}
+    setSending(false)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  useEffect(() => {
+    clearTimeout(searchTimeout.current)
+    if (search.length < 2) { setSearchResults([]); return }
+    setSearching(true)
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const res = await apiGet(`/users/search?q=${encodeURIComponent(search)}`)
+        setSearchResults(res.data || [])
+      } catch { setSearchResults([]) }
+      setSearching(false)
+    }, 250)
+  }, [search])
+
+  const lastOwnMsg = [...messages].reverse().find(m => m.autor_id === user?.id)
+
+  return (
+    <div className="chat-layout">
+      <div className="chat-sidebar">
+        <div className="chat-sidebar-header">
+          <h3>Mensajes</h3>
+        </div>
+        <div className="chat-search">
+          <input
+            type="text"
+            placeholder="Buscar usuario..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {search.length >= 2 && (
+            <div className="chat-search-results">
+              {searching ? (
+                <div className="chat-search-item chat-search-item--loading">Buscando...</div>
+              ) : searchResults.length === 0 ? (
+                <div className="chat-search-item chat-search-item--loading">Sin resultados</div>
+              ) : (
+                searchResults.filter(u => u.id !== user?.id).map(u => (
+                  <div
+                    key={u.id}
+                    className="chat-search-item"
+                    onClick={() => { setSearch(''); navigate(`/chat/${encodeURIComponent(u.nickname)}`) }}
+                  >
+                    <UserAvatar url_imagen={u.url_imagen} nickname={u.nickname} size={32} />
+                    <span>@{u.nickname}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+        <div className="chat-conv-list">
+          {conversations.map(c => (
+            <div
+              key={c.id}
+              className={`chat-conv-item${c.otro_nickname === nickname ? ' active' : ''}`}
+              onClick={() => navigate(`/chat/${encodeURIComponent(c.otro_nickname)}`)}
+            >
+              <UserAvatar url_imagen={c.otro_url_imagen} nickname={c.otro_nickname} size={40} />
+              <div className="chat-conv-info">
+                <div className="chat-conv-top">
+                  <span className="chat-conv-nick">@{c.otro_nickname}</span>
+                  {c.ultimo_mensaje_at && (
+                    <span className="chat-conv-time">{timeLabel(c.ultimo_mensaje_at)}</span>
+                  )}
+                </div>
+                <div className="chat-conv-bottom">
+                  <span className="chat-conv-preview">
+                    {c.ultimo_mensaje ? (c.ultimo_mensaje.length > 50 ? c.ultimo_mensaje.slice(0, 50) + '...' : c.ultimo_mensaje) : 'Sin mensajes'}
+                  </span>
+                  {c.no_leidos > 0 && (
+                    <span className="chat-conv-badge">{c.no_leidos > 9 ? '+9' : c.no_leidos}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+          {conversations.length === 0 && (
+            <div className="chat-empty-sidebar">No tenés conversaciones</div>
+          )}
+        </div>
+      </div>
+
+      <div className="chat-main">
+        {!nickname ? (
+          <div className="chat-empty">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <p>Seleccioná una conversación</p>
+          </div>
+        ) : (
+          <>
+            <div className="chat-header">
+              <Link to={`/user/${encodeURIComponent(otherUser?.nickname || nickname)}`} className="chat-header-user">
+                <UserAvatar url_imagen={otherUser?.url_imagen} nickname={otherUser?.nickname || nickname} size={36} />
+                <span className="chat-header-nick">@{otherUser?.nickname || nickname}</span>
+              </Link>
+            </div>
+            <div className="chat-messages" ref={messagesContainerRef}>
+              {hasMore && messages.length > 0 && (
+                <button className="chat-load-more" type="button" onClick={loadMore} disabled={loadingMsgs}>
+                  {loadingMsgs ? 'Cargando...' : 'Cargar anteriores'}
+                </button>
+              )}
+              {loadingMsgs && messages.length === 0 && (
+                <div className="chat-loading">Cargando mensajes...</div>
+              )}
+              {messages.map(m => {
+                const isOwn = m.autor_id === user?.id
+                const isLastOwn = lastOwnMsg && m.id === lastOwnMsg.id
+                return (
+                  <div key={m.id} className={`chat-bubble-row${isOwn ? ' own' : ''}`}>
+                    <div className={`chat-bubble${isOwn ? ' chat-bubble--own' : ''}`}>
+                      <p>{m.cuerpo}</p>
+                      <span className="chat-bubble-time">
+                        {timeLabel(m.fecha_creacion)}
+                        {isOwn && isLastOwn && (
+                          <span className={`chat-check${m.leido ? ' chat-check--read' : ''}`}>
+                            {' '}&#10003;&#10003;
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+            <div className="chat-input-bar">
+              <textarea
+                value={text}
+                onChange={e => setText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Escribí un mensaje..."
+                maxLength={2000}
+                rows={1}
+              />
+              <button
+                className="chat-send-btn"
+                type="button"
+                onClick={handleSend}
+                disabled={!text.trim() || sending}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}

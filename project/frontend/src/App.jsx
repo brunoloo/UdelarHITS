@@ -3,6 +3,7 @@ import { RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './context/ToastContext'
+import { SocketProvider } from './context/SocketContext'
 import { router } from './router'
 import './components/ui/Toast.css'
 
@@ -12,11 +13,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider>
-          <ToastProvider>
-            <RouterProvider router={router} />
-          </ToastProvider>
-        </ThemeProvider>
+        <SocketProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <RouterProvider router={router} />
+            </ToastProvider>
+          </ThemeProvider>
+        </SocketProvider>
       </AuthProvider>
     </QueryClientProvider>
   )

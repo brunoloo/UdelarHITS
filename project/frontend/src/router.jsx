@@ -18,6 +18,7 @@ import { RedirectPage } from './features/redirect/RedirectPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AdminRoute } from './components/auth/AdminRoute'
 import { AdminPage } from './features/admin/AdminPage'
+import { ChatPage } from './features/chat/ChatPage'
 
 function NotFoundPage() {
   return (
@@ -48,6 +49,14 @@ export const router = createBrowserRouter([
       {
         path: 'admin',
         element: <AdminRoute><AdminPage /></AdminRoute>,
+      },
+      {
+        path: 'chat',
+        element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
+      },
+      {
+        path: 'chat/:nickname',
+        element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
       },
       { path: '*', element: <NotFoundPage /> },
     ],
