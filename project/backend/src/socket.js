@@ -3,6 +3,12 @@ import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import pool from './config/db.js';
 
+let ioInstance = null;
+
+export function getIO() {
+  return ioInstance;
+}
+
 export function initSocket(httpServer, app) {
   const allowedOrigins = (process.env.URL || '').split(',').map(s => s.trim()).filter(Boolean);
 
@@ -43,6 +49,7 @@ export function initSocket(httpServer, app) {
     });
   });
 
+  ioInstance = io;
   app.set('io', io);
   return io;
 }

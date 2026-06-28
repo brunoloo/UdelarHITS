@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { getIO } from '../socket.js';
 
 // =========================================================
 // Notification repository
@@ -17,7 +18,30 @@ const createNotification = async (
     RETURNING id, usuario_id, tipo, mensaje, contenido_id, actor_id, url, leida, fecha_creacion
   `;
   const { rows } = await client.query(q, [usuario_id, tipo, mensaje, contenido_id, actor_id, url]);
-  return rows[0];
+  const notif = rows[0];
+
+  const io = getIO();
+  if (io && notif) {
+    let actor_nickname = null;
+    let actor_url_imagen = null;
+    if (actor_id) {
+      const actorRes = await pool.query(
+        'SELECT nickname, url_imagen FROM usuario WHERE id = $1',
+        [actor_id]
+      );
+      if (actorRes.rows[0]) {
+        actor_nickname = actorRes.rows[0].nickname;
+        actor_url_imagen = actorRes.rows[0].url_imagen;
+      }
+    }
+    io.to(`user:${usuario_id}`).emit('notificacion:nueva', {
+      ...notif,
+      actor_nickname,
+      actor_url_imagen,
+    });
+  }
+
+  return notif;
 };
 
 // Dedup: ¿ya existe una notificación con este actor + tipo, apuntando al mismo

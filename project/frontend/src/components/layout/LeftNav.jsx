@@ -105,6 +105,16 @@ export function LeftNav() {
     return () => { socket.off('mensaje:nuevo', handleNewMsg) }
   }, [socket, pathname])
 
+  useEffect(() => {
+    if (!socket) return
+    function handleNewNotif(notif) {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
+      setNotifications(prev => prev ? [notif, ...prev] : prev)
+    }
+    socket.on('notificacion:nueva', handleNewNotif)
+    return () => { socket.off('notificacion:nueva', handleNewNotif) }
+  }, [socket, queryClient])
+
   // Solo un panel abierto a la vez: 'notif' | 'saved' | null.
   const [activePanel, setActivePanel] = useState(null)
   const panelOpen = activePanel === 'notif'

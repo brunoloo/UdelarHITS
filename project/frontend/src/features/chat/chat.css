@@ -209,6 +209,7 @@
   padding: 12px 20px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  box-sizing: border-box;
 }
 
 .chat-header-user {
@@ -217,11 +218,15 @@
   gap: 10px;
   text-decoration: none;
   color: var(--text-primary);
+  min-width: 0;
 }
 
 .chat-header-nick {
   font-size: 15px;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chat-header-user:hover .chat-header-nick {
@@ -232,12 +237,14 @@
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
+  box-sizing: border-box;
 }
 
 .chat-load-more {
@@ -331,6 +338,7 @@
   align-items: flex-end;
   gap: 10px;
   background: var(--surface);
+  box-sizing: border-box;
 }
 
 .chat-input-bar textarea {
