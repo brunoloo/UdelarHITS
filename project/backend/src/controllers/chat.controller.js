@@ -40,7 +40,8 @@ export const getOrStartConversation = async (req, res) => {
         usuario: { id: other.id, nickname: other.nickname, url_imagen: other.url_imagen },
       },
     });
-  } catch {
+  } catch (err) {
+    console.error('chat.getOrStartConversation error:', err);
     return res.status(500).json({ ok: false, message: 'Error interno' });
   }
 };

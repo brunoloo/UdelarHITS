@@ -29,14 +29,18 @@ export function initSocket(httpServer, app) {
       socket.userId = rows[0].id;
       socket.userNickname = rows[0].nickname;
       next();
-    } catch {
+    } catch (err) {
+      console.error('Socket auth error:', err.message);
       next(new Error('Token inválido'));
     }
   });
 
   io.on('connection', (socket) => {
+    console.log(`Socket connected: user:${socket.userId} (${socket.userNickname})`);
     socket.join(`user:${socket.userId}`);
-    socket.on('disconnect', () => {});
+    socket.on('disconnect', () => {
+      console.log(`Socket disconnected: user:${socket.userId}`);
+    });
   });
 
   app.set('io', io);

@@ -66,8 +66,13 @@ export function ChatPage() {
         setOtherUser(res.data.usuario)
         setMessages([])
         setHasMore(true)
-      } catch {
-        if (!cancelled) navigate('/chat', { replace: true })
+      } catch (err) {
+        if (cancelled) return
+        const is404 = err.message?.includes('no encontrado')
+        const isSelf = err.message?.includes('vos mismo')
+        if (is404 || isSelf) {
+          navigate('/chat', { replace: true })
+        }
       }
     })()
     return () => { cancelled = true }
