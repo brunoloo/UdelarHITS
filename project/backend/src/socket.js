@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import * as cookieLib from 'cookie';
+import { parse as parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import pool from './config/db.js';
 
