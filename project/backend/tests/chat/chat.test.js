@@ -130,7 +130,7 @@ describe('GET /api/chat/conversations/:id/messages', () => {
       .get(`/api/chat/conversations/${convId}/messages?before=${lastId}`)
       .set('Cookie', alice.cookie);
     expect(res.status).toBe(200);
-    res.body.data.forEach(m => expect(m.id).toBeLessThan(lastId));
+    res.body.data.forEach(m => expect(Number(m.id)).toBeLessThan(Number(lastId)));
   });
 
   test('403 para usuario sin acceso', async () => {

@@ -28,6 +28,7 @@
     "db:test:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits_test -f ../database/schema.sql",
     "db:test:reset": "npm run db:test:drop && npm run db:test:create && npm run db:test:schema",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "test:chat": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand tests/chat/chat.test.js",
     "seed:admin": "node src/seeds/seedAdmin.js",
     "seed:test": "node src/seeds/seedTestData.js",
     "seed:testV2": "node src/seeds/seedTestDataV2.js"
