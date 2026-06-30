@@ -4,7 +4,7 @@ import { registerAndLogin } from '../helpers.js';
 
 let alice, bob, charlie;
 
-beforeAll(async () => {
+beforeEach(async () => {
   alice = await registerAndLogin({ nickname: 'alice_chat' });
   bob = await registerAndLogin({ nickname: 'bob_chat' });
   charlie = await registerAndLogin({ nickname: 'charlie_chat' });
@@ -53,7 +53,7 @@ describe('GET /api/chat/conversations/:nickname', () => {
 describe('POST /api/chat/conversations/:id/messages', () => {
   let convId;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     const res = await request(app)
       .get(`/api/chat/conversations/${bob.user.nickname}`)
       .set('Cookie', alice.cookie);
@@ -98,7 +98,7 @@ describe('POST /api/chat/conversations/:id/messages', () => {
 describe('GET /api/chat/conversations/:id/messages', () => {
   let convId;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     const res = await request(app)
       .get(`/api/chat/conversations/${bob.user.nickname}`)
       .set('Cookie', alice.cookie);
@@ -117,7 +117,7 @@ describe('GET /api/chat/conversations/:id/messages', () => {
       .get(`/api/chat/conversations/${convId}/messages`)
       .set('Cookie', alice.cookie);
     expect(res.status).toBe(200);
-    expect(res.body.data.length).toBeGreaterThanOrEqual(3);
+    expect(res.body.data.length).toBe(3);
   });
 
   test('soporta paginación con before', async () => {
@@ -144,7 +144,7 @@ describe('GET /api/chat/conversations/:id/messages', () => {
 describe('PATCH /api/chat/conversations/:id/read', () => {
   let convId;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     const res = await request(app)
       .get(`/api/chat/conversations/${bob.user.nickname}`)
       .set('Cookie', alice.cookie);
@@ -174,12 +174,22 @@ describe('PATCH /api/chat/conversations/:id/read', () => {
 
 describe('conversations list', () => {
   test('muestra conversaciones con último mensaje', async () => {
+    const conv = await request(app)
+      .get(`/api/chat/conversations/${bob.user.nickname}`)
+      .set('Cookie', alice.cookie);
+    const convId = conv.body.data.conversacion_id;
+
+    await request(app)
+      .post(`/api/chat/conversations/${convId}/messages`)
+      .set('Cookie', alice.cookie)
+      .send({ cuerpo: 'Hola Bob!' });
+
     const res = await request(app)
       .get('/api/chat/conversations')
       .set('Cookie', alice.cookie);
     expect(res.status).toBe(200);
-    const conv = res.body.data.find(c => c.otro_nickname === bob.user.nickname);
-    expect(conv).toBeDefined();
-    expect(conv.ultimo_mensaje).toBeDefined();
+    const found = res.body.data.find(c => c.otro_nickname === bob.user.nickname);
+    expect(found).toBeDefined();
+    expect(found.ultimo_mensaje).toBe('Hola Bob!');
   });
 });
