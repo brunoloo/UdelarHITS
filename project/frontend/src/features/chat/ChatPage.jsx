@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
-import { apiGet, apiPost, apiPatch } from '../../api/client'
+import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import './chat.css'
 
@@ -128,16 +128,9 @@ export function ChatPage() {
       }
       fetchConversations()
     }
-    function handleRead({ conversacion_id }) {
-      if (conversacion_id === activeConv) {
-        setMessages(prev => prev.map(m => ({ ...m, leido: true })))
-      }
-    }
     socket.on('mensaje:nuevo', handleNew)
-    socket.on('mensaje:leido', handleRead)
     return () => {
       socket.off('mensaje:nuevo', handleNew)
-      socket.off('mensaje:leido', handleRead)
     }
   }, [socket, activeConv, fetchConversations])
 
@@ -174,6 +167,20 @@ export function ChatPage() {
     }
   }
 
+  async function handleDeleteConversation() {
+    if (!activeConv) return
+    try {
+      await apiDelete(`/chat/conversations/${activeConv}`)
+      setActiveConv(null)
+      setOtherUser(null)
+      setMessages([])
+      navigate('/chat', { replace: true })
+      fetchConversations()
+    } catch (err) {
+      console.error('Error al borrar conversación:', err)
+    }
+  }
+
   useEffect(() => {
     clearTimeout(searchTimeout.current)
     if (search.length < 2) { setSearchResults([]); return }
@@ -186,8 +193,6 @@ export function ChatPage() {
       setSearching(false)
     }, 250)
   }, [search])
-
-  const lastOwnMsg = [...messages].reverse().find(m => m.autor_id === user?.id)
 
   return (
     <div className="chat-layout">
@@ -253,6 +258,15 @@ export function ChatPage() {
             <div className="chat-empty-sidebar">No tenés conversaciones</div>
           )}
         </div>
+        <div className="chat-sidebar-footer">
+          <button className="chat-back-btn" type="button" onClick={() => navigate('/')}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="19" y1="12" x2="5" y2="12"/>
+              <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Regresar
+          </button>
+        </div>
       </div>
 
       <div className="chat-main">
@@ -275,10 +289,26 @@ export function ChatPage() {
         ) : (
           <>
             <div className="chat-header">
-              <Link to={`/user/${encodeURIComponent(otherUser?.nickname || nickname)}`} className="chat-header-user">
-                <UserAvatar url_imagen={otherUser?.url_imagen} nickname={otherUser?.nickname || nickname} size={36} />
-                <span className="chat-header-nick">@{otherUser?.nickname || nickname}</span>
-              </Link>
+              <div className="chat-header-row">
+                <Link to={`/user/${encodeURIComponent(otherUser?.nickname || nickname)}`} className="chat-header-user">
+                  <UserAvatar url_imagen={otherUser?.url_imagen} nickname={otherUser?.nickname || nickname} size={36} />
+                  <span className="chat-header-nick">@{otherUser?.nickname || nickname}</span>
+                </Link>
+                <button
+                  className="chat-delete-btn"
+                  type="button"
+                  onClick={handleDeleteConversation}
+                  title="Borrar conversación"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6"/>
+                    <path d="M14 11v6"/>
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                  </svg>
+                </button>
+              </div>
             </div>
             <div className="chat-messages" ref={messagesContainerRef}>
               {hasMore && messages.length > 0 && (
@@ -291,18 +321,12 @@ export function ChatPage() {
               )}
               {messages.map(m => {
                 const isOwn = m.autor_id === user?.id
-                const isLastOwn = lastOwnMsg && m.id === lastOwnMsg.id
                 return (
                   <div key={m.id} className={`chat-bubble-row${isOwn ? ' own' : ''}`}>
                     <div className={`chat-bubble${isOwn ? ' chat-bubble--own' : ''}`}>
                       <p>{m.cuerpo}</p>
                       <span className="chat-bubble-time">
                         {timeLabel(m.fecha_creacion)}
-                        {isOwn && isLastOwn && (
-                          <span className={`chat-check${m.leido ? ' chat-check--read' : ''}`}>
-                            {' '}&#10003;&#10003;
-                          </span>
-                        )}
                       </span>
                     </div>
                   </div>

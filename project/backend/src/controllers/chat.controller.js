@@ -7,6 +7,8 @@ import {
   markMessagesAsRead,
   userBelongsToConversation,
   getOtherUserId,
+  getVisibleSince,
+  softDeleteConversation,
 } from '../repositories/chat.repository.js';
 
 export const getConversations = async (req, res) => {
@@ -58,7 +60,8 @@ export const getConversationMessages = async (req, res) => {
     }
     const before = req.query.before ? Number(req.query.before) : null;
     const limit = Math.min(Number(req.query.limit) || 50, 100);
-    const messages = await getMessages(convId, { before, limit });
+    const visibleSince = await getVisibleSince(convId, req.user.id);
+    const messages = await getMessages(convId, { before, limit, visibleSince });
     return res.json({ ok: true, data: messages });
   } catch {
     return res.status(500).json({ ok: false, message: 'Error interno' });
@@ -119,6 +122,23 @@ export const markAsRead = async (req, res) => {
       io.to(`user:${otherUserId}`).emit('mensaje:leido', { conversacion_id: convId });
     }
 
+    return res.json({ ok: true });
+  } catch {
+    return res.status(500).json({ ok: false, message: 'Error interno' });
+  }
+};
+
+export const deleteConversation = async (req, res) => {
+  try {
+    const convId = Number(req.params.conversacion_id);
+    if (!Number.isInteger(convId) || convId < 1) {
+      return res.status(400).json({ ok: false, message: 'ID inválido' });
+    }
+    const belongs = await userBelongsToConversation(convId, req.user.id);
+    if (!belongs) {
+      return res.status(403).json({ ok: false, message: 'No tenés acceso a esta conversación' });
+    }
+    await softDeleteConversation(convId, req.user.id);
     return res.json({ ok: true });
   } catch {
     return res.status(500).json({ ok: false, message: 'Error interno' });

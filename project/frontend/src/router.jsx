@@ -50,16 +50,16 @@ export const router = createBrowserRouter([
         path: 'admin',
         element: <AdminRoute><AdminPage /></AdminRoute>,
       },
-      {
-        path: 'chat',
-        element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
-      },
-      {
-        path: 'chat/:nickname',
-        element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
-      },
       { path: '*', element: <NotFoundPage /> },
     ],
+  },
+  {
+    path: '/chat',
+    element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
+  },
+  {
+    path: '/chat/:nickname',
+    element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
   },
   {
     path: '/login',
