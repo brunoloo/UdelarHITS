@@ -39,6 +39,8 @@ export const CATEGORY_ICONS = [
   'scale',
   'gavel',
   'stethoscope',
+  'calculator',
+  'newspaper',
 ];
 
 export const isValidCategoryIcon = (name) => CATEGORY_ICONS.includes(name);

@@ -2,7 +2,7 @@ import {
   LayoutGrid, Code, Terminal, Monitor, GraduationCap, BookOpen, Pencil, Music, Film,
   Camera, Palette, FlaskConical, Atom, Brain, Heart, Users, MessageCircle, Briefcase,
   BarChart3, DollarSign, Globe, Map, Plane, Gamepad2, Trophy, Wrench, Settings, Leaf,
-  PawPrint, Utensils, Coffee, Scale, Gavel, Stethoscope,
+  PawPrint, Utensils, Coffee, Scale, Gavel, Stethoscope, Calculator, Newspaper,
 } from 'lucide-react'
 import { DEFAULT_CATEGORY_ICON } from '../../utils/categoryIcons.js'
 
@@ -42,6 +42,8 @@ const ICON_MAP = {
   'scale': Scale,
   'gavel': Gavel,
   'stethoscope': Stethoscope,
+  'calculator': Calculator,
+  'newspaper': Newspaper,
 }
 
 // Render del ícono de una categoría por nombre. Si el nombre no existe, cae al
