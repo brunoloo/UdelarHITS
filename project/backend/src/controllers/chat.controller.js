@@ -10,6 +10,7 @@ import {
   getVisibleSince,
   softDeleteConversation,
 } from '../repositories/chat.repository.js';
+import { isBlocked } from '../repositories/block.repository.js';
 
 export const getConversations = async (req, res) => {
   try {
@@ -33,6 +34,9 @@ export const getOrStartConversation = async (req, res) => {
     const other = rows[0];
     if (other.id === req.user.id) {
       return res.status(400).json({ ok: false, message: 'No podés chatear con vos mismo' });
+    }
+    if (await isBlocked(req.user.id, other.id)) {
+      return res.status(403).json({ ok: false, message: 'No podés chatear con este usuario' });
     }
     const conversacion_id = await getOrCreateConversation(req.user.id, other.id);
     return res.json({
@@ -78,6 +82,10 @@ export const sendMessage = async (req, res) => {
     if (!belongs) {
       return res.status(403).json({ ok: false, message: 'No tenés acceso a esta conversación' });
     }
+    const otherUserId = await getOtherUserId(convId, req.user.id);
+    if (otherUserId && await isBlocked(req.user.id, otherUserId)) {
+      return res.status(403).json({ ok: false, message: 'No podés enviar mensajes a este usuario' });
+    }
     const cuerpo = req.body.cuerpo?.trim();
     if (!cuerpo) {
       return res.status(400).json({ ok: false, message: 'El mensaje no puede estar vacío' });
@@ -91,7 +99,6 @@ export const sendMessage = async (req, res) => {
       cuerpo,
     });
 
-    const otherUserId = await getOtherUserId(convId, req.user.id);
     const io = req.app.get('io');
     if (io && otherUserId) {
       io.to(`user:${otherUserId}`).emit('mensaje:nuevo', message);
