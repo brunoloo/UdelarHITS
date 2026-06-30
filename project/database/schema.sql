@@ -408,11 +408,13 @@ CREATE TABLE reporte_usuario (
 -- CHAT 1:1
 -- -----------------------------
 CREATE TABLE conversacion (
-  id                BIGSERIAL PRIMARY KEY,
-  usuario1_id       BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
-  usuario2_id       BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
-  ultimo_mensaje_at TIMESTAMPTZ,
-  fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  id                      BIGSERIAL PRIMARY KEY,
+  usuario1_id             BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  usuario2_id             BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  ultimo_mensaje_at       TIMESTAMPTZ,
+  borrado_por_usuario1_at TIMESTAMPTZ,
+  borrado_por_usuario2_at TIMESTAMPTZ,
+  fecha_creacion          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (usuario1_id < usuario2_id),
   UNIQUE (usuario1_id, usuario2_id)
 );
