@@ -110,9 +110,25 @@ export function LeftNav() {
     function handleNewNotif(notif) {
       queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
       setNotifications(prev => prev ? [notif, ...prev] : prev)
+      if (notif.tipo === 'solicitud_aceptada') {
+        queryClient.invalidateQueries({ queryKey: ['user'] })
+      }
+    }
+    function handleDeletedNotif({ ids }) {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
+      setNotifications(prev => prev ? prev.filter(n => !ids.includes(n.id)) : prev)
+    }
+    function handleFollowUpdate() {
+      queryClient.invalidateQueries({ queryKey: ['user'] })
     }
     socket.on('notificacion:nueva', handleNewNotif)
-    return () => { socket.off('notificacion:nueva', handleNewNotif) }
+    socket.on('notificacion:eliminada', handleDeletedNotif)
+    socket.on('seguimiento:actualizado', handleFollowUpdate)
+    return () => {
+      socket.off('notificacion:nueva', handleNewNotif)
+      socket.off('notificacion:eliminada', handleDeletedNotif)
+      socket.off('seguimiento:actualizado', handleFollowUpdate)
+    }
   }, [socket, queryClient])
 
   // Solo un panel abierto a la vez: 'notif' | 'saved' | null.

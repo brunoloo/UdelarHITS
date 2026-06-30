@@ -151,6 +151,13 @@ const deleteNotificationsByActorAndType = async (usuario_id, actor_id, tipo) => 
     RETURNING id
   `;
   const { rows } = await pool.query(q, [usuario_id, actor_id, tipo]);
+
+  const io = getIO();
+  if (io && rows.length > 0) {
+    const ids = rows.map(r => r.id);
+    io.to(`user:${usuario_id}`).emit('notificacion:eliminada', { ids });
+  }
+
   return rows.length;
 };
 

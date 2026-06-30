@@ -518,10 +518,8 @@ const unfollowUserService = async (seguidorId, seguidoNickname) => {
     err.code = 'NOT_FOUND';
     throw err;
   }
-  // Borra la relación cualquiera sea su estado (deja de seguir o cancela la
-  // solicitud pendiente). No se toca la notificación de solicitud para preservar
-  // el dedup: re-solicitar mientras siga pendiente no genera otra notificación.
   await unfollowUser(seguidorId, seguido.id);
+  await deleteNotificationsByActorAndType(seguido.id, seguidorId, 'solicitud_seguimiento');
   const followers = await getFollowersByUserId(seguido.id);
   return { seguidores: followers.length };
 };
@@ -574,6 +572,14 @@ const rejectFollowRequestService = async (receptorId, solicitanteNickname) => {
   // Consumir la notificación de solicitud (desaparece del panel y reinicia el
   // dedup: un nuevo follow posterior sí generará una notificación nueva).
   await deleteNotificationsByActorAndType(receptorId, solicitante.id, 'solicitud_seguimiento');
+
+  if (rejected) {
+    const { getIO } = await import('../socket.js');
+    const io = getIO();
+    if (io) {
+      io.to(`user:${solicitante.id}`).emit('seguimiento:actualizado');
+    }
+  }
 
   return { rechazada: !!rejected };
 };
