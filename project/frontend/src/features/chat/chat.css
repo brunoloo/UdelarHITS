@@ -220,6 +220,13 @@
   box-sizing: border-box;
 }
 
+.chat-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .chat-header-user {
   display: flex;
   align-items: center;
@@ -322,20 +329,22 @@
   text-align: right;
 }
 
-.chat-check {
+.chat-delete-btn {
+  background: none;
+  border: none;
   color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: color 0.12s, background 0.12s;
 }
 
-.chat-bubble--own .chat-check {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.chat-check--read {
-  color: var(--accent) !important;
-}
-
-.chat-bubble--own .chat-check--read {
-  color: #93c5fd !important;
+.chat-delete-btn:hover {
+  color: var(--danger, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 /* ── Input Bar ── */
