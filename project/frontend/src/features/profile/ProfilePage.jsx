@@ -13,6 +13,7 @@ import { CategoryCardMini } from '../../components/shared/CategoryCardMini'
 import { TopicCardMini } from '../../components/shared/TopicCardMini'
 import { CommentEntry } from '../../components/shared/CommentEntry'
 import { BioText } from '../../utils/renderBioWithLinks'
+import { Modal } from '../../components/ui/Modal'
 import { EditProfileModal } from './EditProfileModal'
 import { FollowersModal } from './FollowersModal'
 import { ReportUserModal } from './ReportUserModal'
@@ -150,6 +151,8 @@ export function ProfilePage() {
     onError: () => showToast('Error al desbloquear usuario', 'error'),
   })
 
+  const teBloqueo = profileData?.te_bloqueo ?? false
+
   function canView() {
     if (!profile) return false
     if (profile.estado === 'inactivo') return false
@@ -194,7 +197,6 @@ export function ProfilePage() {
   // Comes straight from the profile payload, so it's available the moment the
   // card renders — the follow button shows the right state on first paint.
   // 'aceptado' | 'pendiente' | 'none'
-  const teBloqueo = profileData?.te_bloqueo ?? false
   const miEstadoSeguimiento = profileData?.mi_estado_seguimiento ?? 'none'
 
   // "Te sigue" means the profile user follows ME — i.e. I (me) appear in the
@@ -525,29 +527,26 @@ export function ProfilePage() {
       />
 
       {/* Block confirm modal */}
-      {blockConfirmOpen && (
-        <div className="modal-overlay open" onClick={() => setBlockConfirmOpen(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 380 }}>
-            <h2 style={{ fontSize: 17, marginBottom: 8 }}>Bloquear a @{nickname}</h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
-              @{nickname} no podrá ver tu perfil, seguirte, ni interactuar con tu contenido. No sabrá que lo bloqueaste.
-            </p>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button type="button" className="btn-ghost" onClick={() => setBlockConfirmOpen(false)}>
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="btn-danger"
-                disabled={blockMutation.isPending}
-                onClick={() => blockMutation.mutate()}
-              >
-                {blockMutation.isPending ? 'Bloqueando…' : 'Bloquear'}
-              </button>
-            </div>
+      <Modal isOpen={blockConfirmOpen} onClose={() => setBlockConfirmOpen(false)} title={`Bloquear a @${nickname}`} className="modal--narrow">
+        <div className="edit-body">
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+            @{nickname} no podrá ver tu perfil, seguirte, ni interactuar con tu contenido. No sabrá que lo bloqueaste.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <button className="cc-cancel" type="button" onClick={() => setBlockConfirmOpen(false)}>
+              Cancelar
+            </button>
+            <button
+              className="btn-danger"
+              type="button"
+              disabled={blockMutation.isPending}
+              onClick={() => blockMutation.mutate()}
+            >
+              {blockMutation.isPending ? 'Bloqueando…' : 'Bloquear'}
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   )
 }

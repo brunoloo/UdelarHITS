@@ -6,7 +6,9 @@ import { useTheme } from '../../context/ThemeContext'
 import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
 import { UserAvatar } from '../../components/shared/UserAvatar'
+import { Modal } from '../../components/ui/Modal'
 import { ChangePasswordModal } from './ChangePasswordModal'
+import '../profile/FollowersModal.css'
 import './settings.css'
 
 const TABS = [
@@ -311,52 +313,37 @@ export function SettingsPage() {
         onClose={() => setChangePasswordOpen(false)}
       />
 
-      {blockedListOpen && (
-        <div className="modal-overlay open" onClick={() => setBlockedListOpen(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2 style={{ fontSize: 17, margin: 0 }}>Usuarios bloqueados</h2>
-              <button type="button" className="btn-icon" onClick={() => setBlockedListOpen(false)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
-            {blockedUsers.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: 14, textAlign: 'center', padding: '24px 0' }}>
-                No tenés usuarios bloqueados.
-              </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {blockedUsers.map(u => (
-                  <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 4px' }}>
-                    <Link
-                      to={`/user/${encodeURIComponent(u.nickname)}`}
-                      onClick={() => setBlockedListOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, textDecoration: 'none', color: 'inherit' }}
-                    >
-                      <UserAvatar url_imagen={u.url_imagen} nickname={u.nickname} size={36} />
-                      <div>
-                        <p style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>{u.nombre}</p>
-                        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>@{u.nickname}</p>
-                      </div>
-                    </Link>
-                    <button
-                      type="button"
-                      className="settings-btn-secondary"
-                      disabled={unblockMutation.isPending}
-                      onClick={() => unblockMutation.mutate(u.nickname)}
-                      style={{ flexShrink: 0, fontSize: 13 }}
-                    >
-                      Desbloquear
-                    </button>
-                  </div>
-                ))}
+      <Modal isOpen={blockedListOpen} onClose={() => setBlockedListOpen(false)} title="Usuarios bloqueados" className="modal--narrow">
+        <div className="follow-list">
+          {blockedUsers.length === 0 ? (
+            <div className="follow-list-empty">No tenés usuarios bloqueados.</div>
+          ) : (
+            blockedUsers.map(u => (
+              <div key={u.id} className="follow-item">
+                <UserAvatar url_imagen={u.url_imagen} nickname={u.nickname} size="md" />
+                <div className="follow-item-info">
+                  <Link
+                    className="follow-item-nickname"
+                    to={`/user/${encodeURIComponent(u.nickname)}`}
+                    onClick={() => setBlockedListOpen(false)}
+                  >
+                    @{u.nickname}
+                  </Link>
+                  {u.nombre && <div className="follow-item-name">{u.nombre}</div>}
+                </div>
+                <button
+                  type="button"
+                  className="btn-follow-sm"
+                  disabled={unblockMutation.isPending}
+                  onClick={() => unblockMutation.mutate(u.nickname)}
+                >
+                  Desbloquear
+                </button>
               </div>
-            )}
-          </div>
+            ))
+          )}
         </div>
-      )}
+      </Modal>
     </>
   )
 }
