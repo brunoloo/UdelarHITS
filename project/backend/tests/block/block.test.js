@@ -106,9 +106,9 @@ describe('Bloqueo de usuarios', () => {
       .set('Cookie', alice.cookie);
 
     const res = await request(app)
-      .post('/api/reactions/toggle')
+      .post(`/api/reactions/${reply.contenido_id}`)
       .set('Cookie', bob.cookie)
-      .send({ contenido_id: reply.contenido_id, tipo: 'meGusta' });
+      .send({ tipo: 'meGusta' });
     expect(res.status).toBe(403);
   });
 

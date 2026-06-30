@@ -244,6 +244,7 @@ const followUser = async (req, res) => {
   } catch (error) {
     if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }
 };
