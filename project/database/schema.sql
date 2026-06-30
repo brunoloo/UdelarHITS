@@ -433,6 +433,16 @@ CREATE INDEX idx_mensaje_autor ON mensaje(autor_id);
 CREATE INDEX idx_conversacion_usuario1 ON conversacion(usuario1_id);
 CREATE INDEX idx_conversacion_usuario2 ON conversacion(usuario2_id);
 
+CREATE TABLE bloqueo (
+  bloqueador_id  BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  bloqueado_id   BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (bloqueador_id, bloqueado_id),
+  CHECK (bloqueador_id <> bloqueado_id)
+);
+
+CREATE INDEX idx_bloqueo_bloqueado ON bloqueo(bloqueado_id);
+
 -- -----------------------------
 -- ÍNDICES ÚTILES
 -- -----------------------------

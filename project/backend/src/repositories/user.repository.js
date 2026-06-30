@@ -285,18 +285,25 @@ const acceptAllPendingFollowRequests = async (seguidoId) => {
   return rowCount;
 };
 
-const searchUsers = async (query) => {
+const searchUsers = async (query, viewerId = null) => {
   const q = `
     SELECT id, nickname, nombre, url_imagen
     FROM usuario
     WHERE estado = 'activo'
       AND (nickname ILIKE $1 OR nombre ILIKE $1)
-    ORDER BY 
+      ${viewerId ? `AND id NOT IN (
+        SELECT bloqueado_id FROM bloqueo WHERE bloqueador_id = $3
+        UNION
+        SELECT bloqueador_id FROM bloqueo WHERE bloqueado_id = $3
+      )` : ''}
+    ORDER BY
       CASE WHEN nickname ILIKE $2 THEN 0 ELSE 1 END,
       nickname ASC
     LIMIT 5
   `;
-  const { rows } = await pool.query(q, [`%${query}%`, `${query}%`]);
+  const params = [`%${query}%`, `${query}%`];
+  if (viewerId) params.push(viewerId);
+  const { rows } = await pool.query(q, params);
   return rows;
 };
 
@@ -339,6 +346,11 @@ const getSuggestedUsers = async (userId, limit = 10) => {
       AND u.id != $1
       AND u.id NOT IN (
         SELECT us.seguido_id FROM usuario_seguidor us WHERE us.seguidor_id = $1
+      )
+      AND u.id NOT IN (
+        SELECT bloqueado_id FROM bloqueo WHERE bloqueador_id = $1
+        UNION
+        SELECT bloqueador_id FROM bloqueo WHERE bloqueado_id = $1
       )
     ORDER BY actividad DESC, u.fecha_creacion DESC
     LIMIT $2

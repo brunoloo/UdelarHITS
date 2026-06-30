@@ -1,4 +1,5 @@
 import { toggleReaction, getReactionsByContentId } from '../repositories/reaction.repository.js';
+import { isBlocked } from '../repositories/block.repository.js';
 import pool from '../config/db.js';
 
 const TIPOS_VALIDOS = ['meGusta'];
@@ -32,6 +33,16 @@ const toggleReactionService = async (userId, contenidoId, tipo) => {
   );
   if (comRows.length > 0 && comRows[0].estado === 'oculto') {
     const err = new Error('No se puede reaccionar a un comentario oculto');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+
+  const { rows: authorRows } = await pool.query(
+    'SELECT autor_id FROM contenido WHERE id = $1', [id]
+  );
+  const autorId = authorRows[0]?.autor_id;
+  if (autorId && autorId !== userId && await isBlocked(userId, autorId)) {
+    const err = new Error('No se puede realizar esta acción');
     err.code = 'FORBIDDEN';
     throw err;
   }

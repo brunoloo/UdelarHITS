@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
-import { apiPatch } from '../../api/client'
+import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
+import { UserAvatar } from '../../components/shared/UserAvatar'
 import { ChangePasswordModal } from './ChangePasswordModal'
 import './settings.css'
 
@@ -75,6 +76,22 @@ export function SettingsPage() {
   const { theme, setTheme } = useTheme()
   const { user, setUser } = useAuth()
   const { showToast } = useToast()
+  const queryClient = useQueryClient()
+
+  const { data: blockedUsers = [] } = useQuery({
+    queryKey: ['blocked-users'],
+    queryFn: () => apiGet('/users/blocked').then(r => r.data),
+    enabled: activeTab === 'privacidad',
+  })
+
+  const unblockMutation = useMutation({
+    mutationFn: (nickname) => apiDelete(`/users/${encodeURIComponent(nickname)}/block`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blocked-users'] })
+      showToast('Usuario desbloqueado', 'success')
+    },
+    onError: () => showToast('Error al desbloquear', 'error'),
+  })
 
   const privacyMutation = useMutation({
     mutationFn: () => apiPatch('/users/me/privacy', {}),
@@ -231,6 +248,39 @@ export function SettingsPage() {
                       <span className="toggle-slider" />
                     </label>
                   </div>
+                </div>
+
+                <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                  <div className="settings-row-info">
+                    <h3>Usuarios bloqueados</h3>
+                    <p>Los usuarios bloqueados no pueden ver tu perfil, seguirte ni interactuar con tu contenido.</p>
+                  </div>
+                  {blockedUsers.length === 0 ? (
+                    <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 8 }}>No tenés usuarios bloqueados.</p>
+                  ) : (
+                    <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {blockedUsers.map(u => (
+                        <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+                          <Link to={`/user/${encodeURIComponent(u.nickname)}`} style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, textDecoration: 'none', color: 'inherit' }}>
+                            <UserAvatar url_imagen={u.url_imagen} nickname={u.nickname} size={36} />
+                            <div>
+                              <p style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>{u.nombre}</p>
+                              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>@{u.nickname}</p>
+                            </div>
+                          </Link>
+                          <button
+                            type="button"
+                            className="settings-btn-secondary"
+                            disabled={unblockMutation.isPending}
+                            onClick={() => unblockMutation.mutate(u.nickname)}
+                            style={{ flexShrink: 0, fontSize: 13 }}
+                          >
+                            Desbloquear
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </article>
             )}

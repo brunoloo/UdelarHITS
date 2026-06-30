@@ -317,7 +317,7 @@ const updateAvatar = async (req, res) => {
 const searchUsers = async (req, res) => {
   try {
     const { q } = req.query;
-    const users = await searchUsersService(q);
+    const users = await searchUsersService(q, req.user?.id);
     return res.status(200).json({ ok: true, data: users });
   } catch (error) {
     return res.status(500).json({ ok: false, message: 'Internal server error' });
