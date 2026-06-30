@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
-import { apiGet, apiPost, apiDelete } from '../../api/client'
+import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import './chat.css'
 
@@ -102,6 +102,14 @@ export function ChatPage() {
   }, [activeConv])
 
   useEffect(() => {
+    if (!activeConv) return
+    apiPatch(`/chat/conversations/${activeConv}/read`).catch(() => {})
+    setConversations(prev => prev.map(c =>
+      c.id === activeConv ? { ...c, no_leidos: 0 } : c
+    ))
+  }, [activeConv, messages.length])
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
@@ -110,6 +118,7 @@ export function ChatPage() {
     function handleNew(msg) {
       if (msg.conversacion_id === activeConv) {
         setMessages(prev => [...prev, msg])
+        apiPatch(`/chat/conversations/${activeConv}/read`).catch(() => {})
       } else {
         setConversations(prev => prev.map(c =>
           c.id === msg.conversacion_id
