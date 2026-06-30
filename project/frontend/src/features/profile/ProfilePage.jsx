@@ -93,6 +93,8 @@ export function ProfilePage() {
 
   const myFollowing = isOwnProfile ? following : (myData?.following || [])
 
+  const teBloqueo = profileData?.te_bloqueo ?? false
+
   const { data: topics = [] } = useQuery({
     queryKey: ['topics', 'user', profile?.id],
     queryFn: () => apiGet(`/topics/user/${profile.id}`).then(r => r.data),
@@ -150,8 +152,6 @@ export function ProfilePage() {
     },
     onError: () => showToast('Error al desbloquear usuario', 'error'),
   })
-
-  const teBloqueo = profileData?.te_bloqueo ?? false
 
   function canView() {
     if (!profile) return false
