@@ -20,6 +20,7 @@ import {
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy,
   getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
+import { isBlocked } from '../repositories/block.repository.js';
 import pool from '../config/db.js';
 
 // Valida unicidad de nickname/email y lanza el error correspondiente.
@@ -342,23 +343,44 @@ const getUserProfileService = async (nickname, viewerId = null) => {
     err.code = 'NOT_FOUND';
     throw err;
   }
+  let te_bloqueo = false;
+  if (viewerId && viewerId !== user.id) {
+    const blocked = await isBlocked(viewerId, user.id);
+    if (blocked) {
+      te_bloqueo = true;
+      return {
+        user: {
+          id: user.id,
+          nickname: user.nickname,
+          nombre: user.nombre,
+          url_imagen: null,
+          url_banner: null,
+          biografia: null,
+          fecha_creacion: user.fecha_creacion,
+          estado: user.estado,
+          privado: false,
+        },
+        categories: [],
+        followers: [],
+        following: [],
+        ya_sigo: false,
+        mi_estado_seguimiento: 'none',
+        te_bloqueo,
+      };
+    }
+  }
+
   const categories = await getCategoriesByUserId(user.id);
   const followers = await getFollowersByUserId(user.id);
   const following = await getFollowingByUserId(user.id);
 
-  // Estado del seguimiento del viewer hacia este perfil. Resuelto junto al
-  // perfil para que el botón renderice el estado correcto en el primer paint
-  // (sin request extra, sin flash "Seguir" → "Siguiendo"/"Solicitado").
-  //   'aceptado'  → ya lo sigue
-  //   'pendiente' → solicitud enviada (cuenta privada) esperando respuesta
-  //   'none'      → no lo sigue
   let mi_estado_seguimiento = 'none';
   if (viewerId && viewerId !== user.id) {
     mi_estado_seguimiento = (await getFollowState(viewerId, user.id)) || 'none';
   }
   const ya_sigo = mi_estado_seguimiento === 'aceptado';
 
-  return { user , categories, followers, following, ya_sigo, mi_estado_seguimiento };
+  return { user, categories, followers, following, ya_sigo, mi_estado_seguimiento, te_bloqueo };
 };
 
 const showMeService = async (nickname) => {
@@ -473,6 +495,13 @@ const followUserService = async (seguidorId, seguidoNickname) => {
   if (seguidorId === seguido.id) {
     const err = new Error('No podés seguirte a vos mismo');
     err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const blocked = await isBlocked(seguidorId, seguido.id);
+  if (blocked) {
+    const err = new Error('No se puede realizar esta acción');
+    err.code = 'FORBIDDEN';
     throw err;
   }
 
@@ -601,11 +630,11 @@ const updateAvatarService = async (userId, fileBuffer, mimetype) => {
   return updated;
 };
 
-const searchUsersService = async (query) => {
+const searchUsersService = async (query, viewerId = null) => {
   if (!query || query.trim().length < 2) {
     return [];
   }
-  return await searchUsers(query.trim());
+  return await searchUsers(query.trim(), viewerId);
 };
 
 const updateBannerService = async (userId, fileBuffer, mimetype) => {

@@ -2,6 +2,7 @@ import pool from '../src/config/db.js';
 
 const TABLES = [
   'mensaje', 'conversacion',
+  'bloqueo',
   'apelacion', 'reporte', 'reaccion',
   'historial_edicion_comentario', 'historial_edicion_categoria',
   'comentario', 'tema', 'contenido',

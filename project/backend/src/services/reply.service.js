@@ -7,6 +7,7 @@ import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory,
   getReplyContext, getLikedCommentsByUserId } from '../repositories/reply.repository.js';
 import { getLikesPrivacyById } from '../repositories/user.repository.js';
+import { isBlocked } from '../repositories/block.repository.js';
 import { createNotification } from '../repositories/notification.repository.js';
 import { createAttachment, getAttachmentsByContenidoId, getAttachmentsForDeletion } from '../repositories/adjunto.repository.js';
 import { createPoll, getPollByContenidoId } from '../repositories/encuesta.repository.js';
@@ -59,6 +60,11 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     if (!padre) {
       const err = new Error('Comentario padre no encontrado');
       err.code = 'NOT_FOUND';
+      throw err;
+    }
+    if (await isBlocked(autorId, padre.autor_id)) {
+      const err = new Error('No se puede realizar esta acción');
+      err.code = 'FORBIDDEN';
       throw err;
     }
     // Heredar tema_id o categoria_id del padre

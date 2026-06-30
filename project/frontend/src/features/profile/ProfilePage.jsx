@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
-import { apiGet, apiPost } from '../../api/client'
+import { apiGet, apiPost, apiDelete } from '../../api/client'
 import { buildReplyFormData } from '../../utils/attachments'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { UserAvatar } from '../../components/shared/UserAvatar'
@@ -63,6 +63,7 @@ export function ProfilePage() {
   const [activeTab, setActiveTab] = useState('categorias')
   const [editOpen, setEditOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [blockConfirmOpen, setBlockConfirmOpen] = useState(false)
   const [followModal, setFollowModal] = useState(null)
   const [avatarModalOpen, setAvatarModalOpen] = useState(false)
 
@@ -130,9 +131,29 @@ export function ProfilePage() {
   const handleReply = (parentId, text, files, poll) =>
     replyMutation.mutateAsync({ parentId, cuerpo: text, files, poll })
 
+  const blockMutation = useMutation({
+    mutationFn: () => apiPost(`/users/${encodeURIComponent(nickname)}/block`),
+    onSuccess: () => {
+      showToast('Usuario bloqueado', 'success')
+      queryClient.invalidateQueries({ queryKey: profileQueryKey })
+      setBlockConfirmOpen(false)
+    },
+    onError: () => showToast('Error al bloquear usuario', 'error'),
+  })
+
+  const unblockMutation = useMutation({
+    mutationFn: () => apiDelete(`/users/${encodeURIComponent(nickname)}/block`),
+    onSuccess: () => {
+      showToast('Usuario desbloqueado', 'success')
+      queryClient.invalidateQueries({ queryKey: profileQueryKey })
+    },
+    onError: () => showToast('Error al desbloquear usuario', 'error'),
+  })
+
   function canView() {
     if (!profile) return false
     if (profile.estado === 'inactivo') return false
+    if (teBloqueo) return false
     if (!profile.privado) return true
     if (isOwnProfile) return true
     if (me?.rol === 'admin') return true
@@ -173,6 +194,7 @@ export function ProfilePage() {
   // Comes straight from the profile payload, so it's available the moment the
   // card renders — the follow button shows the right state on first paint.
   // 'aceptado' | 'pendiente' | 'none'
+  const teBloqueo = profileData?.te_bloqueo ?? false
   const miEstadoSeguimiento = profileData?.mi_estado_seguimiento ?? 'none'
 
   // "Te sigue" means the profile user follows ME — i.e. I (me) appear in the
@@ -191,6 +213,28 @@ export function ProfilePage() {
       ),
       onClick: () => navigate(`/chat/${encodeURIComponent(nickname)}`),
     })
+    if (teBloqueo) {
+      menuItems.push({
+        label: 'Desbloquear',
+        icon: (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+          </svg>
+        ),
+        onClick: () => unblockMutation.mutate(),
+      })
+    } else {
+      menuItems.push({
+        label: 'Bloquear',
+        icon: (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+          </svg>
+        ),
+        danger: true,
+        onClick: () => setBlockConfirmOpen(true),
+      })
+    }
     menuItems.push({
       label: 'Reportar usuario',
       icon: (
@@ -207,6 +251,17 @@ export function ProfilePage() {
   function handleFollowToggle() {
     queryClient.invalidateQueries({ queryKey: profileQueryKey })
   }
+
+  const blockedMessage = (
+    <div className="empty-panel" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '32px 16px' }}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginBottom: 8 }}>
+        <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+      </svg>
+      <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>
+        No podés ver el contenido de este usuario.
+      </p>
+    </div>
+  )
 
   const privateMessage = (
     <div className="empty-panel" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '32px 16px' }}>
@@ -268,7 +323,7 @@ export function ProfilePage() {
             <button className="btn-ghost" type="button" onClick={() => setEditOpen(true)}>
               Editar perfil
             </button>
-          ) : me && (
+          ) : me && !teBloqueo && (
             <FollowButton
               key={`${nickname}:${miEstadoSeguimiento}`}
               nickname={nickname}
@@ -384,7 +439,7 @@ export function ProfilePage() {
       {/* Tab panels */}
       {activeTab === 'categorias' && (
         <section className="section-panel active">
-          {!canViewContent ? privateMessage : categories.length === 0 ? (
+          {!canViewContent ? (teBloqueo ? blockedMessage : privateMessage) : categories.length === 0 ? (
             <div className="empty-panel">Sin categorías aún</div>
           ) : (
             <div className="cat-grid">
@@ -398,7 +453,7 @@ export function ProfilePage() {
 
       {activeTab === 'temas' && (
         <section className="section-panel active">
-          {!canViewContent ? privateMessage : topics.length === 0 ? (
+          {!canViewContent ? (teBloqueo ? blockedMessage : privateMessage) : topics.length === 0 ? (
             <div className="empty-panel">Sin temas aún</div>
           ) : (
             <div className="profile-feed-list">
@@ -420,7 +475,7 @@ export function ProfilePage() {
 
       {activeTab === 'comentarios' && (
         <section className="section-panel active">
-          {!canViewContent ? privateMessage : replies.length === 0 ? (
+          {!canViewContent ? (teBloqueo ? blockedMessage : privateMessage) : replies.length === 0 ? (
             <div className="empty-panel">Sin comentarios aún</div>
           ) : (
             <div className="profile-feed-list">
@@ -432,7 +487,7 @@ export function ProfilePage() {
 
       {activeTab === 'megusta' && (
         <section className="section-panel active">
-          {!canViewContent ? privateMessage
+          {!canViewContent ? (teBloqueo ? blockedMessage : privateMessage)
             : likesPrivate ? likesPrivateMessage
             : likedComments.length === 0 ? (
               <div className="empty-panel">Sin me gusta aún</div>
@@ -468,6 +523,31 @@ export function ProfilePage() {
         onClose={() => setReportOpen(false)}
         nickname={nickname}
       />
+
+      {/* Block confirm modal */}
+      {blockConfirmOpen && (
+        <div className="modal-overlay open" onClick={() => setBlockConfirmOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 380 }}>
+            <h2 style={{ fontSize: 17, marginBottom: 8 }}>Bloquear a @{nickname}</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.5, marginBottom: 20 }}>
+              @{nickname} no podrá ver tu perfil, seguirte, ni interactuar con tu contenido. No sabrá que lo bloqueaste.
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn-ghost" onClick={() => setBlockConfirmOpen(false)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn-danger"
+                disabled={blockMutation.isPending}
+                onClick={() => blockMutation.mutate()}
+              >
+                {blockMutation.isPending ? 'Bloqueando…' : 'Bloquear'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
