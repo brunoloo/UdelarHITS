@@ -51,7 +51,7 @@ export function SetupProfilePage() {
         </Link>
         <h1 className="auth-title">Elegí tu nickname</h1>
         <p className="auth-subtitle">
-          Es tu nombre de usuario en el foro. Podés cambiarlo después en configuración.
+          Es tu nombre de usuario en el foro. Elegilo bien porque no se puede cambiar después.
         </p>
 
         <form className="auth-form" onSubmit={handleSubmit} noValidate>
