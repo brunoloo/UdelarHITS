@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
+import { GoogleAuthButton } from './GoogleAuthButton'
 import './auth.css'
 
 function EyeIcon() {
@@ -26,6 +27,7 @@ export function LoginPage() {
   const { login, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   // If a session is already active, go straight to home — NOT to any prior
   // route — so we can't bounce back into a page that redirected us here.
@@ -34,6 +36,17 @@ export function LoginPage() {
       navigate('/', { replace: true })
     }
   }, [authLoading, user, navigate])
+
+  useEffect(() => {
+    if (searchParams.get('error') === 'email_taken') {
+      showToast('Ya existe una cuenta con ese email. Iniciá sesión con tu contraseña.', 'error')
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev)
+        next.delete('error')
+        return next
+      }, { replace: true })
+    }
+  }, [searchParams, setSearchParams, showToast])
 
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
@@ -115,6 +128,8 @@ export function LoginPage() {
             {loading ? 'Procesando...' : 'Iniciar sesión'}
           </button>
         </form>
+
+        <GoogleAuthButton />
 
         <hr className="auth-divider" />
         <p className="auth-footer">

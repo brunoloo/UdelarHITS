@@ -1,5 +1,6 @@
 import { fileTypeFromBuffer } from 'file-type';
 
+import { generateToken } from '../utils/generateToken.js';
 import { requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, getUsersService, createUserByAdminService,
     getUserProfileService, showMeService, updateMeService, 
     banUserService, activeUserService, deleteUserService,
@@ -467,7 +468,20 @@ const toggleLikesPrivacy = async (req, res) => {
   }
 };
 
-export { showMe, registerUser, verifyEmail, resendCode, loginUser, logoutUser, getUsers,
+const googleAuthCallback = async (req, res) => {
+  const token = generateToken(req.user.id);
+  res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: (1000 * 60 * 60 * 24) * 7
+  });
+
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  return res.redirect(`${frontendUrl}/`);
+};
+
+export { showMe, registerUser, verifyEmail, resendCode, loginUser, logoutUser, googleAuthCallback, getUsers,
   getUserProfile, updateMe, banUser,
   activeUser, deleteUser, followUser, unfollowUser, acceptFollowRequest, rejectFollowRequest, checkFollowing, updateAvatar,
   searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList,

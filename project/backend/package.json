@@ -24,6 +24,7 @@
     "db:migrate:chat": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_chat.sql",
     "db:migrate:chat-delete": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_chat_delete.sql",
     "db:migrate:bloqueo": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_bloqueo.sql",
+    "db:migrate:fase17": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase17_google_oauth.sql",
     "db:test:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits_test;\"",
     "db:test:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits_test OWNER brunoloo;\"",
     "db:test:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits_test -f ../database/schema.sql",
@@ -53,6 +54,8 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "pg": "^8.20.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "resend": "^6.12.4",
     "socket.io": "^4.8.3"
   },

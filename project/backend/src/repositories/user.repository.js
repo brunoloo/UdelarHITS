@@ -16,7 +16,7 @@ const findByEmailOrNickname = async ({ nickname, email }) => {
 
 const findByEmailOrNicknameForLogin = async ({ nickname, email }) => {
   let q = `
-    SELECT id, nickname, nombre, email, password_hash, biografia, url_imagen, estado, rol
+    SELECT id, nickname, nombre, email, password_hash, biografia, url_imagen, estado, rol, auth_provider
     FROM usuario
   `;
   const values = [];
@@ -34,6 +34,33 @@ const findByEmailOrNicknameForLogin = async ({ nickname, email }) => {
 
   const { rows } = await pool.query(q, values);
   return rows[0] || null;
+};
+
+const findByEmailForGoogleAuth = async (email) => {
+  const q = `
+    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, estado, auth_provider
+    FROM usuario
+    WHERE LOWER(email) = LOWER($1)
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [email]);
+  return rows[0] || null;
+};
+
+const isNicknameTaken = async (nickname) => {
+  const q = `SELECT 1 FROM usuario WHERE LOWER(nickname) = LOWER($1) LIMIT 1`;
+  const { rows } = await pool.query(q, [nickname]);
+  return rows.length > 0;
+};
+
+const createGoogleUser = async ({ nickname, nombre, email }) => {
+  const q = `
+    INSERT INTO usuario (nickname, nombre, email, password_hash, rol, estado, auth_provider)
+    VALUES ($1, $2, $3, NULL, 'user', 'activo', 'google')
+    RETURNING id, rol, nickname, nombre, email, biografia, url_imagen, estado, auth_provider
+  `;
+  const { rows } = await pool.query(q, [nickname, nombre, email]);
+  return rows[0];
 };
 
 const createUser = async ({ nickname, nombre, email, passwordHash, rol = 'user' }) => {
@@ -452,7 +479,8 @@ const getLikesPrivacyById = async (id) => {
   return rows[0] || null;
 };
 
-export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
+export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers,
+  findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser,
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, updateUserEstadoById,
   deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,

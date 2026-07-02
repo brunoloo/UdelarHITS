@@ -1,6 +1,7 @@
 import { Router } from 'express';
-import { registerUser, verifyEmail, resendCode, loginUser, logoutUser, createUserByAdmin, forgotPassword, verifyResetToken, resetPassword } from '../controllers/user.controller.js';
+import { registerUser, verifyEmail, resendCode, loginUser, logoutUser, googleAuthCallback, createUserByAdmin, forgotPassword, verifyResetToken, resetPassword } from '../controllers/user.controller.js';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
+import passport from '../config/passport.js';
 
 const router = Router();
 
@@ -10,6 +11,20 @@ router.post('/verify-email', verifyEmail);           // Paso 2: confirma el cód
 router.post('/resend-code', resendCode);             // Reenvía el código a un registro pendiente
 router.post('/login', loginUser);
 router.post('/logout', protect, logoutUser);
+
+// Login con Google (OAuth 2.0)
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
+
+router.get('/google/callback', (req, res, next) => {
+  passport.authenticate('google', { session: false }, (err, user, info) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    if (err || !user) {
+      return res.redirect(`${frontendUrl}/login?error=email_taken`);
+    }
+    req.user = user;
+    return googleAuthCallback(req, res);
+  })(req, res, next);
+});
 
 // Recuperación de contraseña (pública)
 router.post('/forgot-password', forgotPassword);

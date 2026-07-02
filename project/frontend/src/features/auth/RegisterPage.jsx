@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
+import { GoogleAuthButton } from './GoogleAuthButton'
 import './auth.css'
 
 // Clave en localStorage para retomar el paso de verificación si el usuario sale
@@ -55,6 +56,7 @@ export function RegisterPage() {
   const { register, verifyEmail, resendCode } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [form, setForm] = useState({
     nombre: '',
@@ -81,6 +83,17 @@ export function RegisterPage() {
       setStep('verify')
     }
   }, [])
+
+  useEffect(() => {
+    if (searchParams.get('error') === 'email_taken') {
+      showToast('Ya existe una cuenta con ese email. Iniciá sesión con tu contraseña.', 'error')
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev)
+        next.delete('error')
+        return next
+      }, { replace: true })
+    }
+  }, [searchParams, setSearchParams, showToast])
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -308,6 +321,8 @@ export function RegisterPage() {
           </button>
         </form>
         )}
+
+        {step === 'form' && <GoogleAuthButton />}
 
         {step === 'verify' && (
         <form className="auth-form" onSubmit={handleVerify} noValidate>

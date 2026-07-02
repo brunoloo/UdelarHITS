@@ -11,9 +11,10 @@ import { createRateLimiter } from '../utils/rateLimiter.js';
 // Límite de envío de mails: como máximo 5 por dirección cada 15 minutos
 // (cubre registro/verificación/reenvío y recuperación de contraseña).
 const emailSendLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 5 });
-import { 
+import {
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
-  getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
+  findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser,
+  getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById,
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
   isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, updateBannerById,
   deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getPasswordHashById,
@@ -290,6 +291,12 @@ const loginUserService =  async ({nickname ,email, password}) => {
     // Chequeo de existencia
     if (!existingUser) {
         const err = new Error('El nombre o la contraseña no son correctas');
+        err.code = 'INVALID_CREDENTIALS';
+        throw err;
+    }
+
+    if (!existingUser.password_hash) {
+        const err = new Error('Esta cuenta usa Google para iniciar sesión. Usá el botón "Continuar con Google".');
         err.code = 'INVALID_CREDENTIALS';
         throw err;
     }
@@ -865,7 +872,59 @@ const toggleLikesPrivacyService = async (userId) => {
   return await updateLikesPrivacy(userId, newValue);
 };
 
-export { showMeService , requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, getUsersService, getUserProfileService,
+const sanitizeNicknameBase = (nombre) => {
+  const base = (nombre || 'usuario')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .slice(0, 20);
+  return base || 'usuario';
+};
+
+const generateNicknameFromGoogleProfile = async (nombre) => {
+  const base = sanitizeNicknameBase(nombre);
+  if (!(await isNicknameTaken(base))) return base;
+  for (let i = 0; i < 10; i++) {
+    const suffix = Math.floor(1000 + Math.random() * 9000);
+    const candidate = `${base}${suffix}`;
+    if (!(await isNicknameTaken(candidate))) return candidate;
+  }
+  return `${base}${Date.now() % 100000}`;
+};
+
+const handleGoogleAuthService = async (profile) => {
+  const email = profile?.emails?.[0]?.value?.trim().toLowerCase();
+  const nombre = profile?.displayName?.trim() || 'Usuario de Google';
+
+  if (!email) {
+    const err = new Error('No se pudo obtener el email de la cuenta de Google');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const existingUser = await findByEmailForGoogleAuth(email);
+
+  if (existingUser) {
+    if (existingUser.auth_provider === 'google' || existingUser.auth_provider === 'both') {
+      if (existingUser.estado !== 'activo') {
+        const err = new Error('Esta cuenta no está activa');
+        err.code = 'FORBIDDEN';
+        throw err;
+      }
+      return existingUser;
+    }
+
+    const err = new Error('Ya existe una cuenta con ese email, iniciá sesión con tu contraseña');
+    err.code = 'EMAIL_TAKEN_LOCAL';
+    throw err;
+  }
+
+  const nickname = await generateNicknameFromGoogleProfile(nombre);
+
+  return await createGoogleUser({ nickname, nombre, email });
+};
+
+export { showMeService , requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, handleGoogleAuthService, getUsersService, getUserProfileService,
   updateMeService, banUserService, activeUserService, 
   deleteUserService, followUserService, unfollowUserService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService,

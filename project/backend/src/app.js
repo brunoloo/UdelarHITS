@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import passport from './config/passport.js';
 
 // Import routes
 import API from './routes/API.js';
@@ -46,6 +47,9 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Cookie
 app.use(cookieParser());
+
+// Passport (solo Google OAuth) — sin sesiones, el proyecto usa JWT
+app.use(passport.initialize());
 
 // Body parsers con límite explícito
 app.use(express.json({ limit: '100kb' }));
