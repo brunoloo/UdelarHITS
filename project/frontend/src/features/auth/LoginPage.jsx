@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
@@ -27,7 +27,7 @@ export function LoginPage() {
   const { login, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
 
   // If a session is already active, go straight to home — NOT to any prior
   // route — so we can't bounce back into a page that redirected us here.
@@ -37,9 +37,11 @@ export function LoginPage() {
     }
   }, [authLoading, user, navigate])
 
+  const errorHandled = useRef(false)
   useEffect(() => {
     const errorParam = searchParams.get('error')
-    if (errorParam) {
+    if (errorParam && !errorHandled.current) {
+      errorHandled.current = true
       const messages = {
         email_taken: 'Ya existe una cuenta con ese email. Iniciá sesión con tu contraseña.',
         google_error: 'Hubo un error al iniciar sesión con Google. Intentá de nuevo.',
@@ -47,13 +49,9 @@ export function LoginPage() {
       if (messages[errorParam]) {
         showToast(messages[errorParam], 'error')
       }
-      setSearchParams(prev => {
-        const next = new URLSearchParams(prev)
-        next.delete('error')
-        return next
-      }, { replace: true })
+      navigate('/login', { replace: true })
     }
-  }, [searchParams, setSearchParams, showToast])
+  }, [searchParams, showToast, navigate])
 
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
