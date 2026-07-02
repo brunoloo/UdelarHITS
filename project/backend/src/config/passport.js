@@ -8,14 +8,14 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.GOOGLE_CALLBACK_URL,
   }, async (accessToken, refreshToken, profile, done) => {
+    const email = profile?.emails?.[0]?.value || '(sin email)';
     try {
       const user = await handleGoogleAuthService(profile);
+      console.log(`[Google OAuth] Login exitoso — email=${email}, userId=${user.id}, auth_provider=${user.auth_provider}`);
       return done(null, user);
     } catch (error) {
-      if (error.code === 'EMAIL_TAKEN_LOCAL') {
-        return done(null, false, { code: error.code, message: error.message });
-      }
-      return done(error);
+      console.error(`[Google OAuth] Error — email=${email}, code=${error.code || 'UNKNOWN'}, message=${error.message}`);
+      return done(null, false, { code: error.code || 'INTERNAL', message: error.message });
     }
   }));
 }

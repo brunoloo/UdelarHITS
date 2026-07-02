@@ -85,8 +85,15 @@ export function RegisterPage() {
   }, [])
 
   useEffect(() => {
-    if (searchParams.get('error') === 'email_taken') {
-      showToast('Ya existe una cuenta con ese email. Iniciá sesión con tu contraseña.', 'error')
+    const errorParam = searchParams.get('error')
+    if (errorParam) {
+      const messages = {
+        email_taken: 'Ya existe una cuenta con ese email. Iniciá sesión con tu contraseña.',
+        google_error: 'Hubo un error al registrarse con Google. Intentá de nuevo.',
+      }
+      if (messages[errorParam]) {
+        showToast(messages[errorParam], 'error')
+      }
       setSearchParams(prev => {
         const next = new URLSearchParams(prev)
         next.delete('error')
