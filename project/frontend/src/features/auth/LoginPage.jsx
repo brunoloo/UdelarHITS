@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { GoogleAuthButton } from './GoogleAuthButton'
@@ -28,14 +28,23 @@ export function LoginPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const [searchParams] = useSearchParams()
+  const location = useLocation()
 
-  // If a session is already active, go straight to home — NOT to any prior
-  // route — so we can't bounce back into a page that redirected us here.
   useEffect(() => {
     if (!authLoading && user) {
       navigate('/', { replace: true })
     }
   }, [authLoading, user, navigate])
+
+  const authMsgHandled = useRef(false)
+  useEffect(() => {
+    const label = location.state?.authMessage
+    if (label && !authMsgHandled.current) {
+      authMsgHandled.current = true
+      showToast(`Debes iniciar sesión para acceder ${label}.`, 'error')
+      navigate('/login', { replace: true, state: {} })
+    }
+  }, [location.state, showToast, navigate])
 
   const errorHandled = useRef(false)
   useEffect(() => {

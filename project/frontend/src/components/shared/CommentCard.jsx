@@ -256,7 +256,7 @@ export function CommentCard({
               </div>
             )}
             <CommentAttachments adjuntos={comment.adjuntos} />
-            {comment.encuesta && <PollDisplay encuesta={comment.encuesta} />}
+            {comment.encuesta && <PollDisplay encuesta={comment.encuesta} invalidateKey={invalidateKey} />}
             <div className="comment-actions">
               <ReactionButtons
                 contenidoId={comment.id}

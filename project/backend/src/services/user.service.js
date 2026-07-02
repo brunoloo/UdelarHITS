@@ -325,7 +325,10 @@ const loginUserService =  async ({nickname ,email, password}) => {
     nombre: existingUser.nombre,
     email: existingUser.email,
     biografia: existingUser.biografia,
-    url_imagen: existingUser.url_imagen
+    url_imagen: existingUser.url_imagen,
+    privado: existingUser.privado,
+    me_gusta_privado: existingUser.me_gusta_privado,
+    nickname_confirmado: existingUser.nickname_confirmado
     };
 
     return {user, token};
