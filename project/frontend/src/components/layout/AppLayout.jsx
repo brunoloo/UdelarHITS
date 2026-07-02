@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation, Navigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { Header } from './Header'
 import { LeftNav } from './LeftNav'
 import { Sidebar } from './Sidebar'
@@ -12,6 +13,12 @@ function ScrollToTop() {
 }
 
 export function AppLayout() {
+  const { user, loading } = useAuth()
+
+  if (!loading && user && user.nickname_confirmado === false) {
+    return <Navigate to="/setup-profile" replace />
+  }
+
   return (
     <>
       <ScrollToTop />

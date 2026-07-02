@@ -38,7 +38,7 @@ const findByEmailOrNicknameForLogin = async ({ nickname, email }) => {
 
 const findByEmailForGoogleAuth = async (email) => {
   const q = `
-    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, estado, auth_provider
+    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, estado, auth_provider, nickname_confirmado
     FROM usuario
     WHERE LOWER(email) = LOWER($1)
     LIMIT 1
@@ -55,12 +55,22 @@ const isNicknameTaken = async (nickname) => {
 
 const createGoogleUser = async ({ nickname, nombre, email }) => {
   const q = `
-    INSERT INTO usuario (nickname, nombre, email, password_hash, rol, estado, auth_provider)
-    VALUES ($1, $2, $3, NULL, 'user', 'activo', 'google')
-    RETURNING id, rol, nickname, nombre, email, biografia, url_imagen, estado, auth_provider
+    INSERT INTO usuario (nickname, nombre, email, password_hash, rol, estado, auth_provider, nickname_confirmado)
+    VALUES ($1, $2, $3, NULL, 'user', 'activo', 'google', FALSE)
+    RETURNING id, rol, nickname, nombre, email, biografia, url_imagen, estado, auth_provider, nickname_confirmado
   `;
   const { rows } = await pool.query(q, [nickname, nombre, email]);
   return rows[0];
+};
+
+const confirmNickname = async (userId, nickname) => {
+  const q = `
+    UPDATE usuario SET nickname = $2, nickname_confirmado = TRUE
+    WHERE id = $1
+    RETURNING id, rol, nickname, nombre, email, biografia, url_imagen, estado, auth_provider, nickname_confirmado
+  `;
+  const { rows } = await pool.query(q, [userId, nickname]);
+  return rows[0] || null;
 };
 
 const createUser = async ({ nickname, nombre, email, passwordHash, rol = 'user' }) => {
@@ -85,7 +95,7 @@ const getUsers = async () => {
 
 const getUserByNickname = async (nickname) => {
   const q = `
-    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado, me_gusta_privado
+    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado, me_gusta_privado, nickname_confirmado
     FROM usuario
     WHERE LOWER(nickname) = LOWER($1)
     LIMIT 1
@@ -480,7 +490,7 @@ const getLikesPrivacyById = async (id) => {
 };
 
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers,
-  findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser,
+  findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser, confirmNickname,
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, updateUserEstadoById,
   deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,

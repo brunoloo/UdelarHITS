@@ -20,4 +20,10 @@ ALTER TABLE usuario
 ALTER TABLE usuario
   ALTER COLUMN password_hash DROP NOT NULL;
 
+-- nickname_confirmado: los usuarios de Google empiezan con FALSE (nickname
+-- autogenerado) y pasan a TRUE cuando eligen su nickname en /setup-profile.
+-- Los usuarios locales siempre tienen TRUE (eligen su nickname al registrarse).
+ALTER TABLE usuario
+  ADD COLUMN IF NOT EXISTS nickname_confirmado BOOLEAN NOT NULL DEFAULT TRUE;
+
 COMMIT;

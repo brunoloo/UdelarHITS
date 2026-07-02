@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { registerUser, verifyEmail, resendCode, loginUser, logoutUser, googleAuthCallback, createUserByAdmin, forgotPassword, verifyResetToken, resetPassword } from '../controllers/user.controller.js';
+import { registerUser, verifyEmail, resendCode, loginUser, logoutUser, googleAuthCallback, setupNickname, createUserByAdmin, forgotPassword, verifyResetToken, resetPassword } from '../controllers/user.controller.js';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
 import passport from '../config/passport.js';
 
@@ -37,6 +37,9 @@ router.get('/google/callback', (req, res, next) => {
     return googleAuthCallback(req, res);
   })(req, res, next);
 });
+
+// Confirmar nickname después de registro con Google
+router.post('/setup-nickname', protect, setupNickname);
 
 // Recuperación de contraseña (pública)
 router.post('/forgot-password', forgotPassword);

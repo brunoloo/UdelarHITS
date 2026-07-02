@@ -13,7 +13,7 @@ import { createRateLimiter } from '../utils/rateLimiter.js';
 const emailSendLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 5 });
 import {
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
-  findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser,
+  findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser, confirmNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById,
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
   isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, updateBannerById,
@@ -404,7 +404,8 @@ const showMeService = async (nickname) => {
     url_banner: user.url_banner,
     fecha_creacion: user.fecha_creacion,
     privado: user.privado,
-    me_gusta_privado: user.me_gusta_privado
+    me_gusta_privado: user.me_gusta_privado,
+    nickname_confirmado: user.nickname_confirmado
   };
 
   return { user: safeUser, categories, followers, following };
@@ -873,7 +874,8 @@ const toggleLikesPrivacyService = async (userId) => {
 };
 
 const sanitizeNicknameBase = (nombre) => {
-  const base = (nombre || 'usuario')
+  const firstName = (nombre || 'usuario').split(/\s+/)[0];
+  const base = firstName
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '')
@@ -883,7 +885,6 @@ const sanitizeNicknameBase = (nombre) => {
 
 const generateNicknameFromGoogleProfile = async (nombre) => {
   const base = sanitizeNicknameBase(nombre);
-  if (!(await isNicknameTaken(base))) return base;
   for (let i = 0; i < 10; i++) {
     const suffix = Math.floor(1000 + Math.random() * 9000);
     const candidate = `${base}${suffix}`;
@@ -924,13 +925,44 @@ const handleGoogleAuthService = async (profile) => {
   return await createGoogleUser({ nickname, nombre, email });
 };
 
-export { showMeService , requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, handleGoogleAuthService, getUsersService, getUserProfileService,
-  updateMeService, banUserService, activeUserService, 
+const confirmNicknameService = async (userId, newNickname) => {
+  const normalized = newNickname?.trim().toLowerCase();
+
+  if (!normalized) {
+    const err = new Error('El nickname es obligatorio');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  if (normalized.length > 30) {
+    const err = new Error('El nickname no puede superar los 30 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  if (!/^[a-zA-ZÀ-ÿ0-9_-]+$/.test(newNickname.trim())) {
+    const err = new Error('El nickname solo puede contener letras, números, guiones y guiones bajos');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const ownerCheck = await pool.query(
+    'SELECT id FROM usuario WHERE LOWER(nickname) = LOWER($1) LIMIT 1', [normalized]
+  );
+  if (ownerCheck.rows.length > 0 && String(ownerCheck.rows[0].id) !== String(userId)) {
+    const err = new Error('Ese nickname ya está en uso');
+    err.code = 'NICKNAME_TAKEN';
+    throw err;
+  }
+
+  return await confirmNickname(userId, newNickname.trim());
+};
+
+export { showMeService , requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, handleGoogleAuthService, confirmNicknameService, getUsersService, getUserProfileService,
+  updateMeService, banUserService, activeUserService,
   deleteUserService, followUserService, unfollowUserService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService,
   updateAvatarService, searchUsersService, updateBannerService,
-  deleteAvatarService, deleteBannerService, getSuggestedUsersService, getMostActiveUsersService, 
-  changePasswordService, forgotPasswordService, verifyResetTokenService, resetPasswordService, 
+  deleteAvatarService, deleteBannerService, getSuggestedUsersService, getMostActiveUsersService,
+  changePasswordService, forgotPasswordService, verifyResetTokenService, resetPasswordService,
   deactivateAccountService, togglePrivacyService, toggleLikesPrivacyService };
 
 

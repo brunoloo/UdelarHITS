@@ -2,14 +2,15 @@ import { fileTypeFromBuffer } from 'file-type';
 
 import { generateToken } from '../utils/generateToken.js';
 import { requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, getUsersService, createUserByAdminService,
-    getUserProfileService, showMeService, updateMeService, 
+    getUserProfileService, showMeService, updateMeService,
     banUserService, activeUserService, deleteUserService,
   followUserService, unfollowUserService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService, updateAvatarService,
   searchUsersService, updateBannerService,
-  deleteBannerService, deleteAvatarService, getSuggestedUsersService, getMostActiveUsersService, 
-  changePasswordService, forgotPasswordService, verifyResetTokenService, 
-  resetPasswordService, deactivateAccountService, togglePrivacyService, toggleLikesPrivacyService } from '../services/user.service.js';
+  deleteBannerService, deleteAvatarService, getSuggestedUsersService, getMostActiveUsersService,
+  changePasswordService, forgotPasswordService, verifyResetTokenService,
+  resetPasswordService, deactivateAccountService, togglePrivacyService, toggleLikesPrivacyService,
+  confirmNicknameService } from '../services/user.service.js';
 
 const showMe = async (req, res) => {
   try {
@@ -478,10 +479,23 @@ const googleAuthCallback = async (req, res) => {
   });
 
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  return res.redirect(`${frontendUrl}/`);
+  const dest = req.user.nickname_confirmado === false ? '/setup-profile' : '/';
+  return res.redirect(`${frontendUrl}${dest}`);
 };
 
-export { showMe, registerUser, verifyEmail, resendCode, loginUser, logoutUser, googleAuthCallback, getUsers,
+const setupNickname = async (req, res) => {
+  try {
+    const { nickname } = req.body;
+    const updated = await confirmNicknameService(req.user.id, nickname);
+    return res.status(200).json({ ok: true, data: updated });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NICKNAME_TAKEN') return res.status(409).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
+
+export { showMe, registerUser, verifyEmail, resendCode, loginUser, logoutUser, googleAuthCallback, setupNickname, getUsers,
   getUserProfile, updateMe, banUser,
   activeUser, deleteUser, followUser, unfollowUser, acceptFollowRequest, rejectFollowRequest, checkFollowing, updateAvatar,
   searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList,
