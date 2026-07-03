@@ -154,7 +154,8 @@ export function Header() {
                 </Link>
                 <button
                   className="user-menu-item user-menu-item--saved-mobile"
-                  onClick={() => {
+                  onClick={e => {
+                    e.stopPropagation()
                     setMenuOpen(false)
                     window.dispatchEvent(new CustomEvent('toggle-saved-panel'))
                   }}

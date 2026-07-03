@@ -155,7 +155,7 @@ export function LeftNav() {
       // Los overlays (modales y menús de 3 puntos) son parte de la interacción
       // aunque se rendericen fuera del panel (el modal hace portal a body). No
       // deben cerrar el panel.
-      if (e.target.closest?.('.modal-backdrop, .comment-dropdown, .comment-menu-wrap, .bottom-nav')) return
+      if (e.target.closest?.('.modal-backdrop, .comment-dropdown, .comment-menu-wrap, .bottom-nav, .user-menu')) return
       const inNotif = panelRef.current?.contains(e.target) || notifBtnRef.current?.contains(e.target)
       const inSaved = savedPanelRef.current?.contains(e.target) || savedBtnRef.current?.contains(e.target)
       if (!inNotif && !inSaved) setActivePanel(null)

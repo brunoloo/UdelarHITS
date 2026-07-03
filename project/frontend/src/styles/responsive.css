@@ -118,6 +118,11 @@
     left: 12px;
   }
 
+  header .header-actions:not(:has(.user-chip)) {
+    left: auto;
+    right: 12px;
+  }
+
   header .header-actions .btn-primary {
     display: none;
   }
