@@ -166,4 +166,276 @@
     width: 100vw;
     z-index: 100;
   }
+
+  /* ══════════════════════════════════════════════════════════════
+     PART 2 — Content pages
+     ══════════════════════════════════════════════════════════════ */
+
+  /* ── CATEGORY CARD (Home feed) ── */
+  .category-card {
+    padding: 10px;
+  }
+
+  .category-header-row {
+    gap: 8px;
+  }
+
+  .category-icon-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  .last-activity-title {
+    max-width: 140px;
+  }
+
+  /* ── CREATE CATEGORY / TOPIC PANELS ── */
+  .create-cat-panel-body {
+    flex-direction: column;
+  }
+
+  .cc-avatar,
+  .ct-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .create-cat-panel-footer {
+    padding: 10px 12px;
+  }
+
+  /* ── CATEGORY PAGE HEADER ── */
+  .cat-header {
+    padding: 14px;
+  }
+
+  .cat-header-top {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cat-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+  }
+
+  .cat-title {
+    font-size: 18px;
+  }
+
+  .cat-desc {
+    font-size: 13px;
+  }
+
+  .cat-meta {
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  /* ── TABS (category + recent) ── */
+  .section-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0;
+  }
+
+  .section-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab {
+    padding: 10px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .recent-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .recent-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .recent-tab {
+    padding: 8px 12px;
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+
+  /* ── TOPIC CARD ── */
+  .topic-card {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .topic-footer {
+    gap: 10px;
+  }
+
+  /* ── TOPIC PAGE HEADER ── */
+  .topic-header {
+    padding: 14px;
+  }
+
+  .topic-header-title {
+    font-size: 18px;
+  }
+
+  .topic-header-top-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── COMMENT CARD ── */
+  .comment-card,
+  .comment-thread,
+  .comment-replies {
+    --comment-avatar-size: 28px;
+    --comment-gutter-width: 28px;
+    --comment-row-gap: 10px;
+  }
+
+  .comment-card {
+    padding: 12px;
+  }
+
+  .comment-body-top {
+    padding-right: 20px;
+  }
+
+  .comment-actions {
+    gap: 10px;
+  }
+
+  /* Thread indentation: 28px → 12px */
+  .comment-thread + .comment-replies {
+    padding-left: 12px;
+  }
+
+  /* ── COMMENT FORM ── */
+  .inline-reply-panel {
+    padding: 10px;
+  }
+
+  .inline-reply-actions {
+    flex-wrap: wrap;
+  }
+
+  .attach-btn--indent {
+    margin-left: 0;
+  }
+
+  /* ── COMMENT ATTACHMENTS ── */
+  .ca-images {
+    flex-direction: column;
+  }
+
+  .ca-image-link img {
+    max-height: 240px;
+  }
+
+  .ca-doc {
+    max-width: 100%;
+  }
+
+  /* ── POLL ── */
+  .poll-display {
+    max-width: 100%;
+  }
+
+  .poll-editor {
+    padding: 10px;
+  }
+
+  /* ── EXPLORE PAGE ── */
+  .explore-title,
+  .popular-title,
+  .recent-title {
+    font-size: 20px;
+  }
+
+  .hero-card {
+    padding: 20px 16px;
+  }
+
+  .hero-title {
+    font-size: 18px;
+  }
+
+  .hero-stats {
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .trending-card {
+    padding: 14px;
+  }
+
+  .trending-title {
+    font-size: 15px;
+  }
+
+  .carousel-arrow {
+    display: none;
+  }
+
+  .user-mini-card {
+    width: 110px;
+    padding: 12px 8px;
+  }
+
+  /* ── POPULAR PAGE ── */
+  .popular-card {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .popular-header-row {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* ── RECENT PAGE ── */
+  .recent-cat-card {
+    padding: 12px;
+  }
+
+  /* ── MODALS (edit, history, danger zone) ── */
+  .modal-danger-zone {
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .edit-body {
+    padding: 14px;
+  }
+
+  .history-carousel {
+    padding: 14px;
+  }
+
+  .confirm-delete-body {
+    padding: 14px;
+  }
+
+  .breadcrumb {
+    font-size: 12px;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .section-panel {
+    padding: 12px 0;
+  }
+
+  .feed-empty {
+    padding: 30px 16px;
+  }
 }
