@@ -126,17 +126,18 @@
 
   /* ── HIDE SIDEBAR ── */
   .sidebar {
-    display: none;
+    display: none !important;
   }
 
   /* ── PAGE LAYOUT ── */
   .page {
-    margin-left: 0;
-    padding: calc(var(--header-h) + 12px) 12px calc(56px + 12px) 12px;
+    margin-left: 0 !important;
+    padding: calc(var(--header-h) + 12px) 12px calc(56px + 12px) 12px !important;
+    gap: 0 !important;
   }
 
   .page > main {
-    width: 100%;
+    width: 100% !important;
   }
 
   /* ── NOTIFICATION PANEL — full-width overlay on mobile ── */
