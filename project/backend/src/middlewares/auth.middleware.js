@@ -8,7 +8,7 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ ok: false, message: 'No autenticado' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
     const { rows } = await pool.query(
       'SELECT id, rol, nickname, estado FROM usuario WHERE id = $1',
@@ -42,12 +42,21 @@ export const isAdmin = (req, res, next) => {
   next();
 };
 
-export const optionalAuth = (req, res, next) => {
+export const optionalAuth = async (req, res, next) => {
   const token = req.cookies?.jwt;
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = { id: decoded.id, rol: decoded.rol, nickname: decoded.nickname };
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+      // Verificar el usuario en BD: un token válido de una cuenta baneada/
+      // inactiva no debe otorgar personalización. rol/nickname salen de la BD,
+      // no del token (el payload solo lleva el id).
+      const { rows } = await pool.query(
+        "SELECT id, rol, nickname FROM usuario WHERE id = $1 AND estado = 'activo'",
+        [decoded.id]
+      );
+      if (rows[0]) {
+        req.user = { id: rows[0].id, rol: rows[0].rol, nickname: rows[0].nickname };
+      }
     } catch {
       // Token inválido o expirado — continuar como invitado
     }

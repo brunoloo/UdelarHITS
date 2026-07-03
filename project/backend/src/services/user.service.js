@@ -105,6 +105,11 @@ const requestRegistrationService = async ({ nickname, nombre, email, password })
     err.code = 'BAD_REQUEST';
     throw err;
   }
+  if (password.length > 128) {
+    const err = new Error('La contraseña no puede superar los 128 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
 
   // Chequeo de formato para correo electrónico (usamos una expresión regular: guiño a TeoLen)
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -692,6 +697,11 @@ const changePasswordService = async (userId, { currentPassword, newPassword }) =
     err.code = 'BAD_REQUEST';
     throw err;
   }
+  if (newPassword.length > 128) {
+    const err = new Error('La nueva contraseña no puede superar los 128 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
 
   const hash = await getPasswordHashById(userId);
   if (!hash) {
@@ -792,6 +802,11 @@ const resetPasswordService = async (token, newPassword) => {
 
   if (newPassword.length < 8) {
     const err = new Error('La contraseña debe tener al menos 8 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  if (newPassword.length > 128) {
+    const err = new Error('La contraseña no puede superar los 128 caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
   }

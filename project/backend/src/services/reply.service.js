@@ -150,7 +150,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       const topic = await getTopicById(tema_id);
       const urlTema = `/topic/${tema_id}?commentId=${created.contenido_id}`;
 
-      if (topic && topic.autor_id !== autorId) {
+      if (topic && topic.autor_id !== autorId && !(await isBlocked(autorId, topic.autor_id))) {
         await createNotification({
           usuario_id: topic.autor_id,
           tipo: 'comentario_en_tema',
@@ -164,7 +164,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       // Autor de la categoría: solo si es distinto del comentarista y del autor
       // del tema (para no duplicarle la notificación a la misma persona).
       const cat = topic ? await getCategoryById(topic.categoria_id) : null;
-      if (cat && cat.autor_id !== autorId && cat.autor_id !== topic.autor_id) {
+      if (cat && cat.autor_id !== autorId && cat.autor_id !== topic.autor_id && !(await isBlocked(autorId, cat.autor_id))) {
         await createNotification({
           usuario_id: cat.autor_id,
           tipo: 'comentario_en_tema_categoria',
@@ -177,7 +177,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     } else if (categoria_id) {
       // Comentario directo en la categoría → al autor de la categoría.
       const cat = await getCategoryById(categoria_id);
-      if (cat && cat.autor_id !== autorId) {
+      if (cat && cat.autor_id !== autorId && !(await isBlocked(autorId, cat.autor_id))) {
         await createNotification({
           usuario_id: cat.autor_id,
           tipo: 'comentario_en_categoria',
@@ -236,6 +236,8 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       for (const mu of mentionedUsers) {
         if (alreadyNotified.has(mu.id)) continue;
         alreadyNotified.add(mu.id);
+        // No notificar menciones a través de un bloqueo (en cualquier dirección).
+        if (await isBlocked(autorId, mu.id)) continue;
         await createNotification({
           usuario_id: mu.id,
           tipo: 'mencion_comentario',
@@ -426,6 +428,12 @@ const getRepliesByCommentIdService = async (commentId, userId = null) => {
 const updateReplyService = async (userId, userRol, replyId, { cuerpo }) => {
   if (!cuerpo?.trim()) {
     const err = new Error('El contenido no puede estar vacío');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (cuerpo.trim().length > 5000) {
+    const err = new Error('El comentario superó el máximo de 5000 caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
   }

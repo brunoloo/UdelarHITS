@@ -145,6 +145,12 @@ const updateTopicService = async (userId, topicId, { cuerpo }) => {
     throw err;
   }
 
+  if (cuerpo.trim().length > 750) {
+    const err = new Error('El contenido superó el máximo caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
   const topic = await getTopicById(topicId);
   if (!topic) {
     const err = new Error('Tema no encontrado');

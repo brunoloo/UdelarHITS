@@ -12,9 +12,16 @@ export function getIO() {
 export function initSocket(httpServer, app) {
   const allowedOrigins = (process.env.URL || '').split(',').map(s => s.trim()).filter(Boolean);
 
+  // Misma allowlist que el CORS de Express: se permite same-origin (sin header
+  // Origin) y los orígenes configurados en URL. Nunca se abre a cualquier
+  // origen con credentials, ni siquiera si la allowlist está vacía.
   const io = new Server(httpServer, {
     cors: {
-      origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+      origin: (origin, cb) => {
+        if (!origin) return cb(null, true);
+        if (allowedOrigins.includes(origin)) return cb(null, true);
+        return cb(new Error('Origen no permitido'));
+      },
       credentials: true,
     },
   });
@@ -25,7 +32,7 @@ export function initSocket(httpServer, app) {
       const token = cookies.jwt;
       if (!token) return next(new Error('No autenticado'));
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
       const { rows } = await pool.query(
         "SELECT id, rol, nickname FROM usuario WHERE id = $1 AND estado = 'activo'",
         [decoded.id]
