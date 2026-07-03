@@ -202,6 +202,14 @@ export function LeftNav() {
     return () => window.removeEventListener('toggle-notif-panel', handleToggle)
   })
 
+  useEffect(() => {
+    function handleToggleSaved() {
+      setActivePanel(prev => (prev === 'saved' ? null : 'saved'))
+    }
+    window.addEventListener('toggle-saved-panel', handleToggleSaved)
+    return () => window.removeEventListener('toggle-saved-panel', handleToggleSaved)
+  })
+
   function handleNotifClick(e) {
     e.preventDefault()
     e.stopPropagation()

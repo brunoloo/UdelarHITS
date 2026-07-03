@@ -58,24 +58,13 @@ export function BottomNav() {
         <span>Chat</span>
       </Link>
 
-      {user ? (
-        <Link to={`/user/${user.nickname}`} className={navClass(`/user/${user.nickname}`)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          <span>Perfil</span>
-        </Link>
-      ) : (
-        <Link to="/login" className={navClass('/login')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-            <polyline points="10 17 15 12 10 7" />
-            <line x1="15" y1="12" x2="3" y2="12" />
-          </svg>
-          <span>Login</span>
-        </Link>
-      )}
+      <Link to="/popular" className={navClass('/popular')}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+          <polyline points="17 6 23 6 23 12" />
+        </svg>
+        <span>Populares</span>
+      </Link>
     </nav>
   )
 }

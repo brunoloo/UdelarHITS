@@ -152,6 +152,15 @@ export function Header() {
                 >
                   Ver perfil
                 </Link>
+                <button
+                  className="user-menu-item user-menu-item--saved-mobile"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    window.dispatchEvent(new CustomEvent('toggle-saved-panel'))
+                  }}
+                >
+                  Guardados
+                </button>
                 <Link
                   to="/settings"
                   className="user-menu-item"

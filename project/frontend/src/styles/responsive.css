@@ -65,6 +65,28 @@
   line-height: 1;
 }
 
+/* ── MOBILE-ONLY ELEMENTS (hidden on desktop) ── */
+.user-menu-item--saved-mobile {
+  display: none;
+}
+
+.chat-mobile-back {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.chat-mobile-back:hover {
+  background: var(--bg);
+}
+
 /* ── RESPONSIVE — MOBILE ≤ 768px ─────────────────────────────── */
 
 @media (max-width: 768px) {
@@ -438,5 +460,123 @@
 
   .feed-empty {
     padding: 30px 16px;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     PART 3 — Navigation, profile, chat, auth
+     ══════════════════════════════════════════════════════════════ */
+
+  /* ── HEADER: "Guardados" menu item (mobile only) ── */
+  .user-menu-item--saved-mobile {
+    display: block;
+  }
+
+  /* ── PROFILE PAGE ── */
+  .profile-page {
+    max-width: none;
+  }
+
+  .profile-card {
+    border-radius: 12px;
+  }
+
+  .profile-banner {
+    border-radius: 12px 12px 0 0;
+  }
+
+  .profile-avatar {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  .profile-avatar-wrap {
+    bottom: -36px;
+    left: 14px;
+  }
+
+  .profile-actions {
+    height: 46px;
+    padding: 0 14px;
+  }
+
+  .profile-info {
+    padding: 2px 14px 20px;
+  }
+
+  .profile-social-row {
+    gap: 8px;
+  }
+
+  .profile-social-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .avatar-modal-img {
+    width: 260px;
+    height: 260px;
+  }
+
+  /* Profile tabs: scrollable, no word clipping */
+  .profile-page .section-tabs {
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .profile-page .section-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .profile-page .section-tabs .tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Category grid: single column on mobile */
+  .cat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── CHAT — single-panel layout ── */
+  .chat-sidebar {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .chat-layout:has(.chat-main .chat-header) .chat-sidebar {
+    display: none !important;
+  }
+
+  .chat-main:not(:has(.chat-header)) {
+    display: none !important;
+  }
+
+  .chat-mobile-back {
+    display: flex;
+  }
+
+  .chat-messages {
+    padding: 12px;
+  }
+
+  .chat-input-bar {
+    padding: 10px 12px;
+  }
+
+  .chat-bubble {
+    max-width: 80%;
+  }
+
+  /* ── AUTH PAGES ── */
+  .auth-card {
+    padding: 40px 20px;
+    border-radius: 12px;
+    max-width: none;
+  }
+
+  .auth-page {
+    padding: 20px 12px;
   }
 }
