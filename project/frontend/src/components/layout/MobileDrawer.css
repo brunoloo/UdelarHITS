@@ -1,0 +1,81 @@
+/* ── MOBILE DRAWER ──
+   Solo se muestra en mobile (≤768px). En desktop está completamente oculto,
+   por lo que no afecta el layout de escritorio. Reutiliza .nav-item y
+   .nav-divider del LeftNav para mantener la consistencia visual. */
+
+.mobile-drawer-edge,
+.mobile-drawer,
+.mobile-drawer-overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Columna indicadora angosta en el borde izquierdo, siempre visible. */
+  .mobile-drawer-edge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 72px;
+    padding: 0;
+    background: var(--surface);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+    box-shadow: var(--shadow-1);
+    cursor: pointer;
+    z-index: 90;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-drawer-edge svg {
+    flex-shrink: 0;
+  }
+
+  /* Overlay semitransparente que cubre el resto de la pantalla (el ~30%
+     restante y más), detrás del drawer. */
+  .mobile-drawer-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--modal-overlay);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 205;
+  }
+
+  .mobile-drawer-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Drawer: ocupa el 70% del ancho, slide-in desde la izquierda. */
+  .mobile-drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 70vw;
+    height: 100vh;
+    padding: calc(var(--header-h) + 8px) 8px 16px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    box-shadow: var(--shadow-2);
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 206;
+    overflow-y: auto;
+  }
+
+  .mobile-drawer.open {
+    transform: translateX(0);
+  }
+}

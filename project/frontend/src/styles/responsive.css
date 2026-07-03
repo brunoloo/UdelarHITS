@@ -552,8 +552,14 @@
     grid-template-columns: 1fr;
   }
 
+  /* El título de la categoría se mantiene en una sola línea con puntos
+     suspensivos: con white-space:normal un nombre largo sin espacios desbordaba
+     y overflow:hidden lo cortaba sin ellipsis. */
   .category-mini-title {
-    white-space: normal !important;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* ── CHAT — single-panel layout ── */

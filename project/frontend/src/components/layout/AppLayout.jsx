@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { Header } from './Header'
 import { LeftNav } from './LeftNav'
 import { BottomNav } from './BottomNav'
+import { MobileDrawer } from './MobileDrawer'
 import { Sidebar } from './Sidebar'
 import './AppLayout.css'
 
@@ -32,6 +33,7 @@ export function AppLayout() {
         <Sidebar />
       </div>
       <BottomNav />
+      <MobileDrawer />
     </>
   )
 }

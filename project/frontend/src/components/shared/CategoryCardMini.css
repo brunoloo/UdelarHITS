@@ -24,6 +24,9 @@
   align-items: center;
   gap: 10px;
   margin-bottom: 8px;
+  /* Permite que el título (flex:1) se encoja y aplique ellipsis en vez de
+     desbordar/cortarse cuando el nombre de la categoría es largo. */
+  min-width: 0;
 }
 
 .category-mini-icon {
