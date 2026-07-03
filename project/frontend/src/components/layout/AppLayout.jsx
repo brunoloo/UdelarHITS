@@ -3,6 +3,7 @@ import { Outlet, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { Header } from './Header'
 import { LeftNav } from './LeftNav'
+import { BottomNav } from './BottomNav'
 import { Sidebar } from './Sidebar'
 import './AppLayout.css'
 
@@ -30,6 +31,7 @@ export function AppLayout() {
         </main>
         <Sidebar />
       </div>
+      <BottomNav />
     </>
   )
 }

@@ -155,7 +155,7 @@ export function LeftNav() {
       // Los overlays (modales y menús de 3 puntos) son parte de la interacción
       // aunque se rendericen fuera del panel (el modal hace portal a body). No
       // deben cerrar el panel.
-      if (e.target.closest?.('.modal-backdrop, .comment-dropdown, .comment-menu-wrap')) return
+      if (e.target.closest?.('.modal-backdrop, .comment-dropdown, .comment-menu-wrap, .bottom-nav')) return
       const inNotif = panelRef.current?.contains(e.target) || notifBtnRef.current?.contains(e.target)
       const inSaved = savedPanelRef.current?.contains(e.target) || savedBtnRef.current?.contains(e.target)
       if (!inNotif && !inSaved) setActivePanel(null)
@@ -189,6 +189,18 @@ export function LeftNav() {
       setNotifLoading(false)
     }
   }
+
+  useEffect(() => {
+    function handleToggle() {
+      if (panelOpen) {
+        setActivePanel(null)
+      } else {
+        openPanel()
+      }
+    }
+    window.addEventListener('toggle-notif-panel', handleToggle)
+    return () => window.removeEventListener('toggle-notif-panel', handleToggle)
+  })
 
   function handleNotifClick(e) {
     e.preventDefault()
