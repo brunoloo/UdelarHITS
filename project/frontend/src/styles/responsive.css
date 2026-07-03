@@ -49,7 +49,7 @@
 
   /* ── HIDE DESKTOP LEFT NAV ── */
   .left-nav {
-    display: none;
+    display: none !important;
   }
 
   /* ── HIDE SIDEBAR ── */
