@@ -58,11 +58,15 @@ export function MobileDrawer() {
 
   // Notificaciones y Guardados abren sus paneles (manejados por LeftNav, que
   // sigue montado en mobile aunque esté oculto) y cierran el drawer.
-  function openNotif() {
+  // stopPropagation evita que el click llegue al listener de outside-click de
+  // LeftNav, que cerraría el panel apenas se abre (mismo patrón que el Header).
+  function openNotif(e) {
+    e.stopPropagation()
     setOpen(false)
     window.dispatchEvent(new CustomEvent('toggle-notif-panel'))
   }
-  function openSaved() {
+  function openSaved(e) {
+    e.stopPropagation()
     setOpen(false)
     window.dispatchEvent(new CustomEvent('toggle-saved-panel'))
   }
@@ -87,8 +91,16 @@ export function MobileDrawer() {
         onClick={() => setOpen(false)}
       />
 
-      {/* Drawer */}
-      <nav className={`mobile-drawer${open ? ' open' : ''}`} aria-hidden={!open}>
+      {/* Drawer. inert (en vez de aria-hidden) cuando está cerrado: bloquea foco
+          y lectores de pantalla sobre elementos focuseables sin la contradicción
+          de aria-hidden. */}
+      <nav className={`mobile-drawer${open ? ' open' : ''}`} inert={!open}>
+        {/* Logo institucional al tope (solo mobile) para no dejar un gap vacío
+            donde el drawer tapa al header. */}
+        <Link to="/" className="mobile-drawer-logo" onClick={() => setOpen(false)}>
+          Udelar<span>HITS</span>
+        </Link>
+
         <Link to="/" className={navClass('/')} onClick={() => setOpen(false)}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m3 11 9-8 9 8" />
