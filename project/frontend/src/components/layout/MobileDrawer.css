@@ -78,4 +78,11 @@
   .mobile-drawer.open {
     transform: translateX(0);
   }
+
+  /* "Quienes somos" y "Configuración" se anclan al fondo del drawer, igual que
+     el #nav-about (margin-top:auto) del LeftNav de desktop: el margin-top:auto
+     empuja este ítem y todo lo que le sigue (Configuración) al final. */
+  .mobile-drawer .mobile-drawer-about {
+    margin-top: auto;
+  }
 }
