@@ -104,7 +104,7 @@ Descripción: El caso de uso comienza cuando el usuario desea consultar sus cate
 
 Caso de uso: Modificar categoría 
 Actores: Usuario 
-Descripción: El caso de uso comienza cuando el usuario desea modificar una categoría. El sistema lista todas las categorías creadas por el usuario y el usuario selecciona una, el sistema permite editar su descripción y etiquetas. Cuando termina la edición, el sistema guarda los cambios. (El título no se modifica por integridad) [DONE][a_menos_de_historial_de_edición] 
+Descripción: El caso de uso comienza cuando el usuario desea modificar una categoría. El sistema lista todas las categorías creadas por el usuario y el usuario selecciona una, el sistema permite editar su descripción y etiquetas. Cuando termina la edición, el sistema guarda los cambios. (El título no se modifica por integridad) [DONE]
 
 Caso de uso: Eliminar categoría
 Actores: Usuario 
@@ -137,7 +137,7 @@ Descripción: El caso de uso comienza cuando el usuario desea consultar sus tema
 
 Caso de uso: Modificar tema 
 Actores: usuario del sistema 
-Descripción: El caso de uso comienza cuando el usuario desea modificar un tema. El sistema lista todos los temas y el usuario selecciona uno, el sistema permite editar su contenido. Cuando termina la edición, el sistema guarda los cambios. (El título no se modifica por integridad) [DONE][a_menos_de_historial_de_edición] 
+Descripción: El caso de uso comienza cuando el usuario desea modificar un tema. El sistema lista todos los temas y el usuario selecciona uno, el sistema permite editar su contenido. Cuando termina la edición, el sistema guarda los cambios. (El título no se modifica por integridad) [DONE]
 
 Caso de uso: Eliminar tema 
 Actores: Usuario 
@@ -162,7 +162,7 @@ Descripción: El caso de uso comienza cuando el usuario desea eliminar un coment
 
 Caso de uso: Editar comentario 
 Actores: Usuario 
-Descripción: El caso de uso comienza cuando el usuario desea editar su comentario publicado. El sistema lista sus comentarios por contenido y el usuario selecciona el comentario a editar, el contenido del comentario no puede ser vacío, al aceptar se editar el contenido del comentario, al cancelar se finaliza el caso de uso. [DONE][a_menos_de_historial_de_edición] 
+Descripción: El caso de uso comienza cuando el usuario desea editar su comentario publicado. El sistema lista sus comentarios por contenido y el usuario selecciona el comentario a editar, el contenido del comentario no puede ser vacío, al aceptar se editar el contenido del comentario, al cancelar se finaliza el caso de uso. [DONE]
 
 Caso de uso: Comentarios de usuario
 Actores: Administrador del sistema 
