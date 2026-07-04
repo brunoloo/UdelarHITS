@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../src/app.js';
 import pool from '../../src/config/db.js';
-import { registerAndLogin, createAdmin, createCategory } from '../helpers.js';
+import { registerAndLogin, createAdmin, createCategory, makeParticipant } from '../helpers.js';
 import { UMBRAL_REPORTES } from '../../src/config/reportConfig.js';
 
 const reportarCategoria = (categoria_id, cookie) =>
@@ -11,9 +11,10 @@ const apelarCategoria = (categoria_id, justificacion, cookie) =>
 const resolver = (apelacionId, decision, cookie) =>
   request(app).patch(`/api/appeals/${apelacionId}/resolve`).set('Cookie', cookie).send({ decision });
 
+// Tumba la categoría con UMBRAL participantes reportándola (reportes con peso).
 async function tumbarCategoria(categoriaId) {
   for (let i = 0; i < UMBRAL_REPORTES; i++) {
-    const u = await registerAndLogin();
+    const u = await makeParticipant(categoriaId);
     expect((await reportarCategoria(categoriaId, u.cookie)).status).toBe(201);
   }
 }

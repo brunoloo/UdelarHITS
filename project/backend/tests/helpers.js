@@ -124,6 +124,21 @@ export async function createTopic(cookie, over = {}) {
   return res.body.data;
 }
 
+// Registra un usuario y lo convierte en PARTICIPANTE de la categoría comentando
+// en ella (assignParticipantRole se dispara al crear el comentario). Se usa en
+// los tests del umbral de reportes: los reportes de participantes pesan más y
+// alcanzan la cota de ocultamiento (umbralParticipantes) en categorías chicas.
+// Devuelve la sesión { user, cookie, raw }.
+export async function makeParticipant(categoriaId) {
+  const u = await registerAndLogin();
+  const res = await request(app).post('/api/replies/create')
+    .set('Cookie', u.cookie).send({ cuerpo: 'participo', categoria_id: categoriaId });
+  if (res.status >= 400) {
+    throw new Error(`makeParticipant falló (${res.status}): ${JSON.stringify(res.body)}`);
+  }
+  return u;
+}
+
 // Crea un comentario autenticado. Por defecto cuelga de un tema (que crea si no se pasa).
 // Para comentar en categoría: pasá { categoria_id } en over (y no tema_id).
 // Para responder a otro comentario: pasá { comentario_padre_id, tema_id }.

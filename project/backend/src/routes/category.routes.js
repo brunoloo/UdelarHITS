@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
     getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory,
-    getEtiquetasList, getPopularCategoriesList, getCategoryEditHistory,
+    getEtiquetasList, getPopularCategoriesList, getTrendingTagsList, getCategoryEditHistory,
     pinCategoryItem, unpinCategoryItem,
     subscribeCategory, unsubscribeCategory, getCategorySubscription } from '../controllers/category.controller.js';
 import { protect, isAdmin } from '../middlewares/auth.middleware.js';
@@ -15,6 +15,7 @@ router.post('/create', protect, createCategory);         // Crear categoría
 router.get('/me', protect, getMyCategories);             // Ver mis categorías
 
 router.get('/popular', getPopularCategoriesList);        // Lista de categorías populares
+router.get('/trending-tags', getTrendingTagsList);       // Etiquetas en tendencia (actividad 7d, público)
 
 router.get('/:id/history', getCategoryEditHistory);      // Obtener edición de categoría
 router.patch('/:id', protect, updateCategory);           // Actualizar categoría

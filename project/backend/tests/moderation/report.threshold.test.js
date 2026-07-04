@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../src/app.js';
 import pool from '../../src/config/db.js';
-import { registerAndLogin, createTopic, createReply, createCategory } from '../helpers.js';
+import { registerAndLogin, createTopic, createReply, createCategory, makeParticipant } from '../helpers.js';
 import { UMBRAL_REPORTES } from '../../src/config/reportConfig.js';
 
 const idOf = (x) => x.id ?? x.contenido_id;
@@ -9,12 +9,13 @@ const idOf = (x) => x.id ?? x.contenido_id;
 const reportar = (contenido_id, motivo, cookie) =>
   request(app).post('/api/reports/create').set('Cookie', cookie).send({ contenido_id, motivo });
 
-// Registra N reportantes distintos y reporta el contenido con cada uno.
-// Devuelve la respuesta del ÚLTIMO reporte (el que cruza el umbral).
-async function reportarHastaUmbral(contenidoId, n = UMBRAL_REPORTES) {
+// Registra N reportantes PARTICIPANTES de la categoría (sus reportes pesan más)
+// y reporta el contenido con cada uno. En una categoría chica, UMBRAL_REPORTES
+// participantes alcanzan la cota de ocultamiento. Devuelve el último reporte.
+async function reportarHastaUmbral(contenidoId, categoriaId, n = UMBRAL_REPORTES) {
   let last;
   for (let i = 0; i < n; i++) {
-    const u = await registerAndLogin();
+    const u = await makeParticipant(categoriaId);
     last = await reportar(contenidoId, 'spam', u.cookie);
     expect(last.status).toBe(201);
   }
@@ -51,7 +52,7 @@ describe('reportes — inactivación de TEMA al cruzar umbral', () => {
 
     const contadorAntes = await contadorTemas(cat.id);
 
-    const res = await reportarHastaUmbral(tid);
+    const res = await reportarHastaUmbral(tid, cat.id);
     expect(res.body.data.inactivado).toBe(true);
 
     // tema: inactivo, marcado por reporte, directo
@@ -74,12 +75,13 @@ describe('reportes — inactivación de TEMA al cruzar umbral', () => {
 
   test('antes del umbral el tema sigue activo', async () => {
     const autor = await registerAndLogin();
-    const topic = await createTopic(autor.cookie);
+    const cat = await createCategory(autor.cookie);
+    const topic = await createTopic(autor.cookie, { categoria_id: cat.id });
     const tid = idOf(topic);
 
-    // un reporte menos que el umbral
+    // un reporte participante menos que el umbral
     for (let i = 0; i < UMBRAL_REPORTES - 1; i++) {
-      const u = await registerAndLogin();
+      const u = await makeParticipant(cat.id);
       const r = await reportar(tid, 'spam', u.cookie);
       expect(r.body.data.inactivado).toBe(false);
     }
@@ -91,7 +93,8 @@ describe('reportes — inactivación de COMENTARIO al cruzar umbral', () => {
   test('comentario reportado cae como placeholder, su subárbol queda intacto', async () => {
     const autor = await registerAndLogin();
     const otro = await registerAndLogin();
-    const topic = await createTopic(autor.cookie);
+    const cat = await createCategory(autor.cookie);
+    const topic = await createTopic(autor.cookie, { categoria_id: cat.id });
     const tid = idOf(topic);
 
     // comentario que vamos a reportar
@@ -101,7 +104,7 @@ describe('reportes — inactivación de COMENTARIO al cruzar umbral', () => {
     // una respuesta de OTRO usuario colgando del comentario (no debe caer)
     const respuesta = await createReply(otro.cookie, { tema_id: tid, comentario_padre_id: cid });
 
-    const res = await reportarHastaUmbral(cid);
+    const res = await reportarHastaUmbral(cid, cat.id);
     expect(res.body.data.inactivado).toBe(true);
 
     // el comentario: oculto, directo (apelable en 4.B)
@@ -123,10 +126,11 @@ describe('reportes — inactivación de COMENTARIO al cruzar umbral', () => {
 describe('reportes — robustez', () => {
   test('no se puede reportar un contenido ya inactivo → 400', async () => {
     const autor = await registerAndLogin();
-    const topic = await createTopic(autor.cookie);
+    const cat = await createCategory(autor.cookie);
+    const topic = await createTopic(autor.cookie, { categoria_id: cat.id });
     const tid = idOf(topic);
 
-    await reportarHastaUmbral(tid);
+    await reportarHastaUmbral(tid, cat.id);
     expect((await filaTema(tid)).estado).toBe('inactivo');
 
     // un nuevo usuario intenta reportar el tema ya caído

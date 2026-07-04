@@ -1,7 +1,7 @@
 import { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
   updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas, 
-  hardDeleteCategoryById, categoryHasContent, getPopularCategories,
+  hardDeleteCategoryById, categoryHasContent, getPopularCategories, getTrendingTags,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment,
   pinCategoryTopic, unpinCategoryTopic,
   subscribeCategory, unsubscribeCategory, isSubscribedCategory } from '../repositories/category.repository.js';
@@ -254,6 +254,12 @@ const getPopularCategoriesService = async (days, limit) => {
   return await getPopularCategories(safeDays, safeLimit);
 };
 
+const getTrendingTagsService = async (days, limit) => {
+  const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 30);
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 8, 1), 20);
+  return await getTrendingTags(safeDays, safeLimit);
+};
+
 const getCategoryEditHistoryService = async (categoryId) => {
   const id = Number(categoryId);
   if (!Number.isInteger(id) || id < 1) {
@@ -347,6 +353,6 @@ const isSubscribedCategoryService = async (userId, categoryId) => {
 export { createCategoryService, getCategoriesService, getCategoryByIdService, deactivateCategoryById,
   deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService,
   getActiveCategoriesService, getParticipantsByCategoryIdService, getEtiquetasService,
-  getPopularCategoriesService, getCategoryEditHistoryService,
+  getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,
   subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService };

@@ -1,5 +1,6 @@
-import { createReporte, countReportesByContenido, getContenidoTipo, createReporteCategoria, countReportesByCategoria } from '../repositories/report.repository.js';
-import { calcularUmbral } from '../config/reportConfig.js';
+import { createReporte, countReportesByContenido, getContenidoTipo, createReporteCategoria, countReportesByCategoria,
+  getReportBreakdownByContenido, getReportBreakdownByCategoria } from '../repositories/report.repository.js';
+import { debeInactivar } from '../config/reportConfig.js';
 import { inactivarTemaPorModeracion, inactivarComentarioPorModeracion, inactivarCategoriaPorModeracion } from './moderation.service.js';
 
 // =========================================================
@@ -87,21 +88,24 @@ async function reportarContenido(usuarioId, contenidoId, motivo) {
   }
  
   const total = await countReportesByContenido(id);
-  const umbral = calcularUmbral({ tipo: contenido.tipo, categoria_id: contenido.categoria_id });
- 
+  // Umbral dinámico dual: pondera reportes de participantes vs visitantes de la
+  // categoría del contenido. El desglose (n/p/v) NO se expone en la respuesta
+  // para no filtrar tamaño de participación ni internals de moderación.
+  const { n, p, v } = await getReportBreakdownByContenido(id);
+  const inactivar = debeInactivar({ n, p, v });
+
   let moderacion = null;
-  if (total >= umbral) {
+  if (inactivar) {
     if (contenido.tipo === 'tema') {
       moderacion = await inactivarTemaPorModeracion(id);
     } else {
       moderacion = await inactivarComentarioPorModeracion(id);
     }
   }
- 
+
   return {
     reporte,
     total_reportes: total,
-    umbral,
     inactivado: moderacion !== null && moderacion.action !== 'noop',
     moderacion
   };
@@ -153,17 +157,18 @@ async function reportarCategoria(usuarioId, categoriaId, motivo) {
   }
  
   const total = await countReportesByCategoria(categoriaId);
-  const umbral = calcularUmbral({ tipo: 'categoria', categoria_id: categoriaId });
- 
+  // Umbral dinámico dual sobre los participantes de la propia categoría.
+  const { n, p, v } = await getReportBreakdownByCategoria(categoriaId);
+  const inactivar = debeInactivar({ n, p, v });
+
   let moderacion = null;
-  if (total >= umbral) {
+  if (inactivar) {
     moderacion = await inactivarCategoriaPorModeracion(categoriaId);
   }
- 
+
   return {
     reporte,
     total_reportes: total,
-    umbral,
     inactivado: moderacion !== null && moderacion.action !== 'noop',
     moderacion
   };

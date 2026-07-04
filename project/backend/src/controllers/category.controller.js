@@ -2,7 +2,7 @@ import { createCategoryService, getCategoriesService, getCategoryByIdService,
   deleteCategoryService, activeCategoryService, getMyCategoriesService, 
   updateCategoryService, getActiveCategoriesService, 
   getParticipantsByCategoryIdService, getEtiquetasService, 
-  getPopularCategoriesService, getCategoryEditHistoryService,
+  getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,
   subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService } from '../services/category.service.js';
 
@@ -136,6 +136,15 @@ const getPopularCategoriesList = async (req, res, next) => {
   }
 };
 
+const getTrendingTagsList = async (req, res, next) => {
+  try {
+    const tags = await getTrendingTagsService(req.query.days, req.query.limit);
+    return res.status(200).json({ ok: true, data: tags });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getCategoryEditHistory = async (req, res) => {
   try {
     const history = await getCategoryEditHistoryService(req.params.id);
@@ -204,5 +213,5 @@ const getCategorySubscription = async (req, res) => {
 
 export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
   getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, getEtiquetasList,
-  getPopularCategoriesList, getCategoryEditHistory, pinCategoryItem, unpinCategoryItem,
+  getPopularCategoriesList, getTrendingTagsList, getCategoryEditHistory, pinCategoryItem, unpinCategoryItem,
   subscribeCategory, unsubscribeCategory, getCategorySubscription };

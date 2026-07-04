@@ -1,5 +1,8 @@
 import pool from '../config/db.js';
 import { encuestaSubquery } from './encuesta.repository.js';
+import { TRENDING } from '../config/trendingConfig.js';
+
+const { HALF_LIFE_HOURS, W_TEMA, W_COMENTARIO } = TRENDING;
 
 const createCategory = async ({ titulo, descripcion, autor_id, etiquetas }) => {
   const client = await pool.connect();
@@ -318,41 +321,75 @@ const hardDeleteCategoryById = async (id) => {
   await pool.query(q, [id]);
 };
 
+// Categorías "populares esta semana": ranking por actividad reciente ponderada
+// por recencia (decaimiento exponencial, ver trendingConfig). La PRESENCIA en
+// la lista depende del conteo crudo de temas/comentarios dentro de la ventana
+// (>0); el ORDEN depende del score ponderado, para que actividad reciente real
+// mande sobre categorías antiguas. Los conteos de tema y comentario se calculan
+// en CTEs separadas para evitar el producto cartesiano tema×comentario.
 const getPopularCategories = async (days = 7, limit = 20) => {
   const q = `
-    WITH actividad AS (
-      SELECT c.id AS categoria_id,
-        COUNT(DISTINCT CASE 
-          WHEN t.estado = 'activo' AND con_t.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
-          THEN t.contenido_id END) AS temas_recientes,
-        COUNT(DISTINCT CASE 
-          WHEN com.estado = 'visible' AND con_c.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
-          THEN com.contenido_id END) AS comentarios_recientes
-      FROM categoria c
-      LEFT JOIN tema t ON t.categoria_id = c.id
-      LEFT JOIN contenido con_t ON con_t.id = t.contenido_id
-      LEFT JOIN comentario com ON (com.categoria_id = c.id OR com.tema_id = t.contenido_id)
-      LEFT JOIN contenido con_c ON con_c.id = com.contenido_id
-      WHERE c.estado = 'activa'
-      GROUP BY c.id
-      HAVING COUNT(DISTINCT CASE 
-          WHEN t.estado = 'activo' AND con_t.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
-          THEN t.contenido_id END)
-        + COUNT(DISTINCT CASE 
-          WHEN com.estado = 'visible' AND con_c.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
-          THEN com.contenido_id END) > 0
+    WITH tema_act AS (
+      SELECT t.categoria_id,
+        COUNT(*) AS temas_recientes,
+        SUM(POWER(0.5, GREATEST(EXTRACT(EPOCH FROM (NOW() - con.fecha_creacion)) / 3600.0, 0) / $3)) AS score
+      FROM tema t
+      JOIN contenido con ON con.id = t.contenido_id
+      WHERE t.estado = 'activo'
+        AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+      GROUP BY t.categoria_id
+    ),
+    com_act AS (
+      SELECT COALESCE(com.categoria_id, tt.categoria_id) AS categoria_id,
+        COUNT(*) AS comentarios_recientes,
+        SUM(POWER(0.5, GREATEST(EXTRACT(EPOCH FROM (NOW() - con.fecha_creacion)) / 3600.0, 0) / $3)) AS score
+      FROM comentario com
+      JOIN contenido con ON con.id = com.contenido_id
+      LEFT JOIN tema tt ON tt.contenido_id = com.tema_id
+      WHERE com.estado = 'visible'
+        AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+      GROUP BY COALESCE(com.categoria_id, tt.categoria_id)
     )
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
       c.fecha_creacion, u.nickname AS autor_nickname,
       ARRAY_AGG(DISTINCT ce.etiqueta_valor) FILTER (WHERE ce.etiqueta_valor IS NOT NULL) AS etiquetas,
-      a.temas_recientes, a.comentarios_recientes,
-      (a.temas_recientes + a.comentarios_recientes) AS actividad_total
-    FROM actividad a
-    JOIN categoria c ON c.id = a.categoria_id
+      COALESCE(ta.temas_recientes, 0) AS temas_recientes,
+      COALESCE(ca.comentarios_recientes, 0) AS comentarios_recientes,
+      (COALESCE(ta.temas_recientes, 0) + COALESCE(ca.comentarios_recientes, 0)) AS actividad_total,
+      (COALESCE(ta.score, 0) * $4 + COALESCE(ca.score, 0) * $5) AS actividad_score
+    FROM categoria c
     JOIN usuario u ON u.id = c.autor_id
+    LEFT JOIN tema_act ta ON ta.categoria_id = c.id
+    LEFT JOIN com_act ca ON ca.categoria_id = c.id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
-    GROUP BY c.id, u.nickname, a.temas_recientes, a.comentarios_recientes
-    ORDER BY actividad_total DESC, c.fecha_creacion DESC
+    WHERE c.estado = 'activa'
+      AND (COALESCE(ta.temas_recientes, 0) + COALESCE(ca.comentarios_recientes, 0)) > 0
+    GROUP BY c.id, u.nickname, ta.temas_recientes, ta.score, ca.comentarios_recientes, ca.score
+    ORDER BY actividad_score DESC, c.fecha_creacion DESC
+    LIMIT $2
+  `;
+  const { rows } = await pool.query(q, [days, limit, HALF_LIFE_HOURS, W_TEMA, W_COMENTARIO]);
+  return rows;
+};
+
+// Etiquetas en tendencia: mide actividad REAL de los últimos `days` días —
+// temas activos creados en la ventana, agrupados por la(s) etiqueta(s) de su
+// categoría. Ordena por cantidad de temas recientes (desempate por comentarios
+// recientes en esos temas). Reemplaza el conteo estático de frecuencia.
+const getTrendingTags = async (days = 7, limit = 8) => {
+  const q = `
+    SELECT ce.etiqueta_valor AS etiqueta,
+      COUNT(DISTINCT t.contenido_id) AS temas_recientes,
+      COUNT(com.contenido_id) AS comentarios_recientes
+    FROM categoria_etiqueta ce
+    JOIN categoria c ON c.id = ce.categoria_id AND c.estado = 'activa'
+    JOIN tema t ON t.categoria_id = ce.categoria_id AND t.estado = 'activo'
+    JOIN contenido con ON con.id = t.contenido_id
+      AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+    LEFT JOIN comentario com ON com.tema_id = t.contenido_id AND com.estado = 'visible'
+    GROUP BY ce.etiqueta_valor
+    HAVING COUNT(DISTINCT t.contenido_id) > 0
+    ORDER BY temas_recientes DESC, comentarios_recientes DESC, ce.etiqueta_valor ASC
     LIMIT $2
   `;
   const { rows } = await pool.query(q, [days, limit]);
@@ -362,7 +399,7 @@ const getPopularCategories = async (days = 7, limit = 20) => {
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
   updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId,
-  getEtiquetas, categoryHasContent, hardDeleteCategoryById, getPopularCategories,
+  getEtiquetas, categoryHasContent, hardDeleteCategoryById, getPopularCategories, getTrendingTags,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment, pinCategoryTopic, unpinCategoryTopic,
   subscribeCategory, unsubscribeCategory, isSubscribedCategory, getCategorySubscribers };
 

@@ -1,16 +1,17 @@
 import request from 'supertest';
 import app from '../../src/app.js';
 import pool from '../../src/config/db.js';
-import { registerAndLogin, createCategory } from '../helpers.js';
+import { registerAndLogin, createCategory, makeParticipant } from '../helpers.js';
 import { UMBRAL_REPORTES } from '../../src/config/reportConfig.js';
 
 const reportarCategoria = (categoria_id, motivo, cookie) =>
   request(app).post('/api/reports/create').set('Cookie', cookie).send({ categoria_id, motivo });
 
+// Reporta con UMBRAL_REPORTES participantes de la categoría (reportes con peso).
 async function tumbarCategoriaPorReportes(categoriaId) {
   let last;
   for (let i = 0; i < UMBRAL_REPORTES; i++) {
-    const u = await registerAndLogin();
+    const u = await makeParticipant(categoriaId);
     last = await reportarCategoria(categoriaId, 'spam', u.cookie);
     expect(last.status).toBe(201);
   }
@@ -87,7 +88,7 @@ describe('reportes de categoría — inactivación al cruzar umbral', () => {
     const cat = await createCategory(autor.cookie);
 
     for (let i = 0; i < UMBRAL_REPORTES - 1; i++) {
-      const u = await registerAndLogin();
+      const u = await makeParticipant(cat.id);
       const r = await reportarCategoria(cat.id, 'spam', u.cookie);
       expect(r.body.data.inactivado).toBe(false);
     }

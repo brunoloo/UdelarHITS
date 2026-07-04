@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../src/app.js';
 import pool from '../../src/config/db.js';
-import { registerAndLogin, createAdmin, createTopic, createReply, createCategory } from '../helpers.js';
+import { registerAndLogin, createAdmin, createTopic, createReply, createCategory, makeParticipant } from '../helpers.js';
 import { UMBRAL_REPORTES } from '../../src/config/reportConfig.js';
 
 const idOf = (x) => x.id ?? x.contenido_id;
@@ -13,9 +13,21 @@ const apelar = (contenido_id, justificacion, cookie) =>
 const resolver = (apelacionId, decision, cookie) =>
   request(app).patch(`/api/appeals/${apelacionId}/resolve`).set('Cookie', cookie).send({ decision });
 
+async function categoriaDeContenido(contenidoId) {
+  const { rows } = await pool.query(
+    `SELECT COALESCE(t.categoria_id, c.categoria_id, tt.categoria_id) AS categoria_id
+     FROM contenido con
+     LEFT JOIN tema t ON t.contenido_id = con.id
+     LEFT JOIN comentario c ON c.contenido_id = con.id
+     LEFT JOIN tema tt ON tt.contenido_id = c.tema_id
+     WHERE con.id = $1`, [contenidoId]);
+  return rows[0]?.categoria_id;
+}
+
 async function tumbarPorReportes(contenidoId) {
+  const catId = await categoriaDeContenido(contenidoId);
   for (let i = 0; i < UMBRAL_REPORTES; i++) {
-    const u = await registerAndLogin();
+    const u = await makeParticipant(catId);
     expect((await reportar(contenidoId, u.cookie)).status).toBe(201);
   }
 }

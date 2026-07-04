@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../src/app.js';
 import pool from '../../src/config/db.js';
-import { registerAndLogin, createTopic, createReply } from '../helpers.js';
+import { registerAndLogin, createTopic, createReply, makeParticipant } from '../helpers.js';
 import { UMBRAL_REPORTES } from '../../src/config/reportConfig.js';
 
 const idOf = (x) => x.id ?? x.contenido_id;
@@ -12,10 +12,24 @@ const reportar = (contenido_id, cookie) =>
 const apelar = (contenido_id, justificacion, cookie) =>
   request(app).post('/api/appeals/create').set('Cookie', cookie).send({ contenido_id, justificacion });
 
-// Reporta el contenido con UMBRAL usuarios distintos para tumbarlo por moderación.
+// Resuelve la categoría de un contenido (tema/comentario) para poder crear
+// reportantes participantes de esa categoría.
+async function categoriaDeContenido(contenidoId) {
+  const { rows } = await pool.query(
+    `SELECT COALESCE(t.categoria_id, c.categoria_id, tt.categoria_id) AS categoria_id
+     FROM contenido con
+     LEFT JOIN tema t ON t.contenido_id = con.id
+     LEFT JOIN comentario c ON c.contenido_id = con.id
+     LEFT JOIN tema tt ON tt.contenido_id = c.tema_id
+     WHERE con.id = $1`, [contenidoId]);
+  return rows[0]?.categoria_id;
+}
+
+// Reporta el contenido con UMBRAL participantes de su categoría para tumbarlo.
 async function tumbarPorReportes(contenidoId) {
+  const catId = await categoriaDeContenido(contenidoId);
   for (let i = 0; i < UMBRAL_REPORTES; i++) {
-    const u = await registerAndLogin();
+    const u = await makeParticipant(catId);
     const r = await reportar(contenidoId, u.cookie);
     expect(r.status).toBe(201);
   }
