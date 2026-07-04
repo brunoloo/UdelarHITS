@@ -37,6 +37,12 @@
     flex-shrink: 0;
   }
 
+  /* Ocultar la columna indicadora cuando hay un panel abierto (notificaciones o
+     guardados) para no obstruir la vista. */
+  body:has(.notif-panel.open) .mobile-drawer-edge {
+    display: none;
+  }
+
   /* Overlay semitransparente que cubre el resto de la pantalla (el ~30%
      restante y más), detrás del drawer. */
   .mobile-drawer-overlay {

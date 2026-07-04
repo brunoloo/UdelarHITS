@@ -71,19 +71,28 @@ export function MobileDrawer() {
     window.dispatchEvent(new CustomEvent('toggle-saved-panel'))
   }
 
+  // La columna indicadora solo se muestra en las vistas principales (home,
+  // populares, recientes, explorar) para no obstruir la lectura en el resto.
+  // El swipe para abrir el drawer sigue funcionando en todas las rutas.
+  const showEdge =
+    pathname === '/' ||
+    ['/popular', '/recent', '/explore'].some((r) => pathname.startsWith(r))
+
   return (
     <>
       {/* Columna indicadora en el borde izquierdo */}
-      <button
-        className="mobile-drawer-edge"
-        type="button"
-        aria-label="Abrir menú de navegación"
-        onClick={() => setOpen(true)}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </button>
+      {showEdge && (
+        <button
+          className="mobile-drawer-edge"
+          type="button"
+          aria-label="Abrir menú de navegación"
+          onClick={() => setOpen(true)}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      )}
 
       {/* Overlay semitransparente sobre el resto de la pantalla */}
       <div

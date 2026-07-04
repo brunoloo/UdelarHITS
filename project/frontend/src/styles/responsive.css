@@ -115,10 +115,6 @@
 
   header .header-actions {
     position: absolute;
-    left: 12px;
-  }
-
-  header .header-actions:not(:has(.user-chip)) {
     left: auto;
     right: 12px;
   }
@@ -147,8 +143,8 @@
   }
 
   header .user-menu {
-    left: 0;
-    right: auto;
+    left: auto;
+    right: 0;
   }
 
   /* ── HIDE DESKTOP LEFT NAV ── */

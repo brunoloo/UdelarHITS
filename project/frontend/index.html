@@ -5,15 +5,9 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UdelarHITS</title>
-    <!-- Anti-flash: debe ejecutarse ANTES de que el navegador pinte — sin defer ni async -->
-    <script>
-      (function () {
-        var saved = localStorage.getItem('theme');
-        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var dark = saved === 'dark' || ((saved === 'system' || !saved) && prefersDark);
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-      })();
-    </script>
+    <!-- Anti-flash: debe ejecutarse ANTES de que el navegador pinte — sin defer ni
+         async. Externo (no inline) para cumplir el CSP script-src 'self'. -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
