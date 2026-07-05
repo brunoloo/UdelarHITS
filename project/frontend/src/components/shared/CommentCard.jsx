@@ -25,6 +25,7 @@ export function CommentCard({
   comment,
   role = 'reply',
   showThreadLine = false,
+  highlighted = false,
   onReply,
   onDrillDown,
   onCardClick,
@@ -81,6 +82,7 @@ export function CommentCard({
     if (role === 'ancestor') cardClasses.push('comment-card--ancestor')
     if (role === 'ancestor' && showThreadLine) cardClasses.push('comment-card--has-line')
     if (onCardClick || (role === 'reply' && replyCount > 0)) cardClasses.push('comment-card--clickable')
+    if (highlighted) cardClasses.push('comment-card--highlighted')
 
     const hiddenOnClick = onCardClick
       ? () => onCardClick(comment)
@@ -89,6 +91,7 @@ export function CommentCard({
     return (
       <div
         className={cardClasses.join(' ')}
+        data-comment-id={comment.id}
         onClick={hiddenOnClick}
       >
         <div className="comment-gutter">
@@ -123,6 +126,7 @@ export function CommentCard({
   if (role === 'ancestor') cardClasses.push('comment-card--ancestor')
   if (role === 'ancestor' && showThreadLine) cardClasses.push('comment-card--has-line')
   if (role === 'reply') cardClasses.push('comment-card--clickable')
+  if (highlighted) cardClasses.push('comment-card--highlighted')
 
   function handleCardClick(e) {
     if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.inline-reply-panel')) return
@@ -185,7 +189,7 @@ export function CommentCard({
 
   return (
     <>
-    <div className={cardClasses.join(' ')} onClick={handleCardClick}>
+    <div className={cardClasses.join(' ')} data-comment-id={comment.id} onClick={handleCardClick}>
       <div className="comment-gutter">
         <UserAvatar
           url_imagen={autor.url_imagen}
