@@ -52,7 +52,7 @@ const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }
     throw err;
   }
 
-  if (descripcion.trim().length > 500) {
+  if (descripcion.trim().length > 750) {
     const err = new Error('La descripción superó el máximo de caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
@@ -201,7 +201,7 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
     throw err;
   }
 
-  if (descripcion?.length > 500) {
+  if (descripcion?.length > 750) {
     const err = new Error('La descripción superó el máximo de caracteres');
     err.code = 'BAD_REQUEST';
     throw err;

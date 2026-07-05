@@ -267,12 +267,12 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved, onDeleteRequest }) {
         <div className="edit-field">
           <div className="edit-field-label">
             <span>Descripción (*)</span>
-            <span className={`edit-field-counter${desc.length >= 500 ? ' limit' : ''}`}>
-              {desc.length} / 500
+            <span className={`edit-field-counter${desc.length >= 730 ? ' limit' : ''}`}>
+              {desc.length} / 750
             </span>
           </div>
           <textarea
-            maxLength={500}
+            maxLength={750}
             rows={3}
             value={desc}
             onChange={e => setDesc(e.target.value)}

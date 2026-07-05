@@ -35,7 +35,7 @@ const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => 
     throw err;
   }
 
-  if (cuerpo.trim().length > 750) {
+  if (cuerpo.trim().length > 500) {
     const err = new Error('El contenido superó el máximo caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
@@ -145,7 +145,7 @@ const updateTopicService = async (userId, topicId, { cuerpo }) => {
     throw err;
   }
 
-  if (cuerpo.trim().length > 750) {
+  if (cuerpo.trim().length > 500) {
     const err = new Error('El contenido superó el máximo caracteres');
     err.code = 'BAD_REQUEST';
     throw err;

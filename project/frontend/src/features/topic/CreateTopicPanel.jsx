@@ -97,10 +97,10 @@ export function CreateTopicPanel({ categoryId, user }) {
             <div className="edit-field">
               <div className="edit-field-label">
                 <span>Contenido (*)</span>
-                <span className="edit-field-counter">{cuerpo.length} / 750</span>
+                <span className="edit-field-counter">{cuerpo.length} / 500</span>
               </div>
               <textarea
-                maxLength={750}
+                maxLength={500}
                 rows={4}
                 placeholder="Desarrollá tu idea"
                 value={cuerpo}

@@ -112,12 +112,12 @@ export function CreateCategoryPanel() {
               <div className="edit-field">
                 <div className="edit-field-label">
                   <span>Descripción (*)</span>
-                  <span className={`edit-field-counter${descripcion.length >= 480 ? ' limit' : ''}`}>
-                    {descripcion.length} / 500
+                  <span className={`edit-field-counter${descripcion.length >= 730 ? ' limit' : ''}`}>
+                    {descripcion.length} / 750
                   </span>
                 </div>
                 <textarea
-                  maxLength={500}
+                  maxLength={750}
                   rows={3}
                   placeholder="¿De qué va esta categoría?"
                   value={descripcion}

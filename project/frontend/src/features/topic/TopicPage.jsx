@@ -351,10 +351,10 @@ export function TopicPage() {
           <div className="edit-field">
             <div className="edit-field-label">
               <span>Contenido</span>
-              <span className="edit-field-counter">{editCuerpo.length} / 750</span>
+              <span className="edit-field-counter">{editCuerpo.length} / 500</span>
             </div>
             <textarea
-              maxLength={750}
+              maxLength={500}
               rows={5}
               value={editCuerpo}
               onChange={e => setEditCuerpo(e.target.value)}
