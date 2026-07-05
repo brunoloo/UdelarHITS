@@ -33,10 +33,10 @@ describe('validación de creación de tema', () => {
     expect(res.status).toBe(400);
   });
 
-  test('cuerpo de más de 750 caracteres → 400', async () => {
+  test('cuerpo de más de 500 caracteres → 400', async () => {
     const u = await registerAndLogin();
     const cat = await createCategory(u.cookie);
-    const res = await crear(u.cookie, { categoria_id: cat.id, titulo: 'Título', cuerpo: 'a'.repeat(751) });
+    const res = await crear(u.cookie, { categoria_id: cat.id, titulo: 'Título', cuerpo: 'a'.repeat(501) });
     expect(res.status).toBe(400);
   });
 
@@ -86,5 +86,49 @@ describe('validación de creación de tema', () => {
     // mismo título, otra categoría: debe permitirse
     const enCat2 = await crear(u.cookie, { categoria_id: cat2.id, titulo: TITULO, cuerpo: 'cuerpo' });
     expect(enCat2.status).toBe(201);
+  });
+});
+
+const editar = (cookie, id, body) =>
+  request(app).patch(`/api/topics/${id}`).set('Cookie', cookie).send(body);
+
+describe('validación de edición de tema', () => {
+  test('cuerpo vacío → 400', async () => {
+    const u = await registerAndLogin();
+    const topic = await createTopic(u.cookie);
+    const id = topic.id ?? topic.contenido_id;
+    const res = await editar(u.cookie, id, { cuerpo: '   ' });
+    expect(res.status).toBe(400);
+  });
+
+  test('cuerpo de más de 500 caracteres → 400', async () => {
+    const u = await registerAndLogin();
+    const topic = await createTopic(u.cookie);
+    const id = topic.id ?? topic.contenido_id;
+    const res = await editar(u.cookie, id, { cuerpo: 'a'.repeat(501) });
+    expect(res.status).toBe(400);
+  });
+
+  test('edición válida → 200', async () => {
+    const u = await registerAndLogin();
+    const topic = await createTopic(u.cookie);
+    const id = topic.id ?? topic.contenido_id;
+    const res = await editar(u.cookie, id, { cuerpo: 'Cuerpo editado' });
+    expect(res.status).toBe(200);
+  });
+
+  test('editar tema ajeno → 403', async () => {
+    const a = await registerAndLogin();
+    const b = await registerAndLogin();
+    const topic = await createTopic(a.cookie);
+    const id = topic.id ?? topic.contenido_id;
+    const res = await editar(b.cookie, id, { cuerpo: 'Intruso' });
+    expect(res.status).toBe(403);
+  });
+
+  test('tema inexistente → 404', async () => {
+    const u = await registerAndLogin();
+    const res = await editar(u.cookie, 999999, { cuerpo: 'Nada' });
+    expect(res.status).toBe(404);
   });
 });
