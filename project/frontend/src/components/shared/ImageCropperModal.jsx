@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop'
+import ReactCrop, { centerCrop, makeAspectCrop, convertToPixelCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import { Modal } from '../ui/Modal'
 import './ImageCropperModal.css'
@@ -17,9 +17,11 @@ function cropImageToBlob(image, crop, outputWidth, outputHeight) {
   canvas.width = outputWidth
   canvas.height = outputHeight
   const ctx = canvas.getContext('2d')
+  ctx.imageSmoothingQuality = 'high'
 
-  const scaleX = image.naturalWidth / image.width
-  const scaleY = image.naturalHeight / image.height
+  const { width: displayW, height: displayH } = image.getBoundingClientRect()
+  const scaleX = image.naturalWidth / displayW
+  const scaleY = image.naturalHeight / displayH
 
   ctx.drawImage(
     image,
@@ -51,13 +53,7 @@ export function ImageCropperModal({ isOpen, onClose, imageSrc, aspect = 1, circu
     imgRef.current = e.currentTarget
     const centered = getCenteredCrop(width, height, aspect)
     setCrop(centered)
-    setCompletedCrop({
-      unit: 'px',
-      x: (centered.x / 100) * width,
-      y: (centered.y / 100) * height,
-      width: (centered.width / 100) * width,
-      height: (centered.height / 100) * height,
-    })
+    setCompletedCrop(convertToPixelCrop(centered, width, height))
   }, [aspect])
 
   async function handleConfirm() {
