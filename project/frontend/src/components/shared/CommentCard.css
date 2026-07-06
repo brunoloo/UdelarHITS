@@ -29,6 +29,10 @@
   align-items: center;
 }
 
+.comment-gutter a {
+  line-height: 0;
+}
+
 .comment-avatar--empty {
   width: var(--comment-avatar-size);
   height: var(--comment-avatar-size);

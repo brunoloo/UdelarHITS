@@ -191,12 +191,22 @@ export function CommentCard({
     <>
     <div className={cardClasses.join(' ')} data-comment-id={comment.id} onClick={handleCardClick}>
       <div className="comment-gutter">
-        <UserAvatar
-          url_imagen={autor.url_imagen}
-          nickname={autor.nickname}
-          size="md"
-          inactive={autor.isInactive}
-        />
+        {autor.isInactive ? (
+          <UserAvatar
+            url_imagen={autor.url_imagen}
+            nickname={autor.nickname}
+            size="md"
+            inactive
+          />
+        ) : (
+          <Link to={`/user/${encodeURIComponent(autor.nickname)}`} onClick={e => e.stopPropagation()}>
+            <UserAvatar
+              url_imagen={autor.url_imagen}
+              nickname={autor.nickname}
+              size="md"
+            />
+          </Link>
+        )}
       </div>
       {/* Menú anclado a la esquina sup. derecha de la card: así el badge
           "Fijado" no lo desplaza hacia abajo. */}
