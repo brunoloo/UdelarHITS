@@ -51,7 +51,13 @@ export function ImageCropperModal({ isOpen, onClose, imageSrc, aspect = 1, circu
     imgRef.current = e.currentTarget
     const centered = getCenteredCrop(width, height, aspect)
     setCrop(centered)
-    setCompletedCrop(centered)
+    setCompletedCrop({
+      unit: 'px',
+      x: (centered.x / 100) * width,
+      y: (centered.y / 100) * height,
+      width: (centered.width / 100) * width,
+      height: (centered.height / 100) * height,
+    })
   }, [aspect])
 
   async function handleConfirm() {
