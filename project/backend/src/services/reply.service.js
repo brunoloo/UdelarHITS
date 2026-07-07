@@ -252,13 +252,26 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
 
   // Adjuntos: subir a Cloudinary (en paralelo, que es la parte lenta) e insertar
   // en la tabla `adjunto` respetando el orden de selección.
+  //
+  // allSettled y no all: a esta altura el comentario YA está creado, así que un
+  // fallo de subida (p. ej. cuota de Cloudinary superada) nunca debe tirar la
+  // request entera — se conservan los adjuntos que sí subieron y se devuelve
+  // una advertencia honesta para que el usuario sepa qué pasó.
   if (files.length > 0) {
-    const subidos = await Promise.all(
+    const resultados = await Promise.allSettled(
       files.map((f) => uploadAttachment(f.buffer, f.tipo, f.originalname))
     );
+    let falloCuota = false;
+    let falloOtro = false;
     for (let i = 0; i < files.length; i++) {
+      const r = resultados[i];
+      if (r.status !== 'fulfilled') {
+        if (r.reason?.code === 'CLOUDINARY_QUOTA') falloCuota = true;
+        else falloOtro = true;
+        continue;
+      }
       const f = files[i];
-      const { url, public_id } = subidos[i];
+      const { url, public_id } = r.value;
       await createAttachment({
         contenidoId: created.contenido_id,
         url,
@@ -269,6 +282,11 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       });
     }
     created.adjuntos = await getAttachmentsByContenidoId(created.contenido_id);
+    if (falloCuota) {
+      created.advertencia = 'Tu comentario se publicó, pero los archivos no se pudieron subir por un problema temporal de almacenamiento del sitio — no es un error tuyo. Probá adjuntarlos de nuevo más tarde.';
+    } else if (falloOtro) {
+      created.advertencia = 'Tu comentario se publicó, pero algunos archivos no se pudieron subir. Probá adjuntarlos de nuevo más tarde.';
+    }
   } else {
     created.adjuntos = [];
   }

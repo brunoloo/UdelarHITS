@@ -84,8 +84,11 @@ export function TopicPage() {
     mutationFn: (cuerpo) => apiPost('/replies/create',
       buildReplyFormData({ cuerpo, tema_id: id }, commentFiles, commentPoll)
     ),
-    onSuccess: () => {
-      showToast('Comentario publicado', 'success')
+    onSuccess: (res) => {
+      // El backend publica el comentario aunque los adjuntos fallen (p. ej.
+      // cuota de almacenamiento); si pasó eso, avisa con la advertencia.
+      if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
+      else showToast('Comentario publicado', 'success')
       setCommentText('')
       setCommentFiles([])
       setCommentPoll(null)

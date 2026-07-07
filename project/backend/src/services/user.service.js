@@ -11,6 +11,20 @@ import { createRateLimiter } from '../utils/rateLimiter.js';
 // Límite de envío de mails: como máximo 5 por dirección cada 15 minutos
 // (cubre registro/verificación/reenvío y recuperación de contraseña).
 const emailSendLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 5 });
+
+// Defensa 5: máximo 1 recuperación de contraseña EXITOSA por cuenta cada 24hs.
+// Es adicional al rate-limit por IP (authLimiter) y al de dirección de arriba:
+// evita que una sola cuenta, reintentando fuera de la ventana de 15 min,
+// agote por sí sola la cuota diaria de Resend (100 mails/día en el plan free).
+// La ventana es configurable para poder testearla sin esperar 24hs.
+const forgotAccountLimiter = createRateLimiter({
+  windowMs: Number(process.env.FORGOT_PASSWORD_ACCOUNT_WINDOW_MS || 24 * 60 * 60 * 1000),
+  max: 1,
+});
+
+// Solo para tests: el limiter vive en memoria y los ids de usuario se repiten
+// entre tests (truncate con RESTART IDENTITY), así que necesitan limpiarlo.
+export const _resetForgotAccountLimiter = () => forgotAccountLimiter.reset();
 import {
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
   findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser, confirmNickname,
@@ -741,6 +755,15 @@ const forgotPasswordService = async (email) => {
   // Si está baneado o inactivo, tampoco enviamos
   if (user.estado !== 'activo') return;
 
+  // Defensa 5: 1 recuperación exitosa por cuenta cada 24hs. peek() no consume:
+  // el intento se registra recién DESPUÉS de que el mail salió bien, así un
+  // fallo de envío no deja a la cuenta bloqueada un día sin haber recibido nada.
+  if (!forgotAccountLimiter.peek(`acct:${user.id}`)) {
+    const err = new Error('Ya se envió un enlace de recuperación para esta cuenta en las últimas 24 horas. Revisá tu correo (incluida la carpeta de spam) o probá de nuevo más tarde.');
+    err.code = 'RATE_LIMITED';
+    throw err;
+  }
+
   // Rate limit de envío de mails a esta dirección (silencioso, sin fuga)
   if (!emailSendLimiter.check(`forgot:${normalizedEmail}`)) return;
 
@@ -774,6 +797,9 @@ const forgotPasswordService = async (email) => {
       </div>
     `,
   });
+
+  // El mail salió bien: recién ahora se consume el cupo de 24hs de la cuenta.
+  forgotAccountLimiter.check(`acct:${user.id}`);
 };
 
 const verifyResetTokenService = async (token) => {

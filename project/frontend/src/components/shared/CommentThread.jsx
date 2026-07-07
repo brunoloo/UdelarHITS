@@ -53,8 +53,9 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
     mutationFn: ({ parentId, cuerpo, files, poll }) => apiPost('/replies/create',
       buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files, poll)
     ),
-    onSuccess: () => {
-      showToast('Respuesta publicada', 'success')
+    onSuccess: (res) => {
+      if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
+      else showToast('Respuesta publicada', 'success')
       if (currentParent) {
         queryClient.invalidateQueries({ queryKey: ['replies', currentParent.id, 'replies'] })
       }

@@ -62,8 +62,9 @@ function CreateCommentPanel({ categoryId, user }) {
       files,
       poll,
     )),
-    onSuccess: () => {
-      showToast('Comentario publicado', 'success')
+    onSuccess: (res) => {
+      if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
+      else showToast('Comentario publicado', 'success')
       setOpen(false)
       setCuerpo('')
       setFiles([])

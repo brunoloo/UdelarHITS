@@ -2,6 +2,8 @@ import { Server } from 'socket.io';
 import { parseCookie } from 'cookie';
 import jwt from 'jsonwebtoken';
 import pool from './config/db.js';
+import { releaseUserConversations } from './utils/chatLoad.js';
+import { noteConnection, noteDisconnection, setModeNotifier, isRealtimeEnabled } from './utils/realtimeMode.js';
 
 let ioInstance = null;
 
@@ -48,11 +50,27 @@ export function initSocket(httpServer, app) {
     }
   });
 
+  // Aviso de cambio de modo de notificaciones (Defensa 2): cuando la carga
+  // cruza los umbrales, todos los clientes conectados se enteran para pasar a
+  // refrescar manualmente (o volver al tiempo real).
+  setModeNotifier((realtime) => {
+    io.emit('notificaciones:modo', { realtime });
+  });
+
   io.on('connection', (socket) => {
     console.log(`Socket connected: user:${socket.userId} (${socket.userNickname})`);
+    noteConnection();
     socket.join(`user:${socket.userId}`);
+    // Si el cliente se conecta durante un modo degradado, que lo sepa desde el
+    // arranque (el broadcast de transición ya pasó y no lo vio).
+    if (!isRealtimeEnabled()) {
+      socket.emit('notificaciones:modo', { realtime: false });
+    }
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: user:${socket.userId}`);
+      noteDisconnection();
+      // Libera los lugares de chat activo de este usuario (Defensa 1).
+      releaseUserConversations(socket.userId);
     });
   });
 

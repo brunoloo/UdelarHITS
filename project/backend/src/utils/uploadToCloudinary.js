@@ -1,5 +1,25 @@
 import cloudinary from '../config/cloudinary.js';
 
+// Defensa 4: distinguir el rechazo por cuota/límite del plan de Cloudinary de
+// otros errores (archivo inválido, red, etc.). Cloudinary señala los límites
+// con http_code 420 (rate limit) o mensajes que refieren a quota/plan/limit.
+export const isCloudinaryQuotaError = (error) =>
+  error?.http_code === 420 ||
+  /quota|rate ?limit|usage limit|plan.{0,20}limit|limit.{0,20}(exceeded|reached)|credits/i
+    .test(error?.message || '');
+
+// Envuelve el error crudo de Cloudinary: si es de cuota, sale con código
+// propio para que los controllers respondan 503 con un mensaje honesto en vez
+// de un 500 genérico.
+const wrapCloudinaryError = (error) => {
+  if (isCloudinaryQuotaError(error)) {
+    const err = new Error('Almacenamiento temporalmente no disponible (cuota del proveedor superada)');
+    err.code = 'CLOUDINARY_QUOTA';
+    return err;
+  }
+  return error;
+};
+
 export const uploadToCloudinary = async (buffer, folder, publicId) => {
   if (process.env.NODE_ENV === 'test') {
     return 'https://res.cloudinary.com/test/image/upload/fake.jpg';
@@ -13,7 +33,7 @@ export const uploadToCloudinary = async (buffer, folder, publicId) => {
         resource_type: 'image'
       },
       (error, result) => {
-        if (error) reject(error);
+        if (error) reject(wrapCloudinaryError(error));
         else resolve(result.secure_url);
       }
     );
@@ -83,7 +103,7 @@ export const uploadAttachment = async (buffer, tipo, originalname = '') => {
     const options = { folder: 'udelarhits/adjuntos', resource_type: isImage ? 'image' : 'raw' };
     if (!isImage) options.public_id = documentPublicId(originalname);
     const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
-      if (error) reject(error);
+      if (error) reject(wrapCloudinaryError(error));
       else resolve({
         url: isImage ? optimizeImageUrl(result.secure_url) : signedDocumentUrl(result.public_id, result.version),
         public_id: result.public_id,

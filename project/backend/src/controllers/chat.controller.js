@@ -11,6 +11,7 @@ import {
   softDeleteConversation,
 } from '../repositories/chat.repository.js';
 import { isBlocked } from '../repositories/block.repository.js';
+import { tryOpenConversation, touchConversation, releaseConversation } from '../utils/chatLoad.js';
 
 export const getConversations = async (req, res) => {
   try {
@@ -39,6 +40,16 @@ export const getOrStartConversation = async (req, res) => {
       return res.status(403).json({ ok: false, message: 'No podés chatear con este usuario' });
     }
     const conversacion_id = await getOrCreateConversation(req.user.id, other.id);
+    // Defensa 1: límite de conversaciones activas simultáneas. Solo bloquea
+    // ABRIR una conversación que no estaba activa; las que ya están en curso
+    // (incluida esta, si ya figura en el registro) siguen sin interrupción, y
+    // el resto del sitio no se ve afectado.
+    if (!tryOpenConversation(conversacion_id, req.user.id)) {
+      return res.status(503).json({
+        ok: false,
+        message: 'El chat está muy activo en este momento — el resto del sitio sigue disponible con normalidad. Probá de nuevo en unos minutos.',
+      });
+    }
     return res.json({
       ok: true,
       data: {
@@ -98,6 +109,9 @@ export const sendMessage = async (req, res) => {
       autor_id: req.user.id,
       cuerpo,
     });
+    // Mantiene viva la conversación en el registro de chat activo. Continuar
+    // una conversación existente nunca se bloquea por el límite.
+    touchConversation(convId, req.user.id);
 
     const io = req.app.get('io');
     if (io && otherUserId) {
@@ -146,6 +160,9 @@ export const deleteConversation = async (req, res) => {
       return res.status(403).json({ ok: false, message: 'No tenés acceso a esta conversación' });
     }
     await softDeleteConversation(convId, req.user.id);
+    // Cierre explícito: libera el lugar de este usuario en el registro de
+    // chat activo (la conversación libera su cupo si no queda nadie).
+    releaseConversation(convId, req.user.id);
     return res.json({ ok: true });
   } catch {
     return res.status(500).json({ ok: false, message: 'Error interno' });
