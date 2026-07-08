@@ -110,6 +110,18 @@
   padding: 3px 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: inherit;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.hero-tag--link {
+  cursor: pointer;
+  transition: background .12s;
+}
+
+.hero-tag--link:hover {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 /* ── Trending ── */

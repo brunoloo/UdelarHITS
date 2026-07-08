@@ -9,6 +9,7 @@ import { CategoryIcon } from '../../components/shared/CategoryIcon'
 import { IconPickerModal } from './IconPickerModal'
 import { Modal } from '../../components/ui/Modal'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
+import { Tag } from '../../components/ui/Tag'
 import { TagSelector } from '../../components/ui/TagSelector'
 import { useSaved } from '../../hooks/useSaved'
 import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
@@ -551,7 +552,7 @@ export function CategoryPage() {
 
             {etiquetas.length > 0 && (
               <div className="cat-tags">
-                {etiquetas.map(e => <span key={e} className="tag">{e}</span>)}
+                {etiquetas.map(e => <Tag key={e} label={e} />)}
               </div>
             )}
 

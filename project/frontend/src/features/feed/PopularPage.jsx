@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '../../api/client'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
+import { Tag } from '../../components/ui/Tag'
 import './feed.css'
 import './popular.css'
 
@@ -47,7 +48,7 @@ function PopularCard({ category, rank }) {
           </div>
           {etiquetas.length > 0 && (
             <div className="popular-tags">
-              {etiquetas.map(e => <span key={e} className="tag">{e}</span>)}
+              {etiquetas.map(e => <Tag key={e} label={e} />)}
               {extraCount > 0 && <span className="tag tag--more">+{extraCount} más</span>}
             </div>
           )}
