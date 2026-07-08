@@ -2,17 +2,22 @@
 -- Convierte el sistema de etiquetas de un tipo ENUM fijo a una tabla relacional
 -- para poder agregar/quitar etiquetas con un simple INSERT/DELETE.
 --
--- Pasos:
---   1. Crear tabla etiqueta con seed data
---   2. Crear tabla categoria_etiqueta_new con FK a etiqueta(id)
---   3. Migrar datos existentes de categoria_etiqueta → categoria_etiqueta_new
---   4. Renombrar tablas (old → _legacy, new → principal)
---   5. Eliminar tipo ENUM etiqueta
+-- El ENUM type "etiqueta" y la tabla "etiqueta" no pueden coexistir (mismo nombre),
+-- así que primero salvamos los datos, eliminamos lo viejo y creamos lo nuevo.
 
 BEGIN;
 
--- 1. Crear tabla etiqueta
-CREATE TABLE IF NOT EXISTS etiqueta (
+-- 1. Backup de los datos existentes
+CREATE TEMP TABLE _ce_backup AS
+SELECT categoria_id, etiqueta_valor::text AS etiqueta_nombre
+FROM categoria_etiqueta;
+
+-- 2. Eliminar la tabla vieja y el ENUM
+DROP TABLE categoria_etiqueta;
+DROP TYPE etiqueta;
+
+-- 3. Crear tabla etiqueta
+CREATE TABLE etiqueta (
   id             BIGSERIAL PRIMARY KEY,
   nombre         VARCHAR(100) NOT NULL UNIQUE,
   nombre_display VARCHAR(150),
@@ -20,7 +25,7 @@ CREATE TABLE IF NOT EXISTS etiqueta (
   orden          SMALLINT NOT NULL DEFAULT 0
 );
 
--- 2. Insertar seed data (ON CONFLICT para idempotencia)
+-- 4. Insertar seed data
 -- Grupo: Facultades
 INSERT INTO etiqueta (nombre, nombre_display, grupo, orden) VALUES
   ('FADU', 'Arquitectura, Diseño y Urbanismo', 'Facultades', 1),
@@ -126,7 +131,6 @@ INSERT INTO etiqueta (nombre, nombre_display, grupo, orden) VALUES
 ON CONFLICT (nombre) DO NOTHING;
 
 -- Etiquetas del ENUM viejo que no tienen equivalente exacto en el seed nuevo.
--- Se agregan para no perder las asignaciones de categorías existentes.
 INSERT INTO etiqueta (nombre, nombre_display, grupo, orden) VALUES
   ('Facultades', NULL, 'Vida universitaria', 0),
   ('Política', NULL, 'Áreas académicas', 19),
@@ -144,9 +148,7 @@ INSERT INTO etiqueta (nombre, nombre_display, grupo, orden) VALUES
   ('Reseñas', NULL, 'Intereses', 35)
 ON CONFLICT (nombre) DO NOTHING;
 
--- Mapeo para etiquetas del ENUM cuyo nombre cambió en la nueva tabla.
--- Ingeniería → Ingeniería (área), Derecho → Derecho (área), etc.
--- Creamos una tabla temporal para el mapeo.
+-- 5. Mapeo para etiquetas renombradas (Ingeniería → Ingeniería (área), etc.)
 CREATE TEMP TABLE _etiqueta_map (old_name TEXT, new_name TEXT);
 INSERT INTO _etiqueta_map VALUES
   ('Ingeniería', 'Ingeniería (área)'),
@@ -154,37 +156,31 @@ INSERT INTO _etiqueta_map VALUES
   ('Medicina',   'Medicina (área)'),
   ('Psicología', 'Psicología (área)');
 
--- 3. Crear tabla nueva
-CREATE TABLE categoria_etiqueta_new (
+-- 6. Crear nueva tabla puente
+CREATE TABLE categoria_etiqueta (
   categoria_id BIGINT NOT NULL REFERENCES categoria(id) ON DELETE CASCADE,
   etiqueta_id  BIGINT NOT NULL REFERENCES etiqueta(id) ON DELETE CASCADE,
   PRIMARY KEY (categoria_id, etiqueta_id)
 );
 
--- 4. Migrar datos existentes
--- Para tags con nombre renombrado (ej: Ingeniería → Ingeniería (área)):
-INSERT INTO categoria_etiqueta_new (categoria_id, etiqueta_id)
-SELECT ce.categoria_id, e.id
-FROM categoria_etiqueta ce
-JOIN _etiqueta_map m ON ce.etiqueta_valor::text = m.old_name
+-- 7. Migrar datos — tags renombrados
+INSERT INTO categoria_etiqueta (categoria_id, etiqueta_id)
+SELECT b.categoria_id, e.id
+FROM _ce_backup b
+JOIN _etiqueta_map m ON b.etiqueta_nombre = m.old_name
 JOIN etiqueta e ON e.nombre = m.new_name
 ON CONFLICT DO NOTHING;
 
--- Para tags cuyo nombre se mantuvo igual:
-INSERT INTO categoria_etiqueta_new (categoria_id, etiqueta_id)
-SELECT ce.categoria_id, e.id
-FROM categoria_etiqueta ce
-JOIN etiqueta e ON e.nombre = ce.etiqueta_valor::text
-WHERE ce.etiqueta_valor::text NOT IN (SELECT old_name FROM _etiqueta_map)
+-- Tags con nombre sin cambios
+INSERT INTO categoria_etiqueta (categoria_id, etiqueta_id)
+SELECT b.categoria_id, e.id
+FROM _ce_backup b
+JOIN etiqueta e ON e.nombre = b.etiqueta_nombre
+WHERE b.etiqueta_nombre NOT IN (SELECT old_name FROM _etiqueta_map)
 ON CONFLICT DO NOTHING;
 
+-- 8. Limpieza
 DROP TABLE _etiqueta_map;
-
--- 5. Renombrar tablas
-ALTER TABLE categoria_etiqueta RENAME TO categoria_etiqueta_legacy;
-ALTER TABLE categoria_etiqueta_new RENAME TO categoria_etiqueta;
-
--- 6. Eliminar el tipo ENUM (ya no lo usa nadie)
-DROP TYPE etiqueta;
+DROP TABLE _ce_backup;
 
 COMMIT;
