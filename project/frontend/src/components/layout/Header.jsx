@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
@@ -28,7 +28,10 @@ export function Header() {
     queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
   })
 
-  const allTags = Object.values(allTagsGrouped).flat().map(t => t.nombre)
+  const allTags = useMemo(
+    () => Object.values(allTagsGrouped).flat().map(t => t.nombre),
+    [allTagsGrouped]
+  )
 
   // Cerrar menú de usuario al click afuera
   useEffect(() => {
