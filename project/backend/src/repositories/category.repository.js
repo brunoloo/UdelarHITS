@@ -312,7 +312,7 @@ const getEtiquetas = async () => {
 const getEtiquetasByIds = async (ids) => {
   const q = `SELECT id FROM etiqueta WHERE id = ANY($1::bigint[])`;
   const { rows } = await pool.query(q, [ids]);
-  return rows.map(r => r.id);
+  return rows.map(r => Number(r.id));
 };
 
 const searchEtiquetas = async (query, limit = 20) => {
