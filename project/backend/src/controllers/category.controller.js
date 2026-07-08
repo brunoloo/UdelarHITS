@@ -1,7 +1,7 @@
-import { createCategoryService, getCategoriesService, getCategoryByIdService, 
-  deleteCategoryService, activeCategoryService, getMyCategoriesService, 
-  updateCategoryService, getActiveCategoriesService, 
-  getParticipantsByCategoryIdService, getEtiquetasService, 
+import { createCategoryService, getCategoriesService, getCategoryByIdService,
+  deleteCategoryService, activeCategoryService, getMyCategoriesService,
+  updateCategoryService, getActiveCategoriesService,
+  getParticipantsByCategoryIdService, getEtiquetasService, searchEtiquetasService,
   getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,
   subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService } from '../services/category.service.js';
@@ -127,6 +127,15 @@ const getEtiquetasList = async (req, res) => {
   }
 };
 
+const searchEtiquetas = async (req, res) => {
+  try {
+    const results = await searchEtiquetasService(req.query.q);
+    return res.status(200).json({ ok: true, data: results });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 const getPopularCategoriesList = async (req, res, next) => {
   try {
     const categories = await getPopularCategoriesService(req.query.days, req.query.limit);
@@ -213,5 +222,6 @@ const getCategorySubscription = async (req, res) => {
 
 export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
   getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, getEtiquetasList,
-  getPopularCategoriesList, getTrendingTagsList, getCategoryEditHistory, pinCategoryItem, unpinCategoryItem,
+  searchEtiquetas, getPopularCategoriesList, getTrendingTagsList, getCategoryEditHistory,
+  pinCategoryItem, unpinCategoryItem,
   subscribeCategory, unsubscribeCategory, getCategorySubscription };

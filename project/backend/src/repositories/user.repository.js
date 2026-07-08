@@ -119,9 +119,10 @@ const getCategoriesByUserId = async (userId) => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.fecha_creacion, c.icono,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
-      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+      ARRAY_AGG(e.nombre) AS etiquetas
     FROM categoria c
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.autor_id = $1 AND c.estado = 'activa'
     GROUP BY c.id
     ORDER BY c.fecha_creacion DESC

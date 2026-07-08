@@ -23,10 +23,12 @@ export function Header() {
     queryFn: () => apiGet('/categories/active').then(r => r.data),
   })
 
-  const { data: allTags = [] } = useQuery({
+  const { data: allTagsGrouped = {} } = useQuery({
     queryKey: ['categories', 'etiquetas'],
     queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
   })
+
+  const allTags = Object.values(allTagsGrouped).flat().map(t => t.nombre)
 
   // Cerrar menú de usuario al click afuera
   useEffect(() => {

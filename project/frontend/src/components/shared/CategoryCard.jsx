@@ -84,7 +84,9 @@ export function CategoryCard({ category }) {
     icono,
   } = category
 
-  const tags = parseEtiquetas(etiquetas).slice(0, 3)
+  const allTags = parseEtiquetas(etiquetas)
+  const visibleTags = allTags.slice(0, 5)
+  const extraCount = allTags.length - 5
   const count = Number(contador_temas) || 0
   const catUrl = `/category/${encodeURIComponent(id)}`
   const navigate = useNavigate()
@@ -124,9 +126,10 @@ export function CategoryCard({ category }) {
 
       {/* (3) Tags + (4) footer "Último tema" → /category/:id */}
       <div className="category-foot-link" onClick={goTo(catUrl)}>
-        {tags.length > 0 && (
+        {visibleTags.length > 0 && (
           <div className="category-footer">
-            {tags.map(tag => <Tag key={tag} label={tag} />)}
+            {visibleTags.map(tag => <Tag key={tag} label={tag} />)}
+            {extraCount > 0 && <span className="tag tag--more">+{extraCount} más</span>}
           </div>
         )}
         {ultimo_tema ? (

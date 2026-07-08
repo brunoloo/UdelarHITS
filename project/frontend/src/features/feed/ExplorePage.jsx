@@ -13,7 +13,9 @@ import './explore.css'
 
 // ── Hero ──
 function HeroCard({ category }) {
-  const etiquetas = parseEtiquetas(category.etiquetas).slice(0, 4)
+  const allEtiquetas = parseEtiquetas(category.etiquetas)
+  const etiquetas = allEtiquetas.slice(0, 5)
+  const extraCount = allEtiquetas.length - 5
   const temas = Number(category.temas_recientes) || 0
   const comentarios = Number(category.comentarios_recientes) || 0
   return (
@@ -31,6 +33,7 @@ function HeroCard({ category }) {
       {etiquetas.length > 0 && (
         <div className="hero-tags">
           {etiquetas.map(e => <span key={e} className="hero-tag">{e}</span>)}
+          {extraCount > 0 && <span className="hero-tag hero-tag--more">+{extraCount} más</span>}
         </div>
       )}
     </Link>

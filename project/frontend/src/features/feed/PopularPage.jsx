@@ -19,7 +19,9 @@ function Skeleton() {
 }
 
 function PopularCard({ category, rank }) {
-  const etiquetas = parseEtiquetas(category.etiquetas).slice(0, 3)
+  const allEtiquetas = parseEtiquetas(category.etiquetas)
+  const etiquetas = allEtiquetas.slice(0, 5)
+  const extraCount = allEtiquetas.length - 5
   const count = Number(category.contador_temas) || 0
   const temasRecientes = Number(category.temas_recientes) || 0
   const comentariosRecientes = Number(category.comentarios_recientes) || 0
@@ -46,6 +48,7 @@ function PopularCard({ category, rank }) {
           {etiquetas.length > 0 && (
             <div className="popular-tags">
               {etiquetas.map(e => <span key={e} className="tag">{e}</span>)}
+              {extraCount > 0 && <span className="tag tag--more">+{extraCount} más</span>}
             </div>
           )}
         </div>

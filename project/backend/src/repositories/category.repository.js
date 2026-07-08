@@ -17,10 +17,10 @@ const createCategory = async ({ titulo, descripcion, autor_id, etiquetas }) => {
     const { rows } = await client.query(q, [titulo, descripcion, autor_id]);
     const category = rows[0];
 
-    for (const etiqueta of etiquetas) {
+    for (const etiquetaId of etiquetas) {
       await client.query(
-        `INSERT INTO categoria_etiqueta (categoria_id, etiqueta_valor) VALUES ($1, $2)`,
-        [category.id, etiqueta]
+        `INSERT INTO categoria_etiqueta (categoria_id, etiqueta_id) VALUES ($1, $2)`,
+        [category.id, etiquetaId]
       );
     }
 
@@ -51,9 +51,10 @@ const getCategories = async () => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.autor_id, u.nickname AS autor_nickname,
       c.estado, c.contador_temas, c.fecha_creacion, c.icono,
-      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+      ARRAY_AGG(e.nombre) AS etiquetas
     FROM categoria c
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     JOIN usuario u ON u.id = c.autor_id
     GROUP BY c.id, u.nickname
     ORDER BY c.fecha_creacion DESC
@@ -67,10 +68,11 @@ const getCategoryById = async (id) => {
     SELECT c.id, c.titulo, c.descripcion, c.autor_id, c.estado, c.fecha_creacion, c.icono,
       u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
-      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+      ARRAY_AGG(e.nombre) AS etiquetas
     FROM categoria c
     JOIN usuario u ON u.id = c.autor_id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.id = $1
     GROUP BY c.id, u.nickname, u.url_imagen, u.estado
     LIMIT 1
@@ -83,9 +85,10 @@ const getCategoriesByAuthorId = async (autorId) => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.estado, c.fecha_creacion, c.icono,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
-      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+      ARRAY_AGG(e.nombre) AS etiquetas
     FROM categoria c
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.autor_id = $1
     GROUP BY c.id
     ORDER BY c.fecha_creacion DESC
@@ -179,10 +182,10 @@ const updateCategoryById = async (id, { descripcion, etiquetas, icono }, editorI
         `DELETE FROM categoria_etiqueta WHERE categoria_id = $1`,
         [id]
       );
-      for (const etiqueta of etiquetas) {
+      for (const etiquetaId of etiquetas) {
         await client.query(
-          `INSERT INTO categoria_etiqueta (categoria_id, etiqueta_valor) VALUES ($1, $2)`,
-          [id, etiqueta]
+          `INSERT INTO categoria_etiqueta (categoria_id, etiqueta_id) VALUES ($1, $2)`,
+          [id, etiquetaId]
         );
       }
     }
@@ -191,9 +194,10 @@ const updateCategoryById = async (id, { descripcion, etiquetas, icono }, editorI
 
     const { rows } = await client.query(
       `SELECT c.id, c.titulo, c.descripcion, c.estado, c.icono,
-        ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+        ARRAY_AGG(e.nombre) AS etiquetas
        FROM categoria c
        LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+       LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
        WHERE c.id = $1
        GROUP BY c.id`,
       [id]
@@ -233,7 +237,7 @@ const getActiveCategories = async () => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
       c.fecha_creacion, c.icono, u.nickname AS autor_nickname, u.estado AS autor_estado,
-      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas,
+      ARRAY_AGG(e.nombre) AS etiquetas,
       (
         SELECT json_build_object(
           'titulo', t.titulo,
@@ -278,6 +282,7 @@ const getActiveCategories = async () => {
     FROM categoria c
     JOIN usuario u ON u.id = c.autor_id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.estado = 'activa'
     GROUP BY c.id, u.nickname, u.estado
     ORDER BY c.titulo DESC
@@ -299,9 +304,27 @@ const getParticipantsByCategoryId = async (categoriaId) => {
 };
 
 const getEtiquetas = async () => {
-  const q = `SELECT unnest(enum_range(NULL::etiqueta))::text AS valor ORDER BY valor`;
+  const q = `SELECT id, nombre, nombre_display, grupo, orden FROM etiqueta ORDER BY grupo, orden, nombre`;
   const { rows } = await pool.query(q);
-  return rows.map(r => r.valor);
+  return rows;
+};
+
+const getEtiquetasByIds = async (ids) => {
+  const q = `SELECT id FROM etiqueta WHERE id = ANY($1::bigint[])`;
+  const { rows } = await pool.query(q, [ids]);
+  return rows.map(r => r.id);
+};
+
+const searchEtiquetas = async (query, limit = 20) => {
+  const q = `
+    SELECT id, nombre, nombre_display, grupo
+    FROM etiqueta
+    WHERE nombre ILIKE $1 || '%'
+    ORDER BY grupo, orden, nombre
+    LIMIT $2
+  `;
+  const { rows } = await pool.query(q, [query, limit]);
+  return rows;
 };
 
 const categoryHasContent = async (id) => {
@@ -352,7 +375,7 @@ const getPopularCategories = async (days = 7, limit = 20) => {
     )
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
       c.fecha_creacion, u.nickname AS autor_nickname,
-      ARRAY_AGG(DISTINCT ce.etiqueta_valor) FILTER (WHERE ce.etiqueta_valor IS NOT NULL) AS etiquetas,
+      ARRAY_AGG(DISTINCT e.nombre) FILTER (WHERE e.nombre IS NOT NULL) AS etiquetas,
       COALESCE(ta.temas_recientes, 0) AS temas_recientes,
       COALESCE(ca.comentarios_recientes, 0) AS comentarios_recientes,
       (COALESCE(ta.temas_recientes, 0) + COALESCE(ca.comentarios_recientes, 0)) AS actividad_total,
@@ -362,6 +385,7 @@ const getPopularCategories = async (days = 7, limit = 20) => {
     LEFT JOIN tema_act ta ON ta.categoria_id = c.id
     LEFT JOIN com_act ca ON ca.categoria_id = c.id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.estado = 'activa'
       AND (COALESCE(ta.temas_recientes, 0) + COALESCE(ca.comentarios_recientes, 0)) > 0
     GROUP BY c.id, u.nickname, ta.temas_recientes, ta.score, ca.comentarios_recientes, ca.score
@@ -378,28 +402,30 @@ const getPopularCategories = async (days = 7, limit = 20) => {
 // recientes en esos temas). Reemplaza el conteo estático de frecuencia.
 const getTrendingTags = async (days = 7, limit = 8) => {
   const q = `
-    SELECT ce.etiqueta_valor AS etiqueta,
+    SELECT e.nombre AS etiqueta,
       COUNT(DISTINCT t.contenido_id) AS temas_recientes,
       COUNT(com.contenido_id) AS comentarios_recientes
     FROM categoria_etiqueta ce
+    JOIN etiqueta e ON e.id = ce.etiqueta_id
     JOIN categoria c ON c.id = ce.categoria_id AND c.estado = 'activa'
     JOIN tema t ON t.categoria_id = ce.categoria_id AND t.estado = 'activo'
     JOIN contenido con ON con.id = t.contenido_id
       AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
     LEFT JOIN comentario com ON com.tema_id = t.contenido_id AND com.estado = 'visible'
-    GROUP BY ce.etiqueta_valor
+    GROUP BY e.nombre
     HAVING COUNT(DISTINCT t.contenido_id) > 0
-    ORDER BY temas_recientes DESC, comentarios_recientes DESC, ce.etiqueta_valor ASC
+    ORDER BY temas_recientes DESC, comentarios_recientes DESC, e.nombre ASC
     LIMIT $2
   `;
   const { rows } = await pool.query(q, [days, limit]);
   return rows;
 };
 
-export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
-  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
+export { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
+  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId,
   updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId,
-  getEtiquetas, categoryHasContent, hardDeleteCategoryById, getPopularCategories, getTrendingTags,
+  getEtiquetas, getEtiquetasByIds, searchEtiquetas,
+  categoryHasContent, hardDeleteCategoryById, getPopularCategories, getTrendingTags,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment, pinCategoryTopic, unpinCategoryTopic,
   subscribeCategory, unsubscribeCategory, isSubscribedCategory, getCategorySubscribers };
 

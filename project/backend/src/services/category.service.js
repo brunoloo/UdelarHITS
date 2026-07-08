@@ -1,6 +1,7 @@
-import { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
-  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
-  updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas, 
+import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
+  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId,
+  updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas,
+  getEtiquetasByIds, searchEtiquetas,
   hardDeleteCategoryById, categoryHasContent, getPopularCategories, getTrendingTags,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment,
   pinCategoryTopic, unpinCategoryTopic,
@@ -8,22 +9,6 @@ import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
 import { isValidCategoryIcon } from '../config/categoryIcons.js';
-
-const ETIQUETAS_VALIDAS = [
-  'Facultades','Parciales y exámenes','Becas y trámites','Residencias','Pasantías',
-  'Educación','Ciencia','Matemática','Ingeniería','Filosofía',
-  'Historia','Psicología','Economía','Política','Derecho','Medicina',
-  'Programación','Desarrollo web','Software','Ciberseguridad',
-  'Inteligencia artificial','Gadgets','Gaming',
-  'Arte','Diseño','Fotografía','Cine y TV','Música',
-  'Escritura','Animación','Manualidades','Moda',
-  'Vida diaria','Relaciones','Cocina','Salud y fitness',
-  'Trabajo y carrera','Hogar','Mascotas','Hobbies',
-  'Cultura','Viajes','Deportes','Naturaleza',
-  'Medio ambiente','Noticias','Eventos',
-  'Memes','Tutoriales','Preguntas','Historias',
-  'Reseñas','Feedback','Autos y motos','Jardinería','Otro'
-];
 
 const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }) => {
   if (!titulo?.trim()) {
@@ -58,11 +43,18 @@ const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }
     throw err;
   }
 
-  const etiquetasArray = Array.isArray(etiquetas) ? etiquetas : [etiquetas];
+  const etiquetasArray = (Array.isArray(etiquetas) ? etiquetas : [etiquetas]).map(Number);
 
-  const invalidas = etiquetasArray.filter(e => !ETIQUETAS_VALIDAS.includes(e));
+  if (etiquetasArray.some(id => !Number.isInteger(id) || id < 1)) {
+    const err = new Error('Etiquetas inválidas');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const validIds = await getEtiquetasByIds(etiquetasArray);
+  const invalidas = etiquetasArray.filter(id => !validIds.includes(id));
   if (invalidas.length > 0) {
-    const err = new Error(`Etiquetas inválidas: ${invalidas.join(', ')}`);
+    const err = new Error('Algunas etiquetas seleccionadas no existen');
     err.code = 'BAD_REQUEST';
     throw err;
   }
@@ -208,9 +200,15 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
   }
 
   if (etiquetas) {
-    const invalidas = etiquetas.filter(e => !ETIQUETAS_VALIDAS.includes(e));
-    if (invalidas.length > 0) {
-      const err = new Error(`Etiquetas inválidas: ${invalidas.join(', ')}`);
+    const ids = etiquetas.map(Number);
+    if (ids.some(id => !Number.isInteger(id) || id < 1)) {
+      const err = new Error('Etiquetas inválidas');
+      err.code = 'BAD_REQUEST';
+      throw err;
+    }
+    const validIds = await getEtiquetasByIds(ids);
+    if (validIds.length !== ids.length) {
+      const err = new Error('Algunas etiquetas seleccionadas no existen');
       err.code = 'BAD_REQUEST';
       throw err;
     }
@@ -245,7 +243,20 @@ const getParticipantsByCategoryIdService = async (userId, categoriaId) => {
 };
 
 const getEtiquetasService = async () => {
-  return await getEtiquetas();
+  const rows = await getEtiquetas();
+  const grouped = {};
+  for (const row of rows) {
+    if (!grouped[row.grupo]) grouped[row.grupo] = [];
+    grouped[row.grupo].push({ id: row.id, nombre: row.nombre, nombre_display: row.nombre_display });
+  }
+  return grouped;
+};
+
+const searchEtiquetasService = async (query) => {
+  if (!query?.trim()) {
+    return await getEtiquetasService();
+  }
+  return await searchEtiquetas(query.trim());
 };
 
 const getPopularCategoriesService = async (days, limit) => {
@@ -353,6 +364,7 @@ const isSubscribedCategoryService = async (userId, categoryId) => {
 export { createCategoryService, getCategoriesService, getCategoryByIdService, deactivateCategoryById,
   deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService,
   getActiveCategoriesService, getParticipantsByCategoryIdService, getEtiquetasService,
+  searchEtiquetasService,
   getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,
   subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService };

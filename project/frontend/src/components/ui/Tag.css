@@ -32,3 +32,9 @@
   color: var(--text-on-accent);
   border-color: var(--accent);
 }
+
+.tag--more {
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  font-style: italic;
+}

@@ -26,10 +26,12 @@ export function FeedPage() {
     queryFn: () => apiGet('/categories/active').then(r => r.data),
   })
 
-  const { data: allTags = [] } = useQuery({
+  const { data: allTagsGrouped = {} } = useQuery({
     queryKey: ['categories', 'etiquetas'],
     queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
   })
+
+  const allTagNames = Object.values(allTagsGrouped).flat().map(t => t.nombre)
 
   const displayCategories = qParam
     ? categories.filter(c =>
@@ -40,7 +42,7 @@ export function FeedPage() {
 
   function emptyMessage() {
     if (!qParam) return 'No se encontraron categorías.'
-    const isKnownTag = allTags.some(t => norm(t) === norm(qParam))
+    const isKnownTag = allTagNames.some(t => norm(t) === norm(qParam))
     if (isKnownTag) return `Todavía no hay categorías con la etiqueta "${qParam}".`
     return `No se encontraron categorías para "${qParam}".`
   }

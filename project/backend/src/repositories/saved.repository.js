@@ -54,10 +54,11 @@ const getSavedCategorias = async (usuarioId) => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.icono, c.contador_temas,
       g.fecha_creacion AS fecha_guardado,
-      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+      ARRAY_AGG(e.nombre) AS etiquetas
     FROM guardado g
     JOIN categoria c ON c.id = g.categoria_id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE g.usuario_id = $1 AND g.tipo = 'categoria' AND c.estado = 'activa'
     GROUP BY c.id, g.fecha_creacion
     ORDER BY g.fecha_creacion DESC

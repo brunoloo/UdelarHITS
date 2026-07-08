@@ -87,14 +87,22 @@ export async function createUserWithRole(rol, over = {}) {
 // Atajo para admin
 export const createAdmin = (over = {}) => createUserWithRole('admin', over);
 
+// Busca IDs de etiquetas por nombre. Útil en tests que necesitan pasar IDs.
+export async function getTagIds(nombres) {
+  const { rows } = await pool.query('SELECT id FROM etiqueta WHERE nombre = ANY($1)', [nombres]);
+  return rows.map(r => Number(r.id));
+}
+
 // Crea una categoría autenticado con la cookie dada. Devuelve el objeto categoría.
 export async function createCategory(cookie, over = {}) {
   const body = {
     titulo: 'Cat ' + Math.random().toString(36).slice(2, 8),
     descripcion: 'Descripción de prueba',
-    etiquetas: ['Programación'],
     ...over,
   };
+  if (!body.etiquetas) {
+    body.etiquetas = await getTagIds(['Programación']);
+  }
   const res = await request(app).post('/api/categories/create')
     .set('Cookie', cookie).send(body);
   if (res.status >= 400) {

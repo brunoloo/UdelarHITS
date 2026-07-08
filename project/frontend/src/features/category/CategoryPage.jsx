@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
@@ -9,6 +9,7 @@ import { CategoryIcon } from '../../components/shared/CategoryIcon'
 import { IconPickerModal } from './IconPickerModal'
 import { Modal } from '../../components/ui/Modal'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
+import { TagSelector } from '../../components/ui/TagSelector'
 import { useSaved } from '../../hooks/useSaved'
 import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
 import { BellIcon } from '../../components/shared/BellIcon'
@@ -213,17 +214,26 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved, onDeleteRequest }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
 
-  useEffect(() => {
-    if (isOpen && cat) {
-      setDesc(cat.descripcion || '')
-      setSelectedTags(parseEtiquetas(cat.etiquetas))
-    }
-  }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const { data: availableTags = [] } = useQuery({
+  const { data: availableTags = {} } = useQuery({
     queryKey: ['categories', 'etiquetas'],
     queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
   })
+
+  const nameToId = useMemo(() => {
+    const map = {}
+    for (const tags of Object.values(availableTags)) {
+      for (const t of tags) map[t.nombre] = t.id
+    }
+    return map
+  }, [availableTags])
+
+  useEffect(() => {
+    if (isOpen && cat) {
+      setDesc(cat.descripcion || '')
+      const names = parseEtiquetas(cat.etiquetas)
+      setSelectedTags(names.map(n => nameToId[n]).filter(Boolean))
+    }
+  }, [isOpen, nameToId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const mutation = useMutation({
     mutationFn: () => apiPatch(`/categories/${cat.id}`, {
@@ -240,14 +250,6 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved, onDeleteRequest }) {
       showToast(err.message || 'Error al guardar', 'error')
     },
   })
-
-  function toggleTag(tag) {
-    setSelectedTags(prev =>
-      prev.includes(tag)
-        ? prev.filter(t => t !== tag)
-        : prev.length < 10 ? [...prev, tag] : prev
-    )
-  }
 
   const canSave = desc.trim().length >= 1 && selectedTags.length >= 1
 
@@ -284,18 +286,11 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved, onDeleteRequest }) {
             <span>Etiquetas (*)</span>
             <span className="edit-field-counter">{selectedTags.length} / 10</span>
           </div>
-          <div className="tags-selector">
-            {availableTags.map(tag => (
-              <button
-                key={tag}
-                type="button"
-                className={`tag-option${selectedTags.includes(tag) ? ' selected' : ''}`}
-                onClick={() => toggleTag(tag)}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
+          <TagSelector
+            grouped={availableTags}
+            selected={selectedTags}
+            onChange={setSelectedTags}
+          />
         </div>
       </div>
       <div className="modal-danger-zone">
