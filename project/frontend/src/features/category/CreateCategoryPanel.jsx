@@ -31,7 +31,8 @@ export function CreateCategoryPanel() {
       setTitulo('')
       setDescripcion('')
       setSelectedTags([])
-      queryClient.invalidateQueries({ queryKey: ['categories', 'active'] })
+      // Prefijo 'categories': refresca tanto el feed del Home como 'active'
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
     },
     onError: err => {
       showToast(err.message || 'Error al crear la categoría', 'error')

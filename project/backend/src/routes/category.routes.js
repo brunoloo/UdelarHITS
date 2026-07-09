@@ -1,15 +1,16 @@
 import { Router } from 'express';
 import { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
-    getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory,
+    getMyCategories, updateCategory, getActiveCategories, getCategoryFeed, getParticipantsByCategory,
     getEtiquetasList, searchEtiquetas, getPopularCategoriesList, getTrendingTagsList,
     getCategoryEditHistory, pinCategoryItem, unpinCategoryItem,
     subscribeCategory, unsubscribeCategory, getCategorySubscription } from '../controllers/category.controller.js';
-import { protect, isAdmin } from '../middlewares/auth.middleware.js';
+import { protect, isAdmin, optionalAuth } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
 router.get('/', protect, isAdmin, getCategories);        // Listar categorías  
 router.get('/active', getActiveCategories);              // Listar categorías activas
+router.get('/feed', optionalAuth, getCategoryFeed);      // Home: feed personalizado paginado
 router.get('/etiquetas', getEtiquetasList);              // Obtener las etiquetas (agrupadas)
 router.get('/etiquetas/search', searchEtiquetas);       // Buscar etiquetas por nombre
 router.post('/create', protect, createCategory);         // Crear categoría

@@ -1,6 +1,7 @@
 import pool from '../config/db.js';
 import { encuestaSubquery } from './encuesta.repository.js';
 import { TRENDING } from '../config/trendingConfig.js';
+import { FEED } from '../config/feedConfig.js';
 
 const { HALF_LIFE_HOURS, W_TEMA, W_COMENTARIO } = TRENDING;
 
@@ -233,8 +234,10 @@ const assignParticipantRole = async (userId, categoriaId) => {
   await pool.query(q, [userId, categoriaId]);
 };
 
-const getActiveCategories = async () => {
-  const q = `
+// Fragmento compartido: la "card" completa de una categoría activa (columnas
+// que consumen Home y Recientes). Lo usan getActiveCategories y el feed
+// paginado de Home, que le agregan su propio ORDER BY / cursor por fuera.
+const CATEGORY_CARD_QUERY = `
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
       c.fecha_creacion, c.icono, u.nickname AS autor_nickname, u.estado AS autor_estado,
       ARRAY_AGG(e.nombre) AS etiquetas,
@@ -285,10 +288,111 @@ const getActiveCategories = async () => {
     LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.estado = 'activa'
     GROUP BY c.id, u.nickname, u.estado
-    ORDER BY c.titulo DESC
-  `;
+`;
+
+const getActiveCategories = async () => {
+  const q = `${CATEGORY_CARD_QUERY} ORDER BY c.titulo DESC`;
   const { rows } = await pool.query(q);
   return rows;
+};
+
+// ── Feed del Home ──
+// Modo cronológico (invitados y cold start): fecha_creacion DESC, igual que
+// Recientes. Cursor compuesto (fecha_creacion, id) para que empates de fecha
+// no repitan ni salten filas entre páginas.
+const getChronoFeed = async ({ limit, cursorFecha = null, cursorId = null }) => {
+  const q = `
+    SELECT card.* FROM (${CATEGORY_CARD_QUERY}) card
+    WHERE $2::timestamptz IS NULL
+       OR (card.fecha_creacion, card.id) < ($2::timestamptz, $3::bigint)
+    ORDER BY card.fecha_creacion DESC, card.id DESC
+    LIMIT $1
+  `;
+  const { rows } = await pool.query(q, [limit, cursorFecha, cursorId]);
+  return rows;
+};
+
+// Modo personalizado: puntaje por usuario según config/feedConfig.js.
+// El puntaje es entero y estable dentro del día, así el cursor (score, id)
+// pagina sin repetir ni saltar aunque haya empates.
+const getPersonalizedFeed = async (usuarioId, { limit, cursorScore = null, cursorId = null }) => {
+  const q = `
+    WITH afinidad AS (
+      -- Frecuencia de etiquetas en el historial de likes del usuario: cada
+      -- 'meGusta' se mapea a la categoría de su contenido (tema directo,
+      -- comentario de categoría, o comentario colgado de un tema) y de ahí
+      -- a sus etiquetas.
+      SELECT ce.etiqueta_id, COUNT(*)::int AS cnt
+      FROM reaccion r
+      LEFT JOIN tema t ON t.contenido_id = r.contenido_id
+      LEFT JOIN comentario com ON com.contenido_id = r.contenido_id
+      LEFT JOIN tema tcom ON tcom.contenido_id = com.tema_id
+      JOIN categoria_etiqueta ce
+        ON ce.categoria_id = COALESCE(t.categoria_id, com.categoria_id, tcom.categoria_id)
+      WHERE r.usuario_id = $1 AND r.tipo = 'meGusta'
+      GROUP BY ce.etiqueta_id
+    ),
+    scored AS (
+      SELECT c2.id AS cat_id,
+        (
+          CASE WHEN EXISTS (
+            SELECT 1 FROM participacion_categoria pc
+            WHERE pc.categoria_id = c2.id AND pc.usuario_id = $1
+          ) THEN ${FEED.W_PARTICIPACION} ELSE 0 END
+        + CASE WHEN EXISTS (
+            SELECT 1 FROM suscripcion_categoria sc
+            WHERE sc.categoria_id = c2.id AND sc.usuario_id = $1
+          ) THEN ${FEED.W_SUSCRIPCION} ELSE 0 END
+        + ${FEED.W_ETIQUETA} * COALESCE((
+            SELECT SUM(LEAST(a.cnt, ${FEED.AFINIDAD_CAP_ETIQUETA}))
+            FROM categoria_etiqueta ce2
+            JOIN afinidad a ON a.etiqueta_id = ce2.etiqueta_id
+            WHERE ce2.categoria_id = c2.id
+          ), 0)
+        + ${FEED.W_ACT_TEMA} * (
+            SELECT COUNT(*) FROM tema t2
+            JOIN contenido con ON con.id = t2.contenido_id
+            WHERE t2.categoria_id = c2.id AND t2.estado = 'activo'
+              AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => ${FEED.ACTIVIDAD_DIAS})
+          )
+        + ${FEED.W_ACT_COMENTARIO} * (
+            SELECT COUNT(*) FROM comentario com2
+            JOIN contenido con2 ON con2.id = com2.contenido_id
+            LEFT JOIN tema t3 ON t3.contenido_id = com2.tema_id
+            WHERE COALESCE(com2.categoria_id, t3.categoria_id) = c2.id
+              AND com2.estado = 'visible'
+              AND con2.fecha_creacion > NOW() - MAKE_INTERVAL(days => ${FEED.ACTIVIDAD_DIAS})
+          )
+        + ${FEED.W_NOVEDAD_DIA} * GREATEST(0,
+            ${FEED.NOVEDAD_DIAS} - FLOOR(EXTRACT(EPOCH FROM (NOW() - c2.fecha_creacion)) / 86400)
+          )
+        )::bigint AS score
+      FROM categoria c2
+      WHERE c2.estado = 'activa'
+    )
+    SELECT card.*, s.score
+    FROM (${CATEGORY_CARD_QUERY}) card
+    JOIN scored s ON s.cat_id = card.id
+    WHERE $3::bigint IS NULL
+       OR (s.score, card.id) < ($3::bigint, $4::bigint)
+    ORDER BY s.score DESC, card.id DESC
+    LIMIT $2
+  `;
+  const { rows } = await pool.query(q, [usuarioId, limit, cursorScore, cursorId]);
+  return rows;
+};
+
+// ¿El usuario tiene alguna señal personalizable? Si no (cuenta nueva),
+// Home cae al modo cronológico en vez de rankear con todo en cero.
+const hasFeedSignals = async (usuarioId) => {
+  const q = `
+    SELECT EXISTS (SELECT 1 FROM participacion_categoria WHERE usuario_id = $1)
+        OR EXISTS (SELECT 1 FROM suscripcion_categoria WHERE usuario_id = $1)
+        OR EXISTS (SELECT 1 FROM reaccion WHERE usuario_id = $1 AND tipo = 'meGusta')
+        AS tiene
+  `;
+  const { rows } = await pool.query(q, [usuarioId]);
+  return rows[0].tiene === true;
 };
 
 const getParticipantsByCategoryId = async (categoriaId) => {
@@ -424,6 +528,7 @@ const getTrendingTags = async (days = 7, limit = 8) => {
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId,
   updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId,
+  getChronoFeed, getPersonalizedFeed, hasFeedSignals,
   getEtiquetas, getEtiquetasByIds, searchEtiquetas,
   categoryHasContent, hardDeleteCategoryById, getPopularCategories, getTrendingTags,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment, pinCategoryTopic, unpinCategoryTopic,
