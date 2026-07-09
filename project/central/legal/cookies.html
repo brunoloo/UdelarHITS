@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Política de cookies — UdelarHITS</title>
+  <link rel="stylesheet" href="/central/css/central.css" />
+</head>
+<body>
+
+  <div class="mi-topbar">
+    <a href="/" class="mi-logo">UdelarHITS</a>
+    <span class="mi-topbar-sep">·</span>
+    <span class="mi-topbar-section">Legal</span>
+  </div>
+
+  <div class="mi-breadcrumb">
+    <a href="/central/">Inicio</a>
+    <span>›</span>
+    <span>Política de cookies</span>
+  </div>
+
+  <div class="mi-content">
+    <h1>Política de cookies</h1>
+    <hr class="mi-divider" />
+    <p class="ca-updated">Última actualización: julio 2026</p>
+
+    <p class="mi-lead">
+      UdelarHITS utiliza cookies y almacenamiento local del navegador de forma mínima: solo lo necesario para que la plataforma funcione. No usamos cookies de terceros, ni de analítica, ni de publicidad.
+    </p>
+
+    <h2>Qué es una cookie</h2>
+    <p>Una cookie es un pequeño archivo de texto que un sitio web guarda en tu navegador. Sirve para recordar información entre visitas — por ejemplo, que ya iniciaste sesión. El almacenamiento local (<em>localStorage</em> y <em>sessionStorage</em>) cumple una función similar, pero los datos se quedan en tu dispositivo y nunca se envían automáticamente al servidor.</p>
+
+    <h2>Cookies que usamos</h2>
+    <table class="ca-table">
+      <tr>
+        <th>Nombre</th>
+        <th>Tipo</th>
+        <th>Propósito</th>
+        <th>Duración</th>
+      </tr>
+      <tr>
+        <td><strong>jwt</strong></td>
+        <td>Cookie esencial</td>
+        <td>Mantener tu sesión iniciada. Contiene un token de autenticación cifrado. Sin esta cookie, tendrías que iniciar sesión en cada página.</td>
+        <td>7 días</td>
+      </tr>
+    </table>
+
+    <div class="ca-note">
+      <p>La cookie <strong>jwt</strong> está configurada con las siguientes protecciones de seguridad:</p>
+    </div>
+    <ul>
+      <li><strong>HttpOnly:</strong> no es accesible desde JavaScript — protege contra ataques XSS.</li>
+      <li><strong>SameSite strict:</strong> solo se envía en solicitudes que provienen del propio sitio — protege contra ataques CSRF.</li>
+      <li><strong>Secure:</strong> solo se transmite por HTTPS en producción.</li>
+    </ul>
+
+    <h2>Almacenamiento local</h2>
+    <p>Además de la cookie de sesión, UdelarHITS guarda algunos datos en el almacenamiento local de tu navegador. Estos datos nunca se envían al servidor — se quedan en tu dispositivo para mejorar la experiencia.</p>
+
+    <table class="ca-table">
+      <tr>
+        <th>Clave</th>
+        <th>Almacenamiento</th>
+        <th>Propósito</th>
+        <th>Duración</th>
+      </tr>
+      <tr>
+        <td><strong>theme</strong></td>
+        <td>localStorage</td>
+        <td>Recordar tu preferencia de tema visual (claro, oscuro o sistema).</td>
+        <td>Permanente hasta que la cambies o borres los datos del sitio.</td>
+      </tr>
+      <tr>
+        <td><strong>pendingRegistration</strong></td>
+        <td>localStorage</td>
+        <td>Si cerrás la pestaña durante el registro, permite retomar la verificación del código sin volver a empezar. Se guarda tu email temporalmente.</td>
+        <td>Se elimina automáticamente al completar el registro o al expirar (minutos).</td>
+      </tr>
+      <tr>
+        <td><strong>landingSeen</strong></td>
+        <td>sessionStorage</td>
+        <td>Evitar que la pantalla de bienvenida se muestre más de una vez por sesión de navegador.</td>
+        <td>Se borra al cerrar la pestaña o el navegador.</td>
+      </tr>
+    </table>
+
+    <h2>Cookies de terceros</h2>
+    <p>UdelarHITS <strong>no utiliza cookies de terceros</strong>. No integramos servicios de analítica (como Google Analytics), redes publicitarias, píxeles de seguimiento ni botones de redes sociales que depositen cookies propias en tu navegador.</p>
+
+    <h2>Cómo gestionar las cookies</h2>
+    <p>Podés eliminar o bloquear las cookies desde la configuración de tu navegador. Tené en cuenta que si bloqueás la cookie <strong>jwt</strong>, no vas a poder mantener la sesión iniciada — tendrás que autenticarte cada vez que visites el sitio.</p>
+    <ul>
+      <li>Para borrar los datos de un sitio específico, buscá la opción "Datos del sitio" o "Cookies y datos del sitio" en la configuración de tu navegador.</li>
+      <li>Para borrar el almacenamiento local (tema, registro pendiente), usá la misma opción: se incluye junto con las cookies del sitio.</li>
+    </ul>
+
+    <h2>Cambios a esta política</h2>
+    <p>Si incorporamos nuevas cookies o cambiamos el uso de las existentes, actualizaremos esta página con la fecha correspondiente. El uso continuado del servicio después de un cambio implica la aceptación de la versión vigente.</p>
+
+    <div class="ca-note">
+      <p>Para saber qué otros datos maneja la plataforma, consultá la <a href="/central/legal/privacidad.html">política de privacidad</a>. Para las condiciones generales de uso, los <a href="/central/legal/terminos.html">términos de uso</a>.</p>
+    </div>
+
+  </div>
+
+  <footer class="ca-footer">
+    <div class="ca-footer-grid">
+      <div class="ca-footer-col">
+        <h3>Plataforma</h3>
+        <a href="/">Volver al foro</a>
+        <a href="/about">Acerca de UdelarHITS</a>
+      </div>
+      <div class="ca-footer-col">
+        <h3>Centro de ayuda</h3>
+        <a href="/central/moderation/moderation-policy.html">Política de moderación</a>
+        <a href="/central/info/normas.html">Normas de la comunidad</a>
+        <a href="/central/ayuda/faq.html">Preguntas frecuentes</a>
+      </div>
+      <div class="ca-footer-col">
+        <h3>Legal</h3>
+        <a href="/central/legal/terminos.html">Términos de uso</a>
+        <a href="/central/legal/privacidad.html">Política de privacidad</a>
+        <a href="/central/legal/cookies.html">Política de cookies</a>
+        <a href="/central/info/preservacion.html">Preservación de contenido</a>
+      </div>
+      <div class="ca-footer-col">
+        <h3>Contacto</h3>
+        <a href="mailto:udelarhits@gmail.com">udelarhits@gmail.com</a>
+      </div>
+    </div>
+    <div class="ca-footer-bottom">
+      <span>© 2026 UdelarHITS · Hecho por estudiantes, para estudiantes</span>
+      <span>Proyecto independiente sin afiliación oficial con la Universidad de la República</span>
+    </div>
+  </footer>
+</body>
+</html>
