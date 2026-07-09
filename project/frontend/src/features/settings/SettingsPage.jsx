@@ -268,7 +268,7 @@ export function SettingsPage() {
                 <div className="settings-row">
                   <div className="settings-row-info">
                     <h3>Versión</h3>
-                    <p>Beta</p>
+                    <p>v1.0.0</p>
                   </div>
                 </div>
 
