@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import passport from './config/passport.js';
 
@@ -19,6 +20,24 @@ app.set('trust proxy', 1);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Ubicación del build del frontend (Vite dist). En Railway el working directory
+// y el layout del contenedor pueden diferir del entorno local, así que en vez de
+// asumir una sola ruta relativa, se prueban varias ubicaciones candidatas y se
+// elige la primera que realmente contenga index.html. La ruta elegida se loguea
+// al arrancar para poder diagnosticar el deploy desde los logs de Railway.
+const FRONTEND_DIST_CANDIDATES = [
+  path.join(__dirname, '..', '..', 'frontend', 'dist'), // repo local: backend/src -> project/frontend/dist
+  path.join(process.cwd(), 'frontend', 'dist'),          // cwd = project/
+  path.join(process.cwd(), '..', 'frontend', 'dist'),    // cwd = project/backend/
+];
+const FRONTEND_DIST =
+  FRONTEND_DIST_CANDIDATES.find((p) => fs.existsSync(path.join(p, 'index.html'))) ||
+  FRONTEND_DIST_CANDIDATES[0];
+const FRONTEND_INDEX = path.join(FRONTEND_DIST, 'index.html');
+console.log(
+  `[static] FRONTEND_DIST resuelto: ${FRONTEND_DIST} | index.html presente: ${fs.existsSync(FRONTEND_INDEX)}`
+);
 
 // Security headers (CSP, X-Frame-Options, X-Content-Type-Options, etc.)
 app.use(helmet({
@@ -134,14 +153,24 @@ app.use('/api/reports', limiterIf(reporteLimiter));
 app.use('/central', express.static(path.join(__dirname, '..', '..', 'central')));
 
 // React SPA build (Vite dist)
-app.use(express.static(path.join(__dirname, '..', '..', 'frontend', 'dist')));
+app.use(express.static(FRONTEND_DIST));
 
 // routes
 app.use("/api", API);
 
-// SPA fallback: cualquier ruta que no sea /api ni /central devuelve el index.html de React
-app.get('/{*path}', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', '..', 'frontend', 'dist', 'index.html'));
+// SPA fallback: cualquier ruta que no sea /api ni /central devuelve el index.html
+// de React. Los pedidos a /assets/* son archivos reales del build: si no los
+// sirvió express.static es que no existen, así que se devuelve un 404 explícito
+// en vez de caer en el index.html (que produciría un MIME incorrecto) o en el
+// error handler genérico (que respondería application/json y confundiría al
+// navegador con "Refused to apply style / 500").
+app.get('/{*path}', (req, res, next) => {
+  if (req.path.startsWith('/assets/')) {
+    return res.status(404).json({ ok: false, message: 'Recurso no encontrado' });
+  }
+  return res.sendFile(FRONTEND_INDEX, (err) => {
+    if (err) next(err);
+  });
 });
 
 // Error handler para multer y errores de upload
