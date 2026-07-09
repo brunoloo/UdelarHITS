@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
@@ -11,6 +11,8 @@ export function Header() {
   const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
 
+  const location = useLocation()
+
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
@@ -18,15 +20,25 @@ export function Header() {
   const [results, setResults] = useState(null)
   const searchRef = useRef(null)
 
+  useEffect(() => {
+    setQuery('')
+    setResults(null)
+  }, [location])
+
   const { data: categories = [] } = useQuery({
     queryKey: ['categories', 'active'],
     queryFn: () => apiGet('/categories/active').then(r => r.data),
   })
 
-  const { data: allTags = [] } = useQuery({
+  const { data: allTagsGrouped = {} } = useQuery({
     queryKey: ['categories', 'etiquetas'],
     queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
   })
+
+  const allTags = useMemo(
+    () => Object.values(allTagsGrouped).flat().map(t => t.nombre),
+    [allTagsGrouped]
+  )
 
   // Cerrar menú de usuario al click afuera
   useEffect(() => {
@@ -87,7 +99,7 @@ export function Header() {
   return (
     <header>
       <Link to="/" className="logo">
-        Udelar<span>HITS</span> (BETA)
+        Udelar<span>HITS</span> 
       </Link>
 
       <div className="search-bar" ref={searchRef}>
@@ -152,6 +164,16 @@ export function Header() {
                 >
                   Ver perfil
                 </Link>
+                <button
+                  className="user-menu-item user-menu-item--saved-mobile"
+                  onClick={e => {
+                    e.stopPropagation()
+                    setMenuOpen(false)
+                    window.dispatchEvent(new CustomEvent('toggle-saved-panel'))
+                  }}
+                >
+                  Guardados
+                </button>
                 <Link
                   to="/settings"
                   className="user-menu-item"

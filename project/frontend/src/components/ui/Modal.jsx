@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import './Modal.css'
 
-export function Modal({ isOpen, onClose, title, children, headerAction, className = '' }) {
+export function Modal({ isOpen, onClose, title, children, headerAction, className = '', closeOnBackdrop = true }) {
   useEffect(() => {
     if (!isOpen) return
     function handleKey(e) {
@@ -18,7 +18,7 @@ export function Modal({ isOpen, onClose, title, children, headerAction, classNam
   return createPortal(
     <div
       className={`modal-backdrop${isOpen ? ' open' : ''}`}
-      onClick={onClose}
+      onClick={closeOnBackdrop ? onClose : undefined}
     >
       <div className={`modal${className ? ' ' + className : ''}`} onClick={e => e.stopPropagation()}>
         <div className="modal-head">

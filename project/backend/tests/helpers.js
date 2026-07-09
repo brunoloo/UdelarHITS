@@ -87,14 +87,22 @@ export async function createUserWithRole(rol, over = {}) {
 // Atajo para admin
 export const createAdmin = (over = {}) => createUserWithRole('admin', over);
 
+// Busca IDs de etiquetas por nombre. Útil en tests que necesitan pasar IDs.
+export async function getTagIds(nombres) {
+  const { rows } = await pool.query('SELECT id FROM etiqueta WHERE nombre = ANY($1)', [nombres]);
+  return rows.map(r => Number(r.id));
+}
+
 // Crea una categoría autenticado con la cookie dada. Devuelve el objeto categoría.
 export async function createCategory(cookie, over = {}) {
   const body = {
     titulo: 'Cat ' + Math.random().toString(36).slice(2, 8),
     descripcion: 'Descripción de prueba',
-    etiquetas: ['Programación'],
     ...over,
   };
+  if (!body.etiquetas) {
+    body.etiquetas = await getTagIds(['Programación']);
+  }
   const res = await request(app).post('/api/categories/create')
     .set('Cookie', cookie).send(body);
   if (res.status >= 400) {
@@ -122,6 +130,21 @@ export async function createTopic(cookie, over = {}) {
     throw new Error(`createTopic falló (${res.status}): ${JSON.stringify(res.body)}`);
   }
   return res.body.data;
+}
+
+// Registra un usuario y lo convierte en PARTICIPANTE de la categoría comentando
+// en ella (assignParticipantRole se dispara al crear el comentario). Se usa en
+// los tests del umbral de reportes: los reportes de participantes pesan más y
+// alcanzan la cota de ocultamiento (umbralParticipantes) en categorías chicas.
+// Devuelve la sesión { user, cookie, raw }.
+export async function makeParticipant(categoriaId) {
+  const u = await registerAndLogin();
+  const res = await request(app).post('/api/replies/create')
+    .set('Cookie', u.cookie).send({ cuerpo: 'participo', categoria_id: categoriaId });
+  if (res.status >= 400) {
+    throw new Error(`makeParticipant falló (${res.status}): ${JSON.stringify(res.body)}`);
+  }
+  return u;
 }
 
 // Crea un comentario autenticado. Por defecto cuelga de un tema (que crea si no se pasa).

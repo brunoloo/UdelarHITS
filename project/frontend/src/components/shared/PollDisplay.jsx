@@ -1,22 +1,19 @@
 import { useState, useEffect, useReducer } from 'react'
 import { Check } from 'lucide-react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiPost } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
 import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { tiempoRestante } from '../../utils/poll'
 import './PollDisplay.css'
 
-// Renderiza una encuesta. Si el usuario no votó y no terminó, muestra opciones
-// clickeables; al votar (o al finalizar el tiempo) se revelan los porcentajes.
-// readOnly desactiva la votación (p. ej. en el preview de la categoría).
-export function PollDisplay({ encuesta, readOnly = false }) {
+export function PollDisplay({ encuesta, readOnly = false, invalidateKey }) {
   const { showToast } = useToast()
   const requireAuth = useRequireAuth()
+  const queryClient = useQueryClient()
   const [poll, setPoll] = useState(encuesta)
   const [, force] = useReducer(x => x + 1, 0)
 
-  // Mantener sincronizado si el comentario se refetchea.
   useEffect(() => { setPoll(encuesta) }, [encuesta])
 
   const cerrada = poll.cerrada || new Date(poll.fecha_cierre).getTime() <= Date.now()
@@ -33,7 +30,11 @@ export function PollDisplay({ encuesta, readOnly = false }) {
 
   const voteMutation = useMutation({
     mutationFn: (opcionId) => apiPost(`/polls/${poll.id}/vote`, { opcion_id: opcionId }),
-    onSuccess: (res) => setPoll(res.data),
+    onSuccess: (res) => {
+      setPoll(res.data)
+      if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
+      queryClient.invalidateQueries({ predicate: q => q.queryKey[0] === 'replies' })
+    },
     onError: (err) => showToast(err.message || 'No se pudo votar', 'error'),
   })
 

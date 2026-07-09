@@ -6,6 +6,7 @@ import { useToast } from '../../hooks/useToast'
 import { UserAvatar } from '../shared/UserAvatar'
 import { SavedPanel } from './SavedPanel'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
+import { useSocket } from '../../context/SocketContext'
 import './LeftNav.css'
 
 function notifTimeAgo(dateStr) {
@@ -23,6 +24,13 @@ function NotifTypeIcon({ tipo }) {
     return (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+    )
+  }
+  if (tipo === 'mencion_comentario') {
+    return (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/>
       </svg>
     )
   }
@@ -69,7 +77,59 @@ export function LeftNav() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const socket = useSocket()
   const isAdmin = user?.rol === 'admin'
+
+  const [chatUnread, setChatUnread] = useState(0)
+
+  useEffect(() => {
+    if (!user) return
+    apiGet('/chat/conversations').then(res => {
+      const total = (res.data || []).reduce((sum, c) => sum + (c.no_leidos || 0), 0)
+      setChatUnread(total)
+    }).catch(() => {})
+  }, [user])
+
+  useEffect(() => {
+    if (pathname.startsWith('/chat')) setChatUnread(0)
+  }, [pathname])
+
+  useEffect(() => {
+    if (!socket) return
+    function handleNewMsg() {
+      if (!pathname.startsWith('/chat')) {
+        setChatUnread(prev => prev + 1)
+      }
+    }
+    socket.on('mensaje:nuevo', handleNewMsg)
+    return () => { socket.off('mensaje:nuevo', handleNewMsg) }
+  }, [socket, pathname])
+
+  useEffect(() => {
+    if (!socket) return
+    function handleNewNotif(notif) {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
+      setNotifications(prev => prev ? [notif, ...prev] : prev)
+      if (notif.tipo === 'solicitud_aceptada') {
+        queryClient.invalidateQueries({ queryKey: ['user'] })
+      }
+    }
+    function handleDeletedNotif({ ids }) {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
+      setNotifications(prev => prev ? prev.filter(n => !ids.includes(n.id)) : prev)
+    }
+    function handleFollowUpdate() {
+      queryClient.invalidateQueries({ queryKey: ['user'] })
+    }
+    socket.on('notificacion:nueva', handleNewNotif)
+    socket.on('notificacion:eliminada', handleDeletedNotif)
+    socket.on('seguimiento:actualizado', handleFollowUpdate)
+    return () => {
+      socket.off('notificacion:nueva', handleNewNotif)
+      socket.off('notificacion:eliminada', handleDeletedNotif)
+      socket.off('seguimiento:actualizado', handleFollowUpdate)
+    }
+  }, [socket, queryClient])
 
   // Solo un panel abierto a la vez: 'notif' | 'saved' | null.
   const [activePanel, setActivePanel] = useState(null)
@@ -95,7 +155,7 @@ export function LeftNav() {
       // Los overlays (modales y menús de 3 puntos) son parte de la interacción
       // aunque se rendericen fuera del panel (el modal hace portal a body). No
       // deben cerrar el panel.
-      if (e.target.closest?.('.modal-backdrop, .comment-dropdown, .comment-menu-wrap')) return
+      if (e.target.closest?.('.modal-backdrop, .comment-dropdown, .comment-menu-wrap, .bottom-nav, .user-menu')) return
       const inNotif = panelRef.current?.contains(e.target) || notifBtnRef.current?.contains(e.target)
       const inSaved = savedPanelRef.current?.contains(e.target) || savedBtnRef.current?.contains(e.target)
       if (!inNotif && !inSaved) setActivePanel(null)
@@ -129,6 +189,26 @@ export function LeftNav() {
       setNotifLoading(false)
     }
   }
+
+  useEffect(() => {
+    function handleToggle() {
+      if (panelOpen) {
+        setActivePanel(null)
+      } else {
+        openPanel()
+      }
+    }
+    window.addEventListener('toggle-notif-panel', handleToggle)
+    return () => window.removeEventListener('toggle-notif-panel', handleToggle)
+  })
+
+  useEffect(() => {
+    function handleToggleSaved() {
+      setActivePanel(prev => (prev === 'saved' ? null : 'saved'))
+    }
+    window.addEventListener('toggle-saved-panel', handleToggleSaved)
+    return () => window.removeEventListener('toggle-saved-panel', handleToggleSaved)
+  })
 
   function handleNotifClick(e) {
     e.preventDefault()
@@ -217,12 +297,15 @@ export function LeftNav() {
           )}
         </button>
 
-        <button className="nav-item" id="nav-chat" onClick={() => showToast('El chat estará disponible próximamente', 'info')}>
+        <Link to="/chat" className={navClass('/chat')} id="nav-chat">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
           Chat
-        </button>
+          {chatUnread > 0 && (
+            <span className="notif-badge">{chatUnread > 9 ? '+9' : chatUnread}</span>
+          )}
+        </Link>
 
         <div className="nav-divider" />
 

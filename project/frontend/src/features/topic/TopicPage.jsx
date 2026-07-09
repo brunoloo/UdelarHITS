@@ -84,8 +84,11 @@ export function TopicPage() {
     mutationFn: (cuerpo) => apiPost('/replies/create',
       buildReplyFormData({ cuerpo, tema_id: id }, commentFiles, commentPoll)
     ),
-    onSuccess: () => {
-      showToast('Comentario publicado', 'success')
+    onSuccess: (res) => {
+      // El backend publica el comentario aunque los adjuntos fallen (p. ej.
+      // cuota de almacenamiento); si pasó eso, avisa con la advertencia.
+      if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
+      else showToast('Comentario publicado', 'success')
       setCommentText('')
       setCommentFiles([])
       setCommentPoll(null)
@@ -351,10 +354,10 @@ export function TopicPage() {
           <div className="edit-field">
             <div className="edit-field-label">
               <span>Contenido</span>
-              <span className="edit-field-counter">{editCuerpo.length} / 750</span>
+              <span className="edit-field-counter">{editCuerpo.length} / 500</span>
             </div>
             <textarea
-              maxLength={750}
+              maxLength={500}
               rows={5}
               value={editCuerpo}
               onChange={e => setEditCuerpo(e.target.value)}

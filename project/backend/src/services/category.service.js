@@ -1,29 +1,16 @@
-import { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
-  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
-  updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas, 
-  hardDeleteCategoryById, categoryHasContent, getPopularCategories,
+import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
+  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId,
+  updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas,
+  getChronoFeed, getPersonalizedFeed, hasFeedSignals,
+  getEtiquetasByIds, searchEtiquetas,
+  hardDeleteCategoryById, categoryHasContent, getPopularCategories, getTrendingTags,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment,
   pinCategoryTopic, unpinCategoryTopic,
   subscribeCategory, unsubscribeCategory, isSubscribedCategory } from '../repositories/category.repository.js';
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
+import { FEED } from '../config/feedConfig.js';
 import { isValidCategoryIcon } from '../config/categoryIcons.js';
-
-const ETIQUETAS_VALIDAS = [
-  'Facultades','Parciales y exámenes','Becas y trámites','Residencias','Pasantías',
-  'Educación','Ciencia','Matemática','Ingeniería','Filosofía',
-  'Historia','Psicología','Economía','Política','Derecho','Medicina',
-  'Programación','Desarrollo web','Software','Ciberseguridad',
-  'Inteligencia artificial','Gadgets','Gaming',
-  'Arte','Diseño','Fotografía','Cine y TV','Música',
-  'Escritura','Animación','Manualidades','Moda',
-  'Vida diaria','Relaciones','Cocina','Salud y fitness',
-  'Trabajo y carrera','Hogar','Mascotas','Hobbies',
-  'Cultura','Viajes','Deportes','Naturaleza',
-  'Medio ambiente','Noticias','Eventos',
-  'Memes','Tutoriales','Preguntas','Historias',
-  'Reseñas','Feedback','Autos y motos','Jardinería','Otro'
-];
 
 const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }) => {
   if (!titulo?.trim()) {
@@ -52,17 +39,24 @@ const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }
     throw err;
   }
 
-  if (descripcion.trim().length > 500) {
+  if (descripcion.trim().length > 750) {
     const err = new Error('La descripción superó el máximo de caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
   }
 
-  const etiquetasArray = Array.isArray(etiquetas) ? etiquetas : [etiquetas];
+  const etiquetasArray = (Array.isArray(etiquetas) ? etiquetas : [etiquetas]).map(Number);
 
-  const invalidas = etiquetasArray.filter(e => !ETIQUETAS_VALIDAS.includes(e));
+  if (etiquetasArray.some(id => !Number.isInteger(id) || id < 1)) {
+    const err = new Error('Etiquetas inválidas');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const validIds = await getEtiquetasByIds(etiquetasArray);
+  const invalidas = etiquetasArray.filter(id => !validIds.includes(id));
   if (invalidas.length > 0) {
-    const err = new Error(`Etiquetas inválidas: ${invalidas.join(', ')}`);
+    const err = new Error('Algunas etiquetas seleccionadas no existen');
     err.code = 'BAD_REQUEST';
     throw err;
   }
@@ -201,16 +195,22 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
     throw err;
   }
 
-  if (descripcion?.length > 500) {
+  if (descripcion?.length > 750) {
     const err = new Error('La descripción superó el máximo de caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
   }
 
   if (etiquetas) {
-    const invalidas = etiquetas.filter(e => !ETIQUETAS_VALIDAS.includes(e));
-    if (invalidas.length > 0) {
-      const err = new Error(`Etiquetas inválidas: ${invalidas.join(', ')}`);
+    const ids = etiquetas.map(Number);
+    if (ids.some(id => !Number.isInteger(id) || id < 1)) {
+      const err = new Error('Etiquetas inválidas');
+      err.code = 'BAD_REQUEST';
+      throw err;
+    }
+    const validIds = await getEtiquetasByIds(ids);
+    if (validIds.length !== ids.length) {
+      const err = new Error('Algunas etiquetas seleccionadas no existen');
       err.code = 'BAD_REQUEST';
       throw err;
     }
@@ -229,6 +229,77 @@ const getActiveCategoriesService = async () => {
   return await getActiveCategories();
 };
 
+// ── Feed del Home (paginado por cursor) ──
+// El cursor codifica en base64url el modo y la posición: {m:'p', s, id} para
+// el feed personalizado (score + id) o {m:'c', f, id} para el cronológico
+// (fecha + id). El modo va adentro para detectar cursores de otro modo
+// (p. ej. el usuario cerró sesión a mitad de scroll) y rechazarlos.
+const encodeFeedCursor = (payload) =>
+  Buffer.from(JSON.stringify(payload)).toString('base64url');
+
+const decodeFeedCursor = (cursor) => {
+  try {
+    const p = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+    if (p?.m === 'p' && /^\d+$/.test(String(p.s)) && /^\d+$/.test(String(p.id))) return p;
+    if (p?.m === 'c' && !isNaN(Date.parse(p.f)) && /^\d+$/.test(String(p.id))) return p;
+  } catch { /* cae al throw de abajo */ }
+  const err = new Error('Cursor de paginación inválido');
+  err.code = 'BAD_REQUEST';
+  throw err;
+};
+
+const getCategoryFeedService = async (user, { limit, cursor } = {}) => {
+  const parsed = parseInt(limit, 10);
+  const pageSize = Math.min(
+    Math.max(Number.isNaN(parsed) ? FEED.PAGE_SIZE_DEFAULT : parsed, 1),
+    FEED.PAGE_SIZE_MAX
+  );
+
+  // Personalizado solo si hay usuario con alguna señal (participación,
+  // suscripción o likes). Cold start / invitado → cronológico, como Recientes.
+  const personalized = user ? await hasFeedSignals(user.id) : false;
+  const mode = personalized ? 'p' : 'c';
+
+  let cur = null;
+  if (cursor) {
+    cur = decodeFeedCursor(cursor);
+    if (cur.m !== mode) {
+      const err = new Error('Cursor de paginación inválido');
+      err.code = 'BAD_REQUEST';
+      throw err;
+    }
+  }
+
+  // Se pide una fila extra solo para saber si hay página siguiente.
+  const rows = personalized
+    ? await getPersonalizedFeed(user.id, {
+        limit: pageSize + 1,
+        cursorScore: cur?.s ?? null,
+        cursorId: cur?.id ?? null,
+      })
+    : await getChronoFeed({
+        limit: pageSize + 1,
+        cursorFecha: cur?.f ?? null,
+        cursorId: cur?.id ?? null,
+      });
+
+  const hasMore = rows.length > pageSize;
+  const items = rows.slice(0, pageSize);
+
+  let nextCursor = null;
+  if (hasMore) {
+    const last = items[items.length - 1];
+    nextCursor = personalized
+      ? encodeFeedCursor({ m: 'p', s: String(last.score), id: String(last.id) })
+      : encodeFeedCursor({ m: 'c', f: new Date(last.fecha_creacion).toISOString(), id: String(last.id) });
+  }
+
+  // score es interno del ranking, no parte del contrato de la card
+  for (const item of items) delete item.score;
+
+  return { items, nextCursor };
+};
+
 const getParticipantsByCategoryIdService = async (userId, categoriaId) => {
   const category = await getCategoryById(categoriaId);
   if (!category) {
@@ -245,13 +316,32 @@ const getParticipantsByCategoryIdService = async (userId, categoriaId) => {
 };
 
 const getEtiquetasService = async () => {
-  return await getEtiquetas();
+  const rows = await getEtiquetas();
+  const grouped = {};
+  for (const row of rows) {
+    if (!grouped[row.grupo]) grouped[row.grupo] = [];
+    grouped[row.grupo].push({ id: row.id, nombre: row.nombre, nombre_display: row.nombre_display });
+  }
+  return grouped;
+};
+
+const searchEtiquetasService = async (query) => {
+  if (!query?.trim()) {
+    return await getEtiquetasService();
+  }
+  return await searchEtiquetas(query.trim());
 };
 
 const getPopularCategoriesService = async (days, limit) => {
   const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 30);
   const safeLimit = Math.min(Math.max(parseInt(limit) || 20, 1), 50);
   return await getPopularCategories(safeDays, safeLimit);
+};
+
+const getTrendingTagsService = async (days, limit) => {
+  const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 30);
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 8, 1), 20);
+  return await getTrendingTags(safeDays, safeLimit);
 };
 
 const getCategoryEditHistoryService = async (categoryId) => {
@@ -346,7 +436,8 @@ const isSubscribedCategoryService = async (userId, categoryId) => {
 
 export { createCategoryService, getCategoriesService, getCategoryByIdService, deactivateCategoryById,
   deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService,
-  getActiveCategoriesService, getParticipantsByCategoryIdService, getEtiquetasService,
-  getPopularCategoriesService, getCategoryEditHistoryService,
+  getActiveCategoriesService, getCategoryFeedService, getParticipantsByCategoryIdService, getEtiquetasService,
+  searchEtiquetasService,
+  getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,
   subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService };

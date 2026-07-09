@@ -1,8 +1,8 @@
-import { createCategoryService, getCategoriesService, getCategoryByIdService, 
-  deleteCategoryService, activeCategoryService, getMyCategoriesService, 
-  updateCategoryService, getActiveCategoriesService, 
-  getParticipantsByCategoryIdService, getEtiquetasService, 
-  getPopularCategoriesService, getCategoryEditHistoryService,
+import { createCategoryService, getCategoriesService, getCategoryByIdService,
+  deleteCategoryService, activeCategoryService, getMyCategoriesService,
+  updateCategoryService, getActiveCategoriesService, getCategoryFeedService,
+  getParticipantsByCategoryIdService, getEtiquetasService, searchEtiquetasService,
+  getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,
   subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService } from '../services/category.service.js';
 
@@ -106,6 +106,19 @@ const getActiveCategories = async (req, res) => {
   }
 };
 
+const getCategoryFeed = async (req, res) => {
+  try {
+    const { items, nextCursor } = await getCategoryFeedService(req.user ?? null, {
+      limit: req.query.limit,
+      cursor: req.query.cursor,
+    });
+    return res.status(200).json({ ok: true, data: items, nextCursor });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 const getParticipantsByCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -127,10 +140,28 @@ const getEtiquetasList = async (req, res) => {
   }
 };
 
+const searchEtiquetas = async (req, res) => {
+  try {
+    const results = await searchEtiquetasService(req.query.q);
+    return res.status(200).json({ ok: true, data: results });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 const getPopularCategoriesList = async (req, res, next) => {
   try {
     const categories = await getPopularCategoriesService(req.query.days, req.query.limit);
     return res.status(200).json({ ok: true, data: categories });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getTrendingTagsList = async (req, res, next) => {
+  try {
+    const tags = await getTrendingTagsService(req.query.days, req.query.limit);
+    return res.status(200).json({ ok: true, data: tags });
   } catch (error) {
     next(error);
   }
@@ -203,6 +234,7 @@ const getCategorySubscription = async (req, res) => {
 };
 
 export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
-  getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory, getEtiquetasList,
-  getPopularCategoriesList, getCategoryEditHistory, pinCategoryItem, unpinCategoryItem,
+  getMyCategories, updateCategory, getActiveCategories, getCategoryFeed, getParticipantsByCategory, getEtiquetasList,
+  searchEtiquetas, getPopularCategoriesList, getTrendingTagsList, getCategoryEditHistory,
+  pinCategoryItem, unpinCategoryItem,
   subscribeCategory, unsubscribeCategory, getCategorySubscription };

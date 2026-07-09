@@ -1,14 +1,20 @@
 import request from 'supertest';
 import app from '../../src/app.js';
-import { registerAndLogin, createCategory } from '../helpers.js';
+import pool from '../../src/config/db.js';
+import { registerAndLogin, createCategory, createAdmin, getTagIds } from '../helpers.js';
 
 const crear = (cookie, body) =>
   request(app).post('/api/categories/create').set('Cookie', cookie).send(body);
 
+let validTagIds;
+beforeAll(async () => {
+  validTagIds = await getTagIds(['Programación']);
+});
+
 const base = (over = {}) => ({
   titulo: 'Cat ' + Math.random().toString(36).slice(2, 8),
   descripcion: 'Descripción válida',
-  etiquetas: ['Programación'],
+  etiquetas: validTagIds,
   ...over,
 });
 
@@ -37,15 +43,15 @@ describe('validación de creación de categoría', () => {
     expect(res.status).toBe(400);
   });
 
-  test('descripción de más de 500 caracteres → 400', async () => {
+  test('descripción de más de 750 caracteres → 400', async () => {
     const u = await registerAndLogin();
-    const res = await crear(u.cookie, base({ descripcion: 'a'.repeat(501) }));
+    const res = await crear(u.cookie, base({ descripcion: 'a'.repeat(751) }));
     expect(res.status).toBe(400);
   });
 
-  test('etiqueta fuera del enum → 400', async () => {
+  test('etiqueta con ID inexistente → 400', async () => {
     const u = await registerAndLogin();
-    const res = await crear(u.cookie, base({ etiquetas: ['EtiquetaInventada'] }));
+    const res = await crear(u.cookie, base({ etiquetas: [999999] }));
     expect(res.status).toBe(400);
   });
 
@@ -60,7 +66,6 @@ describe('validación de creación de categoría', () => {
     const TITULO = 'CategoriaUnica_' + Math.random().toString(36).slice(2, 8);
     const primera = await crear(u.cookie, base({ titulo: TITULO }));
     expect(primera.status).toBe(201);
-    // segunda con el mismo título
     const segunda = await crear(u.cookie, base({ titulo: TITULO }));
     expect(segunda.status).toBe(409);
   });
@@ -69,8 +74,47 @@ describe('validación de creación de categoría', () => {
     const u = await registerAndLogin();
     const TITULO = 'MiCategoria_' + Math.random().toString(36).slice(2, 8);
     await crear(u.cookie, base({ titulo: TITULO }));
-    // mismo título en mayúsculas debe colisionar (se guarda lowercase)
     const res = await crear(u.cookie, base({ titulo: TITULO.toUpperCase() }));
     expect(res.status).toBe(409);
+  });
+});
+
+const editar = (cookie, id, body) =>
+  request(app).patch(`/api/categories/${id}`).set('Cookie', cookie).send(body);
+
+describe('validación de edición de categoría', () => {
+  test('descripción de más de 750 caracteres → 400', async () => {
+    const u = await registerAndLogin();
+    const cat = await createCategory(u.cookie);
+    const res = await editar(u.cookie, cat.id, { descripcion: 'a'.repeat(751) });
+    expect(res.status).toBe(400);
+  });
+
+  test('etiqueta con ID inexistente → 400', async () => {
+    const u = await registerAndLogin();
+    const cat = await createCategory(u.cookie);
+    const res = await editar(u.cookie, cat.id, { etiquetas: [999999] });
+    expect(res.status).toBe(400);
+  });
+
+  test('edición válida → 200', async () => {
+    const u = await registerAndLogin();
+    const cat = await createCategory(u.cookie);
+    const res = await editar(u.cookie, cat.id, { descripcion: 'Nueva descripción' });
+    expect(res.status).toBe(200);
+  });
+
+  test('editar categoría ajena → 403', async () => {
+    const a = await registerAndLogin();
+    const b = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const res = await editar(b.cookie, cat.id, { descripcion: 'Intruso' });
+    expect(res.status).toBe(403);
+  });
+
+  test('categoría inexistente → 404', async () => {
+    const u = await registerAndLogin();
+    const res = await editar(u.cookie, 999999, { descripcion: 'Nada' });
+    expect(res.status).toBe(404);
   });
 });

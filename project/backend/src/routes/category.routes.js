@@ -1,20 +1,23 @@
 import { Router } from 'express';
 import { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
-    getMyCategories, updateCategory, getActiveCategories, getParticipantsByCategory,
-    getEtiquetasList, getPopularCategoriesList, getCategoryEditHistory,
-    pinCategoryItem, unpinCategoryItem,
+    getMyCategories, updateCategory, getActiveCategories, getCategoryFeed, getParticipantsByCategory,
+    getEtiquetasList, searchEtiquetas, getPopularCategoriesList, getTrendingTagsList,
+    getCategoryEditHistory, pinCategoryItem, unpinCategoryItem,
     subscribeCategory, unsubscribeCategory, getCategorySubscription } from '../controllers/category.controller.js';
-import { protect, isAdmin } from '../middlewares/auth.middleware.js';
+import { protect, isAdmin, optionalAuth } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
 router.get('/', protect, isAdmin, getCategories);        // Listar categorías  
 router.get('/active', getActiveCategories);              // Listar categorías activas
-router.get('/etiquetas', getEtiquetasList);              // Obtener las etiquetas
+router.get('/feed', optionalAuth, getCategoryFeed);      // Home: feed personalizado paginado
+router.get('/etiquetas', getEtiquetasList);              // Obtener las etiquetas (agrupadas)
+router.get('/etiquetas/search', searchEtiquetas);       // Buscar etiquetas por nombre
 router.post('/create', protect, createCategory);         // Crear categoría
 router.get('/me', protect, getMyCategories);             // Ver mis categorías
 
 router.get('/popular', getPopularCategoriesList);        // Lista de categorías populares
+router.get('/trending-tags', getTrendingTagsList);       // Etiquetas en tendencia (actividad 7d, público)
 
 router.get('/:id/history', getCategoryEditHistory);      // Obtener edición de categoría
 router.patch('/:id', protect, updateCategory);           // Actualizar categoría

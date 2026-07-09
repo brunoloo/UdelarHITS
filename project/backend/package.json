@@ -21,11 +21,18 @@
     "db:migrate:fase14": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase14_suscripcion_categoria.sql",
     "db:migrate:fase15": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase15_adjuntos.sql",
     "db:migrate:fase16": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase16_encuestas.sql",
+    "db:migrate:chat": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_chat.sql",
+    "db:migrate:chat-delete": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_chat_delete.sql",
+    "db:migrate:bloqueo": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_bloqueo.sql",
+    "db:migrate:fase17": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase17_google_oauth.sql",
+    "db:migrate:etiquetas": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_etiquetas_tabla.sql",
     "db:test:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits_test;\"",
     "db:test:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits_test OWNER brunoloo;\"",
     "db:test:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits_test -f ../database/schema.sql",
     "db:test:reset": "npm run db:test:drop && npm run db:test:create && npm run db:test:schema",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "test:chat": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand tests/chat/chat.test.js",
+    "test:block": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand tests/block/block.test.js",
     "seed:admin": "node src/seeds/seedAdmin.js",
     "seed:test": "node src/seeds/seedTestData.js",
     "seed:testV2": "node src/seeds/seedTestDataV2.js"
@@ -37,6 +44,7 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.10.0",
+    "cookie": "^2.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.0",
@@ -47,7 +55,10 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "pg": "^8.20.0",
-    "resend": "^6.12.4"
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "resend": "^6.12.4",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",

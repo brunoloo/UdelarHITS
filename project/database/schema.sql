@@ -34,34 +34,106 @@ CREATE TYPE estado_apelacion AS ENUM ('pendiente', 'aceptada', 'rechazada');
 --   'moderacion_admin'   → lo eliminó un admin como moderación (Fase 4.C, previsto)
 CREATE TYPE motivo_inactivacion AS ENUM ('autor', 'moderacion_reporte', 'moderacion_admin');
 
-CREATE TYPE etiqueta AS ENUM (
-  -- Vida universitaria
-  'Facultades', 'Parciales y exámenes', 'Becas y trámites', 'Residencias', 'Pasantías',
-  
-  -- Académico
-  'Educación', 'Ciencia', 'Matemática', 'Ingeniería', 'Filosofía',
-  'Historia', 'Psicología', 'Economía', 'Política', 'Derecho', 'Medicina',
-  
-  -- Tecnología
-  'Programación', 'Desarrollo web', 'Software', 'Ciberseguridad',
-  'Inteligencia artificial', 'Gadgets', 'Gaming',
-  
-  -- Creatividad
-  'Arte', 'Diseño', 'Fotografía', 'Cine y TV', 'Música',
-  'Escritura', 'Animación', 'Manualidades', 'Moda',
-  
-  -- Vida cotidiana
-  'Vida diaria', 'Relaciones', 'Cocina', 'Salud y fitness',
-  'Trabajo y carrera', 'Hogar', 'Mascotas', 'Hobbies',
-  
-  -- Sociedad
-  'Cultura', 'Viajes', 'Deportes', 'Naturaleza',
-  'Medio ambiente', 'Noticias', 'Eventos',
-  
-  -- Comunidad
-  'Memes', 'Tutoriales', 'Preguntas', 'Historias',
-  'Reseñas', 'Feedback', 'Autos y motos', 'Jardinería', 'Otro'
+-- Etiquetas: tabla relacional (reemplaza al ENUM fijo original).
+-- Agregar etiquetas es un simple INSERT, sin ALTER TYPE.
+CREATE TABLE etiqueta (
+  id             BIGSERIAL PRIMARY KEY,
+  nombre         VARCHAR(100) NOT NULL UNIQUE,
+  nombre_display VARCHAR(150),
+  grupo          VARCHAR(50) NOT NULL,
+  orden          SMALLINT NOT NULL DEFAULT 0
 );
+
+INSERT INTO etiqueta (nombre, nombre_display, grupo, orden) VALUES
+  -- Facultades
+  ('FADU', 'Arquitectura, Diseño y Urbanismo', 'Facultades', 1),
+  ('FAGRO', 'Agronomía', 'Facultades', 2),
+  ('Fartes', 'Artes', 'Facultades', 3),
+  ('FCEA', 'Ciencias Económicas y de Administración', 'Facultades', 4),
+  ('FCIEN', 'Ciencias', 'Facultades', 5),
+  ('FCS', 'Ciencias Sociales', 'Facultades', 6),
+  ('FDER', 'Derecho', 'Facultades', 7),
+  ('FENF', 'Enfermería', 'Facultades', 8),
+  ('FHCE', 'Humanidades y Ciencias de la Educación', 'Facultades', 9),
+  ('FIC', 'Información y Comunicación', 'Facultades', 10),
+  ('FING', 'Ingeniería', 'Facultades', 11),
+  ('FMED', 'Medicina', 'Facultades', 12),
+  ('FOdont', 'Odontología', 'Facultades', 13),
+  ('FPsico', 'Psicología', 'Facultades', 14),
+  ('FQ', 'Química', 'Facultades', 15),
+  ('FVET', 'Veterinaria', 'Facultades', 16),
+  -- Materias FING
+  ('GAL1', 'Geometría y Álgebra Lineal 1', 'Materias FING', 1),
+  ('GAL2', 'Geometría y Álgebra Lineal 2', 'Materias FING', 2),
+  ('CDIV', 'Cálculo Diferencial e Integral en una Variable', 'Materias FING', 3),
+  ('CDIVV', 'Cálculo Diferencial e Integral en Varias Variables', 'Materias FING', 4),
+  ('EcDif', 'Introducción a las Ecuaciones Diferenciales', 'Materias FING', 5),
+  ('MetNum', 'Métodos Numéricos', 'Materias FING', 6),
+  ('MD1', 'Matemática Discreta 1', 'Materias FING', 7),
+  ('MD2', 'Matemática Discreta 2', 'Materias FING', 8),
+  ('Física 1', NULL, 'Materias FING', 9),
+  ('Física 2', NULL, 'Materias FING', 10),
+  ('P1', 'Programación 1', 'Materias FING', 11),
+  ('P2', 'Programación 2', 'Materias FING', 12),
+  ('P3', 'Programación 3', 'Materias FING', 13),
+  ('P4', 'Programación 4', 'Materias FING', 14),
+  ('FBD', 'Fundamentos de Bases de Datos', 'Materias FING', 15),
+  ('Lógica', NULL, 'Materias FING', 16),
+  ('Estadística', 'Estadística I', 'Materias FING', 17),
+  ('CM', 'Complemento de Matemática', 'Materias FING', 18),
+  ('TIC', 'Taller de Introducción a la Computación', 'Materias FING', 19),
+  -- Áreas académicas
+  ('Matemática', NULL, 'Áreas académicas', 1),
+  ('Física', NULL, 'Áreas académicas', 2),
+  ('Química', NULL, 'Áreas académicas', 3),
+  ('Biología', NULL, 'Áreas académicas', 4),
+  ('Programación', NULL, 'Áreas académicas', 5),
+  ('Economía', NULL, 'Áreas académicas', 6),
+  ('Derecho (área)', NULL, 'Áreas académicas', 7),
+  ('Medicina (área)', NULL, 'Áreas académicas', 8),
+  ('Psicología (área)', NULL, 'Áreas académicas', 9),
+  ('Filosofía', NULL, 'Áreas académicas', 10),
+  ('Historia', NULL, 'Áreas académicas', 11),
+  ('Sociología', NULL, 'Áreas académicas', 12),
+  ('Ingeniería (área)', NULL, 'Áreas académicas', 13),
+  ('Arquitectura', NULL, 'Áreas académicas', 14),
+  ('Diseño', NULL, 'Áreas académicas', 15),
+  ('Comunicación', NULL, 'Áreas académicas', 16),
+  ('Educación', NULL, 'Áreas académicas', 17),
+  ('Ciencia', NULL, 'Áreas académicas', 18),
+  -- Vida universitaria
+  ('Parciales y exámenes', NULL, 'Vida universitaria', 1),
+  ('Becas y trámites', NULL, 'Vida universitaria', 2),
+  ('Pasantías', NULL, 'Vida universitaria', 3),
+  ('Trabajo y carrera', NULL, 'Vida universitaria', 4),
+  ('Residencias', NULL, 'Vida universitaria', 5),
+  ('Tutoriales', NULL, 'Vida universitaria', 6),
+  ('Preguntas', NULL, 'Vida universitaria', 7),
+  ('Feedback', NULL, 'Vida universitaria', 8),
+  -- Intereses
+  ('Gaming', NULL, 'Intereses', 1),
+  ('Memes', NULL, 'Intereses', 2),
+  ('Deportes', NULL, 'Intereses', 3),
+  ('Música', NULL, 'Intereses', 4),
+  ('Cine y TV', NULL, 'Intereses', 5),
+  ('Arte', NULL, 'Intereses', 6),
+  ('Cocina', NULL, 'Intereses', 7),
+  ('Salud y fitness', NULL, 'Intereses', 8),
+  ('Mascotas', NULL, 'Intereses', 9),
+  ('Hobbies', NULL, 'Intereses', 10),
+  ('Viajes', NULL, 'Intereses', 11),
+  ('Naturaleza', NULL, 'Intereses', 12),
+  ('Fotografía', NULL, 'Intereses', 13),
+  ('Escritura', NULL, 'Intereses', 14),
+  ('Moda', NULL, 'Intereses', 15),
+  ('Autos y motos', NULL, 'Intereses', 16),
+  ('Jardinería', NULL, 'Intereses', 17),
+  ('Vida diaria', NULL, 'Intereses', 18),
+  ('Relaciones', NULL, 'Intereses', 19),
+  ('Noticias', NULL, 'Intereses', 20),
+  ('Eventos', NULL, 'Intereses', 21),
+  ('Tecnología', NULL, 'Intereses', 22),
+  ('Otro', NULL, 'Intereses', 23);
 
 -- -----------------------------
 -- USUARIO
@@ -72,11 +144,13 @@ CREATE TABLE usuario ( -- Revisado y completo. No modificar
   nickname          VARCHAR(50)  NOT NULL UNIQUE,
   nombre            VARCHAR(120) NOT NULL,
   email             VARCHAR(255) NOT NULL UNIQUE,
-  password_hash     TEXT         NOT NULL,
+  password_hash     TEXT,
+  auth_provider     VARCHAR(10)  NOT NULL DEFAULT 'local',
   biografia         TEXT,
   url_imagen        TEXT,
   url_banner        TEXT,
   estado            estado_usr   NOT NULL DEFAULT 'activo',
+  nickname_confirmado BOOLEAN NOT NULL DEFAULT TRUE,
   privado BOOLEAN NOT NULL DEFAULT FALSE,
   me_gusta_privado BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_creacion    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
@@ -116,11 +190,11 @@ CREATE TABLE categoria ( -- Revisado y completo. No modificar
   fecha_creacion              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- categoria puede tener 1..N etiquetas
+-- categoria puede tener 1..N etiquetas (FK a tabla etiqueta)
 CREATE TABLE categoria_etiqueta (
-  categoria_id        BIGINT NOT NULL REFERENCES categoria(id) ON DELETE CASCADE,
-  etiqueta_valor      etiqueta NOT NULL,
-  PRIMARY KEY (categoria_id, etiqueta_valor)
+  categoria_id BIGINT NOT NULL REFERENCES categoria(id) ON DELETE CASCADE,
+  etiqueta_id  BIGINT NOT NULL REFERENCES etiqueta(id) ON DELETE CASCADE,
+  PRIMARY KEY (categoria_id, etiqueta_id)
 );
 
 -- historial de edición de descripción de categoría
@@ -403,6 +477,45 @@ CREATE TABLE reporte_usuario (
   fecha_resolucion TIMESTAMPTZ,
   UNIQUE(usuario_reportado_id, reportador_id)
 );
+
+-- -----------------------------
+-- CHAT 1:1
+-- -----------------------------
+CREATE TABLE conversacion (
+  id                      BIGSERIAL PRIMARY KEY,
+  usuario1_id             BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  usuario2_id             BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  ultimo_mensaje_at       TIMESTAMPTZ,
+  borrado_por_usuario1_at TIMESTAMPTZ,
+  borrado_por_usuario2_at TIMESTAMPTZ,
+  fecha_creacion          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (usuario1_id < usuario2_id),
+  UNIQUE (usuario1_id, usuario2_id)
+);
+
+CREATE TABLE mensaje (
+  id                BIGSERIAL PRIMARY KEY,
+  conversacion_id   BIGINT NOT NULL REFERENCES conversacion(id) ON DELETE CASCADE,
+  autor_id          BIGINT NOT NULL REFERENCES usuario(id) ON DELETE RESTRICT,
+  cuerpo            TEXT NOT NULL,
+  leido             BOOLEAN NOT NULL DEFAULT FALSE,
+  fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_mensaje_conversacion ON mensaje(conversacion_id, fecha_creacion DESC);
+CREATE INDEX idx_mensaje_autor ON mensaje(autor_id);
+CREATE INDEX idx_conversacion_usuario1 ON conversacion(usuario1_id);
+CREATE INDEX idx_conversacion_usuario2 ON conversacion(usuario2_id);
+
+CREATE TABLE bloqueo (
+  bloqueador_id  BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  bloqueado_id   BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (bloqueador_id, bloqueado_id),
+  CHECK (bloqueador_id <> bloqueado_id)
+);
+
+CREATE INDEX idx_bloqueo_bloqueado ON bloqueo(bloqueado_id);
 
 -- -----------------------------
 -- ÍNDICES ÚTILES

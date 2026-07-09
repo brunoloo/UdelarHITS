@@ -34,8 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await apiPost('/auth/forgot-password', { email });
 
-      // Siempre mostramos el estado de éxito por seguridad
-      // (no revelamos si el email existe o no)
+      if (!res.ok) {
+        errorEl.textContent = res.message || 'Error al procesar la solicitud. Intentá de nuevo.';
+        btn.disabled = false;
+        btn.textContent = 'Enviar enlace de recuperación';
+        return;
+      }
+
       form.style.display = 'none';
       sent.style.display = 'block';
     } catch {

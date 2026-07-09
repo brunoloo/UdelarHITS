@@ -7,6 +7,7 @@ import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory,
   getReplyContext, getLikedCommentsByUserId } from '../repositories/reply.repository.js';
 import { getLikesPrivacyById } from '../repositories/user.repository.js';
+import { isBlocked } from '../repositories/block.repository.js';
 import { createNotification } from '../repositories/notification.repository.js';
 import { createAttachment, getAttachmentsByContenidoId, getAttachmentsForDeletion } from '../repositories/adjunto.repository.js';
 import { createPoll, getPollByContenidoId } from '../repositories/encuesta.repository.js';
@@ -59,6 +60,11 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     if (!padre) {
       const err = new Error('Comentario padre no encontrado');
       err.code = 'NOT_FOUND';
+      throw err;
+    }
+    if (await isBlocked(autorId, padre.autor_id)) {
+      const err = new Error('No se puede realizar esta acción');
+      err.code = 'FORBIDDEN';
       throw err;
     }
     // Heredar tema_id o categoria_id del padre
@@ -144,7 +150,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       const topic = await getTopicById(tema_id);
       const urlTema = `/topic/${tema_id}?commentId=${created.contenido_id}`;
 
-      if (topic && topic.autor_id !== autorId) {
+      if (topic && topic.autor_id !== autorId && !(await isBlocked(autorId, topic.autor_id))) {
         await createNotification({
           usuario_id: topic.autor_id,
           tipo: 'comentario_en_tema',
@@ -158,7 +164,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       // Autor de la categoría: solo si es distinto del comentarista y del autor
       // del tema (para no duplicarle la notificación a la misma persona).
       const cat = topic ? await getCategoryById(topic.categoria_id) : null;
-      if (cat && cat.autor_id !== autorId && cat.autor_id !== topic.autor_id) {
+      if (cat && cat.autor_id !== autorId && cat.autor_id !== topic.autor_id && !(await isBlocked(autorId, cat.autor_id))) {
         await createNotification({
           usuario_id: cat.autor_id,
           tipo: 'comentario_en_tema_categoria',
@@ -171,7 +177,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     } else if (categoria_id) {
       // Comentario directo en la categoría → al autor de la categoría.
       const cat = await getCategoryById(categoria_id);
-      if (cat && cat.autor_id !== autorId) {
+      if (cat && cat.autor_id !== autorId && !(await isBlocked(autorId, cat.autor_id))) {
         await createNotification({
           usuario_id: cat.autor_id,
           tipo: 'comentario_en_categoria',
@@ -201,15 +207,71 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     }
   }
 
+  // Menciones (@nickname): notificar a cada usuario mencionado, sin duplicar
+  // al autor ni a usuarios que ya recibieron notificación por otro motivo.
+  if (cuerpoLimpio) {
+    const mentionRegex = /@(\w[\w.-]{0,29})/g
+    const mentionedNicks = [...new Set(
+      Array.from(cuerpoLimpio.matchAll(mentionRegex), m => m[1].toLowerCase())
+    )];
+    if (mentionedNicks.length > 0) {
+      const { rows: nickRows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [autorId]);
+      const actorNick = nickRows[0]?.nickname;
+      const placeholders = mentionedNicks.map((_, i) => `$${i + 1}`).join(', ');
+      const { rows: mentionedUsers } = await pool.query(
+        `SELECT id, nickname FROM usuario WHERE estado = 'activo' AND LOWER(nickname) IN (${placeholders})`,
+        mentionedNicks
+      );
+
+      const alreadyNotified = new Set();
+      alreadyNotified.add(autorId);
+      if (comentario_padre_id && padre) alreadyNotified.add(padre.autor_id);
+
+      const commentUrl = created.tema_id
+        ? `/topic/${created.tema_id}?commentId=${created.contenido_id}`
+        : created.categoria_id
+          ? `/category/${created.categoria_id}?tab=comentarios&commentId=${created.contenido_id}`
+          : null;
+
+      for (const mu of mentionedUsers) {
+        if (alreadyNotified.has(mu.id)) continue;
+        alreadyNotified.add(mu.id);
+        // No notificar menciones a través de un bloqueo (en cualquier dirección).
+        if (await isBlocked(autorId, mu.id)) continue;
+        await createNotification({
+          usuario_id: mu.id,
+          tipo: 'mencion_comentario',
+          mensaje: `${actorNick} te mencionó en un comentario`,
+          contenido_id: created.contenido_id,
+          actor_id: autorId,
+          url: commentUrl,
+        });
+      }
+    }
+  }
+
   // Adjuntos: subir a Cloudinary (en paralelo, que es la parte lenta) e insertar
   // en la tabla `adjunto` respetando el orden de selección.
+  //
+  // allSettled y no all: a esta altura el comentario YA está creado, así que un
+  // fallo de subida (p. ej. cuota de Cloudinary superada) nunca debe tirar la
+  // request entera — se conservan los adjuntos que sí subieron y se devuelve
+  // una advertencia honesta para que el usuario sepa qué pasó.
   if (files.length > 0) {
-    const subidos = await Promise.all(
+    const resultados = await Promise.allSettled(
       files.map((f) => uploadAttachment(f.buffer, f.tipo, f.originalname))
     );
+    let falloCuota = false;
+    let falloOtro = false;
     for (let i = 0; i < files.length; i++) {
+      const r = resultados[i];
+      if (r.status !== 'fulfilled') {
+        if (r.reason?.code === 'CLOUDINARY_QUOTA') falloCuota = true;
+        else falloOtro = true;
+        continue;
+      }
       const f = files[i];
-      const { url, public_id } = subidos[i];
+      const { url, public_id } = r.value;
       await createAttachment({
         contenidoId: created.contenido_id,
         url,
@@ -220,6 +282,11 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       });
     }
     created.adjuntos = await getAttachmentsByContenidoId(created.contenido_id);
+    if (falloCuota) {
+      created.advertencia = 'Tu comentario se publicó, pero los archivos no se pudieron subir por un problema temporal de almacenamiento del sitio — no es un error tuyo. Probá adjuntarlos de nuevo más tarde.';
+    } else if (falloOtro) {
+      created.advertencia = 'Tu comentario se publicó, pero algunos archivos no se pudieron subir. Probá adjuntarlos de nuevo más tarde.';
+    }
   } else {
     created.adjuntos = [];
   }
@@ -379,6 +446,12 @@ const getRepliesByCommentIdService = async (commentId, userId = null) => {
 const updateReplyService = async (userId, userRol, replyId, { cuerpo }) => {
   if (!cuerpo?.trim()) {
     const err = new Error('El contenido no puede estar vacío');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  if (cuerpo.trim().length > 5000) {
+    const err = new Error('El comentario superó el máximo de 5000 caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
   }

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet, apiPost } from '../../api/client'
@@ -13,7 +13,10 @@ import './explore.css'
 
 // ── Hero ──
 function HeroCard({ category }) {
-  const etiquetas = parseEtiquetas(category.etiquetas).slice(0, 4)
+  const navigate = useNavigate()
+  const allEtiquetas = parseEtiquetas(category.etiquetas)
+  const etiquetas = allEtiquetas.slice(0, 5)
+  const extraCount = allEtiquetas.length - 5
   const temas = Number(category.temas_recientes) || 0
   const comentarios = Number(category.comentarios_recientes) || 0
   return (
@@ -30,7 +33,13 @@ function HeroCard({ category }) {
       </div>
       {etiquetas.length > 0 && (
         <div className="hero-tags">
-          {etiquetas.map(e => <span key={e} className="hero-tag">{e}</span>)}
+          {etiquetas.map(e => (
+            <button key={e} type="button" className="hero-tag hero-tag--link"
+              onClick={ev => { ev.preventDefault(); navigate(`/?q=${encodeURIComponent(e)}`) }}>
+              {e}
+            </button>
+          ))}
+          {extraCount > 0 && <span className="hero-tag hero-tag--more">+{extraCount} más</span>}
         </div>
       )}
     </Link>

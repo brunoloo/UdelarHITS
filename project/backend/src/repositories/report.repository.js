@@ -93,4 +93,57 @@ const countReportesByCategoria = async (categoriaId, client = pool) => {
   return rows[0].total;
 };
 
-export { createReporte, countReportesByContenido, getContenidoTipo, createReporteCategoria, countReportesByCategoria };
+// ---------------------------------------------------------
+// Desglose de reportes de un CONTENIDO (tema/comentario) para el umbral
+// dinámico. Resuelve la categoría del contenido (tema.categoria_id, o la del
+// comentario directo, o la del tema al que responde) y devuelve:
+//   n = participantes de esa categoría (participacion_categoria)
+//   p = reportes de este contenido hechos por participantes de la categoría
+//   v = reportes hechos por visitantes (no participan)
+// Como el UNIQUE por (usuario, contenido) impide reportes duplicados, cada
+// reporte es un usuario distinto → p/v cuentan usuarios distintos.
+// ---------------------------------------------------------
+const getReportBreakdownByContenido = async (contenidoId, client = pool) => {
+  const q = `
+    WITH target AS (
+      SELECT COALESCE(t.categoria_id, c.categoria_id, tt.categoria_id) AS categoria_id
+      FROM contenido con
+      LEFT JOIN tema t ON t.contenido_id = con.id
+      LEFT JOIN comentario c ON c.contenido_id = con.id
+      LEFT JOIN tema tt ON tt.contenido_id = c.tema_id
+      WHERE con.id = $1
+    )
+    SELECT
+      (SELECT categoria_id FROM target) AS categoria_id,
+      (SELECT COUNT(*) FROM participacion_categoria pc
+         WHERE pc.categoria_id = (SELECT categoria_id FROM target))::int AS n,
+      COUNT(*) FILTER (WHERE pc.usuario_id IS NOT NULL)::int AS p,
+      COUNT(*) FILTER (WHERE pc.usuario_id IS NULL)::int AS v
+    FROM reporte r
+    LEFT JOIN participacion_categoria pc
+      ON pc.usuario_id = r.usuario_id
+     AND pc.categoria_id = (SELECT categoria_id FROM target)
+    WHERE r.contenido_id = $1
+  `;
+  const { rows } = await client.query(q, [contenidoId]);
+  return { n: rows[0]?.n ?? 0, p: rows[0]?.p ?? 0, v: rows[0]?.v ?? 0 };
+};
+
+// Desglose análogo para reportes de una CATEGORÍA.
+const getReportBreakdownByCategoria = async (categoriaId, client = pool) => {
+  const q = `
+    SELECT
+      (SELECT COUNT(*) FROM participacion_categoria pc WHERE pc.categoria_id = $1)::int AS n,
+      COUNT(*) FILTER (WHERE pc.usuario_id IS NOT NULL)::int AS p,
+      COUNT(*) FILTER (WHERE pc.usuario_id IS NULL)::int AS v
+    FROM reporte r
+    LEFT JOIN participacion_categoria pc
+      ON pc.usuario_id = r.usuario_id AND pc.categoria_id = $1
+    WHERE r.categoria_id = $1
+  `;
+  const { rows } = await client.query(q, [categoriaId]);
+  return { n: rows[0]?.n ?? 0, p: rows[0]?.p ?? 0, v: rows[0]?.v ?? 0 };
+};
+
+export { createReporte, countReportesByContenido, getContenidoTipo, createReporteCategoria, countReportesByCategoria,
+  getReportBreakdownByContenido, getReportBreakdownByCategoria };

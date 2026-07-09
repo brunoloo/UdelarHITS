@@ -5,6 +5,7 @@ import { useToast } from '../../hooks/useToast'
 import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { apiGet, apiPost } from '../../api/client'
 import { UserAvatar } from '../../components/shared/UserAvatar'
+import { TagSelector } from '../../components/ui/TagSelector'
 
 export function CreateCategoryPanel() {
   const { user } = useAuth()
@@ -17,7 +18,7 @@ export function CreateCategoryPanel() {
   const [descripcion, setDescripcion] = useState('')
   const [selectedTags, setSelectedTags] = useState([])
 
-  const { data: availableTags = [] } = useQuery({
+  const { data: availableTags = {} } = useQuery({
     queryKey: ['categories', 'etiquetas'],
     queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
   })
@@ -30,7 +31,8 @@ export function CreateCategoryPanel() {
       setTitulo('')
       setDescripcion('')
       setSelectedTags([])
-      queryClient.invalidateQueries({ queryKey: ['categories', 'active'] })
+      // Prefijo 'categories': refresca tanto el feed del Home como 'active'
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
     },
     onError: err => {
       showToast(err.message || 'Error al crear la categoría', 'error')
@@ -51,14 +53,6 @@ export function CreateCategoryPanel() {
   function closePanel() {
     setPanelOpen(false)
     mutation.reset()
-  }
-
-  function toggleTag(tag) {
-    setSelectedTags(prev =>
-      prev.includes(tag)
-        ? prev.filter(t => t !== tag)
-        : prev.length < 10 ? [...prev, tag] : prev
-    )
   }
 
   function handleSubmit() {
@@ -112,12 +106,12 @@ export function CreateCategoryPanel() {
               <div className="edit-field">
                 <div className="edit-field-label">
                   <span>Descripción (*)</span>
-                  <span className={`edit-field-counter${descripcion.length >= 480 ? ' limit' : ''}`}>
-                    {descripcion.length} / 500
+                  <span className={`edit-field-counter${descripcion.length >= 730 ? ' limit' : ''}`}>
+                    {descripcion.length} / 750
                   </span>
                 </div>
                 <textarea
-                  maxLength={500}
+                  maxLength={750}
                   rows={3}
                   placeholder="¿De qué va esta categoría?"
                   value={descripcion}
@@ -129,18 +123,11 @@ export function CreateCategoryPanel() {
                   <span>Etiquetas (*)</span>
                   <span className="edit-field-counter">{selectedTags.length} / 10</span>
                 </div>
-                <div className="tags-selector">
-                  {availableTags.map(tag => (
-                    <button
-                      key={tag}
-                      type="button"
-                      className={`tag-option${selectedTags.includes(tag) ? ' selected' : ''}`}
-                      onClick={() => toggleTag(tag)}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
+                <TagSelector
+                  grouped={availableTags}
+                  selected={selectedTags}
+                  onChange={setSelectedTags}
+                />
               </div>
             </div>
           </div>

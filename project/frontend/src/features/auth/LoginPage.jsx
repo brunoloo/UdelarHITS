@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
+import { GoogleAuthButton } from './GoogleAuthButton'
 import './auth.css'
 
 function EyeIcon() {
@@ -26,14 +27,40 @@ export function LoginPage() {
   const { login, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const [searchParams] = useSearchParams()
+  const location = useLocation()
 
-  // If a session is already active, go straight to home — NOT to any prior
-  // route — so we can't bounce back into a page that redirected us here.
   useEffect(() => {
     if (!authLoading && user) {
       navigate('/', { replace: true })
     }
   }, [authLoading, user, navigate])
+
+  const authMsgHandled = useRef(false)
+  useEffect(() => {
+    const label = location.state?.authMessage
+    if (label && !authMsgHandled.current) {
+      authMsgHandled.current = true
+      showToast(`Debes iniciar sesión para acceder ${label}.`, 'error')
+      navigate('/login', { replace: true, state: {} })
+    }
+  }, [location.state, showToast, navigate])
+
+  const errorHandled = useRef(false)
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    if (errorParam && !errorHandled.current) {
+      errorHandled.current = true
+      const messages = {
+        email_taken: 'Ya existe una cuenta con ese email. Iniciá sesión con tu contraseña.',
+        google_error: 'Hubo un error al iniciar sesión con Google. Intentá de nuevo.',
+      }
+      if (messages[errorParam]) {
+        showToast(messages[errorParam], 'error')
+      }
+      navigate('/login', { replace: true })
+    }
+  }, [searchParams, showToast, navigate])
 
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
@@ -115,6 +142,8 @@ export function LoginPage() {
             {loading ? 'Procesando...' : 'Iniciar sesión'}
           </button>
         </form>
+
+        <GoogleAuthButton />
 
         <hr className="auth-divider" />
         <p className="auth-footer">

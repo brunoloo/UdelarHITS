@@ -18,6 +18,8 @@ import { RedirectPage } from './features/redirect/RedirectPage'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AdminRoute } from './components/auth/AdminRoute'
 import { AdminPage } from './features/admin/AdminPage'
+import { ChatPage } from './features/chat/ChatPage'
+import { SetupProfilePage } from './features/auth/SetupProfilePage'
 
 function NotFoundPage() {
   return (
@@ -51,6 +53,18 @@ export const router = createBrowserRouter([
       },
       { path: '*', element: <NotFoundPage /> },
     ],
+  },
+  {
+    path: '/chat',
+    element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
+  },
+  {
+    path: '/chat/:nickname',
+    element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
+  },
+  {
+    path: '/setup-profile',
+    element: <ProtectedRoute><SetupProfilePage /></ProtectedRoute>,
   },
   {
     path: '/login',

@@ -29,6 +29,10 @@
   align-items: center;
 }
 
+.comment-gutter a {
+  line-height: 0;
+}
+
 .comment-avatar--empty {
   width: var(--comment-avatar-size);
   height: var(--comment-avatar-size);
@@ -280,3 +284,13 @@
 }
 .history-arrow:disabled { opacity: 0.35; cursor: not-allowed; }
 .history-empty { font-size: 14px; color: var(--text-muted); padding: 20px; text-align: center; }
+
+/* ── Highlight flash (scroll-to comment) ── */
+.comment-card--highlighted {
+  animation: comment-highlight 2.2s ease-out;
+}
+
+@keyframes comment-highlight {
+  0%, 15% { box-shadow: 0 0 0 2px var(--accent); }
+  100%    { box-shadow: none; }
+}

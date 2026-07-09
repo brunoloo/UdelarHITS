@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import passport from './config/passport.js';
 
 // Import routes
 import API from './routes/API.js';
@@ -25,7 +26,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: true,
     directives: {
-      'img-src': ["'self'", 'data:', 'blob:', 'https:'], // https://res.cloudinary.com poner eso en vez de https para mayor protección
+      'img-src': ["'self'", 'data:', 'blob:', 'https://res.cloudinary.com'],
       'script-src-attr': ["'none'"]
     }
   }
@@ -46,6 +47,9 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Cookie
 app.use(cookieParser());
+
+// Passport (solo Google OAuth) — sin sesiones, el proyecto usa JWT
+app.use(passport.initialize());
 
 // Body parsers con límite explícito
 app.use(express.json({ limit: '100kb' }));
@@ -75,6 +79,37 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/login', limiterIf(authLimiter));
 app.use('/api/auth/register', limiterIf(authLimiter));
+// Mismos límites estrictos para el resto de endpoints sensibles de auth:
+// recuperación de contraseña y verificación por código (anti brute-force y
+// anti-abuso de envío de mails).
+app.use('/api/auth/forgot-password', limiterIf(authLimiter));
+app.use('/api/auth/reset-password', limiterIf(authLimiter));
+app.use('/api/auth/verify-reset-token', limiterIf(authLimiter));
+app.use('/api/auth/verify-email', limiterIf(authLimiter));
+app.use('/api/auth/resend-code', limiterIf(authLimiter));
+
+// Anti-spam de creación de contenido: acota temas/comentarios por IP.
+const contentLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: 'Estás creando contenido demasiado rápido. Esperá un momento.' }
+});
+app.use('/api/topics/create', limiterIf(contentLimiter));
+app.use('/api/replies/create', limiterIf(contentLimiter));
+
+// Anti-spam de reacciones (toggle like). Solo el POST; el GET de conteos es
+// lectura pública y no se limita (una vista puede pedir muchos conteos).
+const reactionLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: 'Demasiadas reacciones en poco tiempo. Esperá un momento.' }
+});
+app.use('/api/reactions', (req, res, next) =>
+  req.method === 'POST' ? limiterIf(reactionLimiter)(req, res, next) : next());
 
 // Rate limit para limitar búsquedas
 const searchLimiter = rateLimit({
@@ -124,6 +159,17 @@ app.use((err, req, res, next) => {
     return res.status(400).json({ ok: false, message: err.message });
   }
   next(err);
+});
+
+// Handler de error final: nunca exponer stack traces ni detalles internos al
+// cliente. En producción se responde un mensaje genérico; los detalles solo se
+// loguean fuera de producción para no volcar información sensible en los logs.
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(err);
+  }
+  return res.status(err.status || 500).json({ ok: false, message: 'Error interno del servidor' });
 });
 
 export default app;

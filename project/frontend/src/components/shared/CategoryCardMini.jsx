@@ -10,7 +10,9 @@ import './CategoryCardMini.css'
 // `className` permite variantes de contenedor (p. ej. ancho fijo en carrusel).
 export function CategoryCardMini({ category, className = '', onNavigate }) {
   const { id, titulo, descripcion, etiquetas, contador_temas, icono } = category
-  const tags = parseEtiquetas(etiquetas).slice(0, 3)
+  const allTags = parseEtiquetas(etiquetas)
+  const visibleTags = allTags.slice(0, 5)
+  const extraCount = allTags.length - 5
   const count = Number(contador_temas) || 0
 
   return (
@@ -32,9 +34,10 @@ export function CategoryCardMini({ category, className = '', onNavigate }) {
         <span className="category-mini-count">
           {count} {count === 1 ? 'tema' : 'temas'}
         </span>
-        {tags.length > 0 && (
+        {visibleTags.length > 0 && (
           <div className="category-mini-tags">
-            {tags.map(t => <Tag key={t} label={t} />)}
+            {visibleTags.map(t => <Tag key={t} label={t} />)}
+            {extraCount > 0 && <span className="tag tag--more">+{extraCount} más</span>}
           </div>
         )}
       </div>

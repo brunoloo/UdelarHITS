@@ -9,12 +9,10 @@ import './CommentCard.css'
 export function CommentThread({ comments, invalidateKey, initialCommentId, onInitialDrillDone, canPin = false, onTogglePin }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
-  // Guarda el último id por el que ya hicimos drill-down. Se resetea cuando el
-  // param se limpia, así volver a clickear la misma notificación (estando ya en
-  // la página) vuelve a disparar el drill-down.
   const lastDrilledId = useRef(null)
 
   const [stack, setStack] = useState([])
+  const [highlightedId, setHighlightedId] = useState(null)
 
   useEffect(() => {
     if (!initialCommentId) {
@@ -26,15 +24,23 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
     apiGet(`/replies/${initialCommentId}/context`)
       .then(chain => {
         if (!chain?.data || chain.data.length === 0) return
-        // La cadena viene raíz→target; quitamos el target y abrimos sus
-        // ancestros. Si es un comentario raíz, ancestors queda vacío y el
-        // stack se resetea a la lista principal donde el target es visible.
         const ancestors = chain.data.slice(0, -1)
         setStack(ancestors)
+        setHighlightedId(String(initialCommentId))
         onInitialDrillDone?.()
       })
       .catch(() => {})
   }, [initialCommentId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!highlightedId) return
+    const timer = setTimeout(() => {
+      const el = document.querySelector(`[data-comment-id="${highlightedId}"]`)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 150)
+    const clearTimer = setTimeout(() => setHighlightedId(null), 2500)
+    return () => { clearTimeout(timer); clearTimeout(clearTimer) }
+  }, [highlightedId])
   const currentParent = stack.length > 0 ? stack[stack.length - 1] : null
 
   const { data: childReplies = [], isLoading: repliesLoading } = useQuery({
@@ -47,8 +53,9 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
     mutationFn: ({ parentId, cuerpo, files, poll }) => apiPost('/replies/create',
       buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files, poll)
     ),
-    onSuccess: () => {
-      showToast('Respuesta publicada', 'success')
+    onSuccess: (res) => {
+      if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
+      else showToast('Respuesta publicada', 'success')
       if (currentParent) {
         queryClient.invalidateQueries({ queryKey: ['replies', currentParent.id, 'replies'] })
       }
@@ -124,6 +131,7 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
               key={c.id || c.contenido_id}
               comment={c}
               role="reply"
+              highlighted={String(c.id || c.contenido_id) === highlightedId}
               onDrillDown={drillDown}
               onReply={handleReply}
               invalidateKey={invalidateKey}

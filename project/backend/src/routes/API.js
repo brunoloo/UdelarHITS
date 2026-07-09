@@ -14,11 +14,12 @@ import userReportRoutes from './report-user.routes.js';
 import ReactionRoutes from './reaction.routes.js';
 import SavedRoutes from './saved.routes.js';
 import PollRoutes from './encuesta.routes.js';
+import ChatRoutes from './chat.routes.js';
 
 const router = Router();
 
 // API routes
-router.use('/auth', AuthRoutes); 
+router.use('/auth', AuthRoutes);
 router.use('/users', UserRoutes);
 router.use('/categories', CategoryRoutes);
 router.use('/topics', TopicRoutes);
@@ -30,6 +31,7 @@ router.use('/user-reports', userReportRoutes);
 router.use('/reactions', ReactionRoutes);
 router.use('/saved', SavedRoutes);
 router.use('/polls', PollRoutes);
+router.use('/chat', ChatRoutes);
 
 
 router.get('/', (_req, res) => {

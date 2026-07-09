@@ -1,10 +1,15 @@
 import request from 'supertest';
 import app from '../../src/app.js';
-import { registerAndLogin, createCategory } from '../helpers.js';
+import { registerAndLogin, createCategory, getTagIds } from '../helpers.js';
+
+let tagIds;
+beforeAll(async () => {
+  tagIds = await getTagIds(['Programación']);
+});
 
 const crearCat = (cookie, titulo) =>
   request(app).post('/api/categories/create').set('Cookie', cookie)
-    .send({ titulo, descripcion: 'desc', etiquetas: ['Programación'] });
+    .send({ titulo, descripcion: 'desc', etiquetas: tagIds });
 
 const crearTema = (cookie, categoria_id, titulo) =>
   request(app).post('/api/topics/create').set('Cookie', cookie)
@@ -26,7 +31,6 @@ describe('duplicados ignorando tildes', () => {
     const TITULO = `Físíca ${sufijo}`;
     const res = await crearCat(u.cookie, TITULO);
     expect(res.status).toBe(201);
-    // se guarda normalizado a lowercase pero CON tildes (no se le quitan)
     expect(res.body.data.titulo).toContain('í');
   });
 
@@ -45,7 +49,6 @@ describe('duplicados ignorando tildes', () => {
     const sufijo = Math.random().toString(36).slice(2, 6);
     const normal = await crearCat(u.cookie, `hola mundo ${sufijo}`);
     expect(normal.status).toBe(201);
-    // mismo título con espacios múltiples entre palabras
     const espaciado = await crearCat(u.cookie, `hola      mundo ${sufijo}`);
     expect(espaciado.status).toBe(409);
   });
@@ -55,7 +58,6 @@ describe('duplicados ignorando tildes', () => {
     const sufijo = Math.random().toString(36).slice(2, 6);
     const TITULO = `Derecho ${sufijo}`;
     await crearCat(u.cookie, TITULO);
-    // el mismo con espacios envolventes debe colisionar (el trim los saca)
     const res = await crearCat(u.cookie, `   ${TITULO}   `);
     expect(res.status).toBe(409);
   });

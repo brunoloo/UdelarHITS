@@ -1,6 +1,6 @@
 import request from 'supertest';
 import app from '../../src/app.js';
-import { registerAndLogin, createTopic } from '../helpers.js';
+import { registerAndLogin, createTopic, createReply } from '../helpers.js';
 
 const idOf = (x) => x.id ?? x.contenido_id;
 const crear = (cookie, body) =>
@@ -66,5 +66,49 @@ describe('validación de creación de comentario', () => {
     // respuesta solo con padre_id, sin tema_id explícito → debe heredar y crear
     const res = await crear(u.cookie, { cuerpo: 'respuesta', comentario_padre_id: idOf(padre.body.data) });
     expect(res.status).toBe(201);
+  });
+});
+
+const editar = (cookie, id, body) =>
+  request(app).patch(`/api/replies/update/${id}`).set('Cookie', cookie).send(body);
+
+describe('validación de edición de comentario', () => {
+  test('cuerpo vacío → 400', async () => {
+    const u = await registerAndLogin();
+    const reply = await createReply(u.cookie);
+    const id = reply.id ?? reply.contenido_id;
+    const res = await editar(u.cookie, id, { cuerpo: '   ' });
+    expect(res.status).toBe(400);
+  });
+
+  test('cuerpo de más de 5000 caracteres → 400', async () => {
+    const u = await registerAndLogin();
+    const reply = await createReply(u.cookie);
+    const id = reply.id ?? reply.contenido_id;
+    const res = await editar(u.cookie, id, { cuerpo: 'a'.repeat(5001) });
+    expect(res.status).toBe(400);
+  });
+
+  test('edición válida → 200', async () => {
+    const u = await registerAndLogin();
+    const reply = await createReply(u.cookie);
+    const id = reply.id ?? reply.contenido_id;
+    const res = await editar(u.cookie, id, { cuerpo: 'Editado correctamente' });
+    expect(res.status).toBe(200);
+  });
+
+  test('editar comentario ajeno → 403', async () => {
+    const a = await registerAndLogin();
+    const b = await registerAndLogin();
+    const reply = await createReply(a.cookie);
+    const id = reply.id ?? reply.contenido_id;
+    const res = await editar(b.cookie, id, { cuerpo: 'Intruso' });
+    expect(res.status).toBe(403);
+  });
+
+  test('comentario inexistente → 404', async () => {
+    const u = await registerAndLogin();
+    const res = await editar(u.cookie, 999999, { cuerpo: 'Nada' });
+    expect(res.status).toBe(404);
   });
 });

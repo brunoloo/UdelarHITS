@@ -20,6 +20,14 @@ export function createRateLimiter({ windowMs, max }) {
       store.set(key, prev);
       return true;
     },
+    // Consulta si la clave tiene cupo SIN consumir un intento. Útil cuando el
+    // intento solo debe registrarse si la operación posterior tiene éxito
+    // (p. ej. registrar el envío de un mail recién después de que salió).
+    peek(key) {
+      const now = Date.now();
+      const prev = (store.get(key) || []).filter(t => now - t < windowMs);
+      return prev.length < max;
+    },
     // Limpia la clave (p. ej. al completar el flujo). Útil en tests.
     reset(key) {
       if (key === undefined) store.clear();

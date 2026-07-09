@@ -1,15 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { apiPost, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
 import './FollowButton.css'
 
-// Estado del seguimiento hacia el perfil:
-//   'none'      → no lo sigo                  → botón "Seguir"
-//   'pendiente' → solicitud enviada (privada) → botón "Solicitado" (hover: Cancelar)
-//   'aceptado'  → lo sigo                      → botón "Siguiendo" (hover: Dejar de seguir)
 export function FollowButton({ nickname, initialState = 'none', onToggle }) {
   const [estado, setEstado] = useState(initialState)
+
+  useEffect(() => { setEstado(initialState) }, [initialState])
   const [hover, setHover] = useState(false)
   const { showToast } = useToast()
 

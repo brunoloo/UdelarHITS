@@ -14,8 +14,9 @@ coverage/
 .env.*
 !.env.example
 
-# Cookies 
+# Cookies
 *cookies*
+!project/central/legal/cookies.html
 
 # Editor / OS
 .vscode/

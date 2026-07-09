@@ -28,8 +28,9 @@ export function SavedPanel({ open, panelRef, onClose }) {
   const replyMutation = useMutation({
     mutationFn: ({ parentId, cuerpo, files, poll }) =>
       apiPost('/replies/create', buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files, poll)),
-    onSuccess: () => {
-      showToast('Respuesta publicada', 'success')
+    onSuccess: (res) => {
+      if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
+      else showToast('Respuesta publicada', 'success')
       queryClient.invalidateQueries({ queryKey: ['saved'] })
     },
     onError: (err) => showToast(err.message || 'Error al publicar', 'error'),

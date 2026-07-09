@@ -11,15 +11,31 @@ import { createRateLimiter } from '../utils/rateLimiter.js';
 // Límite de envío de mails: como máximo 5 por dirección cada 15 minutos
 // (cubre registro/verificación/reenvío y recuperación de contraseña).
 const emailSendLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 5 });
-import { 
+
+// Defensa 5: máximo 1 recuperación de contraseña EXITOSA por cuenta cada 24hs.
+// Es adicional al rate-limit por IP (authLimiter) y al de dirección de arriba:
+// evita que una sola cuenta, reintentando fuera de la ventana de 15 min,
+// agote por sí sola la cuota diaria de Resend (100 mails/día en el plan free).
+// La ventana es configurable para poder testearla sin esperar 24hs.
+const forgotAccountLimiter = createRateLimiter({
+  windowMs: Number(process.env.FORGOT_PASSWORD_ACCOUNT_WINDOW_MS || 24 * 60 * 60 * 1000),
+  max: 1,
+});
+
+// Solo para tests: el limiter vive en memoria y los ids de usuario se repiten
+// entre tests (truncate con RESTART IDENTITY), así que necesitan limpiarlo.
+export const _resetForgotAccountLimiter = () => forgotAccountLimiter.reset();
+import {
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
-  getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, 
+  findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser, confirmNickname,
+  getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById,
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
   isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, updateBannerById,
   deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getPasswordHashById,
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy,
   getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
+import { isBlocked } from '../repositories/block.repository.js';
 import pool from '../config/db.js';
 
 // Valida unicidad de nickname/email y lanza el error correspondiente.
@@ -100,6 +116,11 @@ const requestRegistrationService = async ({ nickname, nombre, email, password })
   // Chequeo de password > 8 caracteres
   if (password.length < 8) {
     const err = new Error('La contraseña debe tener al menos 8 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  if (password.length > 128) {
+    const err = new Error('La contraseña no puede superar los 128 caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
   }
@@ -293,6 +314,12 @@ const loginUserService =  async ({nickname ,email, password}) => {
         throw err;
     }
 
+    if (!existingUser.password_hash) {
+        const err = new Error('Esta cuenta usa Google para iniciar sesión. Usá el botón "Continuar con Google".');
+        err.code = 'INVALID_CREDENTIALS';
+        throw err;
+    }
+
     const isPasswordValid = await bcrypt.compare(password, existingUser.password_hash);
 
     if (!isPasswordValid) {
@@ -317,7 +344,10 @@ const loginUserService =  async ({nickname ,email, password}) => {
     nombre: existingUser.nombre,
     email: existingUser.email,
     biografia: existingUser.biografia,
-    url_imagen: existingUser.url_imagen
+    url_imagen: existingUser.url_imagen,
+    privado: existingUser.privado,
+    me_gusta_privado: existingUser.me_gusta_privado,
+    nickname_confirmado: existingUser.nickname_confirmado
     };
 
     return {user, token};
@@ -342,23 +372,44 @@ const getUserProfileService = async (nickname, viewerId = null) => {
     err.code = 'NOT_FOUND';
     throw err;
   }
+  let te_bloqueo = false;
+  if (viewerId && viewerId !== user.id) {
+    const blocked = await isBlocked(viewerId, user.id);
+    if (blocked) {
+      te_bloqueo = true;
+      return {
+        user: {
+          id: user.id,
+          nickname: user.nickname,
+          nombre: user.nombre,
+          url_imagen: null,
+          url_banner: null,
+          biografia: null,
+          fecha_creacion: user.fecha_creacion,
+          estado: user.estado,
+          privado: false,
+        },
+        categories: [],
+        followers: [],
+        following: [],
+        ya_sigo: false,
+        mi_estado_seguimiento: 'none',
+        te_bloqueo,
+      };
+    }
+  }
+
   const categories = await getCategoriesByUserId(user.id);
   const followers = await getFollowersByUserId(user.id);
   const following = await getFollowingByUserId(user.id);
 
-  // Estado del seguimiento del viewer hacia este perfil. Resuelto junto al
-  // perfil para que el botón renderice el estado correcto en el primer paint
-  // (sin request extra, sin flash "Seguir" → "Siguiendo"/"Solicitado").
-  //   'aceptado'  → ya lo sigue
-  //   'pendiente' → solicitud enviada (cuenta privada) esperando respuesta
-  //   'none'      → no lo sigue
   let mi_estado_seguimiento = 'none';
   if (viewerId && viewerId !== user.id) {
     mi_estado_seguimiento = (await getFollowState(viewerId, user.id)) || 'none';
   }
   const ya_sigo = mi_estado_seguimiento === 'aceptado';
 
-  return { user , categories, followers, following, ya_sigo, mi_estado_seguimiento };
+  return { user, categories, followers, following, ya_sigo, mi_estado_seguimiento, te_bloqueo };
 };
 
 const showMeService = async (nickname) => {
@@ -375,7 +426,8 @@ const showMeService = async (nickname) => {
     url_banner: user.url_banner,
     fecha_creacion: user.fecha_creacion,
     privado: user.privado,
-    me_gusta_privado: user.me_gusta_privado
+    me_gusta_privado: user.me_gusta_privado,
+    nickname_confirmado: user.nickname_confirmado
   };
 
   return { user: safeUser, categories, followers, following };
@@ -476,6 +528,13 @@ const followUserService = async (seguidorId, seguidoNickname) => {
     throw err;
   }
 
+  const blocked = await isBlocked(seguidorId, seguido.id);
+  if (blocked) {
+    const err = new Error('No se puede realizar esta acción');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+
   // Cuenta privada → la solicitud queda pendiente hasta que el receptor la
   // acepte/rechace. Cuenta pública → seguimiento inmediato.
   const esPrivada = !!seguido.privado;
@@ -518,10 +577,8 @@ const unfollowUserService = async (seguidorId, seguidoNickname) => {
     err.code = 'NOT_FOUND';
     throw err;
   }
-  // Borra la relación cualquiera sea su estado (deja de seguir o cancela la
-  // solicitud pendiente). No se toca la notificación de solicitud para preservar
-  // el dedup: re-solicitar mientras siga pendiente no genera otra notificación.
   await unfollowUser(seguidorId, seguido.id);
+  await deleteNotificationsByActorAndType(seguido.id, seguidorId, 'solicitud_seguimiento');
   const followers = await getFollowersByUserId(seguido.id);
   return { seguidores: followers.length };
 };
@@ -575,6 +632,14 @@ const rejectFollowRequestService = async (receptorId, solicitanteNickname) => {
   // dedup: un nuevo follow posterior sí generará una notificación nueva).
   await deleteNotificationsByActorAndType(receptorId, solicitante.id, 'solicitud_seguimiento');
 
+  if (rejected) {
+    const { getIO } = await import('../socket.js');
+    const io = getIO();
+    if (io) {
+      io.to(`user:${solicitante.id}`).emit('seguimiento:actualizado');
+    }
+  }
+
   return { rechazada: !!rejected };
 };
 
@@ -595,11 +660,11 @@ const updateAvatarService = async (userId, fileBuffer, mimetype) => {
   return updated;
 };
 
-const searchUsersService = async (query) => {
+const searchUsersService = async (query, viewerId = null) => {
   if (!query || query.trim().length < 2) {
     return [];
   }
-  return await searchUsers(query.trim());
+  return await searchUsers(query.trim(), viewerId);
 };
 
 const updateBannerService = async (userId, fileBuffer, mimetype) => {
@@ -646,6 +711,11 @@ const changePasswordService = async (userId, { currentPassword, newPassword }) =
     err.code = 'BAD_REQUEST';
     throw err;
   }
+  if (newPassword.length > 128) {
+    const err = new Error('La nueva contraseña no puede superar los 128 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
 
   const hash = await getPasswordHashById(userId);
   if (!hash) {
@@ -685,6 +755,15 @@ const forgotPasswordService = async (email) => {
   // Si está baneado o inactivo, tampoco enviamos
   if (user.estado !== 'activo') return;
 
+  // Defensa 5: 1 recuperación exitosa por cuenta cada 24hs. peek() no consume:
+  // el intento se registra recién DESPUÉS de que el mail salió bien, así un
+  // fallo de envío no deja a la cuenta bloqueada un día sin haber recibido nada.
+  if (!forgotAccountLimiter.peek(`acct:${user.id}`)) {
+    const err = new Error('Ya se envió un enlace de recuperación para esta cuenta en las últimas 24 horas. Revisá tu correo (incluida la carpeta de spam) o probá de nuevo más tarde.');
+    err.code = 'RATE_LIMITED';
+    throw err;
+  }
+
   // Rate limit de envío de mails a esta dirección (silencioso, sin fuga)
   if (!emailSendLimiter.check(`forgot:${normalizedEmail}`)) return;
 
@@ -718,6 +797,9 @@ const forgotPasswordService = async (email) => {
       </div>
     `,
   });
+
+  // El mail salió bien: recién ahora se consume el cupo de 24hs de la cuenta.
+  forgotAccountLimiter.check(`acct:${user.id}`);
 };
 
 const verifyResetTokenService = async (token) => {
@@ -746,6 +828,11 @@ const resetPasswordService = async (token, newPassword) => {
 
   if (newPassword.length < 8) {
     const err = new Error('La contraseña debe tener al menos 8 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  if (newPassword.length > 128) {
+    const err = new Error('La contraseña no puede superar los 128 caracteres');
     err.code = 'BAD_REQUEST';
     throw err;
   }
@@ -830,13 +917,96 @@ const toggleLikesPrivacyService = async (userId) => {
   return await updateLikesPrivacy(userId, newValue);
 };
 
-export { showMeService , requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, getUsersService, getUserProfileService,
-  updateMeService, banUserService, activeUserService, 
+const sanitizeNicknameBase = (nombre) => {
+  const firstName = (nombre || 'usuario').split(/\s+/)[0];
+  const base = firstName
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .slice(0, 20);
+  return base || 'usuario';
+};
+
+const generateNicknameFromGoogleProfile = async (nombre) => {
+  const base = sanitizeNicknameBase(nombre);
+  for (let i = 0; i < 10; i++) {
+    const suffix = Math.floor(1000 + Math.random() * 9000);
+    const candidate = `${base}${suffix}`;
+    if (!(await isNicknameTaken(candidate))) return candidate;
+  }
+  return `${base}${Date.now() % 100000}`;
+};
+
+const handleGoogleAuthService = async (profile) => {
+  const email = profile?.emails?.[0]?.value?.trim().toLowerCase();
+  const nombre = profile?.displayName?.trim() || 'Usuario de Google';
+
+  if (!email) {
+    const err = new Error('No se pudo obtener el email de la cuenta de Google');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const existingUser = await findByEmailForGoogleAuth(email);
+
+  if (existingUser) {
+    if (existingUser.auth_provider === 'google' || existingUser.auth_provider === 'both') {
+      if (existingUser.estado !== 'activo') {
+        const err = new Error('Esta cuenta no está activa');
+        err.code = 'FORBIDDEN';
+        throw err;
+      }
+      return existingUser;
+    }
+
+    const err = new Error('Ya existe una cuenta con ese email, iniciá sesión con tu contraseña');
+    err.code = 'EMAIL_TAKEN_LOCAL';
+    throw err;
+  }
+
+  const nickname = await generateNicknameFromGoogleProfile(nombre);
+
+  return await createGoogleUser({ nickname, nombre, email });
+};
+
+const confirmNicknameService = async (userId, newNickname) => {
+  const normalized = newNickname?.trim().toLowerCase();
+
+  if (!normalized) {
+    const err = new Error('El nickname es obligatorio');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  if (normalized.length > 30) {
+    const err = new Error('El nickname no puede superar los 30 caracteres');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  if (!/^[a-zA-ZÀ-ÿ0-9_-]+$/.test(newNickname.trim())) {
+    const err = new Error('El nickname solo puede contener letras, números, guiones y guiones bajos');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const ownerCheck = await pool.query(
+    'SELECT id FROM usuario WHERE LOWER(nickname) = LOWER($1) LIMIT 1', [normalized]
+  );
+  if (ownerCheck.rows.length > 0 && String(ownerCheck.rows[0].id) !== String(userId)) {
+    const err = new Error('Ese nickname ya está en uso');
+    err.code = 'NICKNAME_TAKEN';
+    throw err;
+  }
+
+  return await confirmNickname(userId, newNickname.trim());
+};
+
+export { showMeService , requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, handleGoogleAuthService, confirmNicknameService, getUsersService, getUserProfileService,
+  updateMeService, banUserService, activeUserService,
   deleteUserService, followUserService, unfollowUserService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService,
   updateAvatarService, searchUsersService, updateBannerService,
-  deleteAvatarService, deleteBannerService, getSuggestedUsersService, getMostActiveUsersService, 
-  changePasswordService, forgotPasswordService, verifyResetTokenService, resetPasswordService, 
+  deleteAvatarService, deleteBannerService, getSuggestedUsersService, getMostActiveUsersService,
+  changePasswordService, forgotPasswordService, verifyResetTokenService, resetPasswordService,
   deactivateAccountService, togglePrivacyService, toggleLikesPrivacyService };
 
 

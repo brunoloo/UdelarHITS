@@ -1,5 +1,9 @@
 import pool from '../config/db.js';
 import { encuestaSubquery } from './encuesta.repository.js';
+import { TRENDING } from '../config/trendingConfig.js';
+import { FEED } from '../config/feedConfig.js';
+
+const { HALF_LIFE_HOURS, W_TEMA, W_COMENTARIO } = TRENDING;
 
 const createCategory = async ({ titulo, descripcion, autor_id, etiquetas }) => {
   const client = await pool.connect();
@@ -14,10 +18,10 @@ const createCategory = async ({ titulo, descripcion, autor_id, etiquetas }) => {
     const { rows } = await client.query(q, [titulo, descripcion, autor_id]);
     const category = rows[0];
 
-    for (const etiqueta of etiquetas) {
+    for (const etiquetaId of etiquetas) {
       await client.query(
-        `INSERT INTO categoria_etiqueta (categoria_id, etiqueta_valor) VALUES ($1, $2)`,
-        [category.id, etiqueta]
+        `INSERT INTO categoria_etiqueta (categoria_id, etiqueta_id) VALUES ($1, $2)`,
+        [category.id, etiquetaId]
       );
     }
 
@@ -48,9 +52,10 @@ const getCategories = async () => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.autor_id, u.nickname AS autor_nickname,
       c.estado, c.contador_temas, c.fecha_creacion, c.icono,
-      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+      ARRAY_AGG(e.nombre) AS etiquetas
     FROM categoria c
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     JOIN usuario u ON u.id = c.autor_id
     GROUP BY c.id, u.nickname
     ORDER BY c.fecha_creacion DESC
@@ -64,10 +69,11 @@ const getCategoryById = async (id) => {
     SELECT c.id, c.titulo, c.descripcion, c.autor_id, c.estado, c.fecha_creacion, c.icono,
       u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
-      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+      ARRAY_AGG(e.nombre) AS etiquetas
     FROM categoria c
     JOIN usuario u ON u.id = c.autor_id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.id = $1
     GROUP BY c.id, u.nickname, u.url_imagen, u.estado
     LIMIT 1
@@ -80,9 +86,10 @@ const getCategoriesByAuthorId = async (autorId) => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.estado, c.fecha_creacion, c.icono,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
-      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+      ARRAY_AGG(e.nombre) AS etiquetas
     FROM categoria c
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.autor_id = $1
     GROUP BY c.id
     ORDER BY c.fecha_creacion DESC
@@ -176,10 +183,10 @@ const updateCategoryById = async (id, { descripcion, etiquetas, icono }, editorI
         `DELETE FROM categoria_etiqueta WHERE categoria_id = $1`,
         [id]
       );
-      for (const etiqueta of etiquetas) {
+      for (const etiquetaId of etiquetas) {
         await client.query(
-          `INSERT INTO categoria_etiqueta (categoria_id, etiqueta_valor) VALUES ($1, $2)`,
-          [id, etiqueta]
+          `INSERT INTO categoria_etiqueta (categoria_id, etiqueta_id) VALUES ($1, $2)`,
+          [id, etiquetaId]
         );
       }
     }
@@ -188,9 +195,10 @@ const updateCategoryById = async (id, { descripcion, etiquetas, icono }, editorI
 
     const { rows } = await client.query(
       `SELECT c.id, c.titulo, c.descripcion, c.estado, c.icono,
-        ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+        ARRAY_AGG(e.nombre) AS etiquetas
        FROM categoria c
        LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+       LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
        WHERE c.id = $1
        GROUP BY c.id`,
       [id]
@@ -226,11 +234,13 @@ const assignParticipantRole = async (userId, categoriaId) => {
   await pool.query(q, [userId, categoriaId]);
 };
 
-const getActiveCategories = async () => {
-  const q = `
+// Fragmento compartido: la "card" completa de una categoría activa (columnas
+// que consumen Home y Recientes). Lo usan getActiveCategories y el feed
+// paginado de Home, que le agregan su propio ORDER BY / cursor por fuera.
+const CATEGORY_CARD_QUERY = `
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
       c.fecha_creacion, c.icono, u.nickname AS autor_nickname, u.estado AS autor_estado,
-      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas,
+      ARRAY_AGG(e.nombre) AS etiquetas,
       (
         SELECT json_build_object(
           'titulo', t.titulo,
@@ -275,12 +285,114 @@ const getActiveCategories = async () => {
     FROM categoria c
     JOIN usuario u ON u.id = c.autor_id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.estado = 'activa'
     GROUP BY c.id, u.nickname, u.estado
-    ORDER BY c.titulo DESC
-  `;
+`;
+
+const getActiveCategories = async () => {
+  const q = `${CATEGORY_CARD_QUERY} ORDER BY c.titulo DESC`;
   const { rows } = await pool.query(q);
   return rows;
+};
+
+// ── Feed del Home ──
+// Modo cronológico (invitados y cold start): fecha_creacion DESC, igual que
+// Recientes. Cursor compuesto (fecha_creacion, id) para que empates de fecha
+// no repitan ni salten filas entre páginas.
+const getChronoFeed = async ({ limit, cursorFecha = null, cursorId = null }) => {
+  const q = `
+    SELECT card.* FROM (${CATEGORY_CARD_QUERY}) card
+    WHERE $2::timestamptz IS NULL
+       OR (card.fecha_creacion, card.id) < ($2::timestamptz, $3::bigint)
+    ORDER BY card.fecha_creacion DESC, card.id DESC
+    LIMIT $1
+  `;
+  const { rows } = await pool.query(q, [limit, cursorFecha, cursorId]);
+  return rows;
+};
+
+// Modo personalizado: puntaje por usuario según config/feedConfig.js.
+// El puntaje es entero y estable dentro del día, así el cursor (score, id)
+// pagina sin repetir ni saltar aunque haya empates.
+const getPersonalizedFeed = async (usuarioId, { limit, cursorScore = null, cursorId = null }) => {
+  const q = `
+    WITH afinidad AS (
+      -- Frecuencia de etiquetas en el historial de likes del usuario: cada
+      -- 'meGusta' se mapea a la categoría de su contenido (tema directo,
+      -- comentario de categoría, o comentario colgado de un tema) y de ahí
+      -- a sus etiquetas.
+      SELECT ce.etiqueta_id, COUNT(*)::int AS cnt
+      FROM reaccion r
+      LEFT JOIN tema t ON t.contenido_id = r.contenido_id
+      LEFT JOIN comentario com ON com.contenido_id = r.contenido_id
+      LEFT JOIN tema tcom ON tcom.contenido_id = com.tema_id
+      JOIN categoria_etiqueta ce
+        ON ce.categoria_id = COALESCE(t.categoria_id, com.categoria_id, tcom.categoria_id)
+      WHERE r.usuario_id = $1 AND r.tipo = 'meGusta'
+      GROUP BY ce.etiqueta_id
+    ),
+    scored AS (
+      SELECT c2.id AS cat_id,
+        (
+          CASE WHEN EXISTS (
+            SELECT 1 FROM participacion_categoria pc
+            WHERE pc.categoria_id = c2.id AND pc.usuario_id = $1
+          ) THEN ${FEED.W_PARTICIPACION} ELSE 0 END
+        + CASE WHEN EXISTS (
+            SELECT 1 FROM suscripcion_categoria sc
+            WHERE sc.categoria_id = c2.id AND sc.usuario_id = $1
+          ) THEN ${FEED.W_SUSCRIPCION} ELSE 0 END
+        + ${FEED.W_ETIQUETA} * COALESCE((
+            SELECT SUM(LEAST(a.cnt, ${FEED.AFINIDAD_CAP_ETIQUETA}))
+            FROM categoria_etiqueta ce2
+            JOIN afinidad a ON a.etiqueta_id = ce2.etiqueta_id
+            WHERE ce2.categoria_id = c2.id
+          ), 0)
+        + ${FEED.W_ACT_TEMA} * (
+            SELECT COUNT(*) FROM tema t2
+            JOIN contenido con ON con.id = t2.contenido_id
+            WHERE t2.categoria_id = c2.id AND t2.estado = 'activo'
+              AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => ${FEED.ACTIVIDAD_DIAS})
+          )
+        + ${FEED.W_ACT_COMENTARIO} * (
+            SELECT COUNT(*) FROM comentario com2
+            JOIN contenido con2 ON con2.id = com2.contenido_id
+            LEFT JOIN tema t3 ON t3.contenido_id = com2.tema_id
+            WHERE COALESCE(com2.categoria_id, t3.categoria_id) = c2.id
+              AND com2.estado = 'visible'
+              AND con2.fecha_creacion > NOW() - MAKE_INTERVAL(days => ${FEED.ACTIVIDAD_DIAS})
+          )
+        + ${FEED.W_NOVEDAD_DIA} * GREATEST(0,
+            ${FEED.NOVEDAD_DIAS} - FLOOR(EXTRACT(EPOCH FROM (NOW() - c2.fecha_creacion)) / 86400)
+          )
+        )::bigint AS score
+      FROM categoria c2
+      WHERE c2.estado = 'activa'
+    )
+    SELECT card.*, s.score
+    FROM (${CATEGORY_CARD_QUERY}) card
+    JOIN scored s ON s.cat_id = card.id
+    WHERE $3::bigint IS NULL
+       OR (s.score, card.id) < ($3::bigint, $4::bigint)
+    ORDER BY s.score DESC, card.id DESC
+    LIMIT $2
+  `;
+  const { rows } = await pool.query(q, [usuarioId, limit, cursorScore, cursorId]);
+  return rows;
+};
+
+// ¿El usuario tiene alguna señal personalizable? Si no (cuenta nueva),
+// Home cae al modo cronológico en vez de rankear con todo en cero.
+const hasFeedSignals = async (usuarioId) => {
+  const q = `
+    SELECT EXISTS (SELECT 1 FROM participacion_categoria WHERE usuario_id = $1)
+        OR EXISTS (SELECT 1 FROM suscripcion_categoria WHERE usuario_id = $1)
+        OR EXISTS (SELECT 1 FROM reaccion WHERE usuario_id = $1 AND tipo = 'meGusta')
+        AS tiene
+  `;
+  const { rows } = await pool.query(q, [usuarioId]);
+  return rows[0].tiene === true;
 };
 
 const getParticipantsByCategoryId = async (categoriaId) => {
@@ -296,9 +408,27 @@ const getParticipantsByCategoryId = async (categoriaId) => {
 };
 
 const getEtiquetas = async () => {
-  const q = `SELECT unnest(enum_range(NULL::etiqueta))::text AS valor ORDER BY valor`;
+  const q = `SELECT id, nombre, nombre_display, grupo, orden FROM etiqueta ORDER BY grupo, orden, nombre`;
   const { rows } = await pool.query(q);
-  return rows.map(r => r.valor);
+  return rows;
+};
+
+const getEtiquetasByIds = async (ids) => {
+  const q = `SELECT id FROM etiqueta WHERE id = ANY($1::bigint[])`;
+  const { rows } = await pool.query(q, [ids]);
+  return rows.map(r => Number(r.id));
+};
+
+const searchEtiquetas = async (query, limit = 20) => {
+  const q = `
+    SELECT id, nombre, nombre_display, grupo
+    FROM etiqueta
+    WHERE nombre ILIKE $1 || '%'
+    ORDER BY grupo, orden, nombre
+    LIMIT $2
+  `;
+  const { rows } = await pool.query(q, [query, limit]);
+  return rows;
 };
 
 const categoryHasContent = async (id) => {
@@ -318,51 +448,89 @@ const hardDeleteCategoryById = async (id) => {
   await pool.query(q, [id]);
 };
 
+// Categorías "populares esta semana": ranking por actividad reciente ponderada
+// por recencia (decaimiento exponencial, ver trendingConfig). La PRESENCIA en
+// la lista depende del conteo crudo de temas/comentarios dentro de la ventana
+// (>0); el ORDEN depende del score ponderado, para que actividad reciente real
+// mande sobre categorías antiguas. Los conteos de tema y comentario se calculan
+// en CTEs separadas para evitar el producto cartesiano tema×comentario.
 const getPopularCategories = async (days = 7, limit = 20) => {
   const q = `
-    WITH actividad AS (
-      SELECT c.id AS categoria_id,
-        COUNT(DISTINCT CASE 
-          WHEN t.estado = 'activo' AND con_t.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
-          THEN t.contenido_id END) AS temas_recientes,
-        COUNT(DISTINCT CASE 
-          WHEN com.estado = 'visible' AND con_c.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
-          THEN com.contenido_id END) AS comentarios_recientes
-      FROM categoria c
-      LEFT JOIN tema t ON t.categoria_id = c.id
-      LEFT JOIN contenido con_t ON con_t.id = t.contenido_id
-      LEFT JOIN comentario com ON (com.categoria_id = c.id OR com.tema_id = t.contenido_id)
-      LEFT JOIN contenido con_c ON con_c.id = com.contenido_id
-      WHERE c.estado = 'activa'
-      GROUP BY c.id
-      HAVING COUNT(DISTINCT CASE 
-          WHEN t.estado = 'activo' AND con_t.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
-          THEN t.contenido_id END)
-        + COUNT(DISTINCT CASE 
-          WHEN com.estado = 'visible' AND con_c.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
-          THEN com.contenido_id END) > 0
+    WITH tema_act AS (
+      SELECT t.categoria_id,
+        COUNT(*) AS temas_recientes,
+        SUM(POWER(0.5, GREATEST(EXTRACT(EPOCH FROM (NOW() - con.fecha_creacion)) / 3600.0, 0) / $3)) AS score
+      FROM tema t
+      JOIN contenido con ON con.id = t.contenido_id
+      WHERE t.estado = 'activo'
+        AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+      GROUP BY t.categoria_id
+    ),
+    com_act AS (
+      SELECT COALESCE(com.categoria_id, tt.categoria_id) AS categoria_id,
+        COUNT(*) AS comentarios_recientes,
+        SUM(POWER(0.5, GREATEST(EXTRACT(EPOCH FROM (NOW() - con.fecha_creacion)) / 3600.0, 0) / $3)) AS score
+      FROM comentario com
+      JOIN contenido con ON con.id = com.contenido_id
+      LEFT JOIN tema tt ON tt.contenido_id = com.tema_id
+      WHERE com.estado = 'visible'
+        AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+      GROUP BY COALESCE(com.categoria_id, tt.categoria_id)
     )
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
       c.fecha_creacion, u.nickname AS autor_nickname,
-      ARRAY_AGG(DISTINCT ce.etiqueta_valor) FILTER (WHERE ce.etiqueta_valor IS NOT NULL) AS etiquetas,
-      a.temas_recientes, a.comentarios_recientes,
-      (a.temas_recientes + a.comentarios_recientes) AS actividad_total
-    FROM actividad a
-    JOIN categoria c ON c.id = a.categoria_id
+      ARRAY_AGG(DISTINCT e.nombre) FILTER (WHERE e.nombre IS NOT NULL) AS etiquetas,
+      COALESCE(ta.temas_recientes, 0) AS temas_recientes,
+      COALESCE(ca.comentarios_recientes, 0) AS comentarios_recientes,
+      (COALESCE(ta.temas_recientes, 0) + COALESCE(ca.comentarios_recientes, 0)) AS actividad_total,
+      (COALESCE(ta.score, 0) * $4 + COALESCE(ca.score, 0) * $5) AS actividad_score
+    FROM categoria c
     JOIN usuario u ON u.id = c.autor_id
+    LEFT JOIN tema_act ta ON ta.categoria_id = c.id
+    LEFT JOIN com_act ca ON ca.categoria_id = c.id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
-    GROUP BY c.id, u.nickname, a.temas_recientes, a.comentarios_recientes
-    ORDER BY actividad_total DESC, c.fecha_creacion DESC
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
+    WHERE c.estado = 'activa'
+      AND (COALESCE(ta.temas_recientes, 0) + COALESCE(ca.comentarios_recientes, 0)) > 0
+    GROUP BY c.id, u.nickname, ta.temas_recientes, ta.score, ca.comentarios_recientes, ca.score
+    ORDER BY actividad_score DESC, c.fecha_creacion DESC
+    LIMIT $2
+  `;
+  const { rows } = await pool.query(q, [days, limit, HALF_LIFE_HOURS, W_TEMA, W_COMENTARIO]);
+  return rows;
+};
+
+// Etiquetas en tendencia: mide actividad REAL de los últimos `days` días —
+// temas activos creados en la ventana, agrupados por la(s) etiqueta(s) de su
+// categoría. Ordena por cantidad de temas recientes (desempate por comentarios
+// recientes en esos temas). Reemplaza el conteo estático de frecuencia.
+const getTrendingTags = async (days = 7, limit = 8) => {
+  const q = `
+    SELECT e.nombre AS etiqueta,
+      COUNT(DISTINCT t.contenido_id) AS temas_recientes,
+      COUNT(com.contenido_id) AS comentarios_recientes
+    FROM categoria_etiqueta ce
+    JOIN etiqueta e ON e.id = ce.etiqueta_id
+    JOIN categoria c ON c.id = ce.categoria_id AND c.estado = 'activa'
+    JOIN tema t ON t.categoria_id = ce.categoria_id AND t.estado = 'activo'
+    JOIN contenido con ON con.id = t.contenido_id
+      AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+    LEFT JOIN comentario com ON com.tema_id = t.contenido_id AND com.estado = 'visible'
+    GROUP BY e.nombre
+    HAVING COUNT(DISTINCT t.contenido_id) > 0
+    ORDER BY temas_recientes DESC, comentarios_recientes DESC, e.nombre ASC
     LIMIT $2
   `;
   const { rows } = await pool.query(q, [days, limit]);
   return rows;
 };
 
-export { createCategory, findCategoryByTitulo, getCategories, getCategoryById, 
-  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId, 
+export { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
+  getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId,
   updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId,
-  getEtiquetas, categoryHasContent, hardDeleteCategoryById, getPopularCategories,
+  getChronoFeed, getPersonalizedFeed, hasFeedSignals,
+  getEtiquetas, getEtiquetasByIds, searchEtiquetas,
+  categoryHasContent, hardDeleteCategoryById, getPopularCategories, getTrendingTags,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment, pinCategoryTopic, unpinCategoryTopic,
   subscribeCategory, unsubscribeCategory, isSubscribedCategory, getCategorySubscribers };
 

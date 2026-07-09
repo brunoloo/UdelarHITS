@@ -32,3 +32,20 @@
   color: var(--text-on-accent);
   border-color: var(--accent);
 }
+
+.tag--link {
+  cursor: pointer;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  transition: background .12s, color .12s;
+}
+.tag--link:hover {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.tag--more {
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  font-style: italic;
+}

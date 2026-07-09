@@ -1,14 +1,24 @@
 import 'dotenv/config';
+import http from 'http';
 import app from './app.js';
 import pool from './config/db.js';
+import { initSocket } from './socket.js';
+import { startCleanupJobs } from './jobs/cleanup.job.js';
 
 const PORT = Number(process.env.PORT || 5001);
 
-const server = app.listen(PORT,'0.0.0.0', () => {
+const server = http.createServer(app);
+initSocket(server, app);
+
+// Jobs de limpieza (retención de chat + housekeeping de auth). Se arranca acá
+// y no en app.js para que los tests (que importan app) no dejen timers vivos.
+startCleanupJobs();
+
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-// Manejo de señales para cierre 
+// Manejo de señales para cierre
 
 let isShuttingDown = false;
 

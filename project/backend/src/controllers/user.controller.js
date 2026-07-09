@@ -1,14 +1,16 @@
 import { fileTypeFromBuffer } from 'file-type';
 
+import { generateToken } from '../utils/generateToken.js';
 import { requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, getUsersService, createUserByAdminService,
-    getUserProfileService, showMeService, updateMeService, 
+    getUserProfileService, showMeService, updateMeService,
     banUserService, activeUserService, deleteUserService,
   followUserService, unfollowUserService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService, updateAvatarService,
   searchUsersService, updateBannerService,
-  deleteBannerService, deleteAvatarService, getSuggestedUsersService, getMostActiveUsersService, 
-  changePasswordService, forgotPasswordService, verifyResetTokenService, 
-  resetPasswordService, deactivateAccountService, togglePrivacyService, toggleLikesPrivacyService } from '../services/user.service.js';
+  deleteBannerService, deleteAvatarService, getSuggestedUsersService, getMostActiveUsersService,
+  changePasswordService, forgotPasswordService, verifyResetTokenService,
+  resetPasswordService, deactivateAccountService, togglePrivacyService, toggleLikesPrivacyService,
+  confirmNicknameService } from '../services/user.service.js';
 
 const showMe = async (req, res) => {
   try {
@@ -52,6 +54,14 @@ const registerUser = async (req, res) => {
     if (error.code === 'BAD_REQUEST') {
       return res.status(400).json({ ok: false, message: error.message });
     }
+    // El envío del código falló (p. ej. cuota de Resend superada): avisar de
+    // forma honesta — nunca decir "revisá tu correo" si no salió nada.
+    if (error.code === 'EMAIL_QUOTA' || error.code === 'EMAIL_SEND_FAILED') {
+      return res.status(503).json({
+        ok: false,
+        message: 'No pudimos enviar el correo de verificación por un problema temporal del servicio de email. Tu registro no se completó — probá de nuevo más tarde.',
+      });
+    }
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }
 };
@@ -62,7 +72,16 @@ const resendCode = async (req, res) => {
   try {
     await resendRegistrationCodeService(req.body);
   } catch (error) {
-    // Falla silenciosa (p. ej. error de envío): no exponemos detalles.
+    // Si el envío falló de verdad (cuota de Resend u otro error del servicio),
+    // avisar honestamente: la respuesta genérica de éxito dejaría al usuario
+    // esperando un mail que nunca va a llegar.
+    if (error.code === 'EMAIL_QUOTA' || error.code === 'EMAIL_SEND_FAILED') {
+      return res.status(503).json({
+        ok: false,
+        message: 'No pudimos enviar el correo por un problema temporal del servicio de email. Probá de nuevo más tarde.',
+      });
+    }
+    // Cualquier otro error sigue siendo silencioso: no exponemos detalles.
   }
   return res.status(200).json({
     ok: true,
@@ -244,6 +263,7 @@ const followUser = async (req, res) => {
   } catch (error) {
     if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }
 };
@@ -310,6 +330,12 @@ const updateAvatar = async (req, res) => {
     return res.status(200).json({ ok: true, data: updated });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'CLOUDINARY_QUOTA') {
+      return res.status(503).json({
+        ok: false,
+        message: 'No se pudo subir la imagen por un problema temporal de almacenamiento del sitio — no es un error tuyo ni de tu archivo. El resto del foro sigue funcionando con normalidad, probá de nuevo más tarde.',
+      });
+    }
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }
 };
@@ -317,7 +343,7 @@ const updateAvatar = async (req, res) => {
 const searchUsers = async (req, res) => {
   try {
     const { q } = req.query;
-    const users = await searchUsersService(q);
+    const users = await searchUsersService(q, req.user?.id);
     return res.status(200).json({ ok: true, data: users });
   } catch (error) {
     return res.status(500).json({ ok: false, message: 'Internal server error' });
@@ -341,6 +367,12 @@ const updateBanner = async (req, res) => {
     return res.status(200).json({ ok: true, data: updated });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'CLOUDINARY_QUOTA') {
+      return res.status(503).json({
+        ok: false,
+        message: 'No se pudo subir la imagen por un problema temporal de almacenamiento del sitio — no es un error tuyo ni de tu archivo. El resto del foro sigue funcionando con normalidad, probá de nuevo más tarde.',
+      });
+    }
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }
 };
@@ -400,6 +432,17 @@ const forgotPassword = async (req, res) => {
     return res.status(200).json({ ok: true, message: 'Si el email existe, se envió el enlace de recuperación' });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    // Límite de 1 recuperación por cuenta cada 24hs: mensaje claro (pedido
+    // explícito del flujo) aunque implique confirmar que la cuenta existe.
+    if (error.code === 'RATE_LIMITED') return res.status(429).json({ ok: false, message: error.message });
+    // El mail no salió (cuota de Resend u otro fallo de envío): nunca
+    // responder el 200 genérico como si se hubiera enviado.
+    if (error.code === 'EMAIL_QUOTA' || error.code === 'EMAIL_SEND_FAILED') {
+      return res.status(503).json({
+        ok: false,
+        message: 'No pudimos enviar el correo de recuperación por un problema temporal del servicio de email. Probá de nuevo más tarde.',
+      });
+    }
     return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
   }
 };
@@ -466,7 +509,33 @@ const toggleLikesPrivacy = async (req, res) => {
   }
 };
 
-export { showMe, registerUser, verifyEmail, resendCode, loginUser, logoutUser, getUsers,
+const googleAuthCallback = async (req, res) => {
+  const token = generateToken(req.user.id);
+  res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: (1000 * 60 * 60 * 24) * 7
+  });
+
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const dest = req.user.nickname_confirmado === false ? '/setup-profile' : '/';
+  return res.redirect(`${frontendUrl}${dest}`);
+};
+
+const setupNickname = async (req, res) => {
+  try {
+    const { nickname } = req.body;
+    const updated = await confirmNicknameService(req.user.id, nickname);
+    return res.status(200).json({ ok: true, data: updated });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NICKNAME_TAKEN') return res.status(409).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
+
+export { showMe, registerUser, verifyEmail, resendCode, loginUser, logoutUser, googleAuthCallback, setupNickname, getUsers,
   getUserProfile, updateMe, banUser,
   activeUser, deleteUser, followUser, unfollowUser, acceptFollowRequest, rejectFollowRequest, checkFollowing, updateAvatar,
   searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList,

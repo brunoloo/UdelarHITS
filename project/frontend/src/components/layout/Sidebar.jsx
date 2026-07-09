@@ -2,7 +2,6 @@ import { useLocation, Link, useMatch } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
-import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { resolveAutor } from '../shared/AuthorDisplay'
 import { UserAvatar } from '../shared/UserAvatar'
 import './Sidebar.css'
@@ -40,29 +39,27 @@ function CommunityCard({ categoryCount, topicCount }) {
   )
 }
 
-function PopularTagsCard({ categories }) {
-  const tagCount = {}
-  categories.forEach(c => {
-    parseEtiquetas(c.etiquetas).forEach(tag => {
-      tagCount[tag] = (tagCount[tag] || 0) + 1
-    })
+function PopularTagsCard() {
+  // Etiquetas en tendencia por actividad real de los últimos 7 días (temas
+  // creados por etiqueta), servidas por el backend. Antes se calculaba la
+  // frecuencia estática de etiquetas sobre las categorías activas.
+  const { data: tags = [] } = useQuery({
+    queryKey: ['categories', 'trending-tags'],
+    queryFn: () => apiGet('/categories/trending-tags?days=7&limit=8').then(r => r.data),
   })
-  const sorted = Object.entries(tagCount)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
 
   return (
     <div className="sidebar-card">
       <div className="sidebar-card-header">Etiquetas populares</div>
       <div className="sidebar-card-body">
-        {sorted.length === 0 ? (
+        {tags.length === 0 ? (
           <span className="sidebar-empty">Sin etiquetas aún</span>
         ) : (
           <div className="sidebar-tags-wrap">
-            {sorted.map(([tag, count]) => (
-              <Link key={tag} to={`/?q=${encodeURIComponent(tag)}`} className="sidebar-tag">
-                <span className="sidebar-tag-name">{tag}</span>
-                <span className="sidebar-tag-count">{count}</span>
+            {tags.map(t => (
+              <Link key={t.etiqueta} to={`/?q=${encodeURIComponent(t.etiqueta)}`} className="sidebar-tag">
+                <span className="sidebar-tag-name">{t.etiqueta}</span>
+                <span className="sidebar-tag-count">{Number(t.temas_recientes) || 0}</span>
               </Link>
             ))}
           </div>
@@ -357,7 +354,7 @@ export function Sidebar() {
 
       {pathname === '/recent' && (
         <>
-          <PopularTagsCard categories={categories} />
+          <PopularTagsCard />
           <CommunityCard categoryCount={categoryCount} topicCount={recentTopics.length} />
         </>
       )}

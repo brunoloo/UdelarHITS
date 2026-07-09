@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
-import { apiPatch } from '../../api/client'
+import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
+import { UserAvatar } from '../../components/shared/UserAvatar'
+import { Modal } from '../../components/ui/Modal'
 import { ChangePasswordModal } from './ChangePasswordModal'
+import '../profile/FollowersModal.css'
 import './settings.css'
 
 const TABS = [
@@ -41,16 +44,6 @@ const TABS = [
     ),
   },
   {
-    id: 'notificaciones',
-    label: 'Notificaciones',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/>
-        <path d="M10 21a2 2 0 0 0 4 0"/>
-      </svg>
-    ),
-  },
-  {
     id: 'acerca',
     label: 'Acerca de',
     icon: (
@@ -72,9 +65,26 @@ const THEME_OPTIONS = [
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState('apariencia')
   const [changePasswordOpen, setChangePasswordOpen] = useState(false)
+  const [blockedListOpen, setBlockedListOpen] = useState(false)
   const { theme, setTheme } = useTheme()
   const { user, setUser } = useAuth()
   const { showToast } = useToast()
+  const queryClient = useQueryClient()
+
+  const { data: blockedUsers = [] } = useQuery({
+    queryKey: ['blocked-users'],
+    queryFn: () => apiGet('/users/blocked').then(r => r.data),
+    enabled: blockedListOpen,
+  })
+
+  const unblockMutation = useMutation({
+    mutationFn: (nickname) => apiDelete(`/users/${encodeURIComponent(nickname)}/block`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['blocked-users'] })
+      showToast('Usuario desbloqueado', 'success')
+    },
+    onError: () => showToast('Error al desbloquear', 'error'),
+  })
 
   const privacyMutation = useMutation({
     mutationFn: () => apiPatch('/users/me/privacy', {}),
@@ -232,19 +242,24 @@ export function SettingsPage() {
                     </label>
                   </div>
                 </div>
-              </article>
-            )}
 
-            {activeTab === 'notificaciones' && (
-              <article className="settings-section">
-                <h2>Notificaciones</h2>
-                <p className="settings-section-desc">Elegí sobre qué cosas querés ser notificado.</p>
-                <div className="settings-placeholder">
-                  <p>El sistema de notificaciones está en desarrollo.</p>
+                <div className="settings-row">
+                  <div className="settings-row-info">
+                    <h3>Usuarios bloqueados</h3>
+                    <p>Los usuarios bloqueados no pueden ver tu perfil, seguirte ni interactuar con tu contenido.</p>
+                  </div>
+                  <div className="settings-row-control">
+                    <button
+                      type="button"
+                      className="settings-btn-secondary"
+                      onClick={() => setBlockedListOpen(true)}
+                    >
+                      Ver
+                    </button>
+                  </div>
                 </div>
               </article>
             )}
-
             {activeTab === 'acerca' && (
               <article className="settings-section">
                 <h2>Acerca de UdelarHITS</h2>
@@ -253,7 +268,7 @@ export function SettingsPage() {
                 <div className="settings-row">
                   <div className="settings-row-info">
                     <h3>Versión</h3>
-                    <p>Beta</p>
+                    <p>v1.0.0</p>
                   </div>
                 </div>
 
@@ -276,6 +291,38 @@ export function SettingsPage() {
         isOpen={changePasswordOpen}
         onClose={() => setChangePasswordOpen(false)}
       />
+
+      <Modal isOpen={blockedListOpen} onClose={() => setBlockedListOpen(false)} title="Usuarios bloqueados" className="modal--narrow">
+        <div className="follow-list">
+          {blockedUsers.length === 0 ? (
+            <div className="follow-list-empty">No tenés usuarios bloqueados.</div>
+          ) : (
+            blockedUsers.map(u => (
+              <div key={u.id} className="follow-item">
+                <UserAvatar url_imagen={u.url_imagen} nickname={u.nickname} size="md" />
+                <div className="follow-item-info">
+                  <Link
+                    className="follow-item-nickname"
+                    to={`/user/${encodeURIComponent(u.nickname)}`}
+                    onClick={() => setBlockedListOpen(false)}
+                  >
+                    @{u.nickname}
+                  </Link>
+                  {u.nombre && <div className="follow-item-name">{u.nombre}</div>}
+                </div>
+                <button
+                  type="button"
+                  className="btn-follow-sm"
+                  disabled={unblockMutation.isPending}
+                  onClick={() => unblockMutation.mutate(u.nickname)}
+                >
+                  Desbloquear
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </Modal>
     </>
   )
 }

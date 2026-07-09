@@ -16,7 +16,7 @@ const findByEmailOrNickname = async ({ nickname, email }) => {
 
 const findByEmailOrNicknameForLogin = async ({ nickname, email }) => {
   let q = `
-    SELECT id, nickname, nombre, email, password_hash, biografia, url_imagen, estado, rol
+    SELECT id, nickname, nombre, email, password_hash, biografia, url_imagen, estado, rol, auth_provider, privado, me_gusta_privado, nickname_confirmado
     FROM usuario
   `;
   const values = [];
@@ -33,6 +33,43 @@ const findByEmailOrNicknameForLogin = async ({ nickname, email }) => {
   }
 
   const { rows } = await pool.query(q, values);
+  return rows[0] || null;
+};
+
+const findByEmailForGoogleAuth = async (email) => {
+  const q = `
+    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, estado, auth_provider, nickname_confirmado
+    FROM usuario
+    WHERE LOWER(email) = LOWER($1)
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [email]);
+  return rows[0] || null;
+};
+
+const isNicknameTaken = async (nickname) => {
+  const q = `SELECT 1 FROM usuario WHERE LOWER(nickname) = LOWER($1) LIMIT 1`;
+  const { rows } = await pool.query(q, [nickname]);
+  return rows.length > 0;
+};
+
+const createGoogleUser = async ({ nickname, nombre, email }) => {
+  const q = `
+    INSERT INTO usuario (nickname, nombre, email, password_hash, rol, estado, auth_provider, nickname_confirmado)
+    VALUES ($1, $2, $3, NULL, 'user', 'activo', 'google', FALSE)
+    RETURNING id, rol, nickname, nombre, email, biografia, url_imagen, estado, auth_provider, nickname_confirmado
+  `;
+  const { rows } = await pool.query(q, [nickname, nombre, email]);
+  return rows[0];
+};
+
+const confirmNickname = async (userId, nickname) => {
+  const q = `
+    UPDATE usuario SET nickname = $2, nickname_confirmado = TRUE
+    WHERE id = $1
+    RETURNING id, rol, nickname, nombre, email, biografia, url_imagen, estado, auth_provider, nickname_confirmado
+  `;
+  const { rows } = await pool.query(q, [userId, nickname]);
   return rows[0] || null;
 };
 
@@ -58,7 +95,7 @@ const getUsers = async () => {
 
 const getUserByNickname = async (nickname) => {
   const q = `
-    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado, me_gusta_privado
+    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado, me_gusta_privado, nickname_confirmado
     FROM usuario
     WHERE LOWER(nickname) = LOWER($1)
     LIMIT 1
@@ -82,9 +119,10 @@ const getCategoriesByUserId = async (userId) => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.fecha_creacion, c.icono,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
-      ARRAY_AGG(ce.etiqueta_valor) AS etiquetas
+      ARRAY_AGG(e.nombre) AS etiquetas
     FROM categoria c
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.autor_id = $1 AND c.estado = 'activa'
     GROUP BY c.id
     ORDER BY c.fecha_creacion DESC
@@ -285,18 +323,25 @@ const acceptAllPendingFollowRequests = async (seguidoId) => {
   return rowCount;
 };
 
-const searchUsers = async (query) => {
+const searchUsers = async (query, viewerId = null) => {
   const q = `
     SELECT id, nickname, nombre, url_imagen
     FROM usuario
     WHERE estado = 'activo'
       AND (nickname ILIKE $1 OR nombre ILIKE $1)
-    ORDER BY 
+      ${viewerId ? `AND id NOT IN (
+        SELECT bloqueado_id FROM bloqueo WHERE bloqueador_id = $3
+        UNION
+        SELECT bloqueador_id FROM bloqueo WHERE bloqueado_id = $3
+      )` : ''}
+    ORDER BY
       CASE WHEN nickname ILIKE $2 THEN 0 ELSE 1 END,
       nickname ASC
     LIMIT 5
   `;
-  const { rows } = await pool.query(q, [`%${query}%`, `${query}%`]);
+  const params = [`%${query}%`, `${query}%`];
+  if (viewerId) params.push(viewerId);
+  const { rows } = await pool.query(q, params);
   return rows;
 };
 
@@ -339,6 +384,11 @@ const getSuggestedUsers = async (userId, limit = 10) => {
       AND u.id != $1
       AND u.id NOT IN (
         SELECT us.seguido_id FROM usuario_seguidor us WHERE us.seguidor_id = $1
+      )
+      AND u.id NOT IN (
+        SELECT bloqueado_id FROM bloqueo WHERE bloqueador_id = $1
+        UNION
+        SELECT bloqueador_id FROM bloqueo WHERE bloqueado_id = $1
       )
     ORDER BY actividad DESC, u.fecha_creacion DESC
     LIMIT $2
@@ -440,7 +490,8 @@ const getLikesPrivacyById = async (id) => {
   return rows[0] || null;
 };
 
-export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, 
+export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers,
+  findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser, confirmNickname,
   getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, updateUserEstadoById,
   deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,

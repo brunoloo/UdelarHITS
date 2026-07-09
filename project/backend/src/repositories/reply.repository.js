@@ -388,7 +388,9 @@ const getReplyContext = async (commentId, userId = null) => {
       con.fecha_creacion, u.estado AS autor_estado,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
-      (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion
+      (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
+      (SELECT COALESCE(json_agg(json_build_object('id', adj.id, 'url', adj.url, 'nombre_original', adj.nombre_original, 'tipo', adj.tipo, 'tamano', adj.tamano) ORDER BY adj.id), '[]'::json) FROM adjunto adj WHERE adj.contenido_id = com.contenido_id) AS adjuntos,
+      ${encuestaSubquery('$2')} AS encuesta
     FROM ancestors a
     JOIN comentario com ON com.contenido_id = a.contenido_id
     JOIN contenido con ON con.id = com.contenido_id
