@@ -35,7 +35,7 @@ import {
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy,
   getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
-import { isBlocked } from '../repositories/block.repository.js';
+import { isBlocked, getBlockDirection } from '../repositories/block.repository.js';
 import pool from '../config/db.js';
 
 // Valida unicidad de nickname/email y lanza el error correspondiente.
@@ -373,10 +373,13 @@ const getUserProfileService = async (nickname, viewerId = null) => {
     throw err;
   }
   let te_bloqueo = false;
+  let yo_bloquee = false;
   if (viewerId && viewerId !== user.id) {
     const blocked = await isBlocked(viewerId, user.id);
     if (blocked) {
       te_bloqueo = true;
+      const directions = await getBlockDirection(viewerId, user.id);
+      yo_bloquee = directions ? directions.some(d => d.bloqueador_id === viewerId) : false;
       return {
         user: {
           id: user.id,
@@ -395,6 +398,7 @@ const getUserProfileService = async (nickname, viewerId = null) => {
         ya_sigo: false,
         mi_estado_seguimiento: 'none',
         te_bloqueo,
+        yo_bloquee,
       };
     }
   }
@@ -409,7 +413,7 @@ const getUserProfileService = async (nickname, viewerId = null) => {
   }
   const ya_sigo = mi_estado_seguimiento === 'aceptado';
 
-  return { user, categories, followers, following, ya_sigo, mi_estado_seguimiento, te_bloqueo };
+  return { user, categories, followers, following, ya_sigo, mi_estado_seguimiento, te_bloqueo, yo_bloquee };
 };
 
 const showMeService = async (nickname) => {

@@ -94,6 +94,7 @@ export function ProfilePage() {
   const myFollowing = isOwnProfile ? following : (myData?.following || [])
 
   const teBloqueo = profileData?.te_bloqueo ?? false
+  const yoBloquee = profileData?.yo_bloquee ?? false
 
   const { data: topics = [] } = useQuery({
     queryKey: ['topics', 'user', profile?.id],
@@ -218,7 +219,7 @@ export function ProfilePage() {
         onClick: () => navigate(`/chat/${encodeURIComponent(nickname)}`),
       })
     }
-    if (teBloqueo) {
+    if (yoBloquee) {
       menuItems.push({
         label: 'Desbloquear',
         icon: (
@@ -228,7 +229,7 @@ export function ProfilePage() {
         ),
         onClick: () => unblockMutation.mutate(),
       })
-    } else {
+    } else if (!teBloqueo) {
       menuItems.push({
         label: 'Bloquear',
         icon: (
