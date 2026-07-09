@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
@@ -11,12 +11,19 @@ export function Header() {
   const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
 
+  const location = useLocation()
+
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
   const [query, setQuery] = useState('')
   const [results, setResults] = useState(null)
   const searchRef = useRef(null)
+
+  useEffect(() => {
+    setQuery('')
+    setResults(null)
+  }, [location])
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories', 'active'],
