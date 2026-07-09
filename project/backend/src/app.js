@@ -62,6 +62,13 @@ app.use(cors({
   credentials: true
 }));
 
+// Archivos estáticos: se sirven ANTES de cualquier middleware que dependa de la
+// DB (passport, auth, etc.) para que un error de conexión a Postgres no impida
+// servir el frontend. El orden importa: primero frontend/dist (que tiene su
+// propia carpeta assets/), luego central/, luego el fallback de assets internos
+// del backend (default-user.jpg).
+app.use(express.static(FRONTEND_DIST));
+app.use('/central', express.static(path.join(__dirname, '..', '..', 'central')));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Cookie
@@ -148,12 +155,6 @@ const reporteLimiter = rateLimit({
   message: { ok: false, message: 'Demasiados reportes en poco tiempo. Intentá de nuevo en un momento.' }
 });
 app.use('/api/reports', limiterIf(reporteLimiter));
-
-// La Central — capa institucional (HTML estático, siempre light)
-app.use('/central', express.static(path.join(__dirname, '..', '..', 'central')));
-
-// React SPA build (Vite dist)
-app.use(express.static(FRONTEND_DIST));
 
 // routes
 app.use("/api", API);
