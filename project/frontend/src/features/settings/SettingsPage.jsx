@@ -44,16 +44,6 @@ const TABS = [
     ),
   },
   {
-    id: 'notificaciones',
-    label: 'Notificaciones',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/>
-        <path d="M10 21a2 2 0 0 0 4 0"/>
-      </svg>
-    ),
-  },
-  {
     id: 'acerca',
     label: 'Acerca de',
     icon: (
@@ -270,17 +260,6 @@ export function SettingsPage() {
                 </div>
               </article>
             )}
-
-            {activeTab === 'notificaciones' && (
-              <article className="settings-section">
-                <h2>Notificaciones</h2>
-                <p className="settings-section-desc">Elegí sobre qué cosas querés ser notificado.</p>
-                <div className="settings-placeholder">
-                  <p>El sistema de notificaciones está en desarrollo.</p>
-                </div>
-              </article>
-            )}
-
             {activeTab === 'acerca' && (
               <article className="settings-section">
                 <h2>Acerca de UdelarHITS</h2>
