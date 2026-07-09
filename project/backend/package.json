@@ -8,8 +8,8 @@
   },
   "scripts": {
     "start": "node src/server.js",
+    "build": "cd ../frontend && npm install --include=dev && npm run build",
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
     "db:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits;\"",
     "db:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits OWNER brunoloo;\"",
     "db:schema": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/schema.sql",
