@@ -7,10 +7,10 @@ export default defineConfig({
     port: 5173,
     allowedHosts: ['carload-chivalry-sinuous.ngrok-free.dev'],
     proxy: {
-      '/api': 'http://localhost:5001',
-      '/central': 'http://localhost:5001',
+      '/api': 'https://udelarhits-production.up.railway.app',
+      '/central': 'https://udelarhits-production.up.railway.app',
       '/socket.io': {
-        target: 'http://localhost:5001',
+        target: 'https://udelarhits-production.up.railway.app',
         ws: true,
       },
     },
