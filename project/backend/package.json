@@ -7,6 +7,7 @@
     "test": "tests"
   },
   "scripts": {
+    "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "db:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits;\"",
