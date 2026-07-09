@@ -53,7 +53,7 @@ export function ModerationPage() {
             <div className="about-flow-step-num">4</div>
             <div className="about-flow-step-body">
               <strong>Derecho a réplica (Apelación)</strong>
-              <p>El autor original es notificado y puede iniciar una apelación formal desde su perfil. La administración revisa el caso con base en las reglas y emite un fallo definitivo.</p>
+              <p>El autor original es notificado y puede iniciar una apelación si considera que el ocultamiento fue injusto. La administración revisa el caso con base en las reglas y emite un fallo definitivo.</p>
             </div>
           </div>
         </div>
