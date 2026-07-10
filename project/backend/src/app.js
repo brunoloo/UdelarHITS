@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import multer from 'multer';
@@ -50,6 +51,8 @@ app.use(helmet({
     }
   }
 }));
+
+app.use(compression());
 
 // Allowlist de orígenes para CORS (separados por coma en .env)
 const allowedOrigins = (process.env.URL || '').split(',').map(s => s.trim()).filter(Boolean);
