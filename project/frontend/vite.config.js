@@ -14,12 +14,11 @@ export default defineConfig({
   plugins: [react(), stripCrossorigin()],
   server: {
     port: 5173,
-    allowedHosts: ['carload-chivalry-sinuous.ngrok-free.dev'],
     proxy: {
-      '/api': 'https://udelarhits-production.up.railway.app',
-      '/central': 'https://udelarhits-production.up.railway.app',
+      '/api': 'http://localhost:5001',
+      '/central': 'http://localhost:5001',
       '/socket.io': {
-        target: 'https://udelarhits-production.up.railway.app',
+        target: 'http://localhost:5001',
         ws: true,
       },
     },
