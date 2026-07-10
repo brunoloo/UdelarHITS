@@ -52,8 +52,6 @@ app.use(helmet({
   }
 }));
 
-app.use(compression());
-
 // Allowlist de orígenes para CORS (separados por coma en .env)
 const allowedOrigins = (process.env.URL || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({
@@ -73,6 +71,7 @@ app.use(cors({
 app.use(express.static(FRONTEND_DIST));
 app.use('/central', express.static(path.join(__dirname, '..', '..', 'central')));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
+app.use(compression());
 
 // Cookie
 app.use(cookieParser());
