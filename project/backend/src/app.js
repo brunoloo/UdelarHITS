@@ -9,6 +9,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import passport from './config/passport.js';
+import pool from './config/db.js';
 
 // Import routes
 import API from './routes/API.js';
@@ -62,6 +63,16 @@ app.use(express.static(FRONTEND_DIST));
 app.use('/central', express.static(path.join(__dirname, '..', '..', 'central')));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use(compression());
+
+// Healthcheck — Railway lo consulta para confirmar que el server puede atender tráfico
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.status(200).json({ ok: true });
+  } catch {
+    res.status(503).json({ ok: false });
+  }
+});
 
 // Allowlist de orígenes para CORS (separados por coma en .env)
 const allowedOrigins = (process.env.URL || '').split(',').map(s => s.trim()).filter(Boolean);
