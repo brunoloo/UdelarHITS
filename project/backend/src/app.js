@@ -52,6 +52,17 @@ app.use(helmet({
   }
 }));
 
+// Archivos estáticos: se sirven ANTES de CORS y de cualquier middleware que
+// dependa de la DB. Los assets del frontend son públicos y no deben pasar por
+// la validación CORS (los requests de módulos ES traen header Origin y la
+// validación los rechazaba con 500). El orden importa: primero frontend/dist
+// (que tiene su propia carpeta assets/), luego central/, luego el fallback de
+// assets internos del backend (default-user.jpg).
+app.use(express.static(FRONTEND_DIST));
+app.use('/central', express.static(path.join(__dirname, '..', '..', 'central')));
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
+app.use(compression());
+
 // Allowlist de orígenes para CORS (separados por coma en .env)
 const allowedOrigins = (process.env.URL || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({
@@ -62,16 +73,6 @@ app.use(cors({
   },
   credentials: true
 }));
-
-// Archivos estáticos: se sirven ANTES de cualquier middleware que dependa de la
-// DB (passport, auth, etc.) para que un error de conexión a Postgres no impida
-// servir el frontend. El orden importa: primero frontend/dist (que tiene su
-// propia carpeta assets/), luego central/, luego el fallback de assets internos
-// del backend (default-user.jpg).
-app.use(express.static(FRONTEND_DIST));
-app.use('/central', express.static(path.join(__dirname, '..', '..', 'central')));
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
-app.use(compression());
 
 // Cookie
 app.use(cookieParser());
