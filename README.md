@@ -1,6 +1,7 @@
 # UdelarHITS 🎓
-
 **Un foro institucional para la comunidad de la Universidad de la República.**
+
+🌐 **[udelarhits.com](https://udelarhits.com)**
 
 ---
 
@@ -32,7 +33,7 @@ La información en la universidad vive dispersa: grupos de WhatsApp que se pierd
 
 ## Estado del proyecto
 
-🚧 **En desarrollo**
+✅ **En producción** — activo en [udelarhits.com](https://udelarhits.com)
 
 ---
 
