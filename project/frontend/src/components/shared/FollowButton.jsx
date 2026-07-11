@@ -1,29 +1,76 @@
 import { useState, useEffect } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiPost, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
 import './FollowButton.css'
 
-export function FollowButton({ nickname, initialState = 'none', onToggle }) {
+export function FollowButton({ nickname, initialState = 'none', isPrivate = false, onToggle }) {
   const [estado, setEstado] = useState(initialState)
 
   useEffect(() => { setEstado(initialState) }, [initialState])
   const [hover, setHover] = useState(false)
   const { showToast } = useToast()
+  const queryClient = useQueryClient()
 
   const mutation = useMutation({
-    mutationFn: () =>
-      estado === 'none'
+    mutationFn: ({ prevEstado }) =>
+      prevEstado === 'none'
         ? apiPost(`/users/${encodeURIComponent(nickname)}/follow`, {})
         : apiDelete(`/users/${encodeURIComponent(nickname)}/follow`),
-    onSuccess: (res) => {
-      // Al seguir, el backend informa si quedó 'aceptado' (pública) o
-      // 'pendiente' (privada). Al dejar de seguir / cancelar, volvemos a 'none'.
-      const newEstado = estado === 'none' ? (res?.data?.estado || 'aceptado') : 'none'
-      setEstado(newEstado)
-      if (onToggle) onToggle(newEstado)
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['user', nickname] })
+      await queryClient.cancelQueries({ queryKey: ['me'] })
+      await queryClient.cancelQueries({ queryKey: ['users', 'suggested'] })
+
+      const prevProfile = queryClient.getQueryData(['user', nickname])
+      const prevMe = queryClient.getQueryData(['me'])
+      const prevSuggested = queryClient.getQueryData(['users', 'suggested'])
+      const prevEstado = estado
+
+      const optimisticEstado = prevEstado === 'none'
+        ? (isPrivate ? 'pendiente' : 'aceptado')
+        : 'none'
+
+      setEstado(optimisticEstado)
+
+      if (prevProfile) {
+        queryClient.setQueryData(['user', nickname], old => {
+          if (!old) return old
+          const updated = { ...old, mi_estado_seguimiento: optimisticEstado }
+          if (optimisticEstado === 'aceptado' && old.followers) {
+            updated.followers = [...old.followers, { nickname: prevMe?.user?.nickname }]
+          } else if (optimisticEstado === 'none' && old.followers) {
+            updated.followers = old.followers.filter(f => f.nickname !== prevMe?.user?.nickname)
+          }
+          return updated
+        })
+      }
+
+      return { prevProfile, prevMe, prevSuggested, prevEstado }
     },
-    onError: (err) => showToast(err.message || 'Error', 'error'),
+    onError: (err, _vars, context) => {
+      if (context?.prevEstado !== undefined) setEstado(context.prevEstado)
+      if (context?.prevProfile) queryClient.setQueryData(['user', nickname], context.prevProfile)
+      if (context?.prevMe) queryClient.setQueryData(['me'], context.prevMe)
+      if (context?.prevSuggested) queryClient.setQueryData(['users', 'suggested'], context.prevSuggested)
+      showToast(err.message || 'Error', 'error')
+    },
+    onSuccess: (res, { prevEstado }) => {
+      if (prevEstado === 'none') {
+        const serverEstado = res?.data?.estado || 'aceptado'
+        setEstado(serverEstado)
+        if (onToggle) onToggle(serverEstado)
+      } else {
+        setEstado('none')
+        if (onToggle) onToggle('none')
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', nickname] })
+      queryClient.invalidateQueries({ queryKey: ['me'] })
+      queryClient.invalidateQueries({ queryKey: ['users', 'suggested'] })
+      queryClient.invalidateQueries({ queryKey: ['user'] })
+    },
   })
 
   let label = 'Seguir'
@@ -44,7 +91,7 @@ export function FollowButton({ nickname, initialState = 'none', onToggle }) {
       className={className}
       type="button"
       disabled={mutation.isPending}
-      onClick={() => mutation.mutate()}
+      onClick={() => mutation.mutate({ prevEstado: estado })}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >

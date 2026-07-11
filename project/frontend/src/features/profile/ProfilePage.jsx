@@ -334,6 +334,7 @@ export function ProfilePage() {
               key={`${nickname}:${miEstadoSeguimiento}`}
               nickname={nickname}
               initialState={miEstadoSeguimiento}
+              isPrivate={!!profile?.privado}
               onToggle={handleFollowToggle}
             />
           )}
