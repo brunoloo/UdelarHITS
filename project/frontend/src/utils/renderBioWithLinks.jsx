@@ -1,8 +1,5 @@
-// Returns an array of React elements: plain text segments, <br> for newlines,
-// <a className="bio-link"> for detected URLs, and <a className="mention-link">
-// for @mentions.
-// React escapes all string content automatically — no manual escapeHtml needed.
 import { Link } from 'react-router-dom'
+import { isInternalUrl, toRelativePath } from './isInternalUrl'
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/g
 const MENTION_REGEX = /@(\w[\w.-]{0,29})/g
@@ -19,17 +16,30 @@ export function renderBioWithLinks(text) {
     if (!part) continue
     if (URL_REGEX.test(part)) {
       URL_REGEX.lastIndex = 0
-      elements.push(
-        <a
-          key={key++}
-          href={`/redirect?to=${encodeURIComponent(part)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bio-link"
-        >
-          {part}
-        </a>
-      )
+      if (isInternalUrl(part)) {
+        elements.push(
+          <Link
+            key={key++}
+            to={toRelativePath(part)}
+            className="bio-link"
+            onClick={e => e.stopPropagation()}
+          >
+            {part}
+          </Link>
+        )
+      } else {
+        elements.push(
+          <a
+            key={key++}
+            href={`/redirect?to=${encodeURIComponent(part)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bio-link"
+          >
+            {part}
+          </a>
+        )
+      }
     } else if (part.startsWith('@') && MENTION_REGEX.test(part)) {
       MENTION_REGEX.lastIndex = 0
       const nickname = part.slice(1)
