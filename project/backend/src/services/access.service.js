@@ -1,4 +1,5 @@
 import { getPrivacyById, getFollowState } from '../repositories/user.repository.js';
+import { hasBlocked } from '../repositories/block.repository.js';
 
 // ── ÚNICA fuente de verdad de la política de visibilidad de cuentas privadas ──
 // Predicado PURO (sin I/O): recibe los hechos ya recolectados y aplica la regla.
@@ -24,6 +25,16 @@ export const canViewUserContent = async (targetUserId, viewerId = null, viewerRo
 
   const isOwner = viewerId != null && Number(viewerId) === Number(targetUserId);
   const isAdmin = viewerRol === 'admin';
+
+  // Gate de bloqueo UNIDIRECCIONAL: si el DUEÑO del contenido bloqueó al viewer,
+  // este no puede ver su contenido "por usuario" — incluso en cuenta pública.
+  // La dirección inversa (el viewer bloqueó al dueño) NO se gatea: bloquear es una
+  // decisión del que bloquea, no una restricción sobre el bloqueado, así que el
+  // viewer sigue viendo el contenido del target normalmente. Los admins conservan
+  // visibilidad para moderación.
+  if (!isOwner && !isAdmin && viewerId != null) {
+    if (await hasBlocked(targetUserId, viewerId)) return false;
+  }
 
   // Solo consultamos el estado de seguimiento cuando puede cambiar la decisión
   // (cuenta privada y el viewer no es dueño ni admin).

@@ -184,3 +184,54 @@ describe('Control de acceso — contenido de cuenta privada por endpoints direct
     expect(r.status).toBe(200);
   });
 });
+
+// Gate de bloqueo UNIDIRECCIONAL en los endpoints "por usuario": solo importa que
+// el DUEÑO del contenido haya bloqueado al viewer. La dirección inversa no restringe.
+describe('Control de acceso — bloqueo direccional en endpoints "por usuario"', () => {
+  test('A bloqueó a B (A pública) → B NO puede ver /topics ni /replies de A', async () => {
+    const A = await registerAndLogin();
+    const topic = await createTopic(A.cookie);
+    await createReply(A.cookie, { tema_id: topicId(topic), cuerpo: 'comentario de A' });
+    const B = await registerAndLogin();
+    // A (dueño del contenido) bloquea a B.
+    await request(app).post(`/api/users/${B.user.nickname}/block`).set('Cookie', A.cookie);
+
+    const t = await request(app).get(`/api/topics/user/${A.user.id}`).set('Cookie', B.cookie);
+    const r = await request(app).get(`/api/replies/user/${A.user.id}`).set('Cookie', B.cookie);
+    expect(t.status).toBe(403);
+    expect(r.status).toBe(403);
+  });
+
+  test('B bloqueó a A (A pública) → B SÍ puede ver /topics y /replies de A (inversa NO se gatea)', async () => {
+    const A = await registerAndLogin();
+    const topic = await createTopic(A.cookie);
+    await createReply(A.cookie, { tema_id: topicId(topic), cuerpo: 'comentario de A' });
+    const B = await registerAndLogin();
+    // B bloquea a A: es decisión de B, no debe impedirle ver el contenido de A.
+    await request(app).post(`/api/users/${A.user.nickname}/block`).set('Cookie', B.cookie);
+
+    const t = await request(app).get(`/api/topics/user/${A.user.id}`).set('Cookie', B.cookie);
+    const r = await request(app).get(`/api/replies/user/${A.user.id}`).set('Cookie', B.cookie);
+    expect(t.status).toBe(200);
+    expect(r.status).toBe(200);
+    expect(Array.isArray(t.body.data)).toBe(true);
+    expect(Array.isArray(r.body.data)).toBe(true);
+  });
+
+  test('el feed GENERAL de categoría sigue mostrando el tema del usuario bloqueado con su nickname real', async () => {
+    // Comportamiento existente que NO debe cambiar: bloquear no oculta ni
+    // anonimiza el contenido en el feed general de una categoría (solo afecta
+    // perfil/DMs/endpoints "por usuario"). El autor sigue con su nickname real.
+    const A = await registerAndLogin();
+    const cat = await createCategory(A.cookie);
+    const topic = await createTopic(A.cookie, { categoria_id: cat.id });
+    const B = await registerAndLogin();
+    await request(app).post(`/api/users/${A.user.nickname}/block`).set('Cookie', B.cookie);
+
+    const res = await request(app).get(`/api/topics/category/${cat.id}`).set('Cookie', B.cookie);
+    expect(res.status).toBe(200);
+    const found = res.body.data.find(t => Number(t.contenido_id) === Number(topicId(topic)));
+    expect(found).toBeDefined();
+    expect(found.autor_nickname).toBe(A.user.nickname); // nickname real, sin reemplazo
+  });
+});
