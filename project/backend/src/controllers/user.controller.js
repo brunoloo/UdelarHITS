@@ -197,7 +197,7 @@ const getUsers = async (req, res) => {
 const getUserProfile = async (req, res) => {
   try {
     const { nickname } = req.params;
-    const data = await getUserProfileService(nickname, req.user?.id);
+    const data = await getUserProfileService(nickname, req.user?.id, req.user?.rol);
     return res.status(200).json({ ok: true, data });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
