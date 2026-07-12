@@ -46,9 +46,15 @@ describe('Control de acceso — GET /users/:nickname (P0: fuga de email + perfil
     expect(res.body.data.categories).toEqual([]);
     expect(res.body.data.followers).toEqual([]);
     expect(res.body.data.following).toEqual([]);
-    // La card pública sí viaja (nombre/avatar), coherente con el producto.
-    expect(res.body.data.user.nickname).toBe(target.user.nickname);
-    expect(res.body.data.user).toHaveProperty('nombre');
+    // La card pública SÍ viaja (contrato mínimo acordado): nickname, nombre y
+    // url_imagen deben estar presentes para poder pintar el cartel "cuenta
+    // privada" sin romper la UI (sobre-corregir vaciando el objeto sería un bug).
+    const u = res.body.data.user;
+    expect(u.nickname).toBe(target.user.nickname);
+    expect(typeof u.nombre).toBe('string');
+    expect(u.nombre.length).toBeGreaterThan(0);
+    expect(u).toHaveProperty('url_imagen'); // presente aunque sea null (sin avatar)
+    expect(u).toHaveProperty('fecha_creacion');
   });
 
   test('(c) viewer viendo cuenta pública: sin email pero con contenido', async () => {

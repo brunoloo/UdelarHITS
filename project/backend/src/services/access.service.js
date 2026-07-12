@@ -1,14 +1,19 @@
 import { getPrivacyById, getFollowState } from '../repositories/user.repository.js';
 
-// Determina si `viewer` puede ver el contenido/actividad de `targetUserId`.
-// Es la MISMA regla que canView() del frontend, pero enforced en el backend
-// (el chequeo del front es solo cosmético y se puede saltear pegándole directo
-// a la API):
-//   - cuenta pública  -> todos
-//   - cuenta privada  -> solo el dueño, un admin (moderación) o un seguidor aceptado
-//
-// Depende únicamente de repositorios, así que puede importarse desde cualquier
-// service sin crear ciclos de imports.
+// ── ÚNICA fuente de verdad de la política de visibilidad de cuentas privadas ──
+// Predicado PURO (sin I/O): recibe los hechos ya recolectados y aplica la regla.
+// Cualquiera que decida "¿este viewer puede ver el contenido/actividad de esta
+// cuenta?" debe pasar por acá, para que la política viva en un solo lugar y no
+// se pueda desincronizar entre endpoints (perfil vs topics/replies).
+//   - cuenta pública -> todos
+//   - cuenta privada -> solo el dueño, un admin (moderación) o un seguidor aceptado
+export const canViewPrivateContent = ({ privado, isOwner, isAdmin, isAcceptedFollower }) =>
+  !privado || isOwner || isAdmin || isAcceptedFollower;
+
+// Versión con I/O: junta los hechos (privacidad + estado de seguimiento) y aplica
+// el predicado de arriba. La usan los endpoints de topics/replies, que no tienen
+// el usuario ya cargado. Depende solo de repositorios, así que puede importarse
+// desde cualquier service sin crear ciclos de imports.
 export const canViewUserContent = async (targetUserId, viewerId = null, viewerRol = null) => {
   const privacy = await getPrivacyById(targetUserId);
   if (!privacy) {
@@ -16,12 +21,16 @@ export const canViewUserContent = async (targetUserId, viewerId = null, viewerRo
     err.code = 'NOT_FOUND';
     throw err;
   }
-  if (!privacy.privado) return true;
-  if (viewerId != null && Number(viewerId) === Number(targetUserId)) return true;
-  if (viewerRol === 'admin') return true;
-  if (viewerId != null) {
-    const estado = await getFollowState(viewerId, targetUserId);
-    if (estado === 'aceptado') return true;
+
+  const isOwner = viewerId != null && Number(viewerId) === Number(targetUserId);
+  const isAdmin = viewerRol === 'admin';
+
+  // Solo consultamos el estado de seguimiento cuando puede cambiar la decisión
+  // (cuenta privada y el viewer no es dueño ni admin).
+  let isAcceptedFollower = false;
+  if (privacy.privado && !isOwner && !isAdmin && viewerId != null) {
+    isAcceptedFollower = (await getFollowState(viewerId, targetUserId)) === 'aceptado';
   }
-  return false;
+
+  return canViewPrivateContent({ privado: privacy.privado, isOwner, isAdmin, isAcceptedFollower });
 };

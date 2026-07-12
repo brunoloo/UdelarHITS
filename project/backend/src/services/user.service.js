@@ -36,6 +36,7 @@ import {
   getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
 import { isBlocked, getBlockDirection } from '../repositories/block.repository.js';
+import { canViewPrivateContent } from './access.service.js';
 import pool from '../config/db.js';
 
 // Valida unicidad de nickname/email y lanza el error correspondiente.
@@ -428,11 +429,18 @@ const getUserProfileService = async (nickname, viewerId = null, viewerRol = null
   }
   const ya_sigo = mi_estado_seguimiento === 'aceptado';
 
-  // Control de acceso enforced en el backend. Para una cuenta privada, solo el
-  // dueño, un admin (moderación) o un seguidor aceptado ven el contenido/actividad.
+  // Control de acceso enforced en el backend, aplicando el MISMO predicado
+  // (canViewPrivateContent) que usan los endpoints de topics/replies: la política
+  // de privacidad vive en un único lugar (access.service) y no puede
+  // desincronizarse entre endpoints. El bloqueo se resolvió antes (early-return).
   const isOwner = viewerId != null && Number(viewerId) === Number(user.id);
   const isAdmin = viewerRol === 'admin';
-  const puede_ver = !user.privado || isOwner || isAdmin || ya_sigo;
+  const puede_ver = canViewPrivateContent({
+    privado: user.privado,
+    isOwner,
+    isAdmin,
+    isAcceptedFollower: ya_sigo,
+  });
 
   const publicUser = toPublicUser(user);
 
