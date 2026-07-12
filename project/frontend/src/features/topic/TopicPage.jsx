@@ -166,6 +166,22 @@ export function TopicPage() {
     onClick: loadHistory,
   })
 
+  // Eliminar: acción destructiva, directa desde el menú de tres puntos (antes
+  // vivía dentro del modal de "Editar tema"). Pasa por el ConfirmDelete modal.
+  if (canManage) {
+    menuItems.push({
+      label: 'Eliminar tema',
+      danger: true,
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+      ),
+      onClick: () => setConfirmDeleteOpen(true),
+    })
+  }
+
 
   return (
     <>
@@ -364,21 +380,6 @@ export function TopicPage() {
               autoFocus
             />
           </div>
-        </div>
-        <div className="modal-danger-zone">
-          <div className="danger-zone-info">
-            <span className="danger-zone-title">Eliminar tema</span>
-            <span className="danger-zone-desc">
-              Esta acción no se puede deshacer. Si el tema tiene comentarios, será desactivado.
-            </span>
-          </div>
-          <button
-            className="btn-danger"
-            type="button"
-            onClick={() => { setEditModalOpen(false); setConfirmDeleteOpen(true) }}
-          >
-            Eliminar
-          </button>
         </div>
       </Modal>
 
