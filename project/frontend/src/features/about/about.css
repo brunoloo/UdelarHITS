@@ -9,6 +9,46 @@
   padding: 48px 16px 64px;
 }
 
+/* Barra de "Volver" — SOLO mobile. Las rutas /about* viven fuera del AppLayout
+   (sin drawer/header/bottom-nav), así que damos un escape siempre visible al
+   tope. En desktop se oculta por completo: no se toca el layout de escritorio. */
+.about-mobile-back {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .about-mobile-back {
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 8px 10px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .about-mobile-back button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 8px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* El wrapper ya no necesita tanto padding superior: la barra ocupa el tope. */
+  .about-page-wrap {
+    padding-top: 16px;
+  }
+}
+
 /* Logo link (AboutPage only — sub-pages use breadcrumb instead) */
 .about-logo {
   font-family: 'DM Serif Display', serif;

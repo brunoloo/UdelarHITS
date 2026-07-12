@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { AboutMobileBack } from './AboutMobileBack'
 import './about.css'
 
 const CHECK_ICON = (
@@ -18,6 +19,8 @@ const LOCK_ICON = (
 export function ContentPoliciesPage() {
   useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
+    <>
+    <AboutMobileBack />
     <div className="about-page-wrap">
     <div className="about-container">
       <div className="about-page-header">
@@ -122,5 +125,6 @@ export function ContentPoliciesPage() {
       </div>
     </div>
     </div>
+    </>
   )
 }
