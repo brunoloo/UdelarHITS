@@ -120,29 +120,34 @@
   justify-content: center;
 }
 
-/* ── MOBILE (≤768px) ──
-   En táctil no hay hover, así que los controles del banner y del avatar deben
-   estar SIEMPRE visibles (si no, quedan en opacity:0 y se tapea a ciegas).
-   Además el avatar solapa el banner (margin-top:-60px, z-index:1) e intercepta
-   el tap del botón de cambiar banner: por eso subimos los controles del banner
-   al tope (lejos del avatar, que queda abajo) y los ponemos por encima en el
-   stacking. No afecta el layout de escritorio. */
+/* ── MOBILE (≤768px) — tap-to-reveal ──
+   En táctil no hay hover, así que los controles de cámara/eliminar se revelan al
+   TOCAR el avatar o el banner (clase .revealed que setea React) y se ocultan al
+   tocar afuera. Por defecto quedan ocultos y sin recibir tap, para que el primer
+   toque revele en vez de disparar un botón. Se neutraliza el :hover "pegado" del
+   táctil para que el estado lo maneje React. Desktop (hover) no se toca. */
 @media (max-width: 768px) {
-  .edit-banner-overlay {
-    opacity: 1;
-    align-items: flex-start;
-    padding-top: 10px;
-    background: rgba(0, 0, 0, 0.28);
-    z-index: 2;
+  .edit-banner:hover .edit-banner-overlay,
+  .edit-avatar-wrap:hover .edit-avatar-buttons {
+    opacity: 0;
   }
 
+  .edit-banner-overlay,
   .edit-avatar-buttons {
-    opacity: 1;
+    pointer-events: none;
   }
 
-  /* Targets táctiles más cómodos y separados. */
-  .icon-circle {
-    width: 44px;
-    height: 44px;
+  .edit-banner.revealed .edit-banner-overlay,
+  .edit-avatar-wrap.revealed .edit-avatar-buttons {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Fix puntual de colisión táctil: el avatar solapa el borde inferior del
+     banner, así que subimos los controles del banner al tope del banner, lejos
+     del avatar, para que sus áreas táctiles no se pisen. */
+  .edit-banner.revealed .edit-banner-overlay {
+    align-items: flex-start;
+    padding-top: 8px;
   }
 }
