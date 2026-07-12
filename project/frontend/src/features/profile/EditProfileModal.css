@@ -119,3 +119,30 @@
   align-items: center;
   justify-content: center;
 }
+
+/* ── MOBILE (≤768px) ──
+   En táctil no hay hover, así que los controles del banner y del avatar deben
+   estar SIEMPRE visibles (si no, quedan en opacity:0 y se tapea a ciegas).
+   Además el avatar solapa el banner (margin-top:-60px, z-index:1) e intercepta
+   el tap del botón de cambiar banner: por eso subimos los controles del banner
+   al tope (lejos del avatar, que queda abajo) y los ponemos por encima en el
+   stacking. No afecta el layout de escritorio. */
+@media (max-width: 768px) {
+  .edit-banner-overlay {
+    opacity: 1;
+    align-items: flex-start;
+    padding-top: 10px;
+    background: rgba(0, 0, 0, 0.28);
+    z-index: 2;
+  }
+
+  .edit-avatar-buttons {
+    opacity: 1;
+  }
+
+  /* Targets táctiles más cómodos y separados. */
+  .icon-circle {
+    width: 44px;
+    height: 44px;
+  }
+}
