@@ -114,6 +114,24 @@ describe('Control de acceso — GET /users/:nickname (P0: fuga de email + perfil
     expect(res.body.data.puede_ver).toBe(true);
     expect(res.body.data.categories.length).toBeGreaterThan(0);
   });
+
+  test('(h) cuenta privada + viewer bloqueado por el dueño: sin email ni contenido', async () => {
+    const target = await registerAndLogin();
+    await createCategory(target.cookie);
+    await setPrivado(target.user.id);
+    const viewer = await registerAndLogin();
+    // El dueño bloquea al viewer.
+    await request(app).post(`/api/users/${viewer.user.nickname}/block`).set('Cookie', target.cookie);
+
+    const res = await request(app).get(`/api/users/${target.user.nickname}`).set('Cookie', viewer.cookie);
+    expect(res.status).toBe(200);
+    assertNoEmailLeak(res.body, target.raw.email);
+    expect(res.body.data.te_bloqueo).toBe(true);
+    expect(res.body.data.puede_ver).toBe(false);
+    expect(res.body.data.categories).toEqual([]);
+    expect(res.body.data.followers).toEqual([]);
+    expect(res.body.data.following).toEqual([]);
+  });
 });
 
 describe('Control de acceso — contenido de cuenta privada por endpoints directos', () => {
