@@ -1,13 +1,10 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { AboutMobileBack } from './AboutMobileBack'
 import './about.css'
 
 export function ModerationPage() {
   useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
-    <>
-    <AboutMobileBack />
     <div className="about-page-wrap">
     <div className="about-container">
       <div className="about-page-header">
@@ -123,6 +120,5 @@ export function ModerationPage() {
       </div>
     </div>
     </div>
-    </>
   )
 }
