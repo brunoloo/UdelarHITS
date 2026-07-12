@@ -107,9 +107,11 @@ const getRepliesByUser = async (req, res) => {
     if (!/^\d+$/.test(userId)) {
       return res.status(400).json({ ok: false, message: 'userId inválido' });
     }
-    const replies = await getRepliesByUserIdService(userId, req.user?.id || null);
+    const replies = await getRepliesByUserIdService(userId, req.user?.id || null, req.user?.rol ?? null);
     return res.status(200).json({ ok: true, data: replies });
   } catch (error) {
+    if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
     return res.status(500).json({ ok: false, message: 'Internal server error' });
   }
 };

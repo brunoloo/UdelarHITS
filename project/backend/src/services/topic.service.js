@@ -6,6 +6,7 @@ import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
   hardDeleteTopicById, getRecentTopics, getTrendingTopic, getTopicEditHistory,
   pinTopicComment, unpinTopicComment } from '../repositories/topic.repository.js';
 import { createNotification } from '../repositories/notification.repository.js';
+import { canViewUserContent } from './access.service.js';
 import pool from '../config/db.js';
 
 const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => {
@@ -242,7 +243,16 @@ const getTopicsByCategoryIdService = async (categoriaId) => {
   return await getTopicsByCategoryId(categoriaId);
 };
 
-const getTopicsByUserIdService = async (userId) => {
+const getTopicsByUserIdService = async (userId, viewerId = null, viewerRol = null) => {
+  // Gating de privacidad en el backend: los temas de una cuenta privada solo
+  // los ve el dueño, un admin o un seguidor aceptado. Sin esto, cualquiera
+  // pegándole directo al endpoint veía el contenido privado.
+  const allowed = await canViewUserContent(userId, viewerId, viewerRol);
+  if (!allowed) {
+    const err = new Error('Esta cuenta es privada');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
   return await getTopicsByUserId(userId);
 };
 

@@ -7,6 +7,7 @@ import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory,
   getReplyContext, getLikedCommentsByUserId } from '../repositories/reply.repository.js';
 import { getLikesPrivacyById } from '../repositories/user.repository.js';
+import { canViewUserContent } from './access.service.js';
 import { isBlocked } from '../repositories/block.repository.js';
 import { createNotification } from '../repositories/notification.repository.js';
 import { createAttachment, getAttachmentsByContenidoId, getAttachmentsForDeletion } from '../repositories/adjunto.repository.js';
@@ -423,7 +424,15 @@ const getMyRepliesService = async (autorId) => {
   return await getRepliesByAuthorId(autorId);
 };
 
-const getRepliesByUserIdService = async (userId, viewerId = null) => {
+const getRepliesByUserIdService = async (userId, viewerId = null, viewerRol = null) => {
+  // Gating de privacidad en el backend: los comentarios de una cuenta privada
+  // solo los ve el dueño, un admin o un seguidor aceptado.
+  const allowed = await canViewUserContent(userId, viewerId, viewerRol);
+  if (!allowed) {
+    const err = new Error('Esta cuenta es privada');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
   return await getRepliesByUserId(userId, viewerId);
 };
 

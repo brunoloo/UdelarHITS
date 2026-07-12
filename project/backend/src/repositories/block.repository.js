@@ -32,6 +32,20 @@ const isBlocked = async (userA, userB) => {
   return rows.length > 0;
 };
 
+// Chequeo DIRECCIONAL: ¿`bloqueadorId` bloqueó a `bloqueadoId`? (a diferencia de
+// isBlocked, que es simétrico). Se usa para gatear contenido "por usuario": el
+// dueño que bloqueó al viewer le oculta su contenido, pero la dirección inversa
+// no restringe al bloqueado.
+const hasBlocked = async (bloqueadorId, bloqueadoId) => {
+  const q = `
+    SELECT 1 FROM bloqueo
+    WHERE bloqueador_id = $1 AND bloqueado_id = $2
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [bloqueadorId, bloqueadoId]);
+  return rows.length > 0;
+};
+
 const getBlockDirection = async (userA, userB) => {
   const q = `
     SELECT bloqueador_id, bloqueado_id FROM bloqueo
@@ -64,4 +78,4 @@ const removeFollowsBothDirections = async (userA, userB) => {
   await pool.query(q, [userA, userB]);
 };
 
-export { blockUser, unblockUser, isBlocked, getBlockDirection, getBlockedUsers, removeFollowsBothDirections };
+export { blockUser, unblockUser, isBlocked, hasBlocked, getBlockDirection, getBlockedUsers, removeFollowsBothDirections };
