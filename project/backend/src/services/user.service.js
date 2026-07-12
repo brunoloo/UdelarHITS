@@ -357,7 +357,24 @@ const getUsersService = async () => {
   return await getUsers();
 };
 
-const getUserProfileService = async (nickname, viewerId = null) => {
+// Proyección PÚBLICA de un usuario para el endpoint GET /users/:nickname.
+// NUNCA incluye campos sensibles (email, rol, nickname_confirmado): esos solo
+// viajan por /users/me (el propio perfil). El control de acceso es del backend;
+// el canView() del frontend es solo cosmético y no debe considerarse una barrera.
+const toPublicUser = (user) => ({
+  id: user.id,
+  nickname: user.nickname,
+  nombre: user.nombre,
+  url_imagen: user.url_imagen,
+  url_banner: user.url_banner,
+  biografia: user.biografia,
+  fecha_creacion: user.fecha_creacion,
+  estado: user.estado,
+  privado: user.privado,
+  me_gusta_privado: user.me_gusta_privado,
+});
+
+const getUserProfileService = async (nickname, viewerId = null, viewerRol = null) => {
   const normalizedNickname = nickname?.trim().toLowerCase();
 
   if (!normalizedNickname) {
@@ -391,6 +408,7 @@ const getUserProfileService = async (nickname, viewerId = null) => {
           fecha_creacion: user.fecha_creacion,
           estado: user.estado,
           privado: false,
+          me_gusta_privado: false,
         },
         categories: [],
         followers: [],
@@ -399,13 +417,10 @@ const getUserProfileService = async (nickname, viewerId = null) => {
         mi_estado_seguimiento: 'none',
         te_bloqueo,
         yo_bloquee,
+        puede_ver: false,
       };
     }
   }
-
-  const categories = await getCategoriesByUserId(user.id);
-  const followers = await getFollowersByUserId(user.id);
-  const following = await getFollowingByUserId(user.id);
 
   let mi_estado_seguimiento = 'none';
   if (viewerId && viewerId !== user.id) {
@@ -413,11 +428,64 @@ const getUserProfileService = async (nickname, viewerId = null) => {
   }
   const ya_sigo = mi_estado_seguimiento === 'aceptado';
 
-  return { user, categories, followers, following, ya_sigo, mi_estado_seguimiento, te_bloqueo, yo_bloquee };
+  // Control de acceso enforced en el backend. Para una cuenta privada, solo el
+  // dueño, un admin (moderación) o un seguidor aceptado ven el contenido/actividad.
+  const isOwner = viewerId != null && Number(viewerId) === Number(user.id);
+  const isAdmin = viewerRol === 'admin';
+  const puede_ver = !user.privado || isOwner || isAdmin || ya_sigo;
+
+  const publicUser = toPublicUser(user);
+
+  if (!puede_ver) {
+    // Cuenta privada + viewer no autorizado: se devuelve solo la card pública
+    // (nombre, avatar, banner, bio, fecha), NUNCA categorías/seguidores/
+    // seguidos ni ninguna actividad. mi_estado_seguimiento se mantiene para que
+    // el botón de seguir refleje una solicitud pendiente.
+    return {
+      user: publicUser,
+      categories: [],
+      followers: [],
+      following: [],
+      ya_sigo,
+      mi_estado_seguimiento,
+      te_bloqueo,
+      yo_bloquee,
+      puede_ver: false,
+    };
+  }
+
+  const categories = await getCategoriesByUserId(user.id);
+  const followers = await getFollowersByUserId(user.id);
+  const following = await getFollowingByUserId(user.id);
+
+  return {
+    user: publicUser,
+    categories,
+    followers,
+    following,
+    ya_sigo,
+    mi_estado_seguimiento,
+    te_bloqueo,
+    yo_bloquee,
+    puede_ver: true,
+  };
 };
 
+// Perfil propio (GET /users/me). Es el ÚNICO endpoint que expone campos
+// sensibles del usuario autenticado (email, rol, nickname_confirmado). No pasa
+// por el gating de privacidad: siempre es el dueño viendo sus propios datos.
 const showMeService = async (nickname) => {
-  const { user, categories, followers, following } = await getUserProfileService(nickname);
+  const normalizedNickname = nickname?.trim().toLowerCase();
+  const user = await getUserByNickname(normalizedNickname);
+  if (!user) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  const categories = await getCategoriesByUserId(user.id);
+  const followers = await getFollowersByUserId(user.id);
+  const following = await getFollowingByUserId(user.id);
 
   const safeUser = {
     id: user.id,
