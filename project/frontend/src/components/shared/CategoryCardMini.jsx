@@ -9,11 +9,16 @@ import './CategoryCardMini.css'
 // compacta (perfil, explorar, etc.). La versión ampliada (Home) es CategoryCard.
 // `className` permite variantes de contenedor (p. ej. ancho fijo en carrusel).
 export function CategoryCardMini({ category, className = '', onNavigate }) {
-  const { id, titulo, descripcion, etiquetas, contador_temas, icono } = category
+  const { id, titulo, descripcion, etiquetas, contador_temas, contador_comentarios, icono } = category
   const allTags = parseEtiquetas(etiquetas)
   const visibleTags = allTags.slice(0, 5)
   const extraCount = allTags.length - 5
   const count = Number(contador_temas) || 0
+  // El contador de comentarios solo se muestra si la fuente lo provee (p. ej.
+  // /categories/active en Explorar). Otras fuentes (perfil, guardados) no lo
+  // traen, y en ese caso no mostramos un "0 comentarios" engañoso.
+  const hasComments = contador_comentarios != null
+  const commentCount = Number(contador_comentarios) || 0
 
   return (
     <Link
@@ -33,6 +38,7 @@ export function CategoryCardMini({ category, className = '', onNavigate }) {
       <div className="category-mini-foot">
         <span className="category-mini-count">
           {count} {count === 1 ? 'tema' : 'temas'}
+          {hasComments && `${' · '}${commentCount} ${commentCount === 1 ? 'comentario' : 'comentarios'}`}
         </span>
         {visibleTags.length > 0 && (
           <div className="category-mini-tags">

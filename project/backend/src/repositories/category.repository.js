@@ -484,6 +484,10 @@ const getPopularCategories = async (days = 7, limit = 20) => {
     )
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
       c.fecha_creacion, u.nickname AS autor_nickname,
+      -- Total general de comentarios directos (top-level) de la categoría, para
+      -- exponerlo junto a contador_temas en la card (aparte de los "recientes").
+      (SELECT COUNT(*) FROM comentario cc
+         WHERE cc.categoria_id = c.id AND cc.comentario_padre_id IS NULL) AS contador_comentarios,
       ARRAY_AGG(DISTINCT e.nombre) FILTER (WHERE e.nombre IS NOT NULL) AS etiquetas,
       COALESCE(ta.temas_recientes, 0) AS temas_recientes,
       COALESCE(ca.comentarios_recientes, 0) AS comentarios_recientes,

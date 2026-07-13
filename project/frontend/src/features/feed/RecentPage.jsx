@@ -27,6 +27,7 @@ function RecentCategoryCard({ category }) {
   const etiquetas = allEtiquetas.slice(0, 5)
   const extraCount = allEtiquetas.length - 5
   const count = Number(category.contador_temas) || 0
+  const commentCount = Number(category.contador_comentarios) || 0
   // Cuenta inactiva → se anonimiza. (Las cuentas 'ban' siguen siendo públicas.)
   const author = category.autor_estado === 'inactivo'
     ? 'Usuario inactivo'
@@ -38,18 +39,21 @@ function RecentCategoryCard({ category }) {
         <span className="recent-cat-meta">
           {timeAgo(category.fecha_creacion)}{author ? ` · por ${author}` : ''}
         </span>
+        {/* Contador arriba a la derecha, igual que las demás páginas. */}
+        <span className="recent-cat-count">
+          {count} {count === 1 ? 'tema' : 'temas'} · {commentCount} {commentCount === 1 ? 'comentario' : 'comentarios'}
+        </span>
       </div>
       <div className="recent-cat-title">{category.titulo}</div>
       {category.descripcion && <div className="recent-cat-desc">{category.descripcion}</div>}
-      <div className="recent-cat-footer">
-        <span className="recent-cat-count">{count} {count === 1 ? 'tema' : 'temas'}</span>
-        {etiquetas.length > 0 && (
+      {etiquetas.length > 0 && (
+        <div className="recent-cat-footer">
           <div className="recent-cat-tags">
             {etiquetas.map(e => <Tag key={e} label={e} />)}
             {extraCount > 0 && <span className="tag tag--more">+{extraCount} más</span>}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </Link>
   )
 }

@@ -24,6 +24,7 @@ function PopularCard({ category, rank }) {
   const etiquetas = allEtiquetas.slice(0, 5)
   const extraCount = allEtiquetas.length - 5
   const count = Number(category.contador_temas) || 0
+  const commentCount = Number(category.contador_comentarios) || 0
   const temasRecientes = Number(category.temas_recientes) || 0
   const comentariosRecientes = Number(category.comentarios_recientes) || 0
 
@@ -33,7 +34,9 @@ function PopularCard({ category, rank }) {
       <div className="popular-body">
         <div className="popular-header-row">
           <div className="popular-card-title">{category.titulo}</div>
-          <div className="popular-card-stats">{count} {count === 1 ? 'tema' : 'temas'}</div>
+          <div className="popular-card-stats">
+            {count} {count === 1 ? 'tema' : 'temas'} · {commentCount} {commentCount === 1 ? 'comentario' : 'comentarios'}
+          </div>
         </div>
         {category.descripcion && <div className="popular-desc">{category.descripcion}</div>}
         <div className="popular-footer">

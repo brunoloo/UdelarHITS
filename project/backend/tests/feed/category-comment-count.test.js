@@ -26,4 +26,22 @@ describe('CategoryCard — contador_comentarios', () => {
     expect(found).toBeDefined();
     expect(Number(found.contador_comentarios)).toBe(2);
   });
+
+  test('/categories/popular también expone contador_comentarios (total general)', async () => {
+    const u = await registerAndLogin();
+    const cat = await createCategory(u.cookie);
+    const c1 = await createReply(u.cookie, { categoria_id: cat.id, cuerpo: 'directo 1' });
+    await createReply(u.cookie, { categoria_id: cat.id, cuerpo: 'directo 2' });
+    await createReply(u.cookie, {
+      categoria_id: cat.id,
+      comentario_padre_id: c1.contenido_id ?? c1.id,
+      cuerpo: 'anidada',
+    });
+
+    const res = await request(app).get('/api/categories/popular?days=7&limit=20');
+    expect(res.status).toBe(200);
+    const found = res.body.data.find(c => Number(c.id) === Number(cat.id));
+    expect(found).toBeDefined();
+    expect(Number(found.contador_comentarios)).toBe(2);
+  });
 });
