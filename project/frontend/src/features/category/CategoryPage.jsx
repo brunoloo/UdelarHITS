@@ -209,7 +209,7 @@ function HistoryModalBody({ catId }) {
 }
 
 // ── EDIT CATEGORY MODAL ────────────────────────────────────────────────────────
-function EditCategoryModal({ cat, isOpen, onClose, onSaved, onDeleteRequest }) {
+function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
   const [desc, setDesc] = useState('')
   const [selectedTags, setSelectedTags] = useState([])
   const { showToast } = useToast()
@@ -294,15 +294,6 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved, onDeleteRequest }) {
           />
         </div>
       </div>
-      <div className="modal-danger-zone">
-        <div className="danger-zone-info">
-          <span className="danger-zone-title">Eliminar categoría</span>
-          <span className="danger-zone-desc">
-            Esta acción no se puede deshacer. Si la categoría tiene contenido, será desactivada.
-          </span>
-        </div>
-        <button className="btn-danger" type="button" onClick={onDeleteRequest}>Eliminar</button>
-      </div>
     </Modal>
   )
 }
@@ -344,13 +335,16 @@ export function CategoryPage() {
 
   const tabParam = searchParams.get('tab')
   const commentIdParam = searchParams.get('commentId')
-  const [activeTab, setActiveTab] = useState(tabParam === 'comentarios' ? 'comentarios' : 'temas')
+  // Comentarios es el tab por defecto. Un deep-link explícito (?tab=temas o
+  // ?tab=comentarios) igual respeta lo que pida la URL.
+  const [activeTab, setActiveTab] = useState(tabParam === 'temas' ? 'temas' : 'comentarios')
 
-  // Si llega ?tab=comentarios (p.ej. al clickear una notificación estando ya en
-  // esta página), cambiamos de tab. El inicializador de useState solo corre al
-  // montar, así que necesitamos reaccionar a cambios posteriores del param.
+  // Si llega ?tab=comentarios o ?tab=temas (p.ej. al clickear una notificación
+  // estando ya en esta página), cambiamos de tab. El inicializador de useState
+  // solo corre al montar, así que reaccionamos a cambios posteriores del param.
   useEffect(() => {
     if (tabParam === 'comentarios') setActiveTab('comentarios')
+    else if (tabParam === 'temas') setActiveTab('temas')
   }, [tabParam])
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -489,6 +483,22 @@ export function CategoryPage() {
     },
   )
 
+  // Eliminar: acción destructiva, directa desde el menú de tres puntos (antes
+  // vivía dentro del modal de "Editar categoría"). Pasa por el ConfirmDeleteModal.
+  if (isOwner && isActive) {
+    dropdownItems.push({
+      label: 'Eliminar categoría',
+      danger: true,
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+      ),
+      onClick: () => setDeleteOpen(true),
+    })
+  }
+
   return (
     <>
       {/* Breadcrumb */}
@@ -587,17 +597,6 @@ export function CategoryPage() {
       {/* Tabs */}
       <nav className="section-tabs" role="tablist">
         <button
-          className={`tab${activeTab === 'temas' ? ' active' : ''}`}
-          role="tab"
-          aria-selected={activeTab === 'temas'}
-          onClick={() => setActiveTab('temas')}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 6h16M4 12h16M4 18h10"/>
-          </svg>
-          Temas <span className="count">{topicCount}</span>
-        </button>
-        <button
           className={`tab${activeTab === 'comentarios' ? ' active' : ''}`}
           role="tab"
           aria-selected={activeTab === 'comentarios'}
@@ -607,6 +606,17 @@ export function CategoryPage() {
             <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
           Comentarios <span className="count">{commentCount}</span>
+        </button>
+        <button
+          className={`tab${activeTab === 'temas' ? ' active' : ''}`}
+          role="tab"
+          aria-selected={activeTab === 'temas'}
+          onClick={() => setActiveTab('temas')}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 6h16M4 12h16M4 18h10"/>
+          </svg>
+          Temas <span className="count">{topicCount}</span>
         </button>
       </nav>
 
@@ -663,10 +673,6 @@ export function CategoryPage() {
           isOpen={editOpen}
           onClose={() => setEditOpen(false)}
           onSaved={() => queryClient.invalidateQueries({ queryKey: ['category', id] })}
-          onDeleteRequest={() => {
-            setEditOpen(false)
-            setDeleteOpen(true)
-          }}
         />
       )}
 

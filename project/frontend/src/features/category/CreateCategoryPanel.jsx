@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
@@ -13,6 +14,8 @@ export function CreateCategoryPanel() {
   const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
 
+  const navigate = useNavigate()
+
   const [panelOpen, setPanelOpen] = useState(false)
   const [titulo, setTitulo] = useState('')
   const [descripcion, setDescripcion] = useState('')
@@ -25,14 +28,20 @@ export function CreateCategoryPanel() {
 
   const mutation = useMutation({
     mutationFn: data => apiPost('/categories/create', data),
-    onSuccess: () => {
+    onSuccess: (res) => {
       showToast('Categoría creada correctamente', 'success')
+      // Cerramos el panel y limpiamos el formulario para que no quede abierto
+      // de fondo al navegar.
       setPanelOpen(false)
       setTitulo('')
       setDescripcion('')
       setSelectedTags([])
       // Prefijo 'categories': refresca tanto el feed del Home como 'active'
       queryClient.invalidateQueries({ queryKey: ['categories'] })
+      // Mismo comportamiento que "crear tema": navegar directo a la categoría
+      // recién creada (id que devuelve el backend).
+      const newId = res?.data?.id
+      if (newId) navigate(`/category/${encodeURIComponent(newId)}`)
     },
     onError: err => {
       showToast(err.message || 'Error al crear la categoría', 'error')
