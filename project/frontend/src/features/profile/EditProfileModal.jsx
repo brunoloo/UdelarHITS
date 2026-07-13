@@ -28,6 +28,12 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
   const [cropperSrc, setCropperSrc] = useState('')
   const [cropperType, setCropperType] = useState(null)
 
+  // Mobile (táctil): como no hay hover, los controles de cámara/eliminar se
+  // revelan al TOCAR el avatar o el banner. 'avatar' | 'banner' | null. En
+  // desktop no se usa (el reveal es por hover vía CSS).
+  const [revealed, setRevealed] = useState(null)
+  const isTouch = () => window.matchMedia('(max-width: 768px)').matches
+
   useEffect(() => {
     if (isOpen && profile) {
       setNombre(profile.nombre || '')
@@ -38,8 +44,31 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
       setBannerPreview(profile.url_banner || '')
       setPendingBanner(null)
       setRemoveBanner(false)
+      setRevealed(null)
     }
   }, [isOpen, profile])
+
+  // Mobile: al revelar los controles de un elemento, tocar fuera de él los
+  // vuelve a ocultar (mismo criterio que un menú). En desktop no aplica.
+  useEffect(() => {
+    if (!revealed) return
+    function onDocClick(e) {
+      if (e.target.closest?.('.edit-banner, .edit-avatar-wrap')) return
+      setRevealed(null)
+    }
+    document.addEventListener('click', onDocClick)
+    return () => document.removeEventListener('click', onDocClick)
+  }, [revealed])
+
+  // Primer tap sobre el avatar/banner: revela sus controles (solo mobile). Si ya
+  // están revelados, no interceptamos: el tap sigue hasta el botón real.
+  function handleReveal(which, e) {
+    if (!isTouch()) return
+    if (revealed !== which) {
+      e.stopPropagation()
+      setRevealed(which)
+    }
+  }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -151,19 +180,23 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
         }
       >
         {/* Banner */}
-        <div className="edit-banner" style={{ background: bannerBg }}>
+        <div
+          className={`edit-banner${revealed === 'banner' ? ' revealed' : ''}`}
+          style={{ background: bannerBg }}
+          onClick={(e) => handleReveal('banner', e)}
+        >
           <div className="edit-banner-overlay">
             <button
               className="icon-circle"
               type="button"
-              onClick={() => bannerRef.current?.click()}
+              onClick={() => { setRevealed(null); bannerRef.current?.click() }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
                 <circle cx="12" cy="13" r="4"/>
               </svg>
             </button>
-            <button className="icon-circle" type="button" onClick={handleRemoveBanner}>
+            <button className="icon-circle" type="button" onClick={() => { setRevealed(null); handleRemoveBanner() }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6 6 18M6 6l12 12"/>
               </svg>
@@ -180,7 +213,10 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
 
         {/* Avatar */}
         <div className="edit-avatar-row">
-          <div className="edit-avatar-wrap">
+          <div
+            className={`edit-avatar-wrap${revealed === 'avatar' ? ' revealed' : ''}`}
+            onClick={(e) => handleReveal('avatar', e)}
+          >
             {avatarPreview ? (
               <img
                 className="edit-avatar-img"
@@ -198,14 +234,14 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
               <button
                 className="edit-avatar-overlay"
                 type="button"
-                onClick={() => avatarRef.current?.click()}
+                onClick={() => { setRevealed(null); avatarRef.current?.click() }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
                   <circle cx="12" cy="13" r="4"/>
                 </svg>
               </button>
-              <button className="edit-avatar-remove" type="button" onClick={handleRemoveAvatar}>
+              <button className="edit-avatar-remove" type="button" onClick={() => { setRevealed(null); handleRemoveAvatar() }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M18 6 6 18M6 6l12 12"/>
                 </svg>
