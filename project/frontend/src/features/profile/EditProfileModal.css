@@ -127,6 +127,28 @@
    toque revele en vez de disparar un botón. Se neutraliza el :hover "pegado" del
    táctil para que el estado lo maneje React. Desktop (hover) no se toca. */
 @media (max-width: 768px) {
+  /* En pantallas angostas el modal se achica y el banner (aspect-ratio 4/1)
+     quedaba de ~80px: el avatar de 112px con margin-top:-60px lo tapaba casi
+     por completo ("desaparecía") y se veía enorme. Fijamos una altura de banner
+     y achicamos el avatar/solape para que ambos se vean bien. Solo mobile. */
+  .edit-banner {
+    aspect-ratio: auto;
+    height: 120px;
+  }
+
+  .edit-avatar-row {
+    margin-top: -44px;
+  }
+
+  .edit-avatar-wrap {
+    width: 88px;
+    height: 88px;
+  }
+
+  .edit-avatar-wrap .user-avatar-fallback {
+    font-size: 32px;
+  }
+
   .edit-banner:hover .edit-banner-overlay,
   .edit-avatar-wrap:hover .edit-avatar-buttons {
     opacity: 0;
