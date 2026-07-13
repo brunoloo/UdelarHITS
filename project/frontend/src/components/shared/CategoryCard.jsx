@@ -79,6 +79,7 @@ export function CategoryCard({ category }) {
     descripcion,
     etiquetas,
     contador_temas,
+    contador_comentarios,
     ultimo_tema,
     ultimo_comentario,
     icono,
@@ -88,6 +89,7 @@ export function CategoryCard({ category }) {
   const visibleTags = allTags.slice(0, 5)
   const extraCount = allTags.length - 5
   const count = Number(contador_temas) || 0
+  const commentCount = Number(contador_comentarios) || 0
   const catUrl = `/category/${encodeURIComponent(id)}`
   const navigate = useNavigate()
 
@@ -108,7 +110,11 @@ export function CategoryCard({ category }) {
             <CategoryIcon name={icono} size={20} />
           </div>
           <div className="category-title">{titulo}</div>
-          <div className="category-stats">{count} {count === 1 ? 'tema' : 'temas'}</div>
+          <div className="category-stats">
+            {count} {count === 1 ? 'tema' : 'temas'}
+            {' · '}
+            {commentCount} {commentCount === 1 ? 'comentario' : 'comentarios'}
+          </div>
         </div>
         {descripcion && (
           <div className="category-description">

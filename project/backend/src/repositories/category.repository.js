@@ -240,6 +240,11 @@ const assignParticipantRole = async (userId, categoriaId) => {
 const CATEGORY_CARD_QUERY = `
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
       c.fecha_creacion, c.icono, u.nickname AS autor_nickname, u.estado AS autor_estado,
+      -- Comentarios directos (top-level) de la categoría: mismo criterio que el
+      -- tab "Comentarios" de la página (getRepliesByCategory), para que el número
+      -- de la card coincida con el de la página.
+      (SELECT COUNT(*) FROM comentario cc
+         WHERE cc.categoria_id = c.id AND cc.comentario_padre_id IS NULL) AS contador_comentarios,
       ARRAY_AGG(e.nombre) AS etiquetas,
       (
         SELECT json_build_object(
