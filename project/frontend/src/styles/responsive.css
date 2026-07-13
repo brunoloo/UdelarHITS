@@ -245,6 +245,23 @@
   .cat-header-top {
     flex-direction: column;
     gap: 10px;
+    /* Contexto de posicionamiento para el menú de tres puntos: al pasar a
+       columna, el menú caía al flujo normal (entre la descripción y las
+       etiquetas). Lo anclamos a la esquina superior derecha como en desktop. */
+    position: relative;
+  }
+
+  .cat-header-top .comment-menu-wrap {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-top: 0;
+  }
+
+  /* Área táctil mínima de 44x44 en la esquina, sin agrandar el ícono. */
+  .cat-header-top .comment-menu-btn {
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .cat-icon-wrap {
