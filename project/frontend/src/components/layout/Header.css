@@ -278,3 +278,91 @@ header .search-bar {
   background: var(--border);
   margin: 4px 0;
 }
+
+/* ── MOBILE SEARCH (lupa + overlay) ── */
+.mobile-search-btn { display: none; }
+
+.mobile-search-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay);
+  z-index: 300;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.mobile-search-panel {
+  width: 100%;
+  max-height: 100%;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.mobile-search-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+
+.mobile-search-head-icon { color: var(--text-muted); flex-shrink: 0; }
+
+.mobile-search-head input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px; /* 16px evita el auto-zoom de iOS al enfocar el input */
+  color: var(--text-primary);
+}
+
+.mobile-search-head input::placeholder { color: var(--text-muted); }
+
+.mobile-search-close {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+/* El dropdown compartido, dentro del overlay, va estático (no absoluto). */
+.mobile-search-panel .search-dropdown {
+  position: static;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  max-height: none;
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .mobile-search-btn {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+}

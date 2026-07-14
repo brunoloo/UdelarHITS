@@ -1,44 +1,28 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
-import { apiGet } from '../../api/client'
 import { UserAvatar } from '../shared/UserAvatar'
-import { parseEtiquetas, normSearch as norm } from '../../utils/parseEtiquetas'
+import { useSiteSearch } from '../../hooks/useSiteSearch'
+import { SearchDropdown } from './SearchDropdown'
+import { MobileSearch } from './MobileSearch'
 import './Header.css'
 
 export function Header() {
   const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
-
   const location = useLocation()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
 
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState(null)
+  // Búsqueda de desktop: misma lógica que el overlay de mobile (hook compartido).
+  const { query, setQuery, results, setResults, categories } = useSiteSearch()
   const searchRef = useRef(null)
 
   useEffect(() => {
     setQuery('')
     setResults(null)
-  }, [location])
-
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories', 'active'],
-    queryFn: () => apiGet('/categories/active').then(r => r.data),
-  })
-
-  const { data: allTagsGrouped = {} } = useQuery({
-    queryKey: ['categories', 'etiquetas'],
-    queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
-  })
-
-  const allTags = useMemo(
-    () => Object.values(allTagsGrouped).flat().map(t => t.nombre),
-    [allTagsGrouped]
-  )
+  }, [location, setQuery, setResults])
 
   // Cerrar menú de usuario al click afuera
   useEffect(() => {
@@ -58,34 +42,7 @@ export function Header() {
     }
     document.addEventListener('click', handle)
     return () => document.removeEventListener('click', handle)
-  }, [results])
-
-  // Búsqueda: sync inmediato + users debounced 250ms
-  useEffect(() => {
-    const q = query.trim()
-    if (!q) {
-      setResults(null)
-      return
-    }
-
-    const catResults = categories
-      .filter(c => norm(c.titulo).includes(norm(q)))
-      .slice(0, 3)
-
-    const tagResults = allTags
-      .filter(t => norm(t).includes(norm(q)))
-      .slice(0, 3)
-
-    setResults({ cats: catResults, tags: tagResults, users: [] })
-
-    if (q.length < 2) return
-    const timer = setTimeout(() => {
-      apiGet(`/users/search?q=${encodeURIComponent(q)}`)
-        .then(r => setResults(prev => (prev ? { ...prev, users: r.data } : prev)))
-        .catch(() => {})
-    }, 250)
-    return () => clearTimeout(timer)
-  }, [query, categories, allTags])
+  }, [results, setResults])
 
   async function handleLogout() {
     // Navigate home BEFORE clearing the session. Otherwise, if we're on a page
@@ -98,8 +55,11 @@ export function Header() {
 
   return (
     <header>
+      {/* Búsqueda mobile (lupa a la izquierda + overlay). Oculta en desktop. */}
+      <MobileSearch />
+
       <Link to="/" className="logo">
-        Udelar<span>HITS</span> 
+        Udelar<span>HITS</span>
       </Link>
 
       <div className="search-bar" ref={searchRef}>
@@ -198,104 +158,5 @@ export function Header() {
         )}
       </div>
     </header>
-  )
-}
-
-function SearchDropdown({ results, query, categories, onClose, onTagClick }) {
-  const { cats, tags, users } = results
-  const hasResults = cats.length || tags.length || users.length
-
-  if (!hasResults) {
-    return (
-      <div className="search-dropdown open">
-        <div className="search-empty">No se encontraron resultados para "{query}"</div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="search-dropdown open">
-      {cats.length > 0 && (
-        <>
-          <div className="search-section-title">Categorías</div>
-          {cats.map(c => (
-            <Link key={c.id} to={`/category/${c.id}`} className="search-item" onClick={onClose}>
-              <div className="search-item-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                  <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                  <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                  <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                </svg>
-              </div>
-              <div className="search-item-info">
-                <div className="search-item-title">{c.titulo}</div>
-                <div className="search-item-sub">{Number(c.contador_temas) || 0} temas</div>
-              </div>
-            </Link>
-          ))}
-        </>
-      )}
-
-      {tags.length > 0 && (
-        <>
-          {cats.length > 0 && <div className="search-divider" />}
-          <div className="search-section-title">Etiquetas</div>
-          {tags.map(tag => {
-            const count = categories.filter(c =>
-              parseEtiquetas(c.etiquetas).some(e => norm(e) === norm(tag))
-            ).length
-            return (
-              <button key={tag} className="search-item" onClick={() => onTagClick(tag)}>
-                <div className="search-item-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
-                    <line x1="7" y1="7" x2="7.01" y2="7" />
-                  </svg>
-                </div>
-                <div className="search-item-info">
-                  <div className="search-item-title">{tag}</div>
-                  <div className="search-item-sub">
-                    {count} {count === 1 ? 'categoría' : 'categorías'}
-                  </div>
-                </div>
-              </button>
-            )
-          })}
-        </>
-      )}
-
-      {users.length > 0 && (
-        <>
-          {(cats.length > 0 || tags.length > 0) && <div className="search-divider" />}
-          <div className="search-section-title">Usuarios</div>
-          {users.map(u => {
-            const avatarUrl =
-              u.url_imagen && /^https?:\/\//i.test(u.url_imagen)
-                ? u.url_imagen
-                : null
-            return (
-              <Link
-                key={u.nickname}
-                to={`/user/${u.nickname}`}
-                className="search-item"
-                onClick={onClose}
-              >
-                <UserAvatar
-                  className="search-item-avatar"
-                  url_imagen={avatarUrl}
-                  nickname={u.nickname}
-                  size={28}
-                />
-                <div className="search-item-info">
-                  <div className="search-item-title">@{u.nickname}</div>
-                  <div className="search-item-sub">{u.nombre}</div>
-                </div>
-              </Link>
-            )
-          })}
-        </>
-      )}
-    </div>
   )
 }
