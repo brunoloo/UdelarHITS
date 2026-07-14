@@ -103,7 +103,10 @@ export function Header() {
             categories={categories}
             onClose={() => setResults(null)}
             onTagClick={tag => {
-              setQuery(tag)
+              // setQueryFromFilter (no setQuery) para que la barra quede con el
+              // nombre de la etiqueta pero el dropdown no se reabra: así al
+              // clickear la etiqueta se cierra el buscador para mejor visión.
+              setQueryFromFilter(tag)
               setResults(null)
               navigate(`/?q=${encodeURIComponent(tag)}`)
             }}
