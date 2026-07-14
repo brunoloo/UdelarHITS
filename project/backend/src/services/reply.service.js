@@ -14,6 +14,7 @@ import { createAttachment, getAttachmentsByContenidoId, getAttachmentsForDeletio
 import { createPoll, getPollByContenidoId } from '../repositories/encuesta.repository.js';
 import { uploadAttachment, deleteAttachmentFromCloudinary } from '../utils/uploadToCloudinary.js';
 import { checkImageSafety } from '../utils/checkImageSafety.js';
+import { notifyImagePending } from './pendingImage.service.js';
 import pool from '../config/db.js';
 
 const ENCUESTA_DUR_MIN = 60;            // 1 minuto
@@ -265,6 +266,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     );
     let falloCuota = false;
     let falloOtro = false;
+    let algunaEnRevision = false;
     for (let i = 0; i < files.length; i++) {
       const r = resultados[i];
       if (r.status !== 'fulfilled') {
@@ -290,6 +292,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
             estado = 'pendiente_revision';
             scoreAdult = safety.scores?.adult ?? null;
             scoreRacy = safety.scores?.racy ?? null;
+            algunaEnRevision = true;
           }
         } catch (err) {
           // Fallback: nunca bloquear la publicación por un fallo de Vision; el
@@ -310,6 +313,11 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
         scoreAdult,
         scoreRacy,
       });
+    }
+    // Aviso in-app al autor si alguna imagen quedó en revisión (una sola
+    // notificación por comentario, aunque haya varias imágenes marcadas).
+    if (algunaEnRevision) {
+      await notifyImagePending(autorId, created.contenido_id);
     }
     created.adjuntos = await getAttachmentsByContenidoId(created.contenido_id);
     if (falloCuota) {

@@ -36,6 +36,7 @@ import {
   getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
 import { createPendingImagen } from '../repositories/pendingImage.repository.js';
+import { notifyImagePending } from './pendingImage.service.js';
 import { checkImageSafety, isVisionConfigured } from '../utils/checkImageSafety.js';
 import { isBlocked, getBlockDirection } from '../repositories/block.repository.js';
 import { canViewPrivateContent } from './access.service.js';
@@ -797,6 +798,8 @@ const moderateProfileImage = async ({ userId, fileBuffer, tipo, folder, canonica
     scoreAdult: result.scores?.adult ?? null,
     scoreRacy: result.scores?.racy ?? null,
   });
+  // Aviso in-app: la imagen quedó en revisión (avatar/banner no tienen contenido_id).
+  await notifyImagePending(userId, null);
   return { pendiente: true };
 };
 

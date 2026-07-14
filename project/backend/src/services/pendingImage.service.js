@@ -8,17 +8,29 @@ import {
   getExpiredPendingAdjuntos, getExpiredPendingImagenes,
 } from '../repositories/pendingImage.repository.js';
 
-// Mensaje genérico de rechazo: NO expone scores ni detalles de por qué.
-const REJECTION_MESSAGE = 'Tu imagen fue rechazada por no cumplir con las normas de la comunidad.';
+// Mensajes de moderación de imagen (genéricos: no exponen scores ni detalles).
+// Todas son notificaciones in-app (sin email, no gastar cuota de Resend).
+const IMAGE_MODERATION_MSG = {
+  pending: 'Tu imagen quedó en revisión: se publicará automáticamente si cumple con las normas de la comunidad.',
+  approved: 'Tu imagen fue aprobada y ya es visible.',
+  rejected: 'Tu imagen fue rechazada por no cumplir con las normas de la comunidad.',
+};
 
-// Notificación in-app (sin email, no gastar cuota de Resend).
-const notifyRejection = (usuarioId, contenidoId = null) =>
+const notifyImageModeration = (usuarioId, mensaje, contenidoId = null) =>
   createNotification({
     usuario_id: usuarioId,
     tipo: 'moderacion_imagen',
-    mensaje: REJECTION_MESSAGE,
+    mensaje,
     contenido_id: contenidoId,
   });
+
+const notifyRejection = (usuarioId, contenidoId = null) =>
+  notifyImageModeration(usuarioId, IMAGE_MODERATION_MSG.rejected, contenidoId);
+
+// Exportada: la usan reply.service (adjuntos) y user.service (avatar/banner)
+// para avisar al autor apenas su imagen entra en revisión.
+export const notifyImagePending = (usuarioId, contenidoId = null) =>
+  notifyImageModeration(usuarioId, IMAGE_MODERATION_MSG.pending, contenidoId);
 
 const notFound = (msg) => {
   const err = new Error(msg);
@@ -76,13 +88,17 @@ const listPendingImagesService = async () => {
 // --- Aprobar ---------------------------------------------------------------
 const approvePendingImageService = async (id, origen) => {
   if (origen === 'adjunto') {
-    const ok = await approveAdjunto(id);
-    if (!ok) throw notFound('Adjunto no encontrado o ya resuelto');
+    // Leemos autor/contenido ANTES de aprobar (approveAdjunto limpia scores).
+    const row = await getPendingAdjunto(id);
+    if (!row || row.estado !== 'pendiente_revision') throw notFound('Adjunto no encontrado o ya resuelto');
+    await approveAdjunto(id);
+    await notifyImageModeration(row.autor_id, IMAGE_MODERATION_MSG.approved, row.contenido_id);
     return { action: 'adjunto_aprobado' };
   }
   // avatar | banner: promover la imagen a la columna de `usuario` y borrar la fila.
   const promoted = await promotePendingImagen(id);
   if (!promoted) throw notFound('Imagen pendiente no encontrada');
+  await notifyImageModeration(promoted.usuario_id, IMAGE_MODERATION_MSG.approved, null);
   return { action: `${origen}_aprobado` };
 };
 

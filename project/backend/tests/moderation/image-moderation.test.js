@@ -30,12 +30,14 @@ const adjuntoRow = async (id) => {
   const { rows } = await pool.query('SELECT estado, url, public_id FROM adjunto WHERE id = $1', [id]);
   return rows[0];
 };
-const countNotif = async (usuarioId, tipo) => {
+const notifMsgs = async (usuarioId) => {
   const { rows } = await pool.query(
-    'SELECT COUNT(*)::int AS n FROM notificacion WHERE usuario_id = $1 AND tipo = $2', [usuarioId, tipo]
+    `SELECT mensaje FROM notificacion WHERE usuario_id = $1 AND tipo = 'moderacion_imagen' ORDER BY id`,
+    [usuarioId]
   );
-  return rows[0].n;
+  return rows.map(r => r.mensaje);
 };
+const hasNotif = async (usuarioId, re) => (await notifMsgs(usuarioId)).some(m => re.test(m));
 
 beforeEach(() => {
   checkImageSafety.mockReset();
@@ -62,6 +64,8 @@ describe('Moderación de adjuntos de imagen', () => {
     const adj = res.body.data.adjuntos[0];
     expect(adj.estado).toBe('pendiente_revision');
     expect((await adjuntoRow(adj.id)).estado).toBe('pendiente_revision');
+    // El autor recibe una notificación de "en revisión".
+    expect(await hasNotif(u.user.id, /revisión/i)).toBe(true);
   });
 
   test('(b) imagen segura (UNLIKELY) → adjunto publicado', async () => {
@@ -133,6 +137,8 @@ describe('Moderación de avatar', () => {
     );
     expect(pend).toHaveLength(1);
     expect(pend[0].tipo).toBe('avatar');
+    // El usuario recibe la notificación de "en revisión".
+    expect(await hasNotif(u.user.id, /revisión/i)).toBe(true);
   });
 });
 
@@ -159,7 +165,8 @@ describe('Auto-descarte a las 48h', () => {
     const adj = await adjuntoRow(adjId);
     expect(adj.estado).toBe('rechazado');
     expect(adj.url).toBe('');
-    expect(await countNotif(u.user.id, 'moderacion_imagen')).toBe(1);
+    // El autor recibe la notificación de rechazo (además de la de "en revisión").
+    expect(await hasNotif(u.user.id, /rechazada/i)).toBe(true);
   });
 });
 
@@ -177,8 +184,8 @@ describe('Cola de admin — aprobar / rechazar', () => {
     return { author: u, adjId: res.body.data.adjuntos[0].id };
   }
 
-  test('(f) aprobar adjunto → estado publicado', async () => {
-    const { adjId } = await createPendingAdjunto();
+  test('(f) aprobar adjunto → estado publicado + notificación de aprobación', async () => {
+    const { author, adjId } = await createPendingAdjunto();
     const admin = await createAdmin();
 
     const res = await request(app)
@@ -188,6 +195,8 @@ describe('Cola de admin — aprobar / rechazar', () => {
 
     expect(res.status).toBe(200);
     expect((await adjuntoRow(adjId)).estado).toBe('publicado');
+    // El autor recibe la notificación de aprobación.
+    expect(await hasNotif(author.user.id, /aprobada/i)).toBe(true);
   });
 
   test('(g) rechazar adjunto → estado rechazado, url limpia y notificación', async () => {
@@ -203,7 +212,8 @@ describe('Cola de admin — aprobar / rechazar', () => {
     const adj = await adjuntoRow(adjId);
     expect(adj.estado).toBe('rechazado');
     expect(adj.url).toBe('');
-    expect(await countNotif(author.user.id, 'moderacion_imagen')).toBe(1);
+    // El autor recibe la notificación de rechazo.
+    expect(await hasNotif(author.user.id, /rechazada/i)).toBe(true);
   });
 
   test('la cola lista el adjunto pendiente con su contexto', async () => {
