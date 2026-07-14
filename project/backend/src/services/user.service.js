@@ -31,7 +31,7 @@ import {
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById,
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
   isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, updateBannerById,
-  deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getPasswordHashById,
+  deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getPasswordHashById, getAccountAuthById,
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy,
   getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
@@ -797,14 +797,25 @@ const changePasswordService = async (userId, { currentPassword, newPassword }) =
     throw err;
   }
 
-  const hash = await getPasswordHashById(userId);
-  if (!hash) {
+  const account = await getAccountAuthById(userId);
+  // La fila realmente no existe (caso defensivo: sesión válida pero cuenta ya
+  // borrada). Solo acá corresponde "usuario no encontrado".
+  if (!account) {
     const err = new Error('Usuario no encontrado');
     err.code = 'NOT_FOUND';
     throw err;
   }
+  // La cuenta existe pero no tiene contraseña (típicamente creada con Google):
+  // la "contraseña actual" que ingresó no puede ser correcta. Antes esto caía
+  // en el "usuario no encontrado" de arriba, mensaje confuso porque el usuario
+  // sí existe.
+  if (!account.password_hash) {
+    const err = new Error('La contraseña actual no es correcta.');
+    err.code = 'INVALID_CREDENTIALS';
+    throw err;
+  }
 
-  const isValid = await bcrypt.compare(currentPassword, hash);
+  const isValid = await bcrypt.compare(currentPassword, account.password_hash);
   if (!isValid) {
     const err = new Error('La contraseña actual no es correcta.');
     err.code = 'INVALID_CREDENTIALS';
@@ -924,11 +935,49 @@ const resetPasswordService = async (token, newPassword) => {
     throw err;
   }
 
+  // ¿La cuenta tenía contraseña ANTES de este reset? Si no (típicamente una
+  // cuenta creada con Google, password_hash NULL), este reset le agrega un
+  // segundo método de acceso por primera vez. Lo detectamos antes de escribir.
+  const account = await getAccountAuthById(validToken.usuario_id);
+  const esPrimeraPassword = !!account && !account.password_hash;
+
   const salt = await bcrypt.genSalt(10);
   const newHash = await bcrypt.hash(newPassword, salt);
 
   await updatePasswordHashById(validToken.usuario_id, newHash);
   await markTokenAsUsed(validToken.id);
+
+  // Aviso de seguridad SOLO la primera vez que la cuenta obtiene contraseña.
+  // La prueba de propiedad del email ya valida la recuperación, así que esto
+  // no bloquea la acción (ya se aplicó): si el envío falla, se registra y
+  // sigue. En un reset normal (la cuenta ya tenía contraseña) no se envía nada.
+  if (esPrimeraPassword && account.email) {
+    try {
+      await sendEmail({
+        to: account.email,
+        subject: 'Se agregó una contraseña a tu cuenta — UdelarHITS',
+        html: `
+          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 20px;">
+            <h2 style="font-size: 20px; margin-bottom: 16px;">Se agregó una contraseña a tu cuenta</h2>
+            <p style="font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 16px;">
+              Tu cuenta de UdelarHITS ingresaba con Google y ahora también tiene una
+              contraseña propia, configurada recién mediante el flujo de recuperación.
+              A partir de ahora podés iniciar sesión con tu email y esta contraseña,
+              además de con Google.
+            </p>
+            <p style="font-size: 15px; color: #b91c1c; line-height: 1.6; margin-bottom: 8px; font-weight: 600;">
+              Si no fuiste vos, contactanos de inmediato.
+            </p>
+            <p style="font-size: 13px; color: #999; margin-top: 16px; line-height: 1.5;">
+              Podés escribirnos respondiendo a este correo.
+            </p>
+          </div>
+        `,
+      });
+    } catch (e) {
+      console.error('[reset-password] No se pudo enviar el aviso de contraseña agregada:', e.code || e.message);
+    }
+  }
 };
 
 const deactivateAccountService = async (userId, password) => {

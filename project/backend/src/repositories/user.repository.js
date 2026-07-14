@@ -429,6 +429,21 @@ const getPasswordHashById = async (id) => {
   return rows[0]?.password_hash || null;
 };
 
+// Datos mínimos de autenticación de una cuenta. A diferencia de
+// getPasswordHashById, distingue "no existe la fila" (devuelve null) de
+// "existe pero sin contraseña" (password_hash null) — necesario para dar
+// mensajes de error precisos y para detectar el primer alta de contraseña.
+const getAccountAuthById = async (id) => {
+  const q = `
+    SELECT id, email, auth_provider, password_hash
+    FROM usuario
+    WHERE id = $1
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0] || null;
+};
+
 const updatePasswordHashById = async (id, passwordHash) => {
   const q = `
     UPDATE usuario
@@ -497,5 +512,5 @@ export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUs
   deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,
   acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById,
   searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers,
-  getMostActiveUsers, getPasswordHashById, updatePasswordHashById, deactivateUser, clearFollows, updatePrivacy, getPrivacyById,
+  getMostActiveUsers, getPasswordHashById, getAccountAuthById, updatePasswordHashById, deactivateUser, clearFollows, updatePrivacy, getPrivacyById,
   updateLikesPrivacy, getLikesPrivacyById };
