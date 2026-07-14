@@ -11,6 +11,18 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('es-UY', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+// auth_provider en la BD es 'local', 'google' o 'both' (cuenta con ambos).
+function authLabel(provider) {
+  if (provider === 'google') return 'Google'
+  if (provider === 'both') return 'Google + Local'
+  return 'Local'
+}
+function authClass(provider) {
+  if (provider === 'google') return 'admin-status--google'
+  if (provider === 'both') return 'admin-status--both'
+  return 'admin-status--local'
+}
+
 function UsersSkeleton() {
   return (
     <div className="admin-skeleton">
@@ -22,6 +34,7 @@ function UsersSkeleton() {
           <div className="skeleton" style={{ width: '22%', height: 13 }} />
           <div className="skeleton" style={{ width: 40, height: 20, borderRadius: 12 }} />
           <div className="skeleton" style={{ width: 50, height: 20, borderRadius: 12 }} />
+          <div className="skeleton" style={{ width: 70, height: 20, borderRadius: 12 }} />
           <div className="skeleton" style={{ width: '12%', height: 13 }} />
           <div className="skeleton" style={{ width: 80, height: 28, borderRadius: 6, marginLeft: 'auto' }} />
         </div>
@@ -81,6 +94,9 @@ export function UsersSection() {
           <option value="ban">Suspendidos</option>
           <option value="inactivo">Inactivos</option>
         </select>
+        <span className="admin-count">
+          Usuarios total: <strong>{isLoading ? '…' : users.length}</strong>
+        </span>
       </div>
 
       {isLoading ? (
@@ -98,6 +114,7 @@ export function UsersSection() {
                 <th>Email</th>
                 <th>Rol</th>
                 <th>Estado</th>
+                <th>Autenticación</th>
                 <th>Creado</th>
                 <th>Acciones</th>
               </tr>
@@ -125,6 +142,9 @@ export function UsersSection() {
                   </td>
                   <td>
                     <span className={`admin-status admin-status--${u.estado}`}>{u.estado}</span>
+                  </td>
+                  <td>
+                    <span className={`admin-status ${authClass(u.auth_provider)}`}>{authLabel(u.auth_provider)}</span>
                   </td>
                   <td>{formatDate(u.fecha_creacion)}</td>
                   <td>

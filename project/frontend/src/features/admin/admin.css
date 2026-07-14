@@ -157,6 +157,20 @@
 
 .admin-select:focus { border-color: var(--accent); }
 
+/* Contador de usuarios, al lado del filtro de estado. margin-left: auto lo
+   empuja al extremo derecho de la fila de filtros. */
+.admin-count {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.admin-count strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
 /* ── TABLE ── */
 .admin-table-wrapper {
   overflow-x: auto;
@@ -251,6 +265,25 @@
   background: var(--bg);
   color: var(--text-muted);
   border: 1px solid var(--border);
+}
+
+/* Método de autenticación de la cuenta. */
+.admin-status--google {
+  background: var(--accent-light);
+  color: var(--accent);
+  border: 1px solid transparent;
+}
+
+.admin-status--local {
+  background: var(--bg);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.admin-status--both {
+  background: var(--status-success-bg);
+  color: var(--status-success-text);
+  border: 1px solid var(--status-success-border);
 }
 
 /* ── BUTTONS ── */
