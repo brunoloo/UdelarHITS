@@ -522,6 +522,7 @@ export function ProfilePage() {
         users={followModal === 'seguidores' ? followers : following}
         myFollowing={myFollowing}
         onFollowChange={handleFollowToggle}
+        canRemoveFollowers={isOwnProfile && followModal === 'seguidores'}
       />
 
       {/* Report user modal */}

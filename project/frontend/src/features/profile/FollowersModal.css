@@ -72,6 +72,43 @@
   white-space: nowrap;
 }
 
+/* Contenedor del botón seguir/siguiendo + la cruz de remover, alineados a la
+   derecha del item. flex-shrink: 0 para que no se aplaste sobre el nombre. */
+.follow-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Cruz para remover un seguidor (solo en la lista de mis seguidores). */
+.follow-item-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.follow-item-remove:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--text-on-accent);
+}
+
+.follow-item-remove:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .btn-follow-sm {
   height: 30px;
   padding: 0 14px;
@@ -107,4 +144,26 @@
   text-align: center;
   color: var(--text-muted);
   font-size: 14px;
+}
+
+/* Mobile: apretamos separaciones y padding para que el botón de seguir + la
+   cruz de remover entren en una sola línea junto al nombre sin desbordar. */
+@media (max-width: 480px) {
+  .follow-item {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .follow-item-actions {
+    gap: 6px;
+  }
+
+  .btn-follow-sm {
+    padding: 0 11px;
+  }
+
+  .follow-item-remove {
+    width: 28px;
+    height: 28px;
+  }
 }

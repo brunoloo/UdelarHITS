@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { protect, isAdmin, optionalAuth } from '../middlewares/auth.middleware.js';
 import { uploadAvatar, uploadBanner } from '../config/multer.js';
 import { showMe, updateMe, getUsers, getUserProfile, changeUserPassword,
-    banUser, activeUser, deleteUser, followUser, unfollowUser,
+    banUser, activeUser, deleteUser, followUser, unfollowUser, removeFollower,
     acceptFollowRequest, rejectFollowRequest,
     checkFollowing, updateAvatar, searchUsers, updateBanner, deleteBanner,
     deleteAvatar, getSuggestedUsersList, getMostActiveUsersList, deactivateAccount, togglePrivacy, toggleLikesPrivacy } from '../controllers/user.controller.js';
@@ -34,6 +34,7 @@ router.get('/:nickname', protect, getUserProfile);               // Obtener info
 
 router.post('/:nickname/follow', protect, followUser);           // Seguir otro usuario (o solicitar si es privado)
 router.delete('/:nickname/follow', protect, unfollowUser);       // Dejar de seguir / cancelar solicitud
+router.delete('/:nickname/follower', protect, removeFollower);   // Remover a :nickname de mis seguidores
 router.post('/:nickname/follow/accept', protect, acceptFollowRequest); // Aceptar solicitud de :nickname
 router.post('/:nickname/follow/reject', protect, rejectFollowRequest); // Rechazar solicitud de :nickname
 router.get('/:nickname/following', protect, checkFollowing);     // Chequear seguidor

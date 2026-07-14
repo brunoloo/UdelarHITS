@@ -5,10 +5,11 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { apiPost, apiDelete } from '../../api/client'
 import { Modal } from '../../components/ui/Modal'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import './FollowersModal.css'
 
-export function FollowersModal({ isOpen, onClose, title, users, myFollowing = [], onFollowChange }) {
+export function FollowersModal({ isOpen, onClose, title, users, myFollowing = [], onFollowChange, canRemoveFollowers = false }) {
   if (!isOpen) return null
 
   return (
@@ -30,6 +31,7 @@ export function FollowersModal({ isOpen, onClose, title, users, myFollowing = []
               myFollowing={myFollowing}
               onClose={onClose}
               onFollowChange={onFollowChange}
+              canRemove={canRemoveFollowers}
             />
           ))
         )}
@@ -38,7 +40,7 @@ export function FollowersModal({ isOpen, onClose, title, users, myFollowing = []
   )
 }
 
-function FollowItem({ user: u, myFollowing, onClose, onFollowChange }) {
+function FollowItem({ user: u, myFollowing, onClose, onFollowChange, canRemove }) {
   const { user: me } = useAuth()
   const { showToast } = useToast()
   const queryClient = useQueryClient()
@@ -48,6 +50,7 @@ function FollowItem({ user: u, myFollowing, onClose, onFollowChange }) {
   const initialEstado = myFollowing.some(f => f.nickname === u.nickname) ? 'aceptado' : 'none'
   const [estado, setEstado] = useState(initialEstado)
   const [hover, setHover] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState(false)
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -63,6 +66,19 @@ function FollowItem({ user: u, myFollowing, onClose, onFollowChange }) {
       // the follow state survives closing and reopening the modal. ['me'] is
       // the source of `myFollowing` when viewing another user's profile, and
       // ['user'] covers any open profile (partial-key match).
+      queryClient.invalidateQueries({ queryKey: ['me'] })
+      queryClient.invalidateQueries({ queryKey: ['user'] })
+    },
+    onError: (err) => showToast(err.message || 'Error', 'error'),
+  })
+
+  // Remover a este seguidor de MI lista de seguidores. No toca si yo lo sigo a
+  // él: es otro registro. Al terminar, se refresca el perfil (la lista y los
+  // contadores) invalidando las mismas caches que el follow.
+  const removeMutation = useMutation({
+    mutationFn: () => apiDelete(`/users/${encodeURIComponent(u.nickname)}/follower`),
+    onSuccess: () => {
+      showToast(`Removiste a @${u.nickname} de tus seguidores`, 'success')
       queryClient.invalidateQueries({ queryKey: ['me'] })
       queryClient.invalidateQueries({ queryKey: ['user'] })
     },
@@ -94,16 +110,45 @@ function FollowItem({ user: u, myFollowing, onClose, onFollowChange }) {
         {u.nombre && <div className="follow-item-name">{u.nombre}</div>}
       </div>
       {me && !isMe && (
-        <button
-          className={btnClass}
-          type="button"
-          disabled={mutation.isPending}
-          onClick={() => mutation.mutate()}
-          onMouseEnter={() => setHover(true)}
-          onMouseLeave={() => setHover(false)}
-        >
-          {btnLabel}
-        </button>
+        <div className="follow-item-actions">
+          <button
+            className={btnClass}
+            type="button"
+            disabled={mutation.isPending}
+            onClick={() => mutation.mutate()}
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+          >
+            {btnLabel}
+          </button>
+          {canRemove && (
+            <button
+              className="follow-item-remove"
+              type="button"
+              aria-label={`Remover a @${u.nickname} de tus seguidores`}
+              title="Remover seguidor"
+              disabled={removeMutation.isPending}
+              onClick={() => setConfirmRemove(true)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
+
+      {canRemove && (
+        <ConfirmDialog
+          isOpen={confirmRemove}
+          onClose={() => setConfirmRemove(false)}
+          onConfirm={() => removeMutation.mutate()}
+          title="Remover seguidor"
+          message={`¿Seguro que querés remover a @${u.nickname} de tus seguidores?`}
+          confirmText="Remover"
+          danger
+        />
       )}
     </div>
   )

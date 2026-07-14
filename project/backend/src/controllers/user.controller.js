@@ -4,7 +4,7 @@ import { generateToken } from '../utils/generateToken.js';
 import { requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, getUsersService, createUserByAdminService,
     getUserProfileService, showMeService, updateMeService,
     banUserService, activeUserService, deleteUserService,
-  followUserService, unfollowUserService, isFollowingService,
+  followUserService, unfollowUserService, removeFollowerService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService, updateAvatarService,
   searchUsersService, updateBannerService,
   deleteBannerService, deleteAvatarService, getSuggestedUsersService, getMostActiveUsersService,
@@ -279,6 +279,18 @@ const unfollowUser = async (req, res) => {
   }
 };
 
+// El usuario autenticado remueve a :nickname de su lista de seguidores.
+const removeFollower = async (req, res) => {
+  try {
+    const { nickname } = req.params;
+    const result = await removeFollowerService(req.user.id, nickname);
+    return res.status(200).json({ ok: true, data: result });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 // El usuario autenticado acepta la solicitud de seguimiento de :nickname.
 const acceptFollowRequest = async (req, res) => {
   try {
@@ -537,6 +549,6 @@ const setupNickname = async (req, res) => {
 
 export { showMe, registerUser, verifyEmail, resendCode, loginUser, logoutUser, googleAuthCallback, setupNickname, getUsers,
   getUserProfile, updateMe, banUser,
-  activeUser, deleteUser, followUser, unfollowUser, acceptFollowRequest, rejectFollowRequest, checkFollowing, updateAvatar,
+  activeUser, deleteUser, followUser, unfollowUser, removeFollower, acceptFollowRequest, rejectFollowRequest, checkFollowing, updateAvatar,
   searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList,
   changeUserPassword, forgotPassword, verifyResetToken, resetPassword, deactivateAccount, togglePrivacy, toggleLikesPrivacy }

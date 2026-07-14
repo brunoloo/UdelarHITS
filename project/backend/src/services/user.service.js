@@ -668,6 +668,24 @@ const unfollowUserService = async (seguidorId, seguidoNickname) => {
   return { seguidores: followers.length };
 };
 
+// El usuario autenticado (userId) remueve a seguidorNickname de SUS seguidores.
+// Es el mismo borrado que un unfollow, pero iniciado por el seguido: se elimina
+// la fila (seguidor_id = seguidorNickname, seguido_id = userId). No afecta a que
+// userId siga (o pueda seguir) a seguidorNickname: ese es otro registro.
+const removeFollowerService = async (userId, seguidorNickname) => {
+  const seguidor = await getUserByNickname(seguidorNickname);
+  if (!seguidor) {
+    const err = new Error('Usuario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  await unfollowUser(seguidor.id, userId);
+  // Limpiar una eventual solicitud pendiente de ese seguidor hacia mí.
+  await deleteNotificationsByActorAndType(userId, seguidor.id, 'solicitud_seguimiento');
+  const followers = await getFollowersByUserId(userId);
+  return { seguidores: followers.length };
+};
+
 // El receptor (receptorId) acepta la solicitud de solicitanteNickname.
 const acceptFollowRequestService = async (receptorId, solicitanteNickname) => {
   const solicitante = await getUserByNickname(solicitanteNickname);
@@ -1153,7 +1171,7 @@ const confirmNicknameService = async (userId, newNickname) => {
 
 export { showMeService , requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, handleGoogleAuthService, confirmNicknameService, getUsersService, getUserProfileService,
   updateMeService, banUserService, activeUserService,
-  deleteUserService, followUserService, unfollowUserService, isFollowingService,
+  deleteUserService, followUserService, unfollowUserService, removeFollowerService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService,
   updateAvatarService, searchUsersService, updateBannerService,
   deleteAvatarService, deleteBannerService, getSuggestedUsersService, getMostActiveUsersService,
