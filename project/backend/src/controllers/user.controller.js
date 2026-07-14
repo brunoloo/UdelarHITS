@@ -471,7 +471,7 @@ const resetPassword = async (req, res) => {
 
 const deactivateAccount = async (req, res) => {
   try {
-    await deactivateAccountService(req.user.id, req.body.password);
+    await deactivateAccountService(req.user.id, { password: req.body.password, nickname: req.body.nickname });
 
     // Limpiar cookie JWT
     res.clearCookie('jwt', {
