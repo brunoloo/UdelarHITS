@@ -4,8 +4,16 @@ import app from './app.js';
 import pool from './config/db.js';
 import { initSocket } from './socket.js';
 import { startCleanupJobs } from './jobs/cleanup.job.js';
+import { isVisionConfigured } from './utils/checkImageSafety.js';
 
 const PORT = Number(process.env.PORT || 5001);
+
+// Moderación de imágenes: si no hay API key de Vision, el check queda
+// desactivado (todo se publica sin analizar). Avisamos para que no pase
+// desapercibido en producción — en desarrollo es esperable.
+if (!isVisionConfigured()) {
+  console.warn('[vision] GOOGLE_VISION_API_KEY no configurada: la moderación automática de imágenes está DESACTIVADA (todas las imágenes se publican sin análisis).');
+}
 
 const server = http.createServer(app);
 initSocket(server, app);

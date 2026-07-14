@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
 import { UsersSection } from './UsersSection'
 import { ContentSection } from './ContentSection'
 import { AppealsSection } from './AppealsSection'
 import { ReportsSection } from './ReportsSection'
+import { PendingImagesSection } from './PendingImagesSection'
 import './admin.css'
 
 const TABS = [
@@ -13,10 +13,10 @@ const TABS = [
   { key: 'contenido', label: 'Contenido' },
   { key: 'apelaciones', label: 'Apelaciones' },
   { key: 'reportes', label: 'Reportes' },
+  { key: 'imagenes', label: 'Imágenes' },
 ]
 
 export function AdminPage() {
-  const { user } = useAuth()
   const [tab, setTab] = useState('usuarios')
 
   const { data: temaAppeals = [] } = useQuery({
@@ -35,10 +35,15 @@ export function AdminPage() {
     queryKey: ['user-reports', 'pending'],
     queryFn: () => apiGet('/user-reports/pending').then(r => r.data),
   })
+  const { data: pendingImages = [] } = useQuery({
+    queryKey: ['admin', 'pending-images'],
+    queryFn: () => apiGet('/admin/pending-images').then(r => r.data),
+  })
 
   const badgeCounts = {
     apelaciones: temaAppeals.length + comentarioAppeals.length + categoriaAppeals.length,
     reportes: pendingReports.length,
+    imagenes: pendingImages.length,
   }
 
   return (
@@ -66,6 +71,7 @@ export function AdminPage() {
       {tab === 'contenido' && <ContentSection />}
       {tab === 'apelaciones' && <AppealsSection />}
       {tab === 'reportes' && <ReportsSection />}
+      {tab === 'imagenes' && <PendingImagesSection />}
     </div>
   )
 }

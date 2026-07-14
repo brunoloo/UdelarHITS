@@ -13,6 +13,7 @@ import { createNotification } from '../repositories/notification.repository.js';
 import { createAttachment, getAttachmentsByContenidoId, getAttachmentsForDeletion } from '../repositories/adjunto.repository.js';
 import { createPoll, getPollByContenidoId } from '../repositories/encuesta.repository.js';
 import { uploadAttachment, deleteAttachmentFromCloudinary } from '../utils/uploadToCloudinary.js';
+import { checkImageSafety } from '../utils/checkImageSafety.js';
 import pool from '../config/db.js';
 
 const ENCUESTA_DUR_MIN = 60;            // 1 minuto
@@ -273,6 +274,31 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       }
       const f = files[i];
       const { url, public_id } = r.value;
+
+      // Moderación de imágenes: solo las imágenes pasan por Vision SafeSearch.
+      // Los documentos (PDF/DOCX, resource_type raw) se publican directo — no
+      // tiene sentido (ni es barato) analizarlos. Si Vision marca la imagen,
+      // el adjunto entra 'pendiente_revision' (el comentario se publica igual,
+      // el front muestra el placeholder "en revisión").
+      let estado = 'publicado';
+      let scoreAdult = null;
+      let scoreRacy = null;
+      if (f.tipo === 'imagen') {
+        try {
+          const safety = await checkImageSafety(url);
+          if (!safety.safe) {
+            estado = 'pendiente_revision';
+            scoreAdult = safety.scores?.adult ?? null;
+            scoreRacy = safety.scores?.racy ?? null;
+          }
+        } catch (err) {
+          // Fallback: nunca bloquear la publicación por un fallo de Vision; el
+          // adjunto queda 'publicado'. checkImageSafety ya maneja sus errores,
+          // esto es defensa en profundidad.
+          console.error(`[vision] fallback publicando adjunto ${public_id}: ${err.message}`);
+        }
+      }
+
       await createAttachment({
         contenidoId: created.contenido_id,
         url,
@@ -280,6 +306,9 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
         nombreOriginal: f.originalname,
         tipo: f.tipo,
         tamano: f.size,
+        estado,
+        scoreAdult,
+        scoreRacy,
       });
     }
     created.adjuntos = await getAttachmentsByContenidoId(created.contenido_id);

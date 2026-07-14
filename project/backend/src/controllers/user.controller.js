@@ -339,6 +339,12 @@ const updateAvatar = async (req, res) => {
     }
 
     const updated = await updateAvatarService(req.user.id, req.file.buffer, req.file.mimetype);
+    if (updated?.pendiente) {
+      return res.status(200).json({
+        ok: true, pending: true, data: null,
+        message: 'Tu imagen quedó en revisión por moderación. Seguís viendo tu foto anterior hasta que se apruebe.',
+      });
+    }
     return res.status(200).json({ ok: true, data: updated });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
@@ -376,6 +382,12 @@ const updateBanner = async (req, res) => {
     }
 
     const updated = await updateBannerService(req.user.id, req.file.buffer, req.file.mimetype);
+    if (updated?.pendiente) {
+      return res.status(200).json({
+        ok: true, pending: true, data: null,
+        message: 'Tu imagen quedó en revisión por moderación. Seguís viendo tu portada anterior hasta que se apruebe.',
+      });
+    }
     return res.status(200).json({ ok: true, data: updated });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, FileSpreadsheet, Archive, File } from 'lucide-react'
+import { FileText, FileSpreadsheet, Archive, File, Clock, ShieldAlert } from 'lucide-react'
 import { formatBytes } from '../../utils/formatBytes'
 import { documentDownloadUrl } from '../../utils/attachments'
 import { ImageLightbox } from './ImageLightbox'
@@ -27,17 +27,38 @@ export function CommentAttachments({ adjuntos }) {
     <div className="comment-attachments" onClick={e => e.stopPropagation()}>
       {imagenes.length > 0 && (
         <div className="ca-images">
-          {imagenes.map(a => (
-            <button
-              key={a.id}
-              type="button"
-              className="ca-image-link"
-              title={a.nombre_original}
-              onClick={() => setLightbox({ src: a.url, alt: a.nombre_original })}
-            >
-              <img src={a.url} alt={a.nombre_original} loading="lazy" />
-            </button>
-          ))}
+          {imagenes.map(a => {
+            // Moderación: solo se renderiza la imagen real si está 'publicado'.
+            // 'pendiente_revision' y 'rechazado' muestran un placeholder y no
+            // exponen la imagen (ni abren el visor).
+            if (a.estado === 'pendiente_revision') {
+              return (
+                <div key={a.id} className="ca-image-placeholder ca-image-placeholder--pending">
+                  <Clock size={18} />
+                  <span>Imagen en revisión</span>
+                </div>
+              )
+            }
+            if (a.estado === 'rechazado') {
+              return (
+                <div key={a.id} className="ca-image-placeholder ca-image-placeholder--rejected">
+                  <ShieldAlert size={18} />
+                  <span>Imagen eliminada por moderación</span>
+                </div>
+              )
+            }
+            return (
+              <button
+                key={a.id}
+                type="button"
+                className="ca-image-link"
+                title={a.nombre_original}
+                onClick={() => setLightbox({ src: a.url, alt: a.nombre_original })}
+              >
+                <img src={a.url} alt={a.nombre_original} loading="lazy" />
+              </button>
+            )
+          })}
         </div>
       )}
 

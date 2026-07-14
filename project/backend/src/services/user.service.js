@@ -35,6 +35,8 @@ import {
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy,
   getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
+import { createPendingImagen } from '../repositories/pendingImage.repository.js';
+import { checkImageSafety, isVisionConfigured } from '../utils/checkImageSafety.js';
 import { isBlocked, getBlockDirection } from '../repositories/block.repository.js';
 import { canViewPrivateContent } from './access.service.js';
 import pool from '../config/db.js';
@@ -752,15 +754,63 @@ const isFollowingService = async (seguidorId, seguidoNickname) => {
   return await isFollowing(seguidorId, seguido.id);
 };
 
+// Sube una imagen de perfil (avatar/banner) con moderación de Vision SafeSearch.
+//
+//  * Sin Vision configurado (dev/test o prod sin key): flujo directo de siempre
+//    — subir al id canónico determinístico y actualizar la columna en `usuario`.
+//    Cero overhead, comportamiento idéntico al previo.
+//  * Con Vision: se sube primero a un id "pendiente" que NO sobreescribe la
+//    imagen visible (el canónico). Se analiza; si es segura se promueve al id
+//    canónico (borrando el temp) y se actualiza la columna; si no, se retiene en
+//    imagen_pendiente y la columna NO se toca (el usuario sigue con su foto
+//    anterior o el default). Devuelve { pendiente: true } en ese caso.
+const moderateProfileImage = async ({ userId, fileBuffer, tipo, folder, canonicalId, updateColumn }) => {
+  if (!isVisionConfigured()) {
+    const url = await uploadToCloudinary(fileBuffer, folder, canonicalId);
+    return await updateColumn(userId, url);
+  }
+
+  const pendingFolder = 'udelarhits/pending';
+  const pendingId = `${tipo}_pending_${userId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const pendingUrl = await uploadToCloudinary(fileBuffer, pendingFolder, pendingId);
+
+  // Fallback defensivo: si el análisis falla, publicar normalmente (no bloquear).
+  let result;
+  try {
+    result = await checkImageSafety(pendingUrl);
+  } catch (err) {
+    console.error(`[vision] fallback publicando ${tipo} de usuario ${userId}: ${err.message}`);
+    result = { safe: true };
+  }
+
+  if (result.safe) {
+    const url = await uploadToCloudinary(fileBuffer, folder, canonicalId);
+    await deleteFromCloudinary(pendingFolder, pendingId);
+    return await updateColumn(userId, url);
+  }
+
+  await createPendingImagen({
+    usuarioId: userId,
+    url: pendingUrl,
+    publicId: `${pendingFolder}/${pendingId}`,
+    tipo,
+    scoreAdult: result.scores?.adult ?? null,
+    scoreRacy: result.scores?.racy ?? null,
+  });
+  return { pendiente: true };
+};
+
 const updateAvatarService = async (userId, fileBuffer, mimetype) => {
   if (!fileBuffer) {
     const err = new Error('No se proporcionó ninguna imagen');
     err.code = 'BAD_REQUEST';
     throw err;
   }
-  const url = await uploadToCloudinary(fileBuffer, 'udelarhits/avatars', `avatar_${userId}`);
-  const updated = await updateAvatarById(userId, url);
-  return updated;
+  return await moderateProfileImage({
+    userId, fileBuffer, tipo: 'avatar',
+    folder: 'udelarhits/avatars', canonicalId: `avatar_${userId}`,
+    updateColumn: updateAvatarById,
+  });
 };
 
 const searchUsersService = async (query, viewerId = null) => {
@@ -776,9 +826,11 @@ const updateBannerService = async (userId, fileBuffer, mimetype) => {
     err.code = 'BAD_REQUEST';
     throw err;
   }
-  const url = await uploadToCloudinary(fileBuffer, 'udelarhits/banners', `banner_${userId}`);
-  const updated = await updateBannerById(userId, url);
-  return updated;
+  return await moderateProfileImage({
+    userId, fileBuffer, tipo: 'banner',
+    folder: 'udelarhits/banners', canonicalId: `banner_${userId}`,
+    updateColumn: updateBannerById,
+  });
 };
 
 const deleteBannerService = async (userId) => {

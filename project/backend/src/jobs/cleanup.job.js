@@ -7,6 +7,7 @@
 // el intervalo impida el shutdown del proceso.
 
 import pool from '../config/db.js';
+import { purgeExpiredPendingImages } from '../services/pendingImage.service.js';
 
 const retentionDays = () => Number(process.env.CHAT_RETENTION_DAYS || 30);
 
@@ -39,9 +40,14 @@ export const runCleanup = async () => {
   try {
     const mensajes = await purgeOldChatMessages();
     const auth = await purgeExpiredAuthRows();
-    if (mensajes || auth.verificaciones || auth.tokens) {
+    // Auto-descarte de imágenes pendientes sin acción de un admin (48h por
+    // defecto): mismo efecto que "Rechazar" — se borran de Cloudinary, los
+    // adjuntos pasan a 'rechazado' y se notifica al autor.
+    const imagenes = await purgeExpiredPendingImages();
+    if (mensajes || auth.verificaciones || auth.tokens || imagenes.adjuntos || imagenes.imagenes) {
       console.log(
-        `[cleanup] mensajes de chat purgados: ${mensajes}, verificaciones: ${auth.verificaciones}, tokens reset: ${auth.tokens}`
+        `[cleanup] mensajes de chat purgados: ${mensajes}, verificaciones: ${auth.verificaciones}, tokens reset: ${auth.tokens}, ` +
+        `imágenes pendientes descartadas: ${imagenes.adjuntos} adjuntos + ${imagenes.imagenes} avatares/banners`
       );
     }
   } catch (err) {

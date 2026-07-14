@@ -36,6 +36,34 @@
   opacity: .9;
 }
 
+/* Placeholder para imágenes moderadas (en revisión / eliminadas). No es
+   clickeable ni abre el visor: solo comunica el estado. */
+.ca-image-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  min-height: 72px;
+  border-radius: 12px;
+  border: 1px dashed var(--border-strong);
+  background: var(--surface-2, var(--surface));
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ca-image-placeholder--pending {
+  color: var(--status-warning-text, var(--text-secondary));
+  border-color: var(--status-warning-border, var(--border-strong));
+  background: var(--status-warning-bg, var(--surface));
+}
+
+.ca-image-placeholder--rejected {
+  color: var(--status-error-text, var(--text-secondary));
+  border-color: var(--status-error-border, var(--border-strong));
+  background: var(--status-error-bg, var(--surface));
+}
+
 .ca-doc {
   display: inline-flex;
   align-items: center;

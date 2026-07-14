@@ -81,7 +81,7 @@ const getNotificationsByUserId = async (userId, limit = 30) => {
         LEFT(c.cuerpo, 100)
       ) AS contenido_preview,
       -- El front muestra "[foto]"/"[encuesta]" sin sobrecargar el panel.
-      EXISTS(SELECT 1 FROM adjunto a WHERE a.contenido_id = n.contenido_id AND a.tipo = 'imagen') AS tiene_imagen,
+      EXISTS(SELECT 1 FROM adjunto a WHERE a.contenido_id = n.contenido_id AND a.tipo = 'imagen' AND a.estado = 'publicado') AS tiene_imagen,
       EXISTS(SELECT 1 FROM encuesta e WHERE e.contenido_id = n.contenido_id) AS tiene_encuesta
     FROM notificacion n
     LEFT JOIN usuario a ON a.id = n.actor_id

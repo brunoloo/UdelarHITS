@@ -72,10 +72,16 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      // Moderación de imágenes: el backend puede retener el avatar/banner en
+      // revisión ({ pending: true }). En ese caso NO se actualiza la foto y hay
+      // que avisar al usuario que sigue viendo la anterior.
+      const enRevision = []
+
       if (pendingAvatar) {
         const fd = new FormData()
         fd.append('avatar', pendingAvatar, 'avatar.jpg')
-        await apiPatch('/users/me/avatar', fd)
+        const r = await apiPatch('/users/me/avatar', fd)
+        if (r?.pending) enRevision.push('foto de perfil')
       } else if (removeAvatar) {
         await apiDelete('/users/me/avatar')
       }
@@ -83,21 +89,30 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
       if (pendingBanner) {
         const fd = new FormData()
         fd.append('banner', pendingBanner, 'banner.jpg')
-        await apiPatch('/users/me/banner', fd)
+        const r = await apiPatch('/users/me/banner', fd)
+        if (r?.pending) enRevision.push('portada')
       } else if (removeBanner) {
         await apiDelete('/users/me/banner')
       }
 
       const body = { biografia: bio.trim() }
       if (nombre.trim()) body.nombre = nombre.trim()
-      return apiPatch('/users/me', body)
+      await apiPatch('/users/me', body)
+      return { enRevision }
     },
-    onSuccess: async () => {                    // ← async
+    onSuccess: async ({ enRevision }) => {      // ← async
       try {
         const res = await apiGet('/users/me')   // ← refetch fresh user
         setUser(res.data.user)                  // ← actualiza AuthContext → Header se re-renderiza
       } catch {}
-      showToast('Perfil actualizado', 'success')
+      if (enRevision.length > 0) {
+        showToast(
+          `Tu ${enRevision.join(' y ')} quedó en revisión por moderación. Seguís viendo la anterior hasta que se apruebe.`,
+          'info'
+        )
+      } else {
+        showToast('Perfil actualizado', 'success')
+      }
       onClose()
       if (onSaved) onSaved()
     },

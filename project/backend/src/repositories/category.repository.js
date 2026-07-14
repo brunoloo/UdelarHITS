@@ -273,7 +273,7 @@ const CATEGORY_CARD_QUERY = `
           'contador_respuestas', (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible'),
           'adjuntos', (
             SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano) ORDER BY a.id), '[]'::json)
-            FROM adjunto a WHERE a.contenido_id = com.contenido_id
+            FROM adjunto a WHERE a.contenido_id = com.contenido_id AND a.estado = 'publicado'
           ),
           'encuesta', ${encuestaSubquery('NULL::bigint')}
         )

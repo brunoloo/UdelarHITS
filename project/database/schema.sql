@@ -424,6 +424,11 @@ CREATE TABLE suscripcion_categoria (
 );
 
 -- Adjuntos de un comentario (imágenes/documentos subidos a Cloudinary).
+-- estado: moderación automática de imágenes (Cloud Vision SafeSearch). Los
+-- documentos y las imágenes seguras entran como 'publicado'; una imagen marcada
+-- por Vision queda 'pendiente_revision' (el front muestra un placeholder) y pasa
+-- a 'rechazado' si un admin la rechaza o vence a las 48h (la fila se conserva
+-- para que el placeholder "eliminada por moderación" siga visible).
 CREATE TABLE adjunto (
   id              BIGSERIAL PRIMARY KEY,
   contenido_id    BIGINT NOT NULL REFERENCES contenido(id) ON DELETE CASCADE,
@@ -432,9 +437,34 @@ CREATE TABLE adjunto (
   nombre_original VARCHAR(255) NOT NULL,
   tipo            VARCHAR(20) NOT NULL,     -- 'imagen' o 'documento'
   tamano          INTEGER NOT NULL,         -- bytes
+  estado          VARCHAR(20) NOT NULL DEFAULT 'publicado'
+    CHECK (estado IN ('publicado', 'pendiente_revision', 'rechazado')),
+  score_adult     VARCHAR(20),             -- score de Vision (referencia admin)
+  score_racy      VARCHAR(20),
   fecha_creacion  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_adjunto_contenido ON adjunto(contenido_id);
+-- Cola de revisión del admin: adjuntos de imagen pendientes.
+CREATE INDEX idx_adjunto_pendiente ON adjunto(estado, fecha_creacion)
+  WHERE estado = 'pendiente_revision';
+
+-- Imágenes de avatar/banner retenidas por moderación. Como avatar/banner son
+-- columnas en `usuario` (no tienen tabla propia), la imagen marcada por Vision
+-- se guarda acá SIN actualizar `usuario`: el usuario sigue viendo su foto
+-- anterior o el default. Si un admin la aprueba, se actualiza la columna en
+-- `usuario` y se borra esta fila; si la rechaza (o vence a las 48h), se borra
+-- de Cloudinary y se borra la fila (sin cambio visual).
+CREATE TABLE imagen_pendiente (
+  id              BIGSERIAL PRIMARY KEY,
+  usuario_id      BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  url             TEXT NOT NULL,
+  public_id       TEXT NOT NULL,
+  tipo            VARCHAR(10) NOT NULL CHECK (tipo IN ('avatar', 'banner')),
+  score_adult     VARCHAR(20),
+  score_racy      VARCHAR(20),
+  fecha_creacion  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_imagen_pendiente_fecha ON imagen_pendiente(fecha_creacion);
 
 -- Encuestas de un comentario. Un comentario tiene a lo sumo una encuesta.
 CREATE TABLE encuesta (
