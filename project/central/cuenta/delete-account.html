@@ -45,21 +45,40 @@
 
       <div class="ca-danger-zone">
         <h3>Confirmar eliminación</h3>
-        <p>Para confirmar que querés eliminar tu cuenta, ingresá tu contraseña actual.</p>
 
-        <div class="ca-form-field">
-          <label class="ca-form-label" for="deletePassword">Contraseña</label>
-          <input
-            type="password"
-            id="deletePassword"
-            class="ca-form-input"
-            placeholder="Tu contraseña actual"
-            autocomplete="current-password"
-          />
+        <!-- Confirmación por contraseña (cuentas con contraseña). -->
+        <div id="confirmPassword">
+          <p>Para confirmar que querés eliminar tu cuenta, ingresá tu contraseña actual.</p>
+          <div class="ca-form-field">
+            <label class="ca-form-label" for="deletePassword">Contraseña</label>
+            <input
+              type="password"
+              id="deletePassword"
+              class="ca-form-input"
+              placeholder="Tu contraseña actual"
+              autocomplete="current-password"
+            />
+          </div>
+          <p class="auth-forgot">
+            <a href="/central/cuenta/forgot-password.html" target="_blank">¿Olvidaste tu contraseña?</a>
+          </p>
         </div>
-        <p class="auth-forgot">
-          <a href="/central/cuenta/forgot-password.html" target="_blank">¿Olvidaste tu contraseña?</a>
-        </p>
+
+        <!-- Confirmación por nickname (cuentas de Google sin contraseña). -->
+        <div id="confirmNickname" style="display: none;">
+          <p>Tu cuenta ingresa con Google y no tiene contraseña. Para confirmar, escribí tu nickname exacto: <strong id="confirmNicknameValue"></strong></p>
+          <div class="ca-form-field">
+            <label class="ca-form-label" for="deleteNickname">Nickname</label>
+            <input
+              type="text"
+              id="deleteNickname"
+              class="ca-form-input"
+              placeholder="Tu nickname"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
         <p class="ca-form-error" id="deleteError"></p>
         <button class="mi-btn mi-btn--danger mi-btn--full" id="btnDeleteAccount">
           Eliminar mi cuenta

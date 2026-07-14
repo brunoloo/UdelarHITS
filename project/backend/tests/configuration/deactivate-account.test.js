@@ -1,7 +1,21 @@
 import request from 'supertest';
 import app from '../../src/app.js';
 import pool from '../../src/config/db.js';
+import { generateToken } from '../../src/utils/generateToken.js';
 import { registerAndLogin } from '../helpers.js';
+
+// Crea una cuenta Google-only (sin contraseña) y devuelve { id, nickname, cookie }.
+async function createGoogleOnlyUser() {
+  const rand = Math.random().toString(36).slice(2, 8);
+  const nickname = `g_${rand}`;
+  const { rows } = await pool.query(
+    `INSERT INTO usuario (nickname, nombre, email, password_hash, rol, estado, auth_provider, nickname_confirmado)
+     VALUES ($1, $2, $3, NULL, 'user', 'activo', 'google', TRUE)
+     RETURNING id, nickname`,
+    [nickname, 'google user', `g_${rand}@gmail.com`]
+  );
+  return { ...rows[0], cookie: [`jwt=${generateToken(rows[0].id)}`] };
+}
 
 describe('POST /api/users/me/deactivate', () => {
 
@@ -187,6 +201,71 @@ describe('POST /api/users/me/deactivate', () => {
       .send({ email: raw.email, password: raw.password });
 
     expect(login.status).toBe(200);
+  });
+
+  // ── BUG 1: cuentas Google-only (sin contraseña) ────────
+  // Antes no podían darse de baja: siempre se pedía contraseña y ellas no tienen.
+  // Ahora confirman re-tipeando el nickname.
+  describe('cuenta Google-only (sin contraseña)', () => {
+    it('/users/me expone tiene_password=false para saber qué pedir', async () => {
+      const g = await createGoogleOnlyUser();
+      const me = await request(app).get('/api/users/me').set('Cookie', g.cookie);
+      expect(me.status).toBe(200);
+      expect(me.body.data.user.tiene_password).toBe(false);
+    });
+
+    it('se da de baja con el nickname correcto (200)', async () => {
+      const g = await createGoogleOnlyUser();
+
+      const res = await request(app)
+        .post('/api/users/me/deactivate')
+        .set('Cookie', g.cookie)
+        .send({ nickname: g.nickname });
+
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+
+      const { rows } = await pool.query(`SELECT estado FROM usuario WHERE id = $1`, [g.id]);
+      expect(rows[0].estado).toBe('inactivo');
+    });
+
+    it('rechaza con nickname incorrecto (401)', async () => {
+      const g = await createGoogleOnlyUser();
+
+      const res = await request(app)
+        .post('/api/users/me/deactivate')
+        .set('Cookie', g.cookie)
+        .send({ nickname: 'otro_distinto' });
+
+      expect(res.status).toBe(401);
+      expect(res.body.ok).toBe(false);
+    });
+
+    it('rechaza si no se envía confirmación (400)', async () => {
+      const g = await createGoogleOnlyUser();
+
+      const res = await request(app)
+        .post('/api/users/me/deactivate')
+        .set('Cookie', g.cookie)
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body.ok).toBe(false);
+    });
+  });
+
+  // Una cuenta con contraseña NO se da de baja solo con el nickname: sigue
+  // exigiendo la contraseña (el nickname no alcanza).
+  it('cuenta con contraseña: el nickname solo no la da de baja (400)', async () => {
+    const { cookie, user } = await registerAndLogin();
+
+    const res = await request(app)
+      .post('/api/users/me/deactivate')
+      .set('Cookie', cookie)
+      .send({ nickname: user.nickname });
+
+    expect(res.status).toBe(400);
+    expect(res.body.ok).toBe(false);
   });
 
   it('rechaza requests autenticadas con sesión previa después de desactivar', async () => {

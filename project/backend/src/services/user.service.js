@@ -31,7 +31,7 @@ import {
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById,
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
   isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, updateBannerById,
-  deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getPasswordHashById, getAccountAuthById,
+  deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getAccountAuthById,
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy,
   getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
@@ -507,7 +507,12 @@ const showMeService = async (nickname) => {
     fecha_creacion: user.fecha_creacion,
     privado: user.privado,
     me_gusta_privado: user.me_gusta_privado,
-    nickname_confirmado: user.nickname_confirmado
+    nickname_confirmado: user.nickname_confirmado,
+    auth_provider: user.auth_provider,
+    // Si la cuenta no tiene contraseña (típicamente Google sin password), la
+    // confirmación para eliminar la cuenta se hace re-tipeando el nickname en
+    // vez de la contraseña. El front usa este flag para mostrar el campo correcto.
+    tiene_password: user.tiene_password
   };
 
   return { user: safeUser, categories, followers, following };
@@ -980,25 +985,42 @@ const resetPasswordService = async (token, newPassword) => {
   }
 };
 
-const deactivateAccountService = async (userId, password) => {
-  if (!password) {
-    const err = new Error('Falta la contraseña');
-    err.code = 'BAD_REQUEST';
-    throw err;
-  }
-
-  const hash = await getPasswordHashById(userId);
-  if (!hash) {
+const deactivateAccountService = async (userId, { password, nickname } = {}) => {
+  const account = await getAccountAuthById(userId);
+  if (!account) {
     const err = new Error('Usuario no encontrado');
     err.code = 'NOT_FOUND';
     throw err;
   }
 
-  const isValid = await bcrypt.compare(password, hash);
-  if (!isValid) {
-    const err = new Error('La contraseña no es correcta');
-    err.code = 'INVALID_CREDENTIALS';
-    throw err;
+  if (account.password_hash) {
+    // Cuenta con contraseña (local, o Google que ya le agregó una): se confirma
+    // con la contraseña actual, como siempre.
+    if (!password) {
+      const err = new Error('Falta la contraseña');
+      err.code = 'BAD_REQUEST';
+      throw err;
+    }
+    const isValid = await bcrypt.compare(password, account.password_hash);
+    if (!isValid) {
+      const err = new Error('La contraseña no es correcta');
+      err.code = 'INVALID_CREDENTIALS';
+      throw err;
+    }
+  } else {
+    // Cuenta sin contraseña (típicamente Google): no hay password que pedir, así
+    // que la confirmación es re-tipear el nickname exacto. Antes esto era
+    // imposible (siempre pedía contraseña) y bloqueaba la baja de esas cuentas.
+    if (!nickname || !nickname.trim()) {
+      const err = new Error('Falta el nickname de confirmación');
+      err.code = 'BAD_REQUEST';
+      throw err;
+    }
+    if (nickname.trim().toLowerCase() !== account.nickname.toLowerCase()) {
+      const err = new Error('El nickname no coincide');
+      err.code = 'INVALID_CREDENTIALS';
+      throw err;
+    }
   }
 
   // Borrar avatar y banner de Cloudinary

@@ -95,7 +95,8 @@ const getUsers = async () => {
 
 const getUserByNickname = async (nickname) => {
   const q = `
-    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado, me_gusta_privado, nickname_confirmado
+    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado, me_gusta_privado, nickname_confirmado,
+           auth_provider, (password_hash IS NOT NULL) AS tiene_password
     FROM usuario
     WHERE LOWER(nickname) = LOWER($1)
     LIMIT 1
@@ -435,7 +436,7 @@ const getPasswordHashById = async (id) => {
 // mensajes de error precisos y para detectar el primer alta de contraseña.
 const getAccountAuthById = async (id) => {
   const q = `
-    SELECT id, email, auth_provider, password_hash
+    SELECT id, nickname, email, auth_provider, password_hash
     FROM usuario
     WHERE id = $1
     LIMIT 1
