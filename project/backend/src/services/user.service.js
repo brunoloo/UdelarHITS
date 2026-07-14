@@ -984,9 +984,9 @@ const resetPasswordService = async (token, newPassword) => {
             <h2 style="font-size: 20px; margin-bottom: 16px;">Se agregó una contraseña a tu cuenta</h2>
             <p style="font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 16px;">
               Tu cuenta de UdelarHITS ingresaba con Google y ahora también tiene una
-              contraseña propia, configurada recién mediante el flujo de recuperación.
-              A partir de ahora podés iniciar sesión con tu email y esta contraseña,
-              además de con Google.
+              contraseña propia, configurada mediante el flujo de recuperación.
+              A partir de ahora podés iniciar sesión con tu email y contraseña,
+              además de Google.
             </p>
             <p style="font-size: 15px; color: #b91c1c; line-height: 1.6; margin-bottom: 8px; font-weight: 600;">
               Si no fuiste vos, contactanos de inmediato.
