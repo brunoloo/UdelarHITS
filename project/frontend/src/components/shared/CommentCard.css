@@ -41,6 +41,8 @@
 }
 
 .comment-body {
+  overflow-wrap: break-word;
+  min-width: 0;
   flex: 1;
   min-width: 0;
 }

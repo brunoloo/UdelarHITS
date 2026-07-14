@@ -74,12 +74,14 @@
 }
 
 .hero-title {
+  overflow-wrap: break-word;
   font-size: 22px;
   font-weight: 700;
   margin-bottom: 6px;
 }
 
 .hero-desc {
+  overflow-wrap: break-word;
   font-size: 14px;
   opacity: 0.85;
   line-height: 1.5;

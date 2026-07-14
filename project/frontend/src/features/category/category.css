@@ -74,6 +74,7 @@
   min-width: 0;
 }
 .cat-title {
+  overflow-wrap: break-word;
   font-family: 'DM Sans', sans-serif;
   font-size: 22px;
   font-weight: 700;

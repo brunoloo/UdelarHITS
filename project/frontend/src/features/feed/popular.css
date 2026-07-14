@@ -61,6 +61,8 @@
 }
 
 .popular-card-title {
+  overflow-wrap: break-word;
+  min-width: 0;
   font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
@@ -73,6 +75,7 @@
 }
 
 .popular-desc {
+  overflow-wrap: break-word;
   font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.5;

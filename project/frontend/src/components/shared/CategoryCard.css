@@ -75,6 +75,7 @@
 }
 
 .category-title {
+  overflow-wrap: break-word;
   flex: 1;
   min-width: 0;
   font-size: 16px;
@@ -91,6 +92,7 @@
 }
 
 .category-description {
+  overflow-wrap: break-word;
   font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.5;

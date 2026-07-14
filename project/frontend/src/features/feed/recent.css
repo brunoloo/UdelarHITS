@@ -105,6 +105,7 @@
 }
 
 .recent-cat-title {
+  overflow-wrap: break-word;
   font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
@@ -112,6 +113,7 @@
 }
 
 .recent-cat-desc {
+  overflow-wrap: break-word;
   font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.5;
