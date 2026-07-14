@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useSiteSearch } from '../../hooks/useSiteSearch'
 import { SearchDropdown } from './SearchDropdown'
 
@@ -10,8 +10,18 @@ import { SearchDropdown } from './SearchDropdown'
 export function MobileSearch() {
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
   const inputRef = useRef(null)
-  const { query, setQuery, results, setResults, categories, reset } = useSiteSearch()
+  const { query, setQuery, setQueryFromFilter, results, setResults, categories, reset } = useSiteSearch()
+
+  // Al abrir el overlay, si el Home está filtrado por una etiqueta (?q=),
+  // precargamos su nombre en el input para que se vea qué filtro está activo
+  // (mismo indicador que la barra de desktop).
+  function openSearch() {
+    const q = new URLSearchParams(location.search).get('q')
+    if (location.pathname === '/' && q) setQueryFromFilter(q)
+    setOpen(true)
+  }
 
   function close() {
     setOpen(false)
@@ -35,7 +45,7 @@ export function MobileSearch() {
         className="mobile-search-btn"
         type="button"
         aria-label="Buscar"
-        onClick={() => setOpen(true)}
+        onClick={openSearch}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <circle cx="11" cy="11" r="8" />

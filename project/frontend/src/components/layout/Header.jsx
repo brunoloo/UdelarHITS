@@ -16,13 +16,21 @@ export function Header() {
   const menuRef = useRef(null)
 
   // Búsqueda de desktop: misma lógica que el overlay de mobile (hook compartido).
-  const { query, setQuery, results, setResults, categories } = useSiteSearch()
+  const { query, setQuery, setQueryFromFilter, results, setResults, categories, reset } = useSiteSearch()
   const searchRef = useRef(null)
 
+  // La barra de búsqueda refleja la etiqueta activa del Home (?q=): así el
+  // usuario ve escrito el nombre del filtro (desde una etiqueta, la sidebar,
+  // explorar o la propia búsqueda) y sabe que está viendo el Home filtrado.
+  // En cualquier otra página o sin filtro, la barra queda vacía.
   useEffect(() => {
-    setQuery('')
-    setResults(null)
-  }, [location, setQuery, setResults])
+    const q = new URLSearchParams(location.search).get('q')
+    if (location.pathname === '/' && q) {
+      setQueryFromFilter(q)
+    } else {
+      reset()
+    }
+  }, [location, setQueryFromFilter, reset])
 
   // Cerrar menú de usuario al click afuera
   useEffect(() => {

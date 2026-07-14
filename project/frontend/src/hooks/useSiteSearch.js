@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '../api/client'
 import { normSearch as norm } from '../utils/parseEtiquetas'
@@ -8,8 +8,13 @@ import { normSearch as norm } from '../utils/parseEtiquetas'
 // barra de desktop como en el overlay de búsqueda de mobile — misma query,
 // mismos endpoints, mismo comportamiento.
 export function useSiteSearch() {
-  const [query, setQuery] = useState('')
+  const [query, setQueryState] = useState('')
   const [results, setResults] = useState(null)
+
+  // Cuando el input refleja la etiqueta activa del Home (?q=), no queremos abrir
+  // el dropdown de sugerencias: solo mostrar el nombre del filtro. Este ref
+  // marca ese modo y se apaga en cuanto el usuario vuelve a escribir.
+  const filterModeRef = useRef(false)
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories', 'active'],
@@ -26,10 +31,22 @@ export function useSiteSearch() {
     [allTagsGrouped]
   )
 
+  // setQuery para input del usuario: reactiva la búsqueda en vivo.
+  const setQuery = useCallback(value => {
+    filterModeRef.current = false
+    setQueryState(value)
+  }, [])
+
+  // Refleja la etiqueta activa del filtro sin disparar el dropdown.
+  const setQueryFromFilter = useCallback(value => {
+    filterModeRef.current = true
+    setQueryState(value)
+  }, [])
+
   // Categorías/etiquetas al instante; usuarios con debounce de 250ms.
   useEffect(() => {
     const q = query.trim()
-    if (!q) {
+    if (!q || filterModeRef.current) {
       setResults(null)
       return
     }
@@ -53,10 +70,11 @@ export function useSiteSearch() {
     return () => clearTimeout(timer)
   }, [query, categories, allTags])
 
-  function reset() {
-    setQuery('')
+  const reset = useCallback(() => {
+    filterModeRef.current = false
+    setQueryState('')
     setResults(null)
-  }
+  }, [])
 
-  return { query, setQuery, results, setResults, categories, reset }
+  return { query, setQuery, setQueryFromFilter, results, setResults, categories, reset }
 }
