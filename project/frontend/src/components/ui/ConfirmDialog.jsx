@@ -9,9 +9,17 @@ export function ConfirmDialog({
   message,
   confirmText = 'Confirmar',
   danger = false,
+  // Cuando el confirm se abre desde otro modal (p. ej. la lista de seguidores),
+  // eleva su backdrop para que quede por encima y no debajo de ese modal.
+  elevated = false,
 }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      backdropClassName={elevated ? 'modal-backdrop--elevated' : ''}
+    >
       <div className="confirm-body">
         {message && <p className="confirm-message">{message}</p>}
         <div className="confirm-actions">

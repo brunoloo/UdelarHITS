@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import './Modal.css'
 
-export function Modal({ isOpen, onClose, title, children, headerAction, className = '', closeOnBackdrop = true }) {
+export function Modal({ isOpen, onClose, title, children, headerAction, className = '', backdropClassName = '', closeOnBackdrop = true }) {
   useEffect(() => {
     if (!isOpen) return
     function handleKey(e) {
@@ -17,7 +17,7 @@ export function Modal({ isOpen, onClose, title, children, headerAction, classNam
   // de guardados/notificaciones, que usa translateX para deslizarse).
   return createPortal(
     <div
-      className={`modal-backdrop${isOpen ? ' open' : ''}`}
+      className={`modal-backdrop${isOpen ? ' open' : ''}${backdropClassName ? ' ' + backdropClassName : ''}`}
       onClick={closeOnBackdrop ? onClose : undefined}
     >
       <div className={`modal${className ? ' ' + className : ''}`} onClick={e => e.stopPropagation()}>

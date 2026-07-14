@@ -148,6 +148,7 @@ function FollowItem({ user: u, myFollowing, onClose, onFollowChange, canRemove }
           message={`¿Seguro que querés remover a @${u.nickname} de tus seguidores?`}
           confirmText="Remover"
           danger
+          elevated
         />
       )}
     </div>

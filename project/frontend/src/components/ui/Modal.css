@@ -17,6 +17,12 @@
   animation: modal-fade 0.15s ease;
 }
 
+/* Backdrop elevado: para modales que se abren encima de otro modal (p. ej. una
+   confirmación disparada desde la lista de seguidores), así queda por encima. */
+.modal-backdrop--elevated {
+  z-index: 200;
+}
+
 /* ── MODAL CARD ── */
 .modal {
   background: var(--surface);
