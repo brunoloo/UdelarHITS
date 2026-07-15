@@ -20,6 +20,36 @@ const wrapCloudinaryError = (error) => {
   return error;
 };
 
+const AVATARS_FOLDER = 'udelarhits/avatars';
+
+// Tamaños que pide el frontend para los avatares (ver avatarThumbnail /
+// AVATAR_BUCKETS en frontend/src/utils/cloudinaryUrl.js): 96 cubre TODOS los
+// avatares chicos (chat, listas, header, comentarios); 192, el del perfil.
+// Mantener en sync con esos buckets.
+const AVATAR_PREWARM_SIZES = [96, 192];
+
+// Pre-genera ("pre-warm") las miniaturas de un avatar recién subido para que
+// Cloudinary las tenga listas en su CDN antes de que alguien las pida. Esa
+// primera derivación on-the-fly es lo que hacía que la foto tardara o no
+// cargara en el chat. Best-effort: fire-and-forget, nunca bloquea ni rompe la
+// subida (el avatar ya quedó guardado). Solo avatares.
+const prewarmAvatarThumbnails = (secureUrl) => {
+  if (process.env.NODE_ENV === 'test') return;
+  if (typeof fetch !== 'function' || !secureUrl?.includes('/upload/')) return;
+  for (const px of AVATAR_PREWARM_SIZES) {
+    const thumbUrl = secureUrl.replace(
+      '/upload/',
+      `/upload/c_fill,w_${px},h_${px},f_auto,q_auto/`
+    );
+    // Con f_auto, Cloudinary genera un derivado DISTINTO por formato según el
+    // Accept del cliente. Sin este header pre-generaríamos una variante (JP/PNG)
+    // que el navegador no pide, y la de AVIF/WebP se generaría igual on-the-fly.
+    // Avisamos los formatos modernos para pre-generar justo esa variante.
+    fetch(thumbUrl, { headers: { Accept: 'image/avif,image/webp,image/*,*/*' } })
+      .catch(() => {});
+  }
+};
+
 export const uploadToCloudinary = async (buffer, folder, publicId) => {
   if (process.env.NODE_ENV === 'test') {
     return 'https://res.cloudinary.com/test/image/upload/fake.jpg';
@@ -34,7 +64,12 @@ export const uploadToCloudinary = async (buffer, folder, publicId) => {
       },
       (error, result) => {
         if (error) reject(wrapCloudinaryError(error));
-        else resolve(result.secure_url);
+        else {
+          // Solo avatares (misma función sube banners): los banners se muestran
+          // una vez, en el perfil, y no usan thumbnail cuadrado.
+          if (folder === AVATARS_FOLDER) prewarmAvatarThumbnails(result.secure_url);
+          resolve(result.secure_url);
+        }
       }
     );
     stream.end(buffer);
