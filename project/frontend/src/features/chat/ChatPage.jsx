@@ -51,6 +51,12 @@ export function ChatPage() {
 
   useEffect(() => { fetchConversations() }, [fetchConversations])
 
+  // Ref con la lista vigente: el efecto de apertura la lee para sembrar
+  // otherUser al instante SIN depender de `conversations` (si dependiera,
+  // cada refresh de la lista re-dispararía la apertura de la conversación).
+  const conversationsRef = useRef(conversations)
+  useEffect(() => { conversationsRef.current = conversations }, [conversations])
+
   useEffect(() => {
     if (!nickname) {
       setActiveConv(null)
@@ -60,15 +66,25 @@ export function ChatPage() {
       return
     }
     let cancelled = false
-    setConvError(null);
+    setConvError(null)
+    // Pintado inmediato del header: la lista de conversaciones ya trae avatar
+    // y nickname del otro usuario — no hay que esperar a la red para verlos.
+    const known = conversationsRef.current.find(c => c.otro_nickname === nickname)
+    setOtherUser(known
+      ? { id: known.otro_id, nickname: known.otro_nickname, url_imagen: known.otro_url_imagen }
+      : null)
+    setLoadingMsgs(true);
     (async () => {
       try {
+        // La respuesta incluye la primera página de mensajes: abrir un chat
+        // era una cascada de dos requests (conversación → mensajes).
         const res = await apiGet(`/chat/conversations/${encodeURIComponent(nickname)}`)
         if (cancelled) return
         setActiveConv(res.data.conversacion_id)
         setOtherUser(res.data.usuario)
-        setMessages([])
-        setHasMore(true)
+        const msgs = res.data.mensajes || []
+        setMessages(msgs)
+        setHasMore(msgs.length >= 50)
       } catch (err) {
         if (cancelled) return
         console.error('Error al cargar conversación:', err)
@@ -80,26 +96,10 @@ export function ChatPage() {
           setConvError(err.message || 'No se pudo cargar la conversación')
         }
       }
-    })()
-    return () => { cancelled = true }
-  }, [nickname, navigate])
-
-  useEffect(() => {
-    if (!activeConv) return
-    let cancelled = false;
-    (async () => {
-      setLoadingMsgs(true)
-      try {
-        const res = await apiGet(`/chat/conversations/${activeConv}/messages`)
-        if (!cancelled) {
-          setMessages(res.data)
-          setHasMore(res.data.length >= 50)
-        }
-      } catch {}
       if (!cancelled) setLoadingMsgs(false)
     })()
     return () => { cancelled = true }
-  }, [activeConv])
+  }, [nickname, navigate])
 
   useEffect(() => {
     if (!activeConv) return

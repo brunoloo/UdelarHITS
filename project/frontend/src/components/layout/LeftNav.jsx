@@ -84,9 +84,11 @@ export function LeftNav() {
 
   useEffect(() => {
     if (!user) return
-    apiGet('/chat/conversations').then(res => {
-      const total = (res.data || []).reduce((sum, c) => sum + (c.no_leidos || 0), 0)
-      setChatUnread(total)
+    // Endpoint liviano: solo el total — antes se cargaba la lista completa de
+    // conversaciones (con último mensaje y unread POR conversación) para
+    // reducirla a un número.
+    apiGet('/chat/unread-count').then(res => {
+      setChatUnread(res.data?.total ?? 0)
     }).catch(() => {})
   }, [user])
 

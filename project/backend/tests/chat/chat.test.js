@@ -191,5 +191,100 @@ describe('conversations list', () => {
     const found = res.body.data.find(c => c.otro_nickname === bob.user.nickname);
     expect(found).toBeDefined();
     expect(found.ultimo_mensaje).toBe('Hola Bob!');
+    // La lista trae los datos del otro usuario (el front pinta avatar/nombre
+    // sin requests extra por conversación).
+    expect(found).toHaveProperty('otro_url_imagen');
+    expect(found).toHaveProperty('otro_id');
+  });
+});
+
+// Abrir una conversación devuelve también la primera página de mensajes:
+// el front ya no encadena un segundo request para pedirlos.
+describe('mensajes incluidos al abrir la conversación', () => {
+  test('devuelve los últimos mensajes junto con la conversación', async () => {
+    const conv = await request(app)
+      .get(`/api/chat/conversations/${bob.user.nickname}`)
+      .set('Cookie', alice.cookie);
+    const convId = conv.body.data.conversacion_id;
+    expect(conv.body.data.mensajes).toEqual([]);
+
+    await request(app)
+      .post(`/api/chat/conversations/${convId}/messages`)
+      .set('Cookie', alice.cookie)
+      .send({ cuerpo: 'Hola de nuevo' });
+
+    const reopened = await request(app)
+      .get(`/api/chat/conversations/${bob.user.nickname}`)
+      .set('Cookie', alice.cookie);
+    expect(reopened.body.data.conversacion_id).toBe(convId);
+    expect(reopened.body.data.mensajes).toHaveLength(1);
+    expect(reopened.body.data.mensajes[0].cuerpo).toBe('Hola de nuevo');
+  });
+});
+
+describe('GET /api/chat/unread-count', () => {
+  test('requiere autenticación', async () => {
+    const res = await request(app).get('/api/chat/unread-count');
+    expect(res.status).toBe(401);
+  });
+
+  test('cuenta solo mensajes ajenos no leídos y se limpia al marcar leído', async () => {
+    const conv = await request(app)
+      .get(`/api/chat/conversations/${bob.user.nickname}`)
+      .set('Cookie', alice.cookie);
+    const convId = conv.body.data.conversacion_id;
+
+    // Mensaje propio: no suma para alice.
+    await request(app)
+      .post(`/api/chat/conversations/${convId}/messages`)
+      .set('Cookie', alice.cookie)
+      .send({ cuerpo: 'mío' });
+
+    // Dos de bob: suman 2 para alice.
+    await request(app)
+      .post(`/api/chat/conversations/${convId}/messages`)
+      .set('Cookie', bob.cookie)
+      .send({ cuerpo: 'de bob 1' });
+    await request(app)
+      .post(`/api/chat/conversations/${convId}/messages`)
+      .set('Cookie', bob.cookie)
+      .send({ cuerpo: 'de bob 2' });
+
+    const before = await request(app)
+      .get('/api/chat/unread-count')
+      .set('Cookie', alice.cookie);
+    expect(before.status).toBe(200);
+    expect(before.body.data.total).toBe(2);
+
+    await request(app)
+      .patch(`/api/chat/conversations/${convId}/read`)
+      .set('Cookie', alice.cookie);
+
+    const after = await request(app)
+      .get('/api/chat/unread-count')
+      .set('Cookie', alice.cookie);
+    expect(after.body.data.total).toBe(0);
+  });
+
+  test('los mensajes anteriores al borrado propio de la conversación no cuentan', async () => {
+    const conv = await request(app)
+      .get(`/api/chat/conversations/${bob.user.nickname}`)
+      .set('Cookie', alice.cookie);
+    const convId = conv.body.data.conversacion_id;
+
+    await request(app)
+      .post(`/api/chat/conversations/${convId}/messages`)
+      .set('Cookie', bob.cookie)
+      .send({ cuerpo: 'antes del borrado' });
+
+    // Alice borra (soft) la conversación: lo anterior deja de ser visible para ella.
+    await request(app)
+      .delete(`/api/chat/conversations/${convId}`)
+      .set('Cookie', alice.cookie);
+
+    const res = await request(app)
+      .get('/api/chat/unread-count')
+      .set('Cookie', alice.cookie);
+    expect(res.body.data.total).toBe(0);
   });
 });

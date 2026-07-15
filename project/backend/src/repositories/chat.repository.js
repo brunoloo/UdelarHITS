@@ -140,6 +140,40 @@ export const userBelongsToConversation = async (convId, userId) => {
   return rows.length > 0;
 };
 
+// Lectura fusionada de la conversación desde el punto de vista de un usuario:
+// valida pertenencia y devuelve en UNA query lo que los handlers resolvían en
+// dos o tres viajes (userBelongsToConversation + getVisibleSince +
+// getOtherUserId). null => el usuario no pertenece (403).
+export const getConversationForUser = async (convId, userId) => {
+  const { rows } = await pool.query(
+    `SELECT id,
+       CASE WHEN usuario1_id = $2 THEN usuario2_id ELSE usuario1_id END AS otro_id,
+       CASE WHEN usuario1_id = $2 THEN borrado_por_usuario1_at ELSE borrado_por_usuario2_at END AS visible_since
+     FROM conversacion
+     WHERE id = $1 AND (usuario1_id = $2 OR usuario2_id = $2)`,
+    [convId, userId]
+  );
+  return rows[0] || null;
+};
+
+// Total de mensajes no leídos del usuario en TODAS sus conversaciones (badge
+// del nav). Respeta el soft-delete: los mensajes anteriores al borrado propio
+// no cuentan. Usa el índice parcial idx_mensaje_no_leido (leido = FALSE).
+export const getUnreadTotal = async (userId) => {
+  const { rows } = await pool.query(
+    `SELECT COUNT(*)::int AS total
+     FROM mensaje m
+     JOIN conversacion c ON c.id = m.conversacion_id
+     WHERE (c.usuario1_id = $1 OR c.usuario2_id = $1)
+       AND m.autor_id <> $1 AND m.leido = FALSE
+       AND m.fecha_creacion > COALESCE(
+         CASE WHEN c.usuario1_id = $1 THEN c.borrado_por_usuario1_at ELSE c.borrado_por_usuario2_at END,
+         '1970-01-01'::timestamptz)`,
+    [userId]
+  );
+  return rows[0].total;
+};
+
 export const getOtherUserId = async (convId, userId) => {
   const { rows } = await pool.query(
     `SELECT CASE WHEN usuario1_id = $2 THEN usuario2_id ELSE usuario1_id END AS otro_id
