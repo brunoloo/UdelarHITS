@@ -55,6 +55,23 @@ export const deleteFromCloudinary = async (folder, publicId) => {
   }
 };
 
+// Mueve/renombra un asset de imagen ya subido a otro public_id, SIN re-subir el
+// buffer. Se usa al aprobar un avatar/banner que estaba en revisión: pasa de la
+// carpeta de pendientes a la canónica (avatars/banners), así el borrado
+// posterior (deleteFromCloudinary con el id canónico) lo encuentra y no quedan
+// archivos huérfanos ocupando espacio. Devuelve la nueva secure_url.
+export const renameCloudinaryImage = async (fromPublicId, toPublicId) => {
+  if (process.env.NODE_ENV === 'test') {
+    return `https://res.cloudinary.com/test/image/upload/${toPublicId}.jpg`;
+  }
+  const result = await cloudinary.uploader.rename(fromPublicId, toPublicId, {
+    overwrite: true,
+    invalidate: true,
+    resource_type: 'image',
+  });
+  return result.secure_url;
+};
+
 // Inserta la optimización de entrega (f_auto,q_auto) en la URL de una imagen, así
 // Cloudinary sirve el mejor formato/calidad sin tocar parámetros de subida (que es
 // lo que rompía el upload de imágenes, p. ej. .webp → 500).

@@ -1,4 +1,4 @@
-import { deleteAttachmentFromCloudinary } from '../utils/uploadToCloudinary.js';
+import { deleteAttachmentFromCloudinary, renameCloudinaryImage } from '../utils/uploadToCloudinary.js';
 import { createNotification } from '../repositories/notification.repository.js';
 import {
   listPendingAdjuntos, listPendingImagenes,
@@ -95,8 +95,28 @@ const approvePendingImageService = async (id, origen) => {
     await notifyImageModeration(row.autor_id, IMAGE_MODERATION_MSG.approved, row.contenido_id);
     return { action: 'adjunto_aprobado' };
   }
-  // avatar | banner: promover la imagen a la columna de `usuario` y borrar la fila.
-  const promoted = await promotePendingImagen(id);
+  // avatar | banner: mover el asset de la carpeta de pendientes a la CANÓNICA
+  // (avatars/banners) y recién ahí escribir la columna de `usuario`. Así la
+  // foto aprobada queda en su carpeta definitiva y el borrado posterior
+  // (deleteAvatar/Banner, que apunta al id canónico) la encuentra — sin
+  // huérfanos en Cloudinary.
+  const pend = await getPendingImagen(id);
+  if (!pend) throw notFound('Imagen pendiente no encontrada');
+
+  const canonicalId = pend.tipo === 'avatar'
+    ? `udelarhits/avatars/avatar_${pend.usuario_id}`
+    : `udelarhits/banners/banner_${pend.usuario_id}`;
+
+  let finalUrl = null;
+  try {
+    finalUrl = await renameCloudinaryImage(pend.public_id, canonicalId);
+  } catch (err) {
+    // Si el rename falla, no bloqueamos la aprobación: la imagen se aprueba con
+    // la URL pendiente (queda en la carpeta de pendientes, pero visible).
+    console.error(`[cloudinary] no se pudo mover ${pend.public_id} → ${canonicalId}: ${err.message}`);
+  }
+
+  const promoted = await promotePendingImagen(id, finalUrl);
   if (!promoted) throw notFound('Imagen pendiente no encontrada');
   await notifyImageModeration(promoted.usuario_id, IMAGE_MODERATION_MSG.approved, null);
   return { action: `${origen}_aprobado` };

@@ -89,7 +89,9 @@ const markAdjuntoRejected = async (id) => {
 // --- Mutaciones sobre imagen_pendiente (avatar/banner) --------------------
 
 // Aprueba: escribe la columna en `usuario` y borra la fila pendiente, atómico.
-const promotePendingImagen = async (id) => {
+// `finalUrl` es la URL canónica (ya movida en Cloudinary por el service); si no
+// se pasa, cae a la URL pendiente guardada en la fila.
+const promotePendingImagen = async (id, finalUrl = null) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -102,10 +104,11 @@ const promotePendingImagen = async (id) => {
       return null;
     }
     const col = row.tipo === 'avatar' ? 'url_imagen' : 'url_banner';
-    await client.query(`UPDATE usuario SET ${col} = $1 WHERE id = $2`, [row.url, row.usuario_id]);
+    const url = finalUrl || row.url;
+    await client.query(`UPDATE usuario SET ${col} = $1 WHERE id = $2`, [url, row.usuario_id]);
     await client.query(`DELETE FROM imagen_pendiente WHERE id = $1`, [id]);
     await client.query('COMMIT');
-    return row;
+    return { ...row, url };
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;

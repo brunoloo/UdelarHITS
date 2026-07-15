@@ -140,6 +140,34 @@ describe('Moderación de avatar', () => {
     // El usuario recibe la notificación de "en revisión".
     expect(await hasNotif(u.user.id, /revisión/i)).toBe(true);
   });
+
+  test('aprobar avatar → mueve el asset a la carpeta canónica avatars, borra la fila pendiente y notifica', async () => {
+    checkImageSafety.mockResolvedValue(LIKELY);
+    const u = await registerAndLogin();
+    await request(app).patch('/api/users/me/avatar').set('Cookie', u.cookie).attach('avatar', PNG, 'foto.png');
+    checkImageSafety.mockResolvedValue({ safe: true });
+
+    const { rows: pendRows } = await pool.query('SELECT id FROM imagen_pendiente WHERE usuario_id = $1', [u.user.id]);
+    const pendId = pendRows[0].id;
+
+    const admin = await createAdmin();
+    const res = await request(app)
+      .patch(`/api/admin/pending-images/${pendId}/approve`)
+      .set('Cookie', admin.cookie)
+      .send({ origen: 'avatar' });
+    expect(res.status).toBe(200);
+
+    // url_imagen quedó en la carpeta canónica (no en pending): así el borrado
+    // posterior la encuentra y no queda huérfana en Cloudinary.
+    const { rows: userRows } = await pool.query('SELECT url_imagen FROM usuario WHERE id = $1', [u.user.id]);
+    expect(userRows[0].url_imagen).toMatch(/avatars\/avatar_/);
+    expect(userRows[0].url_imagen).not.toMatch(/pending/);
+
+    // La fila pendiente se borró y el autor recibió la notificación de aprobación.
+    const { rows: gone } = await pool.query('SELECT id FROM imagen_pendiente WHERE id = $1', [pendId]);
+    expect(gone).toHaveLength(0);
+    expect(await hasNotif(u.user.id, /aprobada/i)).toBe(true);
+  });
 });
 
 describe('Auto-descarte a las 48h', () => {

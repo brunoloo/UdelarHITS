@@ -72,7 +72,7 @@ function NotifTypeIcon({ tipo }) {
 }
 
 export function LeftNav() {
-  const { user } = useAuth()
+  const { user, setUser } = useAuth()
   const { showToast } = useToast()
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -113,6 +113,14 @@ export function LeftNav() {
       if (notif.tipo === 'solicitud_aceptada') {
         queryClient.invalidateQueries({ queryKey: ['user'] })
       }
+      // Si aprobaron/rechazaron una imagen de perfil, la columna url_imagen/
+      // url_banner pudo cambiar. Refrescamos el usuario de AuthContext para que
+      // el header muestre la foto nueva sin esperar a un F5, e invalidamos el
+      // perfil propio (['me']) por si está abierto.
+      if (notif.tipo === 'moderacion_imagen') {
+        apiGet('/users/me').then(res => setUser(res.data.user)).catch(() => {})
+        queryClient.invalidateQueries({ queryKey: ['me'] })
+      }
     }
     function handleDeletedNotif({ ids }) {
       queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] })
@@ -129,7 +137,7 @@ export function LeftNav() {
       socket.off('notificacion:eliminada', handleDeletedNotif)
       socket.off('seguimiento:actualizado', handleFollowUpdate)
     }
-  }, [socket, queryClient])
+  }, [socket, queryClient, setUser])
 
   // Solo un panel abierto a la vez: 'notif' | 'saved' | null.
   const [activePanel, setActivePanel] = useState(null)

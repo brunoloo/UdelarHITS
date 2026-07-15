@@ -12,6 +12,7 @@ jest.unstable_mockModule('../../src/utils/uploadToCloudinary.js', () => ({
     public_id: `udelarhits/adjuntos/fake_${Math.random().toString(36).slice(2)}`,
   })),
   deleteAttachmentFromCloudinary: jest.fn(async () => ({ result: 'ok' })),
+  renameCloudinaryImage: jest.fn(async (from, to) => `https://fake.cloudinary/${to}.png`),
 }));
 
 const pool = (await import('../../src/config/db.js')).default;

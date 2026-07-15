@@ -18,6 +18,7 @@ jest.unstable_mockModule('../../src/utils/uploadToCloudinary.js', () => ({
   uploadAttachment: jest.fn(async () => { throw quotaError(); }),
   deleteAttachmentFromCloudinary: jest.fn(async () => ({ result: 'ok' })),
   isCloudinaryQuotaError: jest.fn(),
+  renameCloudinaryImage: jest.fn(async (from, to) => `https://fake.cloudinary/${to}.png`),
 }));
 
 const { uploadAttachment } = await import('../../src/utils/uploadToCloudinary.js');
