@@ -66,6 +66,14 @@
   z-index: 2;
 }
 
+/* El menú de 3 puntos crea su propio contexto de apilamiento (position + z-index),
+   así que el desplegable quedaba atrapado por debajo del menú de la card de abajo.
+   Mientras está abierto, elevamos toda la card por encima de sus vecinas para que
+   el panel se dibuje arriba del todo. */
+.comment-card:has(.comment-dropdown) {
+  z-index: 20;
+}
+
 .comment-head {
   display: flex;
   align-items: center;
