@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { avatarThumbnail } from '../../utils/cloudinaryUrl'
 import './UserAvatar.css'
 
 function getInitials(nickname) {
@@ -16,6 +17,14 @@ function hashColor(str) {
   return `hsl(${h}, 55%, 42%)`
 }
 
+// px de cada tamaño nombrado (en sync con UserAvatar.css)
+const SIZE_PX = { sm: 28, md: 36, lg: 48, xl: 80 }
+
+// Avatar con crossfade: el fallback (inicial + color) queda SIEMPRE como capa
+// base y la imagen se superpone con opacity 0 hasta que su onLoad dispara.
+// Así nunca hay flash inicial→foto ni hueco si la imagen falla o tarda.
+// `lazy` difiere la descarga (para listas largas); los avatares above-the-fold
+// (header, chat, sidebars) se dejan eager, que es el default.
 export function UserAvatar({
   url_imagen,
   nickname,
@@ -24,8 +33,18 @@ export function UserAvatar({
   className = '',
   style,
   onClick,
+  lazy = false,
 }) {
+  const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
+
+  // Reset al cambiar la URL: sin esto, al navegar de un perfil a otro la foto
+  // del usuario anterior quedaría marcada como "cargada" y se vería un frame
+  // de la imagen vieja mientras baja la nueva.
+  useEffect(() => {
+    setLoaded(false)
+    setFailed(false)
+  }, [url_imagen])
 
   const isNumeric = typeof size === 'number'
   const sizeCls = isNumeric ? '' : `user-avatar-${size}`
@@ -34,33 +53,43 @@ export function UserAvatar({
     : null
 
   const cls = [
+    'user-avatar-box',
     sizeCls,
     inactive ? 'user-avatar-inactive' : '',
     onClick ? 'user-avatar-clickable' : '',
     className,
   ].filter(Boolean).join(' ')
 
-  if (!url_imagen || failed) {
-    return (
-      <div
-        className={`user-avatar-fallback ${cls}`}
-        aria-label={nickname}
-        onClick={onClick}
-        style={{ ...sizeStyle, background: hashColor(nickname), color: '#fff', ...style }}
-      >
-        {getInitials(nickname)}
-      </div>
-    )
-  }
+  const px = isNumeric ? size : (SIZE_PX[size] || SIZE_PX.md)
+  const showImg = !!url_imagen && !failed
 
   return (
-    <img
-      className={`user-avatar-img ${cls}`}
-      src={url_imagen}
-      alt={nickname}
+    <div
+      className={cls}
+      role="img"
+      aria-label={nickname}
       onClick={onClick}
       style={{ ...sizeStyle, ...style }}
-      onError={() => setFailed(true)}
-    />
+    >
+      <span
+        className="user-avatar-fallback"
+        aria-hidden="true"
+        style={{ background: hashColor(nickname), color: '#fff' }}
+      >
+        {getInitials(nickname)}
+      </span>
+      {showImg && (
+        <img
+          className="user-avatar-img"
+          src={avatarThumbnail(url_imagen, px * 2)}
+          alt=""
+          loading={lazy ? 'lazy' : undefined}
+          decoding="async"
+          onLoad={() => setLoaded(true)}
+          onError={() => setFailed(true)}
+          style={{ opacity: loaded ? 1 : 0 }}
+        />
+      )}
+    </div>
   )
 }

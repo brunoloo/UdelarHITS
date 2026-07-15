@@ -197,6 +197,7 @@ export function CommentCard({
             nickname={autor.nickname}
             size="md"
             inactive
+            lazy
           />
         ) : (
           <Link to={`/user/${encodeURIComponent(autor.nickname)}`} onClick={e => e.stopPropagation()}>
@@ -204,6 +205,7 @@ export function CommentCard({
               url_imagen={autor.url_imagen}
               nickname={autor.nickname}
               size="md"
+              lazy
             />
           </Link>
         )}

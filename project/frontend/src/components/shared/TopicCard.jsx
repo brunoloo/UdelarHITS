@@ -46,6 +46,7 @@ export function TopicCard({ topic, canPin = false, onTogglePin }) {
         nickname={autor.nickname}
         size="md"
         inactive={autor.isInactive}
+        lazy
       />
       <div className="topic-body">
         {topic.fijado && (

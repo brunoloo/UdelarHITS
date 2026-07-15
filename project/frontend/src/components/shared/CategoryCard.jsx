@@ -27,6 +27,7 @@ function CommentPreview({ comment }) {
           nickname={autor.nickname}
           size="md"
           inactive={autor.isInactive}
+          lazy
         />
       </div>
       <div className="comment-body">
