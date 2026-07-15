@@ -22,7 +22,10 @@
   border-radius: var(--radius);
   padding: 20px;
   margin-bottom: 10px;
-  overflow: hidden;
+  /* overflow visible (no hidden): si no, el dropdown del menú de 3 puntitos
+     queda recortado dentro de la card y la opción "Eliminar" no es clickeable.
+     No hay hijos full-bleed que necesiten recorte. Igual que en la CommentCard. */
+  overflow: visible;
 }
 .cat-header-top {
   display: flex;
