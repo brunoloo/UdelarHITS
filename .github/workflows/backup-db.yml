@@ -1,0 +1,53 @@
+name: Backup diario de base de datos
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 4:00 AM hora Uruguay (UTC-3) = 07:00 UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      PGHOST: ${{ secrets.PGHOST }}
+      PGPORT: ${{ secrets.PGPORT }}
+      PGUSER: ${{ secrets.PGUSER }}
+      PGDATABASE: ${{ secrets.PGDATABASE }}
+      PGPASSWORD: ${{ secrets.PGPASSWORD }}
+      R2_BUCKET_NAME: udelarhits-backups
+
+    steps:
+      - name: Instalar postgresql-client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Generar dump comprimido
+        run: |
+          FILENAME="udelarhits_$(date +%Y-%m-%d).sql.gz"
+          echo "FILENAME=$FILENAME" >> $GITHUB_ENV
+          pg_dump --no-owner --no-acl | gzip > "$FILENAME"
+
+      - name: Configurar AWS CLI para R2
+        run: |
+          aws configure set aws_access_key_id "${{ secrets.R2_ACCESS_KEY_ID }}"
+          aws configure set aws_secret_access_key "${{ secrets.R2_SECRET_ACCESS_KEY }}"
+          aws configure set region auto
+
+      - name: Subir backup a R2
+        run: |
+          aws s3 cp "$FILENAME" "s3://$R2_BUCKET_NAME/$FILENAME" \
+            --endpoint-url "${{ secrets.R2_ENDPOINT }}"
+
+      - name: Borrar backups con más de 30 días
+        run: |
+          CUTOFF=$(date -d "30 days ago" +%Y-%m-%d)
+          aws s3 ls "s3://$R2_BUCKET_NAME/" --endpoint-url "${{ secrets.R2_ENDPOINT }}" | \
+          while read -r line; do
+            FILE=$(echo "$line" | awk '{print $4}')
+            FILE_DATE=$(echo "$FILE" | grep -oP '\d{4}-\d{2}-\d{2}')
+            if [[ -n "$FILE_DATE" && "$FILE_DATE" < "$CUTOFF" ]]; then
+              echo "Borrando backup viejo: $FILE"
+              aws s3 rm "s3://$R2_BUCKET_NAME/$FILE" --endpoint-url "${{ secrets.R2_ENDPOINT }}"
+            fi
+          done
