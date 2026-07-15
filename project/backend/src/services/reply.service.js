@@ -264,6 +264,25 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     const resultados = await Promise.allSettled(
       files.map((f) => uploadAttachment(f.buffer, f.tipo, f.originalname))
     );
+
+    // Moderación de imágenes con Vision EN PARALELO (no en serie): todas las
+    // imágenes que subieron se analizan a la vez, así N imágenes tardan lo de
+    // UNA llamada y no la suma. Solo imágenes: los documentos (PDF/DOCX,
+    // resource_type raw) se publican directo — no tiene sentido (ni es barato)
+    // analizarlos. Un fallo de Vision NUNCA bloquea: la imagen queda
+    // 'publicado' (defensa en profundidad; checkImageSafety ya maneja lo suyo).
+    const safety = await Promise.all(
+      resultados.map(async (r, i) => {
+        if (r.status !== 'fulfilled' || files[i].tipo !== 'imagen') return null;
+        try {
+          return await checkImageSafety(r.value.url);
+        } catch (err) {
+          console.error(`[vision] fallback publicando adjunto ${r.value.public_id}: ${err.message}`);
+          return null;
+        }
+      })
+    );
+
     let falloCuota = false;
     let falloOtro = false;
     let algunaEnRevision = false;
@@ -277,29 +296,17 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       const f = files[i];
       const { url, public_id } = r.value;
 
-      // Moderación de imágenes: solo las imágenes pasan por Vision SafeSearch.
-      // Los documentos (PDF/DOCX, resource_type raw) se publican directo — no
-      // tiene sentido (ni es barato) analizarlos. Si Vision marca la imagen,
-      // el adjunto entra 'pendiente_revision' (el comentario se publica igual,
-      // el front muestra el placeholder "en revisión").
+      // Si Vision marcó la imagen, el adjunto entra 'pendiente_revision' (el
+      // comentario se publica igual, el front muestra el placeholder).
       let estado = 'publicado';
       let scoreAdult = null;
       let scoreRacy = null;
-      if (f.tipo === 'imagen') {
-        try {
-          const safety = await checkImageSafety(url);
-          if (!safety.safe) {
-            estado = 'pendiente_revision';
-            scoreAdult = safety.scores?.adult ?? null;
-            scoreRacy = safety.scores?.racy ?? null;
-            algunaEnRevision = true;
-          }
-        } catch (err) {
-          // Fallback: nunca bloquear la publicación por un fallo de Vision; el
-          // adjunto queda 'publicado'. checkImageSafety ya maneja sus errores,
-          // esto es defensa en profundidad.
-          console.error(`[vision] fallback publicando adjunto ${public_id}: ${err.message}`);
-        }
+      const s = safety[i];
+      if (s && !s.safe) {
+        estado = 'pendiente_revision';
+        scoreAdult = s.scores?.adult ?? null;
+        scoreRacy = s.scores?.racy ?? null;
+        algunaEnRevision = true;
       }
 
       await createAttachment({
