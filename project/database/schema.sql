@@ -563,6 +563,27 @@ CREATE UNIQUE INDEX uq_reporte_usuario_contenido ON reporte(usuario_id, contenid
 CREATE UNIQUE INDEX uq_reporte_usuario_categoria ON reporte(usuario_id, categoria_id) WHERE categoria_id IS NOT NULL;
 CREATE INDEX idx_reaccion_contenido ON reaccion(contenido_id);
 
+-- Índices de performance (ver migrations/migration_performance_indices.sql,
+-- que es la versión aplicable a una base ya creada, con la explicación de
+-- cada uno). Mantener ambos archivos en sync.
+CREATE INDEX idx_comentario_categoria ON comentario(categoria_id) WHERE categoria_id IS NOT NULL;
+CREATE INDEX idx_contenido_fecha ON contenido(fecha_creacion);
+-- Los lookups de usuario usan LOWER(nickname)/LOWER(email); el UNIQUE sobre la
+-- columna cruda no aplica a esos predicados. Estos índices además convierten la
+-- unicidad case-insensitive (que la app ya valida) en garantía de la base.
+CREATE UNIQUE INDEX uq_usuario_nickname_lower ON usuario (LOWER(nickname));
+CREATE UNIQUE INDEX uq_usuario_email_lower ON usuario (LOWER(email));
+CREATE INDEX idx_seguidor_seguido ON usuario_seguidor(seguido_id, estado);
+CREATE INDEX idx_mensaje_no_leido ON mensaje(conversacion_id, autor_id) WHERE leido = FALSE;
+CREATE INDEX idx_notificacion_actor ON notificacion(actor_id, tipo);
+CREATE INDEX idx_notificacion_contenido ON notificacion(contenido_id);
+CREATE INDEX idx_suscripcion_categoria_categoria ON suscripcion_categoria(categoria_id);
+CREATE INDEX idx_participacion_categoria_categoria ON participacion_categoria(categoria_id);
+CREATE INDEX idx_hist_edicion_comentario ON historial_edicion_comentario(comentario_id);
+CREATE INDEX idx_hist_edicion_tema ON historial_edicion_tema(tema_id);
+CREATE INDEX idx_hist_edicion_categoria ON historial_edicion_categoria(categoria_id);
+CREATE INDEX idx_apelacion_autor ON apelacion(autor_id);
+
 -- Fase 4.A: índices parciales para listar contenido caído por moderación
 CREATE INDEX idx_tema_moderacion
   ON tema (motivo_inactivacion)
