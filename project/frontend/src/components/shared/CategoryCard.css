@@ -12,23 +12,26 @@
   border-color: var(--border-strong);
 }
 
-/* Categoría fijada por un admin: destaca con un borde de acento y un badge. */
+/* Categoría fijada por un admin: realce sobrio — un borde de acento de 1px
+   (sin recuadro) y un badge tenue con el tinte de acento en vez de relleno pleno. */
 .category-card--pinned {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
 }
 .category-pinned-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin: 0 0 6px 4px;
+  margin: 0 0 8px 4px;
   padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--text-on-accent);
-  font-size: 11px;
+  border-radius: 6px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 10px;
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
+.category-pinned-badge svg { opacity: 0.85; }
 
 /* Las 3 zonas son Links hermanos (no anidados). Las de categoría (head/foot)
    van a /category/:id; el preview va a ?tab=comentarios. */
