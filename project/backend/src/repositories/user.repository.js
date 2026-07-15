@@ -105,6 +105,21 @@ const getUserByNickname = async (nickname) => {
   return rows[0] || null;
 };
 
+// Mismos campos que getUserByNickname pero por PK. Es el lookup de /users/me:
+// el id ya viene validado del middleware (protect), no hace falta re-buscar
+// por nickname.
+const getUserById = async (id) => {
+  const q = `
+    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado, me_gusta_privado, nickname_confirmado,
+           auth_provider, (password_hash IS NOT NULL) AS tiene_password
+    FROM usuario
+    WHERE id = $1
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0] || null;
+};
+
 const getUserIdByNickname = async (nickname) => {
   const q = `
     SELECT id
@@ -508,7 +523,7 @@ const getLikesPrivacyById = async (id) => {
 
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers,
   findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser, confirmNickname,
-  getUserByNickname, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId, 
+  getUserByNickname, getUserById, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId,
   getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, updateUserEstadoById,
   deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,
   acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById,

@@ -2,7 +2,7 @@ import { fileTypeFromBuffer } from 'file-type';
 
 import { generateToken } from '../utils/generateToken.js';
 import { requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, getUsersService, createUserByAdminService,
-    getUserProfileService, showMeService, updateMeService,
+    getUserProfileService, showMeService, showMeFullService, updateMeService,
     banUserService, activeUserService, deleteUserService,
   followUserService, unfollowUserService, removeFollowerService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService, updateAvatarService,
@@ -14,7 +14,7 @@ import { requestRegistrationService, verifyRegistrationService, resendRegistrati
 
 const showMe = async (req, res) => {
   try {
-    const result = await showMeService(req.user.nickname);
+    const result = await showMeService(req.user.id);
     return res.status(200).json({ ok: true, data: result });
   } catch (error) {
     if (error.code === 'NOT_FOUND') {
@@ -22,6 +22,19 @@ const showMe = async (req, res) => {
     }
     if (error.code === 'BAD_REQUEST') {
       return res.status(400).json({ ok: false, message: error.message });
+    }
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+};
+
+// Perfil propio completo (user + categorías + seguidores + seguidos).
+const showMeFull = async (req, res) => {
+  try {
+    const result = await showMeFullService(req.user.id);
+    return res.status(200).json({ ok: true, data: result });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') {
+      return res.status(404).json({ ok: false, message: error.message });
     }
     return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
   }
@@ -559,7 +572,7 @@ const setupNickname = async (req, res) => {
   }
 };
 
-export { showMe, registerUser, verifyEmail, resendCode, loginUser, logoutUser, googleAuthCallback, setupNickname, getUsers,
+export { showMe, showMeFull, registerUser, verifyEmail, resendCode, loginUser, logoutUser, googleAuthCallback, setupNickname, getUsers,
   getUserProfile, updateMe, banUser,
   activeUser, deleteUser, followUser, unfollowUser, removeFollower, acceptFollowRequest, rejectFollowRequest, checkFollowing, updateAvatar,
   searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList,

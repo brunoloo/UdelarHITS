@@ -71,11 +71,14 @@ export function ProfilePage() {
   const isOwnProfile = me && me.nickname === nickname
   const profileQueryKey = isOwnProfile ? ['me'] : ['user', nickname]
 
+  // El perfil propio usa /users/me/full: /users/me quedó liviano (solo user,
+  // es la request de arranque de la app) y las listas de categorías/seguidores/
+  // seguidos viven en la variante full.
   const { data: profileData, isLoading, isError } = useQuery({
     queryKey: profileQueryKey,
     queryFn: () =>
       isOwnProfile
-        ? apiGet('/users/me').then(r => r.data)
+        ? apiGet('/users/me/full').then(r => r.data)
         : apiGet(`/users/${encodeURIComponent(nickname)}`).then(r => r.data),
     enabled: !!me,
   })
@@ -85,9 +88,11 @@ export function ProfilePage() {
   const following = profileData?.following || []
   const categories = profileData?.categories || []
 
+  // Mirando el perfil de otro se necesita MI lista de seguidos (para saber si
+  // los seguidores del otro "me siguen"): también sale de /users/me/full.
   const { data: myData } = useQuery({
     queryKey: ['me'],
-    queryFn: () => apiGet('/users/me').then(r => r.data),
+    queryFn: () => apiGet('/users/me/full').then(r => r.data),
     enabled: !!me && !isOwnProfile,
   })
 

@@ -26,7 +26,7 @@ const forgotAccountLimiter = createRateLimiter({
 // entre tests (truncate con RESTART IDENTITY), así que necesitan limpiarlo.
 export const _resetForgotAccountLimiter = () => forgotAccountLimiter.reset();
 import {
-  findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname,
+  findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname, getUserById,
   findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser, confirmNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById,
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
@@ -485,18 +485,18 @@ const getUserProfileService = async (nickname, viewerId = null, viewerRol = null
 // Perfil propio (GET /users/me). Es el ÚNICO endpoint que expone campos
 // sensibles del usuario autenticado (email, rol, nickname_confirmado). No pasa
 // por el gating de privacidad: siempre es el dueño viendo sus propios datos.
-const showMeService = async (nickname) => {
-  const normalizedNickname = nickname?.trim().toLowerCase();
-  const user = await getUserByNickname(normalizedNickname);
+//
+// Versión LIVIANA: solo el objeto user (1 query por PK). Es la request de
+// arranque de la app (AuthContext), que descartaba las listas de categorías/
+// seguidores/seguidos — esas viven ahora en /users/me/full (showMeFullService),
+// que consume la página de perfil propio.
+const showMeService = async (userId) => {
+  const user = await getUserById(userId);
   if (!user) {
     const err = new Error('Usuario no encontrado');
     err.code = 'NOT_FOUND';
     throw err;
   }
-
-  const categories = await getCategoriesByUserId(user.id);
-  const followers = await getFollowersByUserId(user.id);
-  const following = await getFollowingByUserId(user.id);
 
   const safeUser = {
     id: user.id,
@@ -518,7 +518,20 @@ const showMeService = async (nickname) => {
     tiene_password: user.tiene_password
   };
 
-  return { user: safeUser, categories, followers, following };
+  return { user: safeUser };
+};
+
+// Perfil propio COMPLETO (GET /users/me/full): user + categorías propias +
+// seguidores + seguidos. Las tres listas van en paralelo (antes eran awaits
+// en serie). Lo usa la página de perfil propio.
+const showMeFullService = async (userId) => {
+  const { user } = await showMeService(userId);
+  const [categories, followers, following] = await Promise.all([
+    getCategoriesByUserId(user.id),
+    getFollowersByUserId(user.id),
+    getFollowingByUserId(user.id),
+  ]);
+  return { user, categories, followers, following };
 };
 
 const updateMeService = async (userId, { nombre, biografia }) => {
@@ -1224,7 +1237,7 @@ const confirmNicknameService = async (userId, newNickname) => {
   return await confirmNickname(userId, newNickname.trim());
 };
 
-export { showMeService , requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, handleGoogleAuthService, confirmNicknameService, getUsersService, getUserProfileService,
+export { showMeService, showMeFullService, requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, handleGoogleAuthService, confirmNicknameService, getUsersService, getUserProfileService,
   updateMeService, banUserService, activeUserService,
   deleteUserService, followUserService, unfollowUserService, removeFollowerService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService,

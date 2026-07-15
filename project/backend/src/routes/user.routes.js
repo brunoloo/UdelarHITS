@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { protect, isAdmin, optionalAuth } from '../middlewares/auth.middleware.js';
 import { uploadAvatar, uploadBanner } from '../config/multer.js';
-import { showMe, updateMe, getUsers, getUserProfile, changeUserPassword,
+import { showMe, showMeFull, updateMe, getUsers, getUserProfile, changeUserPassword,
     banUser, activeUser, deleteUser, followUser, unfollowUser, removeFollower,
     acceptFollowRequest, rejectFollowRequest,
     checkFollowing, updateAvatar, searchUsers, updateBanner, deleteBanner,
@@ -12,7 +12,8 @@ const router = Router();
 
 router.get('/', protect, isAdmin, getUsers);                     // Obtener lista de usuarios
 router.get('/search', optionalAuth, searchUsers);                 // Búsqueda de usuarios
-router.get('/me', protect, showMe);                              // Obtener tu información de usuario
+router.get('/me', protect, showMe);                              // Obtener tu información de usuario (liviano: solo user)
+router.get('/me/full', protect, showMeFull);                     // Perfil propio completo (user + categorías + seguidores + seguidos)
 router.patch('/me', protect, updateMe);                          // Modificar datos personales
 router.patch('/me/avatar', protect, uploadAvatar.single('avatar'), updateAvatar);  // Modifica el avatar
 router.patch('/me/banner', protect, uploadBanner.single('banner'), updateBanner);  // Modifica el banner
