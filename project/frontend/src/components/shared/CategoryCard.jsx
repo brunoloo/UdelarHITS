@@ -104,7 +104,7 @@ export function CategoryCard({ category }) {
   }
 
   return (
-    <div className={`category-card${fijada ? ' category-card--pinned' : ''}`}>
+    <div className="category-card">
       {/* (1) Ícono + título + conteo + descripción → /category/:id */}
       <div className="category-head-link" onClick={goTo(catUrl)}>
         {fijada && (

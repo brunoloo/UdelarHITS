@@ -12,11 +12,8 @@
   border-color: var(--border-strong);
 }
 
-/* Categoría fijada por un admin: realce sobrio — un borde de acento de 1px
-   (sin recuadro) y un badge tenue con el tinte de acento en vez de relleno pleno. */
-.category-card--pinned {
-  border-color: var(--accent);
-}
+/* Categoría fijada por un admin: la card se ve igual que las demás; el único
+   distintivo es el badge tenue con el ícono de fijada. */
 .category-pinned-badge {
   display: inline-flex;
   align-items: center;
