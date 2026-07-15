@@ -28,6 +28,7 @@
     "db:migrate:bloqueo": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_bloqueo.sql",
     "db:migrate:fase17": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase17_google_oauth.sql",
     "db:migrate:fase18": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase18_moderacion_imagenes.sql",
+    "db:migrate:fase19": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase19_categoria_fijada_home.sql",
     "db:migrate:etiquetas": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_etiquetas_tabla.sql",
     "db:test:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits_test;\"",
     "db:test:create": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"CREATE DATABASE udelarhits_test OWNER brunoloo;\"",
