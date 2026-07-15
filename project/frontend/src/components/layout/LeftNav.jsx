@@ -155,6 +155,8 @@ export function LeftNav() {
     queryFn: () => apiGet('/notifications/unread-count').then(r => r.data?.total ?? 0),
     enabled: !!user,
     refetchInterval: 60000,
+    // El badge debe reflejar el estado real: sin frescura de cache.
+    staleTime: 0,
   })
 
   useEffect(() => {

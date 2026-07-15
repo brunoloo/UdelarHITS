@@ -75,6 +75,7 @@ export function RecentPage() {
   const { data: categories = [], isLoading: loadingCats } = useQuery({
     queryKey: ['categories', 'active'],
     queryFn: () => apiGet('/categories/active').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   const isLoading = loadingTopics || loadingCats

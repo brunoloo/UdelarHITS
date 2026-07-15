@@ -16,14 +16,18 @@ export function useSiteSearch() {
   // marca ese modo y se apaga en cuanto el usuario vuelve a escribir.
   const filterModeRef = useRef(false)
 
+  // Índice para sugerencias: montado en el Header (toda la app). Sin staleTime
+  // se re-pedía la lista completa de categorías en cada navegación.
   const { data: categories = [] } = useQuery({
     queryKey: ['categories', 'active'],
     queryFn: () => apiGet('/categories/active').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: allTagsGrouped = {} } = useQuery({
     queryKey: ['categories', 'etiquetas'],
     queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   const allTags = useMemo(

@@ -46,6 +46,8 @@ function PopularTagsCard() {
   const { data: tags = [] } = useQuery({
     queryKey: ['categories', 'trending-tags'],
     queryFn: () => apiGet('/categories/trending-tags?days=7&limit=8').then(r => r.data),
+    // Ranking de 7 días: no cambia minuto a minuto y es caro en el backend.
+    staleTime: 2 * 60 * 1000,
   })
 
   return (
@@ -101,6 +103,7 @@ function ActiveUsersCard() {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users', 'most-active'],
     queryFn: () => apiGet('/users/most-active?limit=5').then(r => r.data),
+    staleTime: 2 * 60 * 1000,
   })
 
   return (
@@ -316,6 +319,7 @@ export function Sidebar() {
   const { data: categories = [], isLoading: catsLoading } = useQuery({
     queryKey: ['categories', 'active'],
     queryFn: () => apiGet('/categories/active').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: recentTopics = [] } = useQuery({

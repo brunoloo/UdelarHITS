@@ -286,19 +286,24 @@ function CategorySuggestions({ allCats, myCats }) {
 export function ExplorePage() {
   const { user, loading } = useAuth()
 
+  // Rankings de ventana semanal: cambian lento y son caros de calcular en el
+  // backend — 2 minutos de frescura alcanzan de sobra.
   const { data: popularCats = [] } = useQuery({
-    queryKey: ['categories', 'popular'],
+    queryKey: ['categories', 'popular', { days: 7, limit: 1 }],
     queryFn: () => apiGet('/categories/popular?days=7&limit=1').then(r => r.data),
+    staleTime: 2 * 60 * 1000,
   })
 
   const { data: trending } = useQuery({
     queryKey: ['topics', 'trending'],
     queryFn: () => apiGet('/topics/trending').then(r => r.data),
+    staleTime: 2 * 60 * 1000,
   })
 
   const { data: allCats = [] } = useQuery({
     queryKey: ['categories', 'active'],
     queryFn: () => apiGet('/categories/active').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: suggestedUsers = [] } = useQuery({

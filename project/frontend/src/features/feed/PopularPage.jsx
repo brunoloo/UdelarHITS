@@ -62,9 +62,12 @@ function PopularCard({ category, rank }) {
 }
 
 export function PopularPage() {
+  // La key incluye los parámetros: Explorar pide este mismo endpoint con
+  // limit=1 y sin distinguirlos compartirían (mal) la misma entrada de cache.
   const { data: popular = [], isLoading } = useQuery({
-    queryKey: ['categories', 'popular'],
+    queryKey: ['categories', 'popular', { days: 7, limit: 20 }],
     queryFn: () => apiGet('/categories/popular?days=7&limit=20').then(r => r.data),
+    staleTime: 2 * 60 * 1000,
   })
 
   return (

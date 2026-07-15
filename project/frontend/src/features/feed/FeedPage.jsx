@@ -24,10 +24,13 @@ function CategorySkeleton() {
 export function FeedPage() {
   const [searchParams] = useSearchParams()
   const qParam = searchParams.get('q')
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   // Feed del Home: paginado por cursor, personalizado si hay sesión.
   // La queryKey incluye el usuario para rearmar el feed al entrar/salir.
+  // enabled espera a que AuthContext resuelva /users/me: sin eso, el primer
+  // render dispara el feed con key 'anon' y al llegar el usuario la key cambia
+  // y se vuelve a pedir — el fetch más caro de la app, dos veces por arranque.
   const {
     data: feedData,
     isLoading: loadingFeed,
@@ -40,7 +43,7 @@ export function FeedPage() {
       apiGet(`/categories/feed?limit=${PAGE_SIZE}${pageParam ? `&cursor=${encodeURIComponent(pageParam)}` : ''}`),
     initialPageParam: null,
     getNextPageParam: lastPage => lastPage.nextCursor ?? undefined,
-    enabled: !qParam,
+    enabled: !qParam && !authLoading,
   })
 
   // Búsqueda (?q=): filtra client-side sobre la lista completa, como antes.
@@ -48,11 +51,14 @@ export function FeedPage() {
     queryKey: ['categories', 'active'],
     queryFn: () => apiGet('/categories/active').then(r => r.data),
     enabled: !!qParam,
+    staleTime: 5 * 60 * 1000,
   })
 
+  // Catálogo de etiquetas: viene sembrado por schema.sql, casi nunca cambia.
   const { data: allTagsGrouped = {} } = useQuery({
     queryKey: ['categories', 'etiquetas'],
     queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   // Sentinel del infinite scroll: al entrar al viewport pide la página siguiente.
@@ -70,7 +76,9 @@ export function FeedPage() {
 
   const allTagNames = Object.values(allTagsGrouped).flat().map(t => t.nombre)
 
-  const isLoading = qParam ? loadingAll : loadingFeed
+  // Mientras auth resuelve, el query del feed está deshabilitado (no "cargando"):
+  // sin authLoading acá se pintaría el estado vacío por un instante.
+  const isLoading = qParam ? loadingAll : (authLoading || loadingFeed)
   const displayCategories = qParam
     ? allCategories.filter(c =>
         parseEtiquetas(c.etiquetas).some(e => norm(e) === norm(qParam)) ||

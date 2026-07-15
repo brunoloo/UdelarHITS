@@ -24,6 +24,7 @@ export function CreateCategoryPanel() {
   const { data: availableTags = {} } = useQuery({
     queryKey: ['categories', 'etiquetas'],
     queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   const mutation = useMutation({
