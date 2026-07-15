@@ -364,6 +364,35 @@
 }
 .confirm-delete-actions { display: flex; justify-content: flex-end; gap: 10px; }
 
+/* ── PIN HOME MODAL (solo admin) ── */
+.pin-home-body { padding: 20px; }
+.pin-home-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-bottom: 18px;
+}
+.pin-home-options { display: flex; gap: 10px; flex-wrap: wrap; }
+.pin-home-option {
+  flex: 1 1 auto;
+  min-width: 90px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+.pin-home-option:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pin-home-option:disabled { opacity: 0.6; cursor: default; }
+
 /* ── HISTORY MODAL ── */
 .history-carousel { padding: 20px; }
 .history-header {

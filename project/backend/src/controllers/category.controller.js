@@ -4,6 +4,7 @@ import { createCategoryService, getCategoriesService, getCategoryByIdService,
   getParticipantsByCategoryIdService, getEtiquetasService, searchEtiquetasService,
   getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,
+  pinCategoryHomeService, unpinCategoryHomeService,
   subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService } from '../services/category.service.js';
 
 const createCategory = async (req, res) => {
@@ -205,6 +206,32 @@ const unpinCategoryItem = async (req, res) => {
   }
 };
 
+const pinCategoryHome = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { dias } = req.body;
+    const result = await pinCategoryHomeService(req.user.rol, id, dias);
+    return res.status(200).json({ ok: true, message: 'Categoría fijada en el inicio', data: result });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const unpinCategoryHome = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await unpinCategoryHomeService(req.user.rol, id);
+    return res.status(200).json({ ok: true, message: 'Categoría desanclada del inicio' });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 const subscribeCategory = async (req, res) => {
   try {
     await subscribeCategoryService(req.user.id, req.params.id);
@@ -237,4 +264,5 @@ export { createCategory, getCategories, getCategoryById, deleteCategory, activeC
   getMyCategories, updateCategory, getActiveCategories, getCategoryFeed, getParticipantsByCategory, getEtiquetasList,
   searchEtiquetas, getPopularCategoriesList, getTrendingTagsList, getCategoryEditHistory,
   pinCategoryItem, unpinCategoryItem,
+  pinCategoryHome, unpinCategoryHome,
   subscribeCategory, unsubscribeCategory, getCategorySubscription };

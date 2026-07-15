@@ -14,6 +14,7 @@ import { TagSelector } from '../../components/ui/TagSelector'
 import { useSaved } from '../../hooks/useSaved'
 import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
 import { BellIcon } from '../../components/shared/BellIcon'
+import { PinIcon } from '../../components/shared/PinIcon'
 import { ReadMore } from '../../components/ui/ReadMore'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
@@ -323,6 +324,40 @@ function ConfirmDeleteModal({ isOpen, onClose, onConfirm, isPending }) {
   )
 }
 
+// ── PIN HOME MODAL (solo admin) ────────────────────────────────────────────────
+// Mini modal que pregunta por cuánto tiempo fijar la categoría en el inicio.
+const PIN_HOME_OPTIONS = [
+  { dias: 3, label: '3 días' },
+  { dias: 7, label: '1 semana' },
+  { dias: 30, label: '1 mes' },
+]
+
+function PinHomeModal({ isOpen, onClose, onConfirm, isPending }) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Fijar en el inicio">
+      <div className="pin-home-body">
+        <p className="pin-home-desc">
+          La categoría aparecerá primera en el inicio para todos los usuarios
+          durante el tiempo elegido. Al vencer, se desancla automáticamente.
+        </p>
+        <div className="pin-home-options">
+          {PIN_HOME_OPTIONS.map(opt => (
+            <button
+              key={opt.dias}
+              className="pin-home-option"
+              type="button"
+              disabled={isPending}
+              onClick={() => onConfirm(opt.dias)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ── MAIN PAGE ──────────────────────────────────────────────────────────────────
 export function CategoryPage() {
   const { id } = useParams()
@@ -351,6 +386,7 @@ export function CategoryPage() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
+  const [pinHomeOpen, setPinHomeOpen] = useState(false)
 
   const { data: cat, isLoading: catLoading, isError } = useQuery({
     queryKey: ['category', id],
@@ -426,6 +462,29 @@ export function CategoryPage() {
     onError: (err) => showToast(err.message || 'No se pudo actualizar la suscripción', 'error'),
   })
 
+  // Fijar/desanclar la categoría en el Home (solo admin). Al cambiar el estado
+  // refrescamos tanto el detalle como el feed del Home (prefijo 'categories').
+  const pinHomeMutation = useMutation({
+    mutationFn: (dias) => apiPost(`/categories/${id}/pin-home`, { dias }),
+    onSuccess: () => {
+      showToast('Categoría fijada en el inicio', 'success')
+      setPinHomeOpen(false)
+      queryClient.invalidateQueries({ queryKey: ['category', id] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    },
+    onError: (err) => showToast(err.message || 'No se pudo fijar la categoría', 'error'),
+  })
+
+  const unpinHomeMutation = useMutation({
+    mutationFn: () => apiDelete(`/categories/${id}/pin-home`),
+    onSuccess: () => {
+      showToast('Categoría desanclada del inicio', 'success')
+      queryClient.invalidateQueries({ queryKey: ['category', id] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    },
+    onError: (err) => showToast(err.message || 'No se pudo desanclar la categoría', 'error'),
+  })
+
   if (catLoading) {
     return (
       <div>
@@ -445,6 +504,7 @@ export function CategoryPage() {
 
   const isActive = cat.estado !== 'inactiva'
   const isOwner = !!(user && (user.id === cat.autor_id || user.rol === 'admin'))
+  const isAdmin = user?.rol === 'admin'
   const etiquetas = parseEtiquetas(cat.etiquetas)
   const topicCount = cat.topics?.length ?? Number(cat.contador_temas) ?? 0
   const commentCount = replies.length
@@ -482,6 +542,19 @@ export function CategoryPage() {
       onClick: () => setHistoryOpen(true),
     },
   )
+
+  // Fijar en el inicio: opción exclusiva de administradores. Fija la categoría
+  // primera en el Home por un tiempo (o la desancla si ya está fijada).
+  if (isAdmin && isActive) {
+    dropdownItems.push({
+      label: cat.fijada ? 'Desanclar del inicio' : 'Fijar en el inicio',
+      icon: <PinIcon filled={!!cat.fijada} size={14} />,
+      onClick: () => {
+        if (cat.fijada) unpinHomeMutation.mutate()
+        else setPinHomeOpen(true)
+      },
+    })
+  }
 
   // Eliminar: acción destructiva, directa desde el menú de tres puntos (antes
   // vivía dentro del modal de "Editar categoría"). Pasa por el ConfirmDeleteModal.
@@ -683,6 +756,16 @@ export function CategoryPage() {
           onClose={() => setDeleteOpen(false)}
           onConfirm={() => deleteMutation.mutate()}
           isPending={deleteMutation.isPending}
+        />
+      )}
+
+      {/* Pin-home modal (solo admin) */}
+      {isAdmin && (
+        <PinHomeModal
+          isOpen={pinHomeOpen}
+          onClose={() => setPinHomeOpen(false)}
+          onConfirm={(dias) => pinHomeMutation.mutate(dias)}
+          isPending={pinHomeMutation.isPending}
         />
       )}
 

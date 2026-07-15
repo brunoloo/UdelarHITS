@@ -3,6 +3,7 @@ import { createCategory, getCategories, getCategoryById, deleteCategory, activeC
     getMyCategories, updateCategory, getActiveCategories, getCategoryFeed, getParticipantsByCategory,
     getEtiquetasList, searchEtiquetas, getPopularCategoriesList, getTrendingTagsList,
     getCategoryEditHistory, pinCategoryItem, unpinCategoryItem,
+    pinCategoryHome, unpinCategoryHome,
     subscribeCategory, unsubscribeCategory, getCategorySubscription } from '../controllers/category.controller.js';
 import { protect, isAdmin, optionalAuth } from '../middlewares/auth.middleware.js';
 
@@ -30,6 +31,9 @@ router.patch('/:id/activar', protect, activeCategory)    // Activa la categoría
 
 router.post('/:id/pin', protect, pinCategoryItem);          // Fijar tema/comentario (moderador)
 router.delete('/:id/pin/:tipo', protect, unpinCategoryItem); // Desanclar tema/comentario
+
+router.post('/:id/pin-home', protect, isAdmin, pinCategoryHome);     // Fijar categoría en el Home (admin)
+router.delete('/:id/pin-home', protect, isAdmin, unpinCategoryHome); // Desanclar categoría del Home (admin)
 
 router.get('/:id/subscription', protect, getCategorySubscription); // ¿Estoy suscrito?
 router.post('/:id/subscribe', protect, subscribeCategory);          // Suscribirse (campanita)

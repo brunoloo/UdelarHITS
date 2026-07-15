@@ -184,6 +184,9 @@ CREATE TABLE categoria ( -- Revisado y completo. No modificar
   -- (Las FK a contenido se agregan al final: contenido se crea después.)
   tema_fijado_id              BIGINT,
   comentario_fijado_id        BIGINT,
+  -- Fase 19: fijar la categoría en el Home (solo admin). Hasta esta fecha aparece
+  -- primera en el feed; NULL = no fijada. Vigencia lógica: fijada_hasta > NOW().
+  fijada_hasta                TIMESTAMPTZ NULL,
   -- Fase 4.A: previsto para reporte de categorías (aún no usado en 4.A)
   motivo_inactivacion         motivo_inactivacion NULL,
   fecha_inactivacion          TIMESTAMPTZ NULL,
@@ -578,3 +581,8 @@ CREATE INDEX idx_notificacion_no_leida ON notificacion(usuario_id) WHERE leida =
 ALTER TABLE categoria
   ADD CONSTRAINT fk_categoria_tema_fijado FOREIGN KEY (tema_fijado_id) REFERENCES contenido(id) ON DELETE SET NULL,
   ADD CONSTRAINT fk_categoria_comentario_fijado FOREIGN KEY (comentario_fijado_id) REFERENCES contenido(id) ON DELETE SET NULL;
+
+-- Fase 19: a lo sumo una categoría fijada en el Home a la vez (singleton global).
+CREATE UNIQUE INDEX uq_categoria_fijada_home
+  ON categoria ((fijada_hasta IS NOT NULL))
+  WHERE fijada_hasta IS NOT NULL;

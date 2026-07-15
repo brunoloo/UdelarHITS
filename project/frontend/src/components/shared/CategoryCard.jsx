@@ -3,6 +3,7 @@ import { Tag } from '../ui/Tag'
 import { ReadMore } from '../ui/ReadMore'
 import { UserAvatar } from './UserAvatar'
 import { CategoryIcon } from './CategoryIcon'
+import { PinIcon } from './PinIcon'
 import { resolveAutor } from './AuthorDisplay'
 import { CommentAttachments } from './CommentAttachments'
 import { PollDisplay } from './PollDisplay'
@@ -83,6 +84,7 @@ export function CategoryCard({ category }) {
     ultimo_tema,
     ultimo_comentario,
     icono,
+    fijada,
   } = category
 
   const allTags = parseEtiquetas(etiquetas)
@@ -102,9 +104,15 @@ export function CategoryCard({ category }) {
   }
 
   return (
-    <div className="category-card">
+    <div className={`category-card${fijada ? ' category-card--pinned' : ''}`}>
       {/* (1) Ícono + título + conteo + descripción → /category/:id */}
       <div className="category-head-link" onClick={goTo(catUrl)}>
+        {fijada && (
+          <div className="category-pinned-badge">
+            <PinIcon filled size={12} />
+            Fijada
+          </div>
+        )}
         <div className="category-header-row">
           <div className="category-icon-wrap">
             <CategoryIcon name={icono} size={20} />

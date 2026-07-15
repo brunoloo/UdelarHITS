@@ -6,6 +6,7 @@ import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   hardDeleteCategoryById, categoryHasContent, getPopularCategories, getTrendingTags,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment,
   pinCategoryTopic, unpinCategoryTopic,
+  pinCategoryHome, unpinCategoryHome, getPinnedHomeCategory,
   subscribeCategory, unsubscribeCategory, isSubscribedCategory } from '../repositories/category.repository.js';
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
@@ -294,8 +295,24 @@ const getCategoryFeedService = async (user, { limit, cursor } = {}) => {
       : encodeFeedCursor({ m: 'c', f: new Date(last.fecha_creacion).toISOString(), id: String(last.id) });
   }
 
-  // score es interno del ranking, no parte del contrato de la card
-  for (const item of items) delete item.score;
+  // score es interno del ranking, no parte del contrato de la card. fijada_hasta
+  // tampoco se expone crudo: se colapsa a un booleano `fijada` más abajo.
+  for (const item of items) { delete item.score; delete item.fijada_hasta; item.fijada = false; }
+
+  // Categoría fijada por un admin: encabeza el feed y sólo en la primera página.
+  // Vive fuera del cursor (se excluye del feed regular en el repo), así no duplica
+  // ni desajusta la paginación. Expira sola cuando fijada_hasta <= NOW().
+  if (!cursor) {
+    const pinned = await getPinnedHomeCategory();
+    if (pinned) {
+      delete pinned.score;
+      delete pinned.fijada_hasta;
+      pinned.fijada = true;
+      // Defensa: el feed regular ya la excluye, pero evitamos duplicarla igual.
+      const rest = items.filter(it => String(it.id) !== String(pinned.id));
+      return { items: [pinned, ...rest], nextCursor };
+    }
+  }
 
   return { items, nextCursor };
 };
@@ -410,6 +427,68 @@ const unpinCategoryItemService = async (userId, userRol, categoryId, tipo) => {
   }
 };
 
+// ── Fijar categoría en el Home (solo admin) ──
+// Duraciones permitidas, en días. El admin elige una desde el modal del front.
+const PIN_HOME_DIAS_VALIDOS = [3, 7, 30];
+
+const pinCategoryHomeService = async (userRol, categoryId, dias) => {
+  if (userRol !== 'admin') {
+    const err = new Error('Solo un administrador puede fijar categorías');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+
+  const id = Number(categoryId);
+  if (!Number.isInteger(id) || id < 1) {
+    const err = new Error('ID inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const diasNum = Number(dias);
+  if (!PIN_HOME_DIAS_VALIDOS.includes(diasNum)) {
+    const err = new Error('Duración inválida (permitido: 3, 7 o 30 días)');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const category = await getCategoryById(id);
+  if (!category) {
+    const err = new Error('Categoría no encontrada');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  if (category.estado !== 'activa') {
+    const err = new Error('No se puede fijar una categoría inactiva');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const fijadaHasta = new Date(Date.now() + diasNum * 24 * 60 * 60 * 1000);
+  const res = await pinCategoryHome(id, fijadaHasta);
+  if (!res) {
+    const err = new Error('No se pudo fijar la categoría');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  return res;
+};
+
+const unpinCategoryHomeService = async (userRol, categoryId) => {
+  if (userRol !== 'admin') {
+    const err = new Error('Solo un administrador puede desanclar categorías');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+  const id = Number(categoryId);
+  if (!Number.isInteger(id) || id < 1) {
+    const err = new Error('ID inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  await unpinCategoryHome(id);
+};
+
 // ── Suscripción a categoría (campanita) ──
 const assertCategoryExists = async (categoryId) => {
   const category = await getCategoryById(categoryId);
@@ -440,4 +519,5 @@ export { createCategoryService, getCategoriesService, getCategoryByIdService, de
   searchEtiquetasService,
   getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,
+  pinCategoryHomeService, unpinCategoryHomeService,
   subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService };

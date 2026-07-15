@@ -67,6 +67,7 @@ const getCategories = async () => {
 const getCategoryById = async (id) => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.autor_id, c.estado, c.fecha_creacion, c.icono,
+      COALESCE(c.fijada_hasta > NOW(), false) AS fijada, c.fijada_hasta,
       u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
       ARRAY_AGG(e.nombre) AS etiquetas
@@ -239,7 +240,7 @@ const assignParticipantRole = async (userId, categoriaId) => {
 // paginado de Home, que le agregan su propio ORDER BY / cursor por fuera.
 const CATEGORY_CARD_QUERY = `
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
-      c.fecha_creacion, c.icono, u.nickname AS autor_nickname, u.estado AS autor_estado,
+      c.fecha_creacion, c.icono, c.fijada_hasta, u.nickname AS autor_nickname, u.estado AS autor_estado,
       -- Comentarios directos (top-level) de la categoría: mismo criterio que el
       -- tab "Comentarios" de la página (getRepliesByCategory), para que el número
       -- de la card coincida con el de la página.
@@ -308,8 +309,9 @@ const getActiveCategories = async () => {
 const getChronoFeed = async ({ limit, cursorFecha = null, cursorId = null }) => {
   const q = `
     SELECT card.* FROM (${CATEGORY_CARD_QUERY}) card
-    WHERE $2::timestamptz IS NULL
-       OR (card.fecha_creacion, card.id) < ($2::timestamptz, $3::bigint)
+    WHERE (card.fijada_hasta IS NULL OR card.fijada_hasta <= NOW())
+      AND ($2::timestamptz IS NULL
+       OR (card.fecha_creacion, card.id) < ($2::timestamptz, $3::bigint))
     ORDER BY card.fecha_creacion DESC, card.id DESC
     LIMIT $1
   `;
@@ -378,8 +380,9 @@ const getPersonalizedFeed = async (usuarioId, { limit, cursorScore = null, curso
     SELECT card.*, s.score
     FROM (${CATEGORY_CARD_QUERY}) card
     JOIN scored s ON s.cat_id = card.id
-    WHERE $3::bigint IS NULL
-       OR (s.score, card.id) < ($3::bigint, $4::bigint)
+    WHERE (card.fijada_hasta IS NULL OR card.fijada_hasta <= NOW())
+      AND ($3::bigint IS NULL
+       OR (s.score, card.id) < ($3::bigint, $4::bigint))
     ORDER BY s.score DESC, card.id DESC
     LIMIT $2
   `;
@@ -541,6 +544,7 @@ export { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   getEtiquetas, getEtiquetasByIds, searchEtiquetas,
   categoryHasContent, hardDeleteCategoryById, getPopularCategories, getTrendingTags,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment, pinCategoryTopic, unpinCategoryTopic,
+  pinCategoryHome, unpinCategoryHome, getPinnedHomeCategory,
   subscribeCategory, unsubscribeCategory, isSubscribedCategory, getCategorySubscribers };
 
 // ── Suscripción a categoría (campanita) ──
@@ -613,4 +617,46 @@ async function pinCategoryTopic(categoriaId, temaId) {
 
 async function unpinCategoryTopic(categoriaId) {
   await pool.query(`UPDATE categoria SET tema_fijado_id = NULL WHERE id = $1`, [categoriaId]);
+}
+
+// ── Fijar categoría en el Home (solo admin) ──
+// Singleton global: a lo sumo una categoría fijada a la vez. Fijar otra desancla
+// automáticamente la anterior. La vigencia es lógica: el feed sólo trata como
+// fijada la categoría con fijada_hasta > NOW().
+
+async function pinCategoryHome(categoriaId, fijadaHasta) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    // Desanclar cualquier categoría previamente fijada (mantiene el singleton).
+    await client.query(`UPDATE categoria SET fijada_hasta = NULL WHERE fijada_hasta IS NOT NULL`);
+    const { rows } = await client.query(
+      `UPDATE categoria SET fijada_hasta = $2
+       WHERE id = $1 AND estado = 'activa'
+       RETURNING id, fijada_hasta`,
+      [categoriaId, fijadaHasta]
+    );
+    await client.query('COMMIT');
+    return rows[0] || null;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function unpinCategoryHome(categoriaId) {
+  await pool.query(`UPDATE categoria SET fijada_hasta = NULL WHERE id = $1`, [categoriaId]);
+}
+
+// La categoría fijada vigente (fijada_hasta > NOW()), como card del Home, o null.
+async function getPinnedHomeCategory() {
+  const q = `
+    SELECT card.* FROM (${CATEGORY_CARD_QUERY}) card
+    WHERE card.fijada_hasta > NOW()
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q);
+  return rows[0] || null;
 }
