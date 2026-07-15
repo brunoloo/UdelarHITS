@@ -53,16 +53,34 @@ app.use(helmet({
   }
 }));
 
+// Compresión: DEBE ir antes de los estáticos — en Express un middleware solo
+// afecta lo que se monta después de él. Con compression() después de los
+// static (como estaba), el bundle JS/CSS del frontend (~650 kB) viajaba sin
+// gzip; solo la API se comprimía.
+app.use(compression());
+
 // Archivos estáticos: se sirven ANTES de CORS y de cualquier middleware que
 // dependa de la DB. Los assets del frontend son públicos y no deben pasar por
 // la validación CORS (los requests de módulos ES traen header Origin y la
 // validación los rechazaba con 500). El orden importa: primero frontend/dist
 // (que tiene su propia carpeta assets/), luego central/, luego el fallback de
 // assets internos del backend (default-user.jpg).
-app.use(express.static(FRONTEND_DIST));
+//
+// Cache: los archivos de dist/assets/ llevan hash de contenido en el nombre
+// (Vite), así que pueden cachearse "para siempre" — un deploy nuevo genera
+// nombres nuevos. index.html NUNCA se cachea: es quien referencia esos hashes
+// y debe estar siempre fresco para que un deploy se vea al instante.
+app.use(express.static(FRONTEND_DIST, {
+  setHeaders: (res, filePath) => {
+    if (/[/\\]assets[/\\]/.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (filePath.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  },
+}));
 app.use('/central', express.static(path.join(__dirname, '..', '..', 'central')));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
-app.use(compression());
 
 // Healthcheck — Railway lo consulta para confirmar que el server puede atender tráfico
 app.get('/health', async (req, res) => {
@@ -183,6 +201,9 @@ app.get('/{*path}', (req, res, next) => {
   if (req.path.startsWith('/assets/')) {
     return res.status(404).json({ ok: false, message: 'Recurso no encontrado' });
   }
+  // Mismo criterio que el static: el index.html referencia bundles hasheados
+  // (cacheados immutable), así que él mismo no debe quedar cacheado.
+  res.setHeader('Cache-Control', 'no-cache');
   return res.sendFile(FRONTEND_INDEX, (err) => {
     if (err) next(err);
   });
