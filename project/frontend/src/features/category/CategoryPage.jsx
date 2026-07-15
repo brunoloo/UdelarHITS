@@ -417,6 +417,7 @@ export function CategoryPage() {
       setIconPickerOpen(false)
       queryClient.invalidateQueries({ queryKey: ['category', id] })
       queryClient.invalidateQueries({ queryKey: ['categories', 'active'] })
+      queryClient.invalidateQueries({ queryKey: ['categories', 'index'] })
     },
     onError: (err) => showToast(err.message || 'Error al actualizar el ícono', 'error'),
   })

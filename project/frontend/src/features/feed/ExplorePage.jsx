@@ -300,9 +300,11 @@ export function ExplorePage() {
     staleTime: 2 * 60 * 1000,
   })
 
+  // CategoryCardMini solo usa título/descripción/contadores/etiquetas/icono:
+  // alcanza con el índice liviano.
   const { data: allCats = [] } = useQuery({
-    queryKey: ['categories', 'active'],
-    queryFn: () => apiGet('/categories/active').then(r => r.data),
+    queryKey: ['categories', 'index'],
+    queryFn: () => apiGet('/categories/index').then(r => r.data),
     staleTime: 5 * 60 * 1000,
   })
 

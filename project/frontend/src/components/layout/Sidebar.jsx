@@ -316,9 +316,11 @@ export function Sidebar() {
   const topicMatch = useMatch('/topic/:id')
   const topicId = topicMatch?.params?.id
 
+  // Índice liviano: la sidebar solo muestra título/contador/fecha de las
+  // categorías nuevas — no necesita la card completa de /categories/active.
   const { data: categories = [], isLoading: catsLoading } = useQuery({
-    queryKey: ['categories', 'active'],
-    queryFn: () => apiGet('/categories/active').then(r => r.data),
+    queryKey: ['categories', 'index'],
+    queryFn: () => apiGet('/categories/index').then(r => r.data),
     staleTime: 5 * 60 * 1000,
   })
 

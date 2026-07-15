@@ -1,6 +1,6 @@
 import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId,
-  updateCategoryById, getActiveCategories, getParticipantsByCategoryId, getEtiquetas,
+  updateCategoryById, getActiveCategories, getCategoryIndex, getParticipantsByCategoryId, getEtiquetas,
   getChronoFeed, getPersonalizedFeed, hasFeedSignals,
   getEtiquetasByIds, searchEtiquetas,
   hardDeleteCategoryById, categoryHasContent, getPopularCategories, getTrendingTags,
@@ -228,6 +228,10 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
 
 const getActiveCategoriesService = async () => {
   return await getActiveCategories();
+};
+
+const getCategoryIndexService = async () => {
+  return await getCategoryIndex();
 };
 
 // ── Feed del Home (paginado por cursor) ──
@@ -515,7 +519,7 @@ const isSubscribedCategoryService = async (userId, categoryId) => {
 
 export { createCategoryService, getCategoriesService, getCategoryByIdService, deactivateCategoryById,
   deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService,
-  getActiveCategoriesService, getCategoryFeedService, getParticipantsByCategoryIdService, getEtiquetasService,
+  getActiveCategoriesService, getCategoryIndexService, getCategoryFeedService, getParticipantsByCategoryIdService, getEtiquetasService,
   searchEtiquetasService,
   getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,

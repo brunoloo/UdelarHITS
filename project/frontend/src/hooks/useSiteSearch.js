@@ -16,11 +16,12 @@ export function useSiteSearch() {
   // marca ese modo y se apaga en cuanto el usuario vuelve a escribir.
   const filterModeRef = useRef(false)
 
-  // Índice para sugerencias: montado en el Header (toda la app). Sin staleTime
-  // se re-pedía la lista completa de categorías en cada navegación.
+  // Índice para sugerencias: montado en el Header (toda la app). Usa el
+  // endpoint liviano (sin previews de último tema/comentario) — el buscador
+  // solo necesita título, contadores y etiquetas.
   const { data: categories = [] } = useQuery({
-    queryKey: ['categories', 'active'],
-    queryFn: () => apiGet('/categories/active').then(r => r.data),
+    queryKey: ['categories', 'index'],
+    queryFn: () => apiGet('/categories/index').then(r => r.data),
     staleTime: 5 * 60 * 1000,
   })
 

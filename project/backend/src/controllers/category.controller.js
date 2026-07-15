@@ -1,6 +1,6 @@
 import { createCategoryService, getCategoriesService, getCategoryByIdService,
   deleteCategoryService, activeCategoryService, getMyCategoriesService,
-  updateCategoryService, getActiveCategoriesService, getCategoryFeedService,
+  updateCategoryService, getActiveCategoriesService, getCategoryIndexService, getCategoryFeedService,
   getParticipantsByCategoryIdService, getEtiquetasService, searchEtiquetasService,
   getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,
@@ -101,6 +101,16 @@ const updateCategory = async (req, res) => {
 const getActiveCategories = async (req, res) => {
   try {
     const categories = await getActiveCategoriesService();
+    return res.status(200).json({ ok: true, data: categories });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+// Índice liviano (buscador/sidebar/listados): sin previews de último tema/comentario.
+const getCategoryIndexList = async (req, res) => {
+  try {
+    const categories = await getCategoryIndexService();
     return res.status(200).json({ ok: true, data: categories });
   } catch (error) {
     return res.status(500).json({ ok: false, message: 'Internal server error' });
@@ -261,7 +271,7 @@ const getCategorySubscription = async (req, res) => {
 };
 
 export { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
-  getMyCategories, updateCategory, getActiveCategories, getCategoryFeed, getParticipantsByCategory, getEtiquetasList,
+  getMyCategories, updateCategory, getActiveCategories, getCategoryIndexList, getCategoryFeed, getParticipantsByCategory, getEtiquetasList,
   searchEtiquetas, getPopularCategoriesList, getTrendingTagsList, getCategoryEditHistory,
   pinCategoryItem, unpinCategoryItem,
   pinCategoryHome, unpinCategoryHome,

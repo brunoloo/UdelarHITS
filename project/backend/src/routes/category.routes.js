@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
-    getMyCategories, updateCategory, getActiveCategories, getCategoryFeed, getParticipantsByCategory,
+    getMyCategories, updateCategory, getActiveCategories, getCategoryIndexList, getCategoryFeed, getParticipantsByCategory,
     getEtiquetasList, searchEtiquetas, getPopularCategoriesList, getTrendingTagsList,
     getCategoryEditHistory, pinCategoryItem, unpinCategoryItem,
     pinCategoryHome, unpinCategoryHome,
@@ -10,7 +10,8 @@ import { protect, isAdmin, optionalAuth } from '../middlewares/auth.middleware.j
 const router = Router();
 
 router.get('/', protect, isAdmin, getCategories);        // Listar categorías  
-router.get('/active', getActiveCategories);              // Listar categorías activas
+router.get('/active', getActiveCategories);              // Listar categorías activas (card completa, Home)
+router.get('/index', getCategoryIndexList);              // Índice liviano (buscador/sidebar/listados)
 router.get('/feed', optionalAuth, getCategoryFeed);      // Home: feed personalizado paginado
 router.get('/etiquetas', getEtiquetasList);              // Obtener las etiquetas (agrupadas)
 router.get('/etiquetas/search', searchEtiquetas);       // Buscar etiquetas por nombre

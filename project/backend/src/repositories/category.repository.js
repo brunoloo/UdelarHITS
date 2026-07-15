@@ -302,6 +302,31 @@ const getActiveCategories = async () => {
   return rows;
 };
 
+// Listado liviano de categorías activas: la "fila de índice" que consumen el
+// buscador del header, la sidebar, Recientes y Explorar. A diferencia de la
+// card completa (CATEGORY_CARD_QUERY) NO calcula ultimo_tema ni
+// ultimo_comentario (con sus likes/adjuntos/encuesta anidados), que son el
+// grueso del costo y solo los muestra la card del Home.
+const getCategoryIndex = async () => {
+  const q = `
+    SELECT c.id, c.titulo, c.descripcion, c.icono, c.contador_temas,
+      c.fecha_creacion, u.nickname AS autor_nickname, u.estado AS autor_estado,
+      -- Mismo criterio que la card y que el tab "Comentarios": directos (top-level).
+      (SELECT COUNT(*) FROM comentario cc
+         WHERE cc.categoria_id = c.id AND cc.comentario_padre_id IS NULL) AS contador_comentarios,
+      ARRAY_AGG(e.nombre) AS etiquetas
+    FROM categoria c
+    JOIN usuario u ON u.id = c.autor_id
+    LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
+    LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
+    WHERE c.estado = 'activa'
+    GROUP BY c.id, u.nickname, u.estado
+    ORDER BY c.fecha_creacion DESC
+  `;
+  const { rows } = await pool.query(q);
+  return rows;
+};
+
 // ── Feed del Home ──
 // Modo cronológico (invitados y cold start): fecha_creacion DESC, igual que
 // Recientes. Cursor compuesto (fecha_creacion, id) para que empates de fecha
@@ -539,7 +564,7 @@ const getTrendingTags = async (days = 7, limit = 8) => {
 
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId,
-  updateCategoryById, assignParticipantRole, getActiveCategories, getParticipantsByCategoryId,
+  updateCategoryById, assignParticipantRole, getActiveCategories, getCategoryIndex, getParticipantsByCategoryId,
   getChronoFeed, getPersonalizedFeed, hasFeedSignals,
   getEtiquetas, getEtiquetasByIds, searchEtiquetas,
   categoryHasContent, hardDeleteCategoryById, getPopularCategories, getTrendingTags,

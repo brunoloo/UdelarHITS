@@ -72,9 +72,11 @@ export function RecentPage() {
     queryFn: () => apiGet('/topics/recent?limit=30').then(r => r.data),
   })
 
+  // RecentCategoryCard usa título/descripción/contadores/etiquetas/autor:
+  // todo está en el índice liviano, sin las previews pesadas de /active.
   const { data: categories = [], isLoading: loadingCats } = useQuery({
-    queryKey: ['categories', 'active'],
-    queryFn: () => apiGet('/categories/active').then(r => r.data),
+    queryKey: ['categories', 'index'],
+    queryFn: () => apiGet('/categories/index').then(r => r.data),
     staleTime: 5 * 60 * 1000,
   })
 
