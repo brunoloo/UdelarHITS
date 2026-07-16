@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useSiteSearch } from '../../hooks/useSiteSearch'
+import { trackSearch } from '../../utils/analytics'
 import { SearchDropdown } from './SearchDropdown'
 
 // Búsqueda en mobile: lupa a la izquierda del header que abre un overlay a
@@ -73,7 +74,7 @@ export function MobileSearch() {
                 onKeyDown={e => {
                   if (e.key === 'Enter') {
                     const q = query.trim()
-                    if (q) { navigate(`/?q=${encodeURIComponent(q)}`); close() }
+                    if (q) { trackSearch(q); navigate(`/?q=${encodeURIComponent(q)}`); close() }
                   }
                 }}
               />

@@ -19,6 +19,7 @@ import { PollButton, PollEditor } from '../../components/shared/PollEditor'
 import { buildReplyFormData } from '../../utils/attachments'
 import { nuevaEncuesta, pollValido } from '../../utils/poll'
 import { timeAgo } from '../../utils/timeAgo'
+import { trackCreateComment } from '../../utils/analytics'
 import '../category/category.css'
 import './topic.css'
 
@@ -87,6 +88,7 @@ export function TopicPage() {
     onSuccess: (res) => {
       // El backend publica el comentario aunque los adjuntos fallen (p. ej.
       // cuota de almacenamiento); si pasó eso, avisa con la advertencia.
+      trackCreateComment('direct')
       if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
       else showToast('Comentario publicado', 'success')
       setCommentText('')

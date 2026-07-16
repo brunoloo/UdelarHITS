@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { UserAvatar } from '../shared/UserAvatar'
 import { useSiteSearch } from '../../hooks/useSiteSearch'
+import { trackSearch } from '../../utils/analytics'
 import { SearchDropdown } from './SearchDropdown'
 import { MobileSearch } from './MobileSearch'
 import './Header.css'
@@ -92,7 +93,10 @@ export function Header() {
           onKeyDown={e => {
             if (e.key === 'Enter') {
               const q = query.trim()
-              if (q) navigate(`/?q=${encodeURIComponent(q)}`)
+              if (q) {
+                trackSearch(q)
+                navigate(`/?q=${encodeURIComponent(q)}`)
+              }
             }
           }}
         />

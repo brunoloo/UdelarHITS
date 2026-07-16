@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiPost, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
+import { trackFollowUser } from '../../utils/analytics'
 import './FollowButton.css'
 
 export function FollowButton({ nickname, initialState = 'none', isPrivate = false, onToggle }) {
@@ -57,6 +58,9 @@ export function FollowButton({ nickname, initialState = 'none', isPrivate = fals
     },
     onSuccess: (res, { prevEstado }) => {
       if (prevEstado === 'none') {
+        // Solo trackeamos el "seguir" (no el dejar de seguir). Incluye tanto el
+        // follow directo como la solicitud a un perfil privado.
+        trackFollowUser()
         const serverEstado = res?.data?.estado || 'aceptado'
         setEstado(serverEstado)
         if (onToggle) onToggle(serverEstado)

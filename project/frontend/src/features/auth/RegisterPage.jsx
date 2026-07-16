@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
+import { trackSignUp } from '../../utils/analytics'
 import { GoogleAuthButton } from './GoogleAuthButton'
 import './auth.css'
 
@@ -158,6 +159,7 @@ export function RegisterPage() {
     setLoading(true)
     try {
       await verifyEmail({ email: form.email, codigo: code.trim() })
+      trackSignUp('email')
       clearPending()
       showToast('¡Cuenta creada exitosamente! Bienvenido/a a UdelarHITS', 'success')
       navigate('/')

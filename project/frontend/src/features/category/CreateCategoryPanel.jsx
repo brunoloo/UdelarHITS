@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { apiGet, apiPost } from '../../api/client'
+import { trackCreateCategory } from '../../utils/analytics'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { TagSelector } from '../../components/ui/TagSelector'
 
@@ -30,6 +31,7 @@ export function CreateCategoryPanel() {
   const mutation = useMutation({
     mutationFn: data => apiPost('/categories/create', data),
     onSuccess: (res) => {
+      trackCreateCategory()
       showToast('Categoría creada correctamente', 'success')
       // Cerramos el panel y limpiamos el formulario para que no quede abierto
       // de fondo al navegar.

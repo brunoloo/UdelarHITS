@@ -556,7 +556,11 @@ const googleAuthCallback = async (req, res) => {
   });
 
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const dest = req.user.nickname_confirmado === false ? '/setup-profile' : '/';
+  // Usuario nuevo → completa el nickname (ahí el frontend trackea el sign_up de
+  // Google). Usuario existente → home con ?login=google para que el frontend
+  // registre el evento login (método google), imposible de detectar del lado
+  // del cliente en un flujo de redirect.
+  const dest = req.user.nickname_confirmado === false ? '/setup-profile' : '/?login=google';
   return res.redirect(`${frontendUrl}${dest}`);
 };
 

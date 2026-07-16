@@ -27,6 +27,7 @@ import { AttachmentButton, AttachmentPreviews } from '../../components/shared/At
 import { PollButton, PollEditor } from '../../components/shared/PollEditor'
 import { buildReplyFormData } from '../../utils/attachments'
 import { nuevaEncuesta, pollValido } from '../../utils/poll'
+import { trackCreateComment, trackSubscribeCategory } from '../../utils/analytics'
 import './category.css'
 
 // ── SKELETONS ──────────────────────────────────────────────────────────────────
@@ -66,6 +67,7 @@ function CreateCommentPanel({ categoryId, user }) {
       poll,
     )),
     onSuccess: (res) => {
+      trackCreateComment('direct')
       if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
       else showToast('Comentario publicado', 'success')
       setOpen(false)
@@ -458,6 +460,8 @@ export function CategoryPage() {
       ? apiDelete(`/categories/${id}/subscribe`)
       : apiPost(`/categories/${id}/subscribe`, {}),
     onSuccess: (res) => {
+      // Solo la suscripción (activar la campanita) es el evento; cancelarla no.
+      if (res.suscrito) trackSubscribeCategory()
       queryClient.setQueryData(['category', id, 'subscription'], { suscrito: !!res.suscrito })
       showToast(res.suscrito ? 'Te suscribiste a la categoría' : 'Cancelaste la suscripción', 'success')
     },

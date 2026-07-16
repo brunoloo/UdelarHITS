@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from './useToast'
 import { apiGet, apiPost, apiDelete } from '../api/client'
+import { trackSaveContent } from '../utils/analytics'
 
 const SAVE_TOAST = {
   categoria: 'Categoría guardada',
@@ -38,6 +39,9 @@ export function useSaved() {
         ? apiDelete(`/saved/${kind}/${encodeURIComponent(id)}`)
         : apiPost('/saved', { tipo: kind, id }),
     onSuccess: (_res, { kind, saved }) => {
+      // `saved` es el estado PREVIO: si era false, se acaba de guardar (evento);
+      // si era true, se quitó de guardados (no se trackea).
+      if (!saved) trackSaveContent(kind)
       queryClient.invalidateQueries({ queryKey: ['saved'] })
       showToast(saved ? 'Quitado de guardados' : (SAVE_TOAST[kind] || 'Guardado'), 'success')
     },

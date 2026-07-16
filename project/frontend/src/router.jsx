@@ -1,4 +1,5 @@
 import { createBrowserRouter, Link } from 'react-router-dom'
+import { RootLayout } from './components/layout/RootLayout'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
@@ -33,50 +34,55 @@ function NotFoundPage() {
 
 export const router = createBrowserRouter([
   {
-    path: '/',
-    element: <AppLayout />,
+    element: <RootLayout />,
     children: [
-      { index: true, element: <FeedPage /> },
-      { path: 'recent', element: <RecentPage /> },
-      { path: 'popular', element: <PopularPage /> },
-      { path: 'explore', element: <ExplorePage /> },
-      { path: 'category/:id', element: <CategoryPage /> },
-      { path: 'topic/:id', element: <TopicPage /> },
-      { path: 'user/:nickname', element: <ProfilePage /> },
       {
-        path: 'settings',
-        element: <ProtectedRoute><SettingsPage /></ProtectedRoute>,
+        path: '/',
+        element: <AppLayout />,
+        children: [
+          { index: true, element: <FeedPage /> },
+          { path: 'recent', element: <RecentPage /> },
+          { path: 'popular', element: <PopularPage /> },
+          { path: 'explore', element: <ExplorePage /> },
+          { path: 'category/:id', element: <CategoryPage /> },
+          { path: 'topic/:id', element: <TopicPage /> },
+          { path: 'user/:nickname', element: <ProfilePage /> },
+          {
+            path: 'settings',
+            element: <ProtectedRoute><SettingsPage /></ProtectedRoute>,
+          },
+          {
+            path: 'admin',
+            element: <AdminRoute><AdminPage /></AdminRoute>,
+          },
+          { path: '*', element: <NotFoundPage /> },
+        ],
       },
       {
-        path: 'admin',
-        element: <AdminRoute><AdminPage /></AdminRoute>,
+        path: '/chat',
+        element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
       },
-      { path: '*', element: <NotFoundPage /> },
+      {
+        path: '/chat/:nickname',
+        element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
+      },
+      {
+        path: '/setup-profile',
+        element: <ProtectedRoute><SetupProfilePage /></ProtectedRoute>,
+      },
+      {
+        path: '/login',
+        element: <LoginPage />,
+      },
+      {
+        path: '/register',
+        element: <RegisterPage />,
+      },
+      { path: '/about', element: <AboutPage /> },
+      { path: '/about/rules', element: <RulesPage /> },
+      { path: '/about/policies', element: <ContentPoliciesPage /> },
+      { path: '/about/moderation', element: <ModerationPage /> },
+      { path: '/redirect', element: <RedirectPage /> },
     ],
   },
-  {
-    path: '/chat',
-    element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
-  },
-  {
-    path: '/chat/:nickname',
-    element: <ProtectedRoute><ChatPage /></ProtectedRoute>,
-  },
-  {
-    path: '/setup-profile',
-    element: <ProtectedRoute><SetupProfilePage /></ProtectedRoute>,
-  },
-  {
-    path: '/login',
-    element: <LoginPage />,
-  },
-  {
-    path: '/register',
-    element: <RegisterPage />,
-  },
-  { path: '/about', element: <AboutPage /> },
-  { path: '/about/rules', element: <RulesPage /> },
-  { path: '/about/policies', element: <ContentPoliciesPage /> },
-  { path: '/about/moderation', element: <ModerationPage /> },
-  { path: '/redirect', element: <RedirectPage /> },
 ])

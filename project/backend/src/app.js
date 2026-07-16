@@ -47,7 +47,25 @@ app.use(helmet({
   contentSecurityPolicy: {
     useDefaults: true,
     directives: {
-      'img-src': ["'self'", 'data:', 'blob:', 'https://res.cloudinary.com'],
+      // GA4 (gtag.js) sirve el script desde googletagmanager.com y envía los
+      // hits a los dominios de google-analytics; sin estos, el CSP los bloquea.
+      'script-src': ["'self'", 'https://www.googletagmanager.com'],
+      'connect-src': [
+        "'self'",
+        'https://www.google-analytics.com',
+        'https://*.google-analytics.com',
+        'https://*.analytics.google.com',
+        'https://www.googletagmanager.com'
+      ],
+      'img-src': [
+        "'self'",
+        'data:',
+        'blob:',
+        'https://res.cloudinary.com',
+        'https://www.google-analytics.com',
+        'https://*.google-analytics.com',
+        'https://www.googletagmanager.com'
+      ],
       'script-src-attr': ["'none'"]
     }
   }

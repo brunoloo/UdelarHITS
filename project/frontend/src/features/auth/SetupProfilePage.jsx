@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { apiPost } from '../../api/client'
+import { trackSignUp } from '../../utils/analytics'
 import './auth.css'
 
 export function SetupProfilePage() {
@@ -33,6 +34,9 @@ export function SetupProfilePage() {
     setLoading(true)
     try {
       const res = await apiPost('/auth/setup-nickname', { nickname: trimmed })
+      // Confirmar el nickname es el último paso del alta con Google: recién acá
+      // se completa el registro del usuario nuevo.
+      trackSignUp('google')
       setUser(prev => ({ ...prev, nickname: res.data.nickname, nickname_confirmado: true }))
       showToast('¡Nickname configurado! Bienvenido/a a UdelarHITS', 'success')
       navigate('/', { replace: true })

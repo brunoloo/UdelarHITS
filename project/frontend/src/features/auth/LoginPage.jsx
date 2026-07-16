@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
+import { trackLogin } from '../../utils/analytics'
 import { GoogleAuthButton } from './GoogleAuthButton'
 import './auth.css'
 
@@ -72,6 +73,7 @@ export function LoginPage() {
     setLoading(true)
     try {
       await login({ email: identifier, nickname: identifier, password })
+      trackLogin('email')
       navigate('/')
     } catch (err) {
       showToast(err.message || 'Credenciales incorrectas.', 'error')

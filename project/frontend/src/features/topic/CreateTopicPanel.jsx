@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiPost } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
 import { useRequireAuth } from '../../hooks/useRequireAuth'
+import { trackCreateTopic } from '../../utils/analytics'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 
 export function CreateTopicPanel({ categoryId, user }) {
@@ -22,6 +23,7 @@ export function CreateTopicPanel({ categoryId, user }) {
       categoria_id: categoryId,
     }),
     onSuccess: (data) => {
+      trackCreateTopic()
       showToast('Tema creado correctamente', 'success')
       queryClient.invalidateQueries({ queryKey: ['category', categoryId] })
       const topicId = data?.data?.contenido_id || data?.data?.id

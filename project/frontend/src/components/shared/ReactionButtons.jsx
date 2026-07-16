@@ -4,6 +4,7 @@ import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { useToast } from '../../hooks/useToast'
 import { apiPost } from '../../api/client'
 import { formatCount } from '../../utils/formatCount'
+import { trackLike } from '../../utils/analytics'
 import './ReactionButtons.css'
 
 /**
@@ -65,6 +66,8 @@ export function ReactionButtons({ contenidoId, likes, mi_reaccion }) {
     if (mutation.isPending) return
 
     const prev = state
+    // Solo el "dar like" (no el quitarlo) es el evento que trackeamos.
+    const isLiking = !prev.mine
 
     // Optimistic toggle: like on/off.
     setState({
@@ -73,6 +76,9 @@ export function ReactionButtons({ contenidoId, likes, mi_reaccion }) {
     })
 
     mutation.mutate(undefined, {
+      onSuccess: () => {
+        if (isLiking) trackLike()
+      },
       onError: (err) => {
         setState(prev) // revert
         showToast(err.message || 'No se pudo registrar la reacción', 'error')

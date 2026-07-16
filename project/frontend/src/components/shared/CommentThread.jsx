@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '../../hooks/useToast'
 import { apiGet, apiPost } from '../../api/client'
 import { buildReplyFormData } from '../../utils/attachments'
+import { trackCreateComment } from '../../utils/analytics'
 import { CommentCard } from './CommentCard'
 import './CommentCard.css'
 
@@ -54,6 +55,7 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
       buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files, poll)
     ),
     onSuccess: (res) => {
+      trackCreateComment('reply')
       if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
       else showToast('Respuesta publicada', 'success')
       if (currentParent) {
