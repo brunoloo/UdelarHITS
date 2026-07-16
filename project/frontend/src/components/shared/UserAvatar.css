@@ -1,13 +1,15 @@
 /* ── USER AVATAR ──
-   Estructura: .user-avatar-box (raíz, define tamaño y clip circular)
-     > .user-avatar-fallback (capa base: inicial + color, siempre presente)
-     > .user-avatar-img (superpuesta; opacity 0 hasta onLoad → crossfade) */
+   Estructura: .user-avatar-box (raíz, define tamaño y clip circular) contiene
+   O BIEN <img.user-avatar-img> (cuando hay foto) O BIEN <span.user-avatar-fallback>
+   (inicial de color: sin foto, o cuando la foto no cargó). El fondo neutro del
+   box es lo que se ve mientras la foto carga — nunca la inicial. */
 .user-avatar-box {
   position: relative;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
   display: block;
+  background: var(--accent-light);
 }
 
 .user-avatar-fallback {
@@ -18,18 +20,15 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
+  line-height: 1;
   user-select: none;
 }
 
 .user-avatar-img {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
-  border-radius: inherit;
   object-fit: cover;
   display: block;
-  transition: opacity 0.2s ease-in-out;
 }
 
 .user-avatar-sm  { width: 28px; height: 28px; font-size: 12px; }

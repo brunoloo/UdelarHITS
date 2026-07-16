@@ -20,11 +20,22 @@ function hashColor(str) {
 // px de cada tamaño nombrado (en sync con UserAvatar.css)
 const SIZE_PX = { sm: 28, md: 36, lg: 48, xl: 80 }
 
-// Avatar con crossfade: el fallback (inicial + color) queda SIEMPRE como capa
-// base y la imagen se superpone con opacity 0 hasta que su onLoad dispara.
-// Así nunca hay flash inicial→foto ni hueco si la imagen falla o tarda.
-// `lazy` difiere la descarga (para listas largas); los avatares above-the-fold
-// (header, chat, sidebars) se dejan eager, que es el default.
+// Avatar del usuario.
+//
+// La imagen se muestra apenas el navegador la tiene — SIN gatear la visibilidad
+// con onLoad. El patrón anterior (opacity 0 → 1 en onLoad) se rompía con
+// imágenes cacheadas: el evento load puede dispararse antes de que React
+// enganche el handler, así que onLoad no corría, la opacity quedaba en 0 y la
+// foto no aparecía nunca (se veía la inicial "default" aunque hubiera foto).
+//
+// Mientras la foto carga se ve el fondo neutro del contenedor, NO la inicial:
+// si el usuario tiene foto puesta, nunca mostramos el default. La inicial de
+// color solo aparece cuando NO hay foto, o cuando ni el thumbnail ni la URL
+// original cargan.
+//
+// Degradación: si el thumbnail transformado falla (p. ej. cuenta de Cloudinary
+// con "strict transformations", que rechaza /upload/c_fill…/ con 4xx), se
+// reintenta con la URL original cruda antes de rendirse.
 export function UserAvatar({
   url_imagen,
   nickname,
@@ -35,15 +46,14 @@ export function UserAvatar({
   onClick,
   lazy = false,
 }) {
-  const [loaded, setLoaded] = useState(false)
+  // failed: ni el thumbnail ni la URL original cargaron → recién ahí, la inicial.
   const [failed, setFailed] = useState(false)
+  // useRaw: el thumbnail transformado falló → probamos la URL original.
+  const [useRaw, setUseRaw] = useState(false)
 
-  // Reset al cambiar la URL: sin esto, al navegar de un perfil a otro la foto
-  // del usuario anterior quedaría marcada como "cargada" y se vería un frame
-  // de la imagen vieja mientras baja la nueva.
   useEffect(() => {
-    setLoaded(false)
     setFailed(false)
+    setUseRaw(false)
   }, [url_imagen])
 
   const isNumeric = typeof size === 'number'
@@ -62,6 +72,14 @@ export function UserAvatar({
 
   const px = isNumeric ? size : (SIZE_PX[size] || SIZE_PX.md)
   const showImg = !!url_imagen && !failed
+  const src = useRaw ? url_imagen : avatarThumbnail(url_imagen, px * 2)
+
+  function handleError() {
+    // 1er fallo: el thumbnail transformado → probar la URL original cruda.
+    // 2do fallo: tampoco cargó la original → mostrar la inicial.
+    if (!useRaw) setUseRaw(true)
+    else setFailed(true)
+  }
 
   return (
     <div
@@ -71,24 +89,23 @@ export function UserAvatar({
       onClick={onClick}
       style={{ ...sizeStyle, ...style }}
     >
-      <span
-        className="user-avatar-fallback"
-        aria-hidden="true"
-        style={{ background: hashColor(nickname), color: '#fff' }}
-      >
-        {getInitials(nickname)}
-      </span>
-      {showImg && (
+      {showImg ? (
         <img
           className="user-avatar-img"
-          src={avatarThumbnail(url_imagen, px * 2)}
+          src={src}
           alt=""
           loading={lazy ? 'lazy' : undefined}
           decoding="async"
-          onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
-          style={{ opacity: loaded ? 1 : 0 }}
+          onError={handleError}
         />
+      ) : (
+        <span
+          className="user-avatar-fallback"
+          aria-hidden="true"
+          style={{ background: hashColor(nickname), color: '#fff' }}
+        >
+          {getInitials(nickname)}
+        </span>
       )}
     </div>
   )
