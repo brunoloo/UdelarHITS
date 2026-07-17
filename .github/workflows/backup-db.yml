@@ -24,9 +24,24 @@ jobs:
 
       - name: Generar dump comprimido
         run: |
+          set -euo pipefail
           FILENAME="udelarhits_$(date +%Y-%m-%d).sql.gz"
           echo "FILENAME=$FILENAME" >> $GITHUB_ENV
+          # pipefail hace que el pipeline falle si pg_dump falla,
+          # en lugar de que gzip "tenga éxito" comprimiendo un stream vacío.
           pg_dump --no-owner --no-acl | gzip > "$FILENAME"
+
+      - name: Verificar que el backup no esté vacío
+        run: |
+          set -euo pipefail
+          SIZE=$(stat -c%s "$FILENAME")
+          MIN_SIZE=10240  # 10KB: muy por debajo de un dump real, muy por encima de un gzip vacío (~20 bytes)
+          if [ "$SIZE" -lt "$MIN_SIZE" ]; then
+            echo "ERROR: el backup generado pesa solo $SIZE bytes (mínimo esperado: $MIN_SIZE)."
+            echo "Probablemente pg_dump falló silenciosamente. Se aborta la subida a R2."
+            exit 1
+          fi
+          echo "Backup OK: $SIZE bytes"
 
       - name: Configurar AWS CLI para R2
         run: |
