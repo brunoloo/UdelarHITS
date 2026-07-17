@@ -168,6 +168,79 @@ describe('Moderación de avatar', () => {
     expect(gone).toHaveLength(0);
     expect(await hasNotif(u.user.id, /aprobada/i)).toBe(true);
   });
+
+  test('superseding: subir otro avatar con uno pendiente reemplaza al anterior (no coexisten dos)', async () => {
+    checkImageSafety.mockResolvedValue(LIKELY);
+    const u = await registerAndLogin();
+    await request(app).patch('/api/users/me/avatar').set('Cookie', u.cookie).attach('avatar', PNG, 'a.png');
+    const first = await pool.query('SELECT id FROM imagen_pendiente WHERE usuario_id = $1 AND tipo = $2', [u.user.id, 'avatar']);
+    expect(first.rows).toHaveLength(1);
+
+    // Segundo avatar, también sospechoso, sin esperar la resolución del primero.
+    await request(app).patch('/api/users/me/avatar').set('Cookie', u.cookie).attach('avatar', PNG, 'b.png');
+    const after = await pool.query('SELECT id FROM imagen_pendiente WHERE usuario_id = $1 AND tipo = $2', [u.user.id, 'avatar']);
+    // Sigue habiendo UNA sola fila pendiente (la de A se descartó) y es la más nueva.
+    expect(after.rows).toHaveLength(1);
+    expect(Number(after.rows[0].id)).toBeGreaterThan(Number(first.rows[0].id));
+  });
+
+  test('superseding: si el avatar nuevo es seguro, descarta el pendiente viejo y publica el nuevo', async () => {
+    checkImageSafety.mockResolvedValue(LIKELY);
+    const u = await registerAndLogin();
+    await request(app).patch('/api/users/me/avatar').set('Cookie', u.cookie).attach('avatar', PNG, 'a.png');
+    expect((await pool.query('SELECT id FROM imagen_pendiente WHERE usuario_id = $1', [u.user.id])).rows).toHaveLength(1);
+
+    // El segundo avatar esta vez pasa la moderación.
+    checkImageSafety.mockResolvedValue({ safe: true });
+    const res = await request(app).patch('/api/users/me/avatar').set('Cookie', u.cookie).attach('avatar', PNG, 'b.png');
+    expect(res.status).toBe(200);
+
+    // No queda ningún pendiente (la A vieja se limpió aunque la nueva fue segura)
+    // y el perfil ya tiene la imagen nueva aplicada.
+    const pend = await pool.query('SELECT id FROM imagen_pendiente WHERE usuario_id = $1 AND tipo = $2', [u.user.id, 'avatar']);
+    expect(pend.rows).toHaveLength(0);
+    const userRows = await pool.query('SELECT url_imagen FROM usuario WHERE id = $1', [u.user.id]);
+    expect(userRows.rows[0].url_imagen).not.toBeNull();
+  });
+
+  test('respaldo defensivo: aprobar una pendiente ya superada por otra más reciente no toca el perfil', async () => {
+    const u = await registerAndLogin();
+    // Simulamos el estado "carrera / datos previos al índice": dos filas
+    // pendientes del mismo usuario+tipo. Para insertarlas hay que quitar el
+    // índice único un momento y recrearlo al final (no filtra a otros tests).
+    await pool.query('DROP INDEX IF EXISTS idx_imagen_pendiente_usuario_tipo');
+    try {
+      const old = await pool.query(
+        `INSERT INTO imagen_pendiente (usuario_id, url, public_id, tipo)
+         VALUES ($1, $2, $3, 'avatar') RETURNING id`,
+        [u.user.id, 'http://old', 'udelarhits/pending/old']
+      );
+      await pool.query(
+        `INSERT INTO imagen_pendiente (usuario_id, url, public_id, tipo)
+         VALUES ($1, $2, $3, 'avatar')`,
+        [u.user.id, 'http://new', 'udelarhits/pending/new']
+      );
+      const oldId = old.rows[0].id;
+
+      const admin = await createAdmin();
+      const res = await request(app)
+        .patch(`/api/admin/pending-images/${oldId}/approve`)
+        .set('Cookie', admin.cookie)
+        .send({ origen: 'avatar' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.action).toBe('avatar_obsoleto');
+
+      // El perfil NO se actualizó con la imagen vieja...
+      const userRows = await pool.query('SELECT url_imagen FROM usuario WHERE id = $1', [u.user.id]);
+      expect(userRows.rows[0].url_imagen).toBeNull();
+      // ...y la fila obsoleta se descartó, dejando solo la más reciente pendiente.
+      const pend = await pool.query('SELECT id FROM imagen_pendiente WHERE usuario_id = $1 AND tipo = $2', [u.user.id, 'avatar']);
+      expect(pend.rows).toHaveLength(1);
+    } finally {
+      await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS idx_imagen_pendiente_usuario_tipo ON imagen_pendiente(usuario_id, tipo)');
+    }
+  });
 });
 
 describe('Auto-descarte a las 48h', () => {

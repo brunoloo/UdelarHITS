@@ -1,5 +1,5 @@
 import bcrypt  from 'bcrypt';
-import {uploadToCloudinary, deleteFromCloudinary} from '../utils/uploadToCloudinary.js';
+import {uploadToCloudinary, deleteFromCloudinary, deleteAttachmentFromCloudinary} from '../utils/uploadToCloudinary.js';
 import {generateToken} from '../utils/generateToken.js'
 import crypto from 'crypto';
 import { sendEmail } from '../utils/sendEmail.js';
@@ -35,7 +35,7 @@ import {
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy,
   getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
-import { createPendingImagen } from '../repositories/pendingImage.repository.js';
+import { createPendingImagen, getPendingImagenesByUserTipo, deletePendingImagen } from '../repositories/pendingImage.repository.js';
 import { notifyImagePending } from './pendingImage.service.js';
 import { checkImageSafety, isVisionConfigured } from '../utils/checkImageSafety.js';
 import { isBlocked, getBlockDirection } from '../repositories/block.repository.js';
@@ -768,6 +768,20 @@ const isFollowingService = async (seguidorId, seguidoNickname) => {
   return await isFollowing(seguidorId, seguido.id);
 };
 
+// Superseding: descarta cualquier avatar/banner del MISMO usuario y tipo que
+// haya quedado en revisión de un upload anterior (borra el asset de Cloudinary y
+// la fila de imagen_pendiente). Con esto, "vale la última imagen que subiste":
+// la cola del admin nunca acumula pendientes obsoletas y no se puede aprobar una
+// versión vieja pisando la nueva. El índice único (usuario_id, tipo) garantiza
+// que sea a lo sumo una; iteramos por robustez ante datos previos al índice.
+const supersedePreviousPending = async (userId, tipo) => {
+  const previas = await getPendingImagenesByUserTipo(userId, tipo);
+  for (const p of previas) {
+    await deleteAttachmentFromCloudinary(p.public_id, 'imagen');
+    await deletePendingImagen(p.id);
+  }
+};
+
 // Sube una imagen de perfil (avatar/banner) con moderación de Vision SafeSearch.
 //
 //  * Sin Vision configurado (dev/test o prod sin key): flujo directo de siempre
@@ -783,6 +797,12 @@ const moderateProfileImage = async ({ userId, fileBuffer, tipo, folder, canonica
     const url = await uploadToCloudinary(fileBuffer, folder, canonicalId);
     return await updateColumn(userId, url);
   }
+
+  // Superseding ANTES de procesar la nueva imagen. Corre en AMBOS desenlaces:
+  //   * la nueva es segura → se publica y el pendiente viejo ya no tiene sentido;
+  //   * la nueva vuelve a quedar pendiente → reemplaza al viejo (y evita violar
+  //     el índice único al insertar).
+  await supersedePreviousPending(userId, tipo);
 
   const pendingFolder = 'udelarhits/pending';
   const pendingId = `${tipo}_pending_${userId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;

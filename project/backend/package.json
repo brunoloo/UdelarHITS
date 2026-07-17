@@ -29,6 +29,7 @@
     "db:migrate:fase17": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase17_google_oauth.sql",
     "db:migrate:fase18": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase18_moderacion_imagenes.sql",
     "db:migrate:fase19": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase19_categoria_fijada_home.sql",
+    "db:migrate:fase20": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase20_imagen_pendiente_unica.sql",
     "db:migrate:etiquetas": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_etiquetas_tabla.sql",
     "db:migrate:performance": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_performance_indices.sql",
     "db:test:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits_test;\"",

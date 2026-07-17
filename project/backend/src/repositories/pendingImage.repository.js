@@ -60,6 +60,16 @@ const getPendingImagen = async (id) => {
   return rows[0] || null;
 };
 
+// Filas pendientes de un usuario para un tipo (avatar|banner). Lo usa el
+// superseding del upload para descartar el pendiente anterior antes de procesar
+// el nuevo. Devuelve un array (normalmente 0 o 1, garantizado por el índice
+// único (usuario_id, tipo); iteramos por robustez ante datos previos al índice).
+const getPendingImagenesByUserTipo = async (usuarioId, tipo) => {
+  const q = `SELECT id, public_id FROM imagen_pendiente WHERE usuario_id = $1 AND tipo = $2`;
+  const { rows } = await pool.query(q, [usuarioId, tipo]);
+  return rows;
+};
+
 // --- Mutaciones sobre adjunto ---------------------------------------------
 
 const approveAdjunto = async (id) => {
@@ -103,6 +113,24 @@ const promotePendingImagen = async (id, finalUrl = null) => {
       await client.query('ROLLBACK');
       return null;
     }
+
+    // Validación defensiva (respaldo, NO el mecanismo principal): si existe otra
+    // fila pendiente MÁS reciente del mismo usuario y tipo, esta ya fue superada
+    // por un upload posterior y no debe aplicarse (aprobarla revertiría la foto a
+    // una versión vieja). El id es monótono (BIGSERIAL): "más reciente" = existe
+    // un id mayor para el mismo usuario+tipo. El camino principal (superseding en
+    // el upload + índice único sobre (usuario_id, tipo)) hace que esto casi nunca
+    // ocurra; queda como cinturón y tirantes ante una carrera o una limpieza
+    // fallida. Se aborta el promote y se señala `stale` para descartar la fila.
+    const { rows: newer } = await client.query(
+      `SELECT 1 FROM imagen_pendiente WHERE usuario_id = $1 AND tipo = $2 AND id > $3 LIMIT 1`,
+      [row.usuario_id, row.tipo, id]
+    );
+    if (newer.length > 0) {
+      await client.query('ROLLBACK');
+      return { stale: true };
+    }
+
     const col = row.tipo === 'avatar' ? 'url_imagen' : 'url_banner';
     const url = finalUrl || row.url;
     await client.query(`UPDATE usuario SET ${col} = $1 WHERE id = $2`, [url, row.usuario_id]);
@@ -160,7 +188,7 @@ const createPendingImagen = async ({ usuarioId, url, publicId, tipo, scoreAdult 
 
 export {
   listPendingAdjuntos, listPendingImagenes,
-  getPendingAdjunto, getPendingImagen,
+  getPendingAdjunto, getPendingImagen, getPendingImagenesByUserTipo,
   approveAdjunto, markAdjuntoRejected,
   promotePendingImagen, deletePendingImagen,
   getExpiredPendingAdjuntos, getExpiredPendingImagenes,
