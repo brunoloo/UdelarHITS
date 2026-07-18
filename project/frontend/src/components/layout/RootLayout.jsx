@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, Suspense } from 'react'
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import { trackPageView, trackLogin } from '../../utils/analytics'
+import { Skeleton } from '../ui/Skeleton'
 
 // Layout raíz sin path: envuelve TODAS las rutas para poder registrar el
 // page_view de GA4 en cada cambio de navegación de React Router (SPA).
@@ -26,5 +27,12 @@ export function RootLayout() {
     }
   }, [searchParams, setSearchParams])
 
-  return <Outlet />
+  // Boundary de nivel raíz para las rutas lazy que NO cuelgan de AppLayout
+  // (login, register, chat, about, setup, redirect). Las de AppLayout tienen su
+  // propio Suspense que preserva el shell.
+  return (
+    <Suspense fallback={<Skeleton height={320} borderRadius={12} style={{ margin: '24px auto', maxWidth: 720 }} />}>
+      <Outlet />
+    </Suspense>
+  )
 }

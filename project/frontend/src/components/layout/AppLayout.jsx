@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { Outlet, useLocation, Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { Header } from './Header'
@@ -6,6 +6,7 @@ import { LeftNav } from './LeftNav'
 import { BottomNav } from './BottomNav'
 import { MobileDrawer } from './MobileDrawer'
 import { Sidebar } from './Sidebar'
+import { Skeleton } from '../ui/Skeleton'
 import './AppLayout.css'
 
 function ScrollToTop() {
@@ -28,7 +29,12 @@ export function AppLayout() {
       <LeftNav />
       <div className="page">
         <main>
-          <Outlet />
+          {/* Las rutas se cargan con React.lazy (code splitting): el shell
+              (header/nav/sidebar) queda visible y solo el contenido muestra un
+              skeleton mientras baja el chunk de la página. */}
+          <Suspense fallback={<Skeleton height={320} borderRadius={12} style={{ margin: '16px 0' }} />}>
+            <Outlet />
+          </Suspense>
         </main>
         <Sidebar />
       </div>

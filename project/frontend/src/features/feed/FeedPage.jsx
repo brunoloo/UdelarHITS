@@ -108,7 +108,11 @@ export function FeedPage() {
           <div className="feed-empty">{emptyMessage()}</div>
         ) : (
           <>
-            {displayCategories.map(c => <CategoryCard key={c.id} category={c} />)}
+            {/* priority solo en el primer card: su adjunto es el candidato LCP
+                del Home → carga eager + fetchpriority=high, el resto lazy. */}
+            {displayCategories.map((c, i) => (
+              <CategoryCard key={c.id} category={c} priority={i === 0} />
+            ))}
             {!qParam && (
               <div ref={sentinelRef}>
                 {isFetchingNextPage && <CategorySkeleton />}

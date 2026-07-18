@@ -4,13 +4,38 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UdelarHITS</title>
+
+    <!-- SEO -->
+    <meta name="description" content="Foro universitario de la Universidad de la República (Uruguay). Discusiones, preguntas y comunidad estudiantil para compartir conocimiento." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://udelarhits.com/" />
+
+    <!-- Open Graph -->
     <meta property="og:title" content="UdelarHITS" />
-    <meta property="og:description" content="Comunidad · Conversación · Conocimiento" />
+    <meta property="og:description" content="Foro universitario de la Universidad de la República (Uruguay). Discusiones, preguntas y comunidad estudiantil." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://udelarhits.com/" />
     <meta property="og:image" content="https://udelarhits.com/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:url" content="https://udelarhits.com" />
-    <meta property="og:type" content="website" />
+
+    <!-- Preconnect a los orígenes del render crítico (imágenes + fuentes).
+         ANTES de cualquier CSS/JS: abre la conexión TLS en paralelo al HTML.
+         Solo fonts.gstatic lleva crossorigin (las fuentes se piden con CORS);
+         Cloudinary y fonts.googleapis van sin él (imágenes y CSS son non-CORS).
+         Nota: un plugin de vite.config.js reescribe estos crossorigin en build. -->
+    <link rel="preconnect" href="https://res.cloudinary.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Sin JS, las fuentes se cargan de forma normal (con JS, el bloque inline
+         de más abajo las carga fuera de la ruta de render crítico). -->
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap"
+      />
+    </noscript>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon-rounded.svg" />
@@ -18,9 +43,28 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
-    <!-- Anti-flash: debe ejecutarse ANTES de que el navegador pinte — sin defer ni
-         async. Externo (no inline) para cumplir el CSP script-src 'self'. -->
-    <script src="/theme-init.js"></script>
+    <!-- Anti-flash de tema + carga no bloqueante de fuentes. Inline para evitar
+         el round-trip HTTP del antiguo /theme-init.js (era render-blocking,
+         ~170ms). Debe ejecutarse ANTES del primer paint — sin defer ni async.
+         El CSP autoriza este bloque EXACTO por su hash sha256 (ver script-src
+         en backend/src/app.js): cualquier cambio a este script obliga a
+         recalcular ese hash. Las fuentes se cargan creando el <link> por JS
+         (no atributo onload inline) para cumplir script-src-attr 'none'. -->
+    <script>
+      (function () {
+        var saved = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var dark = saved === 'dark' || ((saved === 'system' || !saved) && prefersDark);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+
+        var f = document.createElement('link');
+        f.rel = 'stylesheet';
+        f.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap';
+        f.media = 'print';
+        f.onload = function () { this.media = 'all'; };
+        document.head.appendChild(f);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,6 +1,5 @@
-/* Tipografía base */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
-
+/* Tipografía base — las fuentes de Google se cargan de forma NO bloqueante
+   desde index.html (antes había un @import render-blocking acá). */
 body {
   font-family: 'DM Sans', sans-serif;
   background: var(--bg);

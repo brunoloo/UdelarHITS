@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FileText, FileSpreadsheet, Archive, File, Clock, ShieldAlert } from 'lucide-react'
 import { formatBytes } from '../../utils/formatBytes'
 import { documentDownloadUrl } from '../../utils/attachments'
+import { cloudinaryResize } from '../../utils/cloudinaryUrl'
 import { ImageLightbox } from './ImageLightbox'
 import './CommentAttachments.css'
 
@@ -15,7 +16,17 @@ function iconForName(name = '') {
 
 // Renderiza los adjuntos de un comentario: imágenes que abren en un visor (modal)
 // dentro del sitio y documentos como links de descarga.
-export function CommentAttachments({ adjuntos }) {
+//
+// maxWidth: ancho máximo (px) al que se sirve la imagen desde Cloudinary. En el
+// feed (previews de comentarios dentro de las cards) nunca se muestra a más de
+// ~500px, así que 600 alcanza; en la vista completa de un tema se muestra más
+// grande (1200). Al abrir el Lightbox SIEMPRE se usa la URL original —ahí sí
+// queremos resolución completa.
+//
+// priority: cuando la primera imagen es (o puede ser) el elemento LCP —el
+// primer adjunto del primer card del feed— se carga con loading="eager" y
+// fetchpriority="high" para no retrasar el LCP. El resto queda con lazy.
+export function CommentAttachments({ adjuntos, maxWidth = 1200, priority = false }) {
   const [lightbox, setLightbox] = useState(null)
 
   if (!adjuntos || adjuntos.length === 0) return null
@@ -27,7 +38,7 @@ export function CommentAttachments({ adjuntos }) {
     <div className="comment-attachments" onClick={e => e.stopPropagation()}>
       {imagenes.length > 0 && (
         <div className="ca-images">
-          {imagenes.map(a => {
+          {imagenes.map((a, idx) => {
             // Moderación: solo se renderiza la imagen real si está 'publicado'.
             // 'pendiente_revision' y 'rechazado' muestran un placeholder y no
             // exponen la imagen (ni abren el visor).
@@ -47,6 +58,9 @@ export function CommentAttachments({ adjuntos }) {
                 </div>
               )
             }
+            // El Lightbox recibe la URL ORIGINAL (a.url): al ampliar queremos
+            // resolución completa. En la card se sirve una versión redimensionada.
+            const isLcp = priority && idx === 0
             return (
               <button
                 key={a.id}
@@ -55,7 +69,13 @@ export function CommentAttachments({ adjuntos }) {
                 title={a.nombre_original}
                 onClick={() => setLightbox({ src: a.url, alt: a.nombre_original })}
               >
-                <img src={a.url} alt={a.nombre_original} loading="lazy" />
+                <img
+                  src={cloudinaryResize(a.url, maxWidth)}
+                  alt={a.nombre_original}
+                  loading={isLcp ? 'eager' : 'lazy'}
+                  fetchPriority={isLcp ? 'high' : undefined}
+                  decoding="async"
+                />
               </button>
             )
           })}

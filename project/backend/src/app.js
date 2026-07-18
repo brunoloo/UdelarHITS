@@ -49,7 +49,14 @@ app.use(helmet({
     directives: {
       // GA4 (gtag.js) sirve el script desde googletagmanager.com y envía los
       // hits a los dominios de google-analytics; sin estos, el CSP los bloquea.
-      'script-src': ["'self'", 'https://www.googletagmanager.com'],
+      // El hash sha256 autoriza el bloque inline anti-flash + carga de fuentes
+      // de frontend/index.html (antes era /theme-init.js externo). Si se edita
+      // ese <script>, recalcular el hash o el navegador lo bloqueará.
+      'script-src': [
+        "'self'",
+        'https://www.googletagmanager.com',
+        "'sha256-sKESsRZ3eM7KuvKVlrK+C06nYNTzz2FBxADpN/gvous='"
+      ],
       'connect-src': [
         "'self'",
         'https://www.google-analytics.com',

@@ -51,6 +51,7 @@ export function AttachmentButton({ files, onChange, disabled = false, className 
         type="button"
         className={`attach-btn${className ? ` ${className}` : ''}`}
         title="Adjuntar archivos"
+        aria-label="Adjuntar archivos"
         disabled={disabled || files.length >= MAX_ARCHIVOS}
         onClick={() => inputRef.current?.click()}
       >
@@ -106,6 +107,7 @@ export function AttachmentPreviews({ files, onChange }) {
               type="button"
               className="attach-chip-remove"
               title="Quitar"
+              aria-label="Quitar archivo"
               onClick={() => removeAt(i)}
             >
               <X size={14} />

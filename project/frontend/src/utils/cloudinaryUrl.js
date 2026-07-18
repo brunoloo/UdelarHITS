@@ -38,3 +38,29 @@ export function avatarThumbnail(url, size = 80) {
   // reconoce por contener "_" (c_fill, f_auto, w_80…); las carpetas no.
   return url.replace(/\/upload\/(?:[^/]*_[^/]*\/)?/, `/upload/${t}/`)
 }
+
+/**
+ * Redimensiona una imagen de Cloudinary a un ancho máximo, manteniendo el
+ * aspect ratio (c_limit nunca agranda imágenes más chicas que maxWidth) con
+ * formato/calidad automáticos (AVIF/WebP + q_auto).
+ *
+ * Pensada para adjuntos y banners: PageSpeed detecta que un adjunto de
+ * 3024×4032 (~1 MB) se muestra a ~269px — descargar el original a full-res es
+ * desperdicio puro de bytes y retrasa el LCP.
+ *
+ * Idempotente y sin apilado: igual que avatarThumbnail(), REEMPLAZA cualquier
+ * segmento de transformación previo entre /upload/ y la versión en vez de
+ * encadenar otro. Las URLs de adjuntos ya llegan con f_auto,q_auto desde el
+ * backend; como el reemplazo incluye esos mismos parámetros, nunca se duplican.
+ * @param {string} url       URL de Cloudinary (…/upload/[transform/][vNNN/]id)
+ * @param {number} maxWidth  Ancho máximo en px (no agranda si la imagen es menor)
+ * @returns {string} URL transformada, o la original si no es de Cloudinary.
+ */
+export function cloudinaryResize(url, maxWidth = 1200) {
+  if (!url || !url.includes('/upload/')) return url
+  const t = `c_limit,w_${maxWidth},f_auto,q_auto`
+  if (/\/upload\/(?:.+?\/)?v\d+\//.test(url)) {
+    return url.replace(/\/upload\/(?:.+?\/)?(v\d+\/)/, `/upload/${t}/$1`)
+  }
+  return url.replace(/\/upload\/(?:[^/]*_[^/]*\/)?/, `/upload/${t}/`)
+}

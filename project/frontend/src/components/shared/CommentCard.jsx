@@ -301,6 +301,7 @@ export function CommentCard({
                 className="comment-action-btn comment-action-btn--bookmark"
                 type="button"
                 title={comentarioGuardado ? 'Quitar de guardados' : 'Guardar'}
+                aria-label={comentarioGuardado ? 'Quitar de guardados' : 'Guardar'}
                 onClick={e => { e.stopPropagation(); toggleSaved('comentario', comment.id) }}
               >
                 <BookmarkIcon filled={comentarioGuardado} size={14} />

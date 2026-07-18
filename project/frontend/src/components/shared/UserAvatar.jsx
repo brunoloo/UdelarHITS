@@ -94,6 +94,8 @@ export function UserAvatar({
           className="user-avatar-img"
           src={src}
           alt=""
+          width={px}
+          height={px}
           loading={lazy ? 'lazy' : undefined}
           decoding="async"
           onError={handleError}

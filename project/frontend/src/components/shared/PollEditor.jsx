@@ -14,6 +14,7 @@ export function PollButton({ active, onActivate, disabled = false }) {
       type="button"
       className={`poll-btn${active ? ' active' : ''}`}
       title="Crear encuesta"
+      aria-label="Crear encuesta"
       disabled={disabled || active}
       onClick={onActivate}
     >

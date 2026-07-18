@@ -22,7 +22,9 @@ export function DropdownMenu({ items }) {
     <div className="comment-menu-wrap" ref={wrapRef}>
       <button
         className="comment-menu-btn"
+        type="button"
         onClick={() => setOpen((prev) => !prev)}
+        aria-label="Más opciones"
         aria-haspopup="true"
         aria-expanded={open}
       >

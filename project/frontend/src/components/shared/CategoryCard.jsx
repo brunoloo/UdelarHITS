@@ -16,7 +16,7 @@ import './CommentCard.css' // reutilizamos los estilos de .comment-card
 // Preview (solo visual) del último comentario directo a la categoría. Misma
 // estructura que un CommentCard real (avatar + nickname/timeAgo, texto, footer
 // con like y respuestas). No permite dar like ni responder.
-function CommentPreview({ comment }) {
+function CommentPreview({ comment, priority = false }) {
   const autor = resolveAutor(comment)
   const replyCount = Number(comment.contador_respuestas) || 0
   return (
@@ -49,7 +49,9 @@ function CommentPreview({ comment }) {
           </div>
         )}
 
-        <CommentAttachments adjuntos={comment.adjuntos} />
+        {/* En el feed el preview nunca se muestra a más de ~500px → 600 alcanza.
+            priority marca el primer adjunto del primer card como candidato LCP. */}
+        <CommentAttachments adjuntos={comment.adjuntos} maxWidth={600} priority={priority} />
 
         {comment.encuesta && <PollDisplay encuesta={comment.encuesta} readOnly />}
 
@@ -74,7 +76,7 @@ function CommentPreview({ comment }) {
   )
 }
 
-export function CategoryCard({ category }) {
+export function CategoryCard({ category, priority = false }) {
   const {
     id,
     titulo,
@@ -135,7 +137,7 @@ export function CategoryCard({ category }) {
       {/* (2) Preview del último comentario embebido → ?tab=comentarios */}
       {ultimo_comentario && (
         <div className="category-comment-link" onClick={goTo(`${catUrl}?tab=comentarios`)}>
-          <CommentPreview comment={ultimo_comentario} />
+          <CommentPreview comment={ultimo_comentario} priority={priority} />
         </div>
       )}
 

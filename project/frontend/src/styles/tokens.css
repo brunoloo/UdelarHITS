@@ -16,7 +16,9 @@
   /* ── Texto ───────────────────────────────────────── */
   --text-primary: #0f1a2e;
   --text-secondary: #576069;
-  --text-muted: #9aa0a6;
+  /* #9aa0a6 daba ~2.5:1 sobre blanco (falla WCAG AA). #656d76 ≈ 4.8:1 sobre
+     --surface y ≈ 4.5:1 sobre --bg, cumpliendo AA para texto normal. */
+  --text-muted: #656d76;
   --text-on-accent: #ffffff;
 
   /* ── Acento ──────────────────────────────────────── */
@@ -83,7 +85,9 @@
   /* ── Texto ───────────────────────────────────────── */
   --text-primary: #f0f3f6;
   --text-secondary: #8899a6;
-  --text-muted: #5b7183;
+  /* #5b7183 daba ~3.3:1 sobre --surface (falla WCAG AA). #808e9b ≈ 4.9:1 sobre
+     --surface y ≈ 5.6:1 sobre --bg, cumpliendo AA para texto normal. */
+  --text-muted: #808e9b;
   --text-on-accent: #ffffff;
 
   /* ── Acento ──────────────────────────────────────── */
