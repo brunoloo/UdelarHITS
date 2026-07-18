@@ -118,6 +118,14 @@ const approvePendingImageService = async (id, origen) => {
 
   const promoted = await promotePendingImagen(id, finalUrl);
   if (!promoted) throw notFound('Imagen pendiente no encontrada');
+  // Respaldo defensivo: la imagen ya había sido superada por una más reciente del
+  // usuario (el mecanismo principal, superseding en el upload, la habría borrado;
+  // esto cubre una carrera o una limpieza fallida). No se aplica al perfil: se
+  // descarta la fila obsoleta en silencio, sin notificar "aprobada".
+  if (promoted.stale) {
+    await deletePendingImagen(id);
+    return { action: `${origen}_obsoleto` };
+  }
   await notifyImageModeration(promoted.usuario_id, IMAGE_MODERATION_MSG.approved, null);
   return { action: `${origen}_aprobado` };
 };

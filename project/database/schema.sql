@@ -468,6 +468,11 @@ CREATE TABLE imagen_pendiente (
   fecha_creacion  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_imagen_pendiente_fecha ON imagen_pendiente(fecha_creacion);
+-- A lo sumo UNA imagen pendiente por usuario y tipo (avatar|banner). Sostiene el
+-- "superseding": al subir un avatar/banner nuevo teniendo uno en revisión, el
+-- anterior se descarta antes de insertar el nuevo, así la cola nunca acumula
+-- pendientes obsoletas del mismo slot ni se puede aprobar una versión vieja.
+CREATE UNIQUE INDEX idx_imagen_pendiente_usuario_tipo ON imagen_pendiente(usuario_id, tipo);
 
 -- Encuestas de un comentario. Un comentario tiene a lo sumo una encuesta.
 CREATE TABLE encuesta (
