@@ -1,9 +1,14 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useLayoutEffect } from 'react';
 import './DropdownMenu.css';
 
 export function DropdownMenu({ items }) {
   const [open, setOpen] = useState(false);
+  // En viewports chicos (mobile) el menú puede no entrar debajo del trigger:
+  // en ese caso se abre hacia arriba para que no quede cortado por el borde
+  // inferior de la pantalla.
+  const [openUpward, setOpenUpward] = useState(false);
   const wrapRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     if (!open) return;
@@ -16,6 +21,18 @@ export function DropdownMenu({ items }) {
 
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
+  }, [open]);
+
+  // Se mide con el menú ya montado (offsetHeight real) pero antes del paint,
+  // así el flip no produce parpadeo.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const rect = wrapRef.current.getBoundingClientRect();
+    const menuHeight = menuRef.current?.offsetHeight || 200;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    // Solo se abre hacia arriba si no entra abajo Y arriba hay más lugar
+    // (si no entra de ningún lado, mejor abajo que recortado contra el header).
+    setOpenUpward(spaceBelow < menuHeight && rect.top > spaceBelow);
   }, [open]);
 
   return (
@@ -34,7 +51,10 @@ export function DropdownMenu({ items }) {
       </button>
 
       {open && (
-        <div className="comment-dropdown">
+        <div
+          className={`comment-dropdown${openUpward ? ' comment-dropdown--up' : ''}`}
+          ref={menuRef}
+        >
           {items.map((item, index) => (
             <button
               key={index}

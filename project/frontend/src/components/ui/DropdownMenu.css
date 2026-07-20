@@ -14,6 +14,10 @@
   border-radius: var(--radius); box-shadow: var(--shadow-2);
   min-width: 180px; z-index: 100; overflow: hidden;
 }
+/* Sin espacio debajo del trigger (viewport chico): el menú abre hacia arriba. */
+.comment-dropdown--up {
+  top: auto; bottom: 100%;
+}
 .comment-dropdown-item {
   display: flex; align-items: center; gap: 8px; width: 100%;
   padding: 10px 14px; background: none; border: none;

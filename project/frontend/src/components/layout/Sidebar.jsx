@@ -39,16 +39,23 @@ function CommunityCard({ categoryCount, topicCount }) {
   )
 }
 
-function PopularTagsCard() {
-  // Etiquetas en tendencia por actividad real de los últimos 7 días (temas
-  // creados por etiqueta), servidas por el backend. Antes se calculaba la
-  // frecuencia estática de etiquetas sobre las categorías activas.
-  const { data: tags = [] } = useQuery({
-    queryKey: ['categories', 'trending-tags'],
-    queryFn: () => apiGet('/categories/trending-tags?days=7&limit=8').then(r => r.data),
-    // Ranking de 7 días: no cambia minuto a minuto y es caro en el backend.
-    staleTime: 2 * 60 * 1000,
-  })
+function PopularTagsCard({ categories }) {
+  // Frecuencia de etiquetas sobre las categorías activas del índice (en
+  // cuántas categorías aparece cada una). El ranking anterior por actividad
+  // de 7 días (/categories/trending-tags) dejaba la card en "Sin etiquetas
+  // aún" en semanas sin temas nuevos, aunque hubiera etiquetas en uso.
+  const counts = new Map()
+  for (const c of categories) {
+    // ARRAY_AGG sin FILTER en /categories/index: sin etiquetas llega [null].
+    for (const nombre of c.etiquetas || []) {
+      if (!nombre) continue
+      counts.set(nombre, (counts.get(nombre) || 0) + 1)
+    }
+  }
+  const tags = [...counts.entries()]
+    .map(([etiqueta, frecuencia]) => ({ etiqueta, frecuencia }))
+    .sort((a, b) => b.frecuencia - a.frecuencia || a.etiqueta.localeCompare(b.etiqueta))
+    .slice(0, 8)
 
   return (
     <div className="sidebar-card">
@@ -61,7 +68,7 @@ function PopularTagsCard() {
             {tags.map(t => (
               <Link key={t.etiqueta} to={`/?q=${encodeURIComponent(t.etiqueta)}`} className="sidebar-tag">
                 <span className="sidebar-tag-name">{t.etiqueta}</span>
-                <span className="sidebar-tag-count">{Number(t.temas_recientes) || 0}</span>
+                <span className="sidebar-tag-count">{t.frecuencia}</span>
               </Link>
             ))}
           </div>
@@ -360,7 +367,7 @@ export function Sidebar() {
 
       {pathname === '/recent' && (
         <>
-          <PopularTagsCard />
+          <PopularTagsCard categories={categories} />
           <CommunityCard categoryCount={categoryCount} topicCount={recentTopics.length} />
         </>
       )}

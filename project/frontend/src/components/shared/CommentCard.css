@@ -31,6 +31,10 @@
 
 .comment-gutter a {
   line-height: 0;
+  /* El Link que envuelve al avatar no tiene clase y el reset no toca los <a>:
+     sin esto, el subrayado default del navegador se propaga y dibuja una
+     rayita debajo de la inicial del avatar fallback (sin foto). */
+  text-decoration: none;
 }
 
 .comment-avatar--empty {

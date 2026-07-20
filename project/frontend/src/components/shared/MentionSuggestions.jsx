@@ -16,7 +16,14 @@ export function useMentions(textareaRef) {
       setActive(true)
       if (textareaRef.current) {
         const ta = textareaRef.current
-        setPosition({ top: ta.offsetHeight + 4, left: 0 })
+        // Si el listado (max-height 200px) no entra entre el textarea y el
+        // borde inferior del viewport, se abre hacia arriba (mobile/teclado).
+        const rect = ta.getBoundingClientRect()
+        const spaceBelow = window.innerHeight - rect.bottom
+        const openUpward = spaceBelow < 210 && rect.top > spaceBelow
+        setPosition(openUpward
+          ? { bottom: ta.offsetHeight + 4, left: 0 }
+          : { top: ta.offsetHeight + 4, left: 0 })
       }
     } else {
       setActive(false)
@@ -92,7 +99,7 @@ export const MentionSuggestions = forwardRef(function MentionSuggestions({ query
   if (!query || query.length < 2 || (results.length === 0 && !loading)) return null
 
   return (
-    <div className="mention-suggestions" style={{ top: position.top, left: position.left }}>
+    <div className="mention-suggestions" style={position}>
       {loading ? (
         <div className="mention-item mention-item--loading">Buscando...</div>
       ) : (

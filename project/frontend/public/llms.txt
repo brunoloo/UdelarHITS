@@ -1,0 +1,13 @@
+# UdelarHITS
+
+> Foro universitario de la Universidad de la República (Uruguay).
+
+UdelarHITS es una plataforma de discusión y comunidad para estudiantes de todas las facultades de la Universidad de la República. Los usuarios pueden crear categorías temáticas, abrir temas de discusión, comentar, seguir a otros usuarios y participar en encuestas.
+
+## Links
+
+- [Inicio](https://udelarhits.com/)
+- [Acerca de](https://udelarhits.com/central/central.html)
+- [Normas de convivencia](https://udelarhits.com/central/info/normas.html)
+- [Política de privacidad](https://udelarhits.com/central/legal/privacidad.html)
+- [Términos y condiciones](https://udelarhits.com/central/legal/terminos.html)
