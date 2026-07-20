@@ -8,6 +8,7 @@ import { apiGet, apiPost } from '../../api/client'
 import { trackCreateCategory } from '../../utils/analytics'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { TagSelector } from '../../components/ui/TagSelector'
+import { CategoryDescriptionField } from './CategoryDescriptionField'
 
 export function CreateCategoryPanel() {
   const { user } = useAuth()
@@ -115,21 +116,12 @@ export function CreateCategoryPanel() {
                   autoFocus
                 />
               </div>
-              <div className="edit-field">
-                <div className="edit-field-label">
-                  <span>Descripción (*)</span>
-                  <span className={`edit-field-counter${descripcion.length >= 730 ? ' limit' : ''}`}>
-                    {descripcion.length} / 750
-                  </span>
-                </div>
-                <textarea
-                  maxLength={750}
-                  rows={3}
-                  placeholder="¿De qué va esta categoría?"
-                  value={descripcion}
-                  onChange={e => setDescripcion(e.target.value)}
-                />
-              </div>
+              <CategoryDescriptionField
+                value={descripcion}
+                onChange={setDescripcion}
+                maxLength={750}
+                placeholder="¿De qué va esta categoría?"
+              />
               <div className="edit-field">
                 <div className="edit-field-label">
                   <span>Etiquetas (*)</span>

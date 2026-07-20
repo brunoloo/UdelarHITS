@@ -63,3 +63,26 @@ a.mention-link:hover {
   font-weight: 600;
 }
 .section-panel { padding: 16px 0; }
+
+/* ── CATEGORY DESCRIPTION ──
+   Estilo de la descripción de categoría. En el CSS global (bundle inicial), no en
+   category.css (chunk lazy): así la vista previa del modal de editar/crear
+   categoría renderiza IDÉNTICO a la página real —mismo font, line-height,
+   white-space y word-break— en cualquier ruta, incluida Home (donde vive el panel
+   de crear categoría y no se carga category.css). El override de mobile sigue en
+   responsive.css y se apila encima. */
+.cat-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cat-desc .bio-link {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+}
+.cat-desc .bio-link:hover {
+  text-decoration: underline;
+}

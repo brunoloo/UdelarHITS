@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
@@ -11,6 +11,7 @@ import { Modal } from '../../components/ui/Modal'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
 import { Tag } from '../../components/ui/Tag'
 import { TagSelector } from '../../components/ui/TagSelector'
+import { CategoryDescriptionField } from './CategoryDescriptionField'
 import { useSaved } from '../../hooks/useSaved'
 import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
 import { BellIcon } from '../../components/shared/BellIcon'
@@ -215,21 +216,8 @@ function HistoryModalBody({ catId }) {
 function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
   const [desc, setDesc] = useState('')
   const [selectedTags, setSelectedTags] = useState([])
-  // 'editar' (textarea) | 'preview' (descripción renderizada como en la página).
-  const [activeTab, setActiveTab] = useState('editar')
-  const textareaRef = useRef(null)
   const { showToast } = useToast()
   const queryClient = useQueryClient()
-
-  // Auto-resize: el textarea crece con el contenido (hasta el max-height del CSS,
-  // donde aparece scroll). Se recalcula al escribir, al cargar la descripción y
-  // al volver al tab Editar (donde el textarea se re-monta y su alto vuelve a 0).
-  useEffect(() => {
-    const ta = textareaRef.current
-    if (!ta) return
-    ta.style.height = 'auto'
-    ta.style.height = `${ta.scrollHeight}px`
-  }, [desc, activeTab, isOpen])
 
   const { data: availableTags = {} } = useQuery({
     queryKey: ['categories', 'etiquetas'],
@@ -248,7 +236,6 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
   useEffect(() => {
     if (isOpen && cat) {
       setDesc(cat.descripcion || '')
-      setActiveTab('editar')
       const names = parseEtiquetas(cat.etiquetas)
       setSelectedTags(names.map(n => nameToId[n]).filter(Boolean))
     }
@@ -285,57 +272,14 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Editar categoría" headerAction={saveBtn}>
-      <div className="section-tabs edit-tabs" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'editar'}
-          className={`tab${activeTab === 'editar' ? ' active' : ''}`}
-          onClick={() => setActiveTab('editar')}
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === 'preview'}
-          className={`tab${activeTab === 'preview' ? ' active' : ''}`}
-          onClick={() => setActiveTab('preview')}
-        >
-          Vista previa
-        </button>
-      </div>
       <div className="edit-body">
-        {activeTab === 'editar' ? (
-          <div className="edit-field edit-field--desc">
-            <div className="edit-field-label">
-              <span>Descripción (*)</span>
-              <span className={`edit-field-counter${desc.length >= 730 ? ' limit' : ''}`}>
-                {desc.length} / 750
-              </span>
-            </div>
-            <textarea
-              ref={textareaRef}
-              maxLength={750}
-              value={desc}
-              onChange={e => setDesc(e.target.value)}
-            />
-          </div>
-        ) : (
-          <div className="edit-preview">
-            {/* Misma clase (.cat-desc) que la descripción real en CategoryPage:
-                hereda pre-wrap, fuente, tamaño y el mismo ReadMore, así la
-                preview refleja el render final. */}
-            <div className="cat-desc edit-preview-content">
-              {desc.trim()
-                ? <ReadMore text={desc} maxLength={500} />
-                : <span className="edit-preview-empty">Sin descripción</span>}
-            </div>
-            <p className="edit-preview-note">
-              La vista previa puede variar ligeramente según el dispositivo.
-            </p>
-          </div>
-        )}
+        <CategoryDescriptionField
+          key={isOpen ? 'open' : 'closed'}
+          value={desc}
+          onChange={setDesc}
+          maxLength={750}
+          placeholder="¿De qué va esta categoría?"
+        />
         <div className="edit-field">
           <div className="edit-field-label">
             <span>Etiquetas (*)</span>

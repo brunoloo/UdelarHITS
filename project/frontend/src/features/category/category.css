@@ -88,21 +88,9 @@
   margin-bottom: 6px;
   letter-spacing: -0.3px;
 }
-.cat-desc {
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.55;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.cat-desc .bio-link {
-  color: var(--accent);
-  text-decoration: none;
-  word-break: break-word;
-}
-.cat-desc .bio-link:hover {
-  text-decoration: underline;
-}
+/* .cat-desc (+ .bio-link) se movió a styles/global.css (bundle inicial) para que
+   la vista previa de crear/editar categoría renderice idéntico a la página en
+   cualquier ruta. Ver comentario allá. */
 .cat-tags {
   display: flex;
   flex-wrap: wrap;

@@ -187,20 +187,18 @@
   overflow-y: auto;
 }
 
-/* ── PREVIEW ── */
+/* ── PREVIEW ──
+   La preview NO estiliza el texto: usa <p class="cat-desc"> + ReadMore, el mismo
+   markup que la página de categoría real, para que se vea idéntico. Acá solo el
+   layout del bloque (tab preview) y la nota/placeholder. */
 .edit-preview {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-
-.edit-preview-content {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 12px 14px;
+/* Alto mínimo para que el modal no “salte” al alternar con el textarea. */
+.edit-preview .cat-desc {
   min-height: 200px;
-  max-width: 100%;
 }
 
 .edit-preview-empty {
