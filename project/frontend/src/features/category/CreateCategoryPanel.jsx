@@ -9,6 +9,8 @@ import { trackCreateCategory } from '../../utils/analytics'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { TagSelector } from '../../components/ui/TagSelector'
 import { CategoryDescriptionField } from './CategoryDescriptionField'
+import { AccordionField } from '../../components/shared/AccordionField'
+import { descriptionSummary, tagsSummary } from './categoryFieldSummary'
 
 export function CreateCategoryPanel() {
   const { user } = useAuth()
@@ -22,6 +24,9 @@ export function CreateCategoryPanel() {
   const [titulo, setTitulo] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [selectedTags, setSelectedTags] = useState([])
+  // Acordeón: 'desc' | 'tags' | null. Solo uno abierto a la vez.
+  const [openField, setOpenField] = useState(null)
+  const togglePanel = p => setOpenField(cur => (cur === p ? null : p))
 
   const { data: availableTags = {} } = useQuery({
     queryKey: ['categories', 'etiquetas'],
@@ -52,13 +57,11 @@ export function CreateCategoryPanel() {
     },
   })
 
-  const isFormValid =
-    titulo.trim().length >= 3 && descripcion.trim().length >= 1 && selectedTags.length >= 1
-
   function openPanel() {
     setTitulo('')
     setDescripcion('')
     setSelectedTags([])
+    setOpenField(null) // ambos acordeones arrancan cerrados
     mutation.reset()
     setPanelOpen(true)
   }
@@ -70,7 +73,21 @@ export function CreateCategoryPanel() {
 
   function handleSubmit() {
     if (!requireAuth('Debes iniciar sesión para crear una categoría')) return
-    if (!isFormValid || mutation.isPending) return
+    if (mutation.isPending) return
+    // El botón nunca está deshabilitado: validamos acá y avisamos con un toast
+    // rojo del PRIMER requisito que falle (en orden de aparición en el formulario).
+    if (titulo.trim().length < 3) {
+      showToast('El título debe contener al menos 3 caracteres', 'error')
+      return
+    }
+    if (descripcion.trim().length < 1) {
+      showToast('La descripción debe contener al menos un carácter', 'error')
+      return
+    }
+    if (selectedTags.length < 1) {
+      showToast('Debes seleccionar al menos una etiqueta', 'error')
+      return
+    }
     mutation.mutate({
       titulo: titulo.trim(),
       descripcion: descripcion.trim(),
@@ -116,23 +133,39 @@ export function CreateCategoryPanel() {
                   autoFocus
                 />
               </div>
-              <CategoryDescriptionField
-                value={descripcion}
-                onChange={setDescripcion}
-                maxLength={750}
-                placeholder="¿De qué va esta categoría?"
-              />
-              <div className="edit-field">
-                <div className="edit-field-label">
-                  <span>Etiquetas (*)</span>
-                  <span className="edit-field-counter">{selectedTags.length} / 10</span>
-                </div>
-                <TagSelector
-                  grouped={availableTags}
-                  selected={selectedTags}
-                  onChange={setSelectedTags}
+              <AccordionField
+                open={openField === 'desc'}
+                onToggle={() => togglePanel('desc')}
+                title="Descripción"
+                summary={descriptionSummary(descripcion)}
+                hasContent={!!descripcion.trim()}
+              >
+                <CategoryDescriptionField
+                  value={descripcion}
+                  onChange={setDescripcion}
+                  maxLength={750}
+                  placeholder="¿De qué va esta categoría?"
                 />
-              </div>
+              </AccordionField>
+              <AccordionField
+                open={openField === 'tags'}
+                onToggle={() => togglePanel('tags')}
+                title="Etiquetas"
+                summary={tagsSummary(selectedTags)}
+                hasContent={selectedTags.length > 0}
+              >
+                <div className="edit-field">
+                  <div className="edit-field-label">
+                    <span>Etiquetas (*)</span>
+                    <span className="edit-field-counter">{selectedTags.length} / 10</span>
+                  </div>
+                  <TagSelector
+                    grouped={availableTags}
+                    selected={selectedTags}
+                    onChange={setSelectedTags}
+                  />
+                </div>
+              </AccordionField>
             </div>
           </div>
           <div className="create-cat-panel-footer">
@@ -147,7 +180,6 @@ export function CreateCategoryPanel() {
             <button
               className="save-btn"
               type="button"
-              disabled={!isFormValid || mutation.isPending}
               onClick={handleSubmit}
             >
               {mutation.isPending ? 'Creando...' : 'Crear'}

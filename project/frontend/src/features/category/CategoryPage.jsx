@@ -12,6 +12,8 @@ import { DropdownMenu } from '../../components/ui/DropdownMenu'
 import { Tag } from '../../components/ui/Tag'
 import { TagSelector } from '../../components/ui/TagSelector'
 import { CategoryDescriptionField } from './CategoryDescriptionField'
+import { AccordionField } from '../../components/shared/AccordionField'
+import { descriptionSummary, tagsSummary } from './categoryFieldSummary'
 import { useSaved } from '../../hooks/useSaved'
 import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
 import { BellIcon } from '../../components/shared/BellIcon'
@@ -216,6 +218,10 @@ function HistoryModalBody({ catId }) {
 function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
   const [desc, setDesc] = useState('')
   const [selectedTags, setSelectedTags] = useState([])
+  // Acordeón: 'desc' | 'tags' | null. Solo uno abierto a la vez. Arranca cerrado
+  // (los paneles muestran el contenido precargado en su resumen).
+  const [openField, setOpenField] = useState(null)
+  const togglePanel = p => setOpenField(cur => (cur === p ? null : p))
   const { showToast } = useToast()
   const queryClient = useQueryClient()
 
@@ -236,6 +242,7 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
   useEffect(() => {
     if (isOpen && cat) {
       setDesc(cat.descripcion || '')
+      setOpenField(null) // ambos acordeones arrancan cerrados
       const names = parseEtiquetas(cat.etiquetas)
       setSelectedTags(names.map(n => nameToId[n]).filter(Boolean))
     }
@@ -273,24 +280,40 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Editar categoría" headerAction={saveBtn} className="modal--wide">
       <div className="edit-body">
-        <CategoryDescriptionField
-          key={isOpen ? 'open' : 'closed'}
-          value={desc}
-          onChange={setDesc}
-          maxLength={750}
-          placeholder="¿De qué va esta categoría?"
-        />
-        <div className="edit-field">
-          <div className="edit-field-label">
-            <span>Etiquetas (*)</span>
-            <span className="edit-field-counter">{selectedTags.length} / 10</span>
-          </div>
-          <TagSelector
-            grouped={availableTags}
-            selected={selectedTags}
-            onChange={setSelectedTags}
+        <AccordionField
+          open={openField === 'desc'}
+          onToggle={() => togglePanel('desc')}
+          title="Descripción"
+          summary={descriptionSummary(desc)}
+          hasContent={!!desc.trim()}
+        >
+          <CategoryDescriptionField
+            key={isOpen ? 'open' : 'closed'}
+            value={desc}
+            onChange={setDesc}
+            maxLength={750}
+            placeholder="¿De qué va esta categoría?"
           />
-        </div>
+        </AccordionField>
+        <AccordionField
+          open={openField === 'tags'}
+          onToggle={() => togglePanel('tags')}
+          title="Etiquetas"
+          summary={tagsSummary(selectedTags)}
+          hasContent={selectedTags.length > 0}
+        >
+          <div className="edit-field">
+            <div className="edit-field-label">
+              <span>Etiquetas (*)</span>
+              <span className="edit-field-counter">{selectedTags.length} / 10</span>
+            </div>
+            <TagSelector
+              grouped={availableTags}
+              selected={selectedTags}
+              onChange={setSelectedTags}
+            />
+          </div>
+        </AccordionField>
       </div>
     </Modal>
   )

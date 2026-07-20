@@ -17,7 +17,6 @@ export function PreviewTextField({
   maxLength = 750,
   placeholder,
   renderPreview,
-  emptyText = 'Sin contenido',
 }) {
   const [tab, setTab] = useState('editar')
   const textareaRef = useRef(null)
@@ -72,9 +71,10 @@ export function PreviewTextField({
         </div>
       ) : (
         <div className="edit-preview">
-          {value.trim()
-            ? renderPreview(value)
-            : <span className="edit-preview-empty">{emptyText}</span>}
+          {/* Se renderiza siempre, incluso vacío: sin texto placeholder, solo el
+              mismo contenedor/estilos en blanco (renderPreview('') devuelve un
+              contenedor vacío). */}
+          {renderPreview(value)}
           <p className="edit-preview-note">
             La vista previa puede variar ligeramente según el dispositivo.
           </p>

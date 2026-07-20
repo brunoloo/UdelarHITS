@@ -295,7 +295,6 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
             label="Biografía"
             maxLength={160}
             placeholder="Contá algo sobre vos"
-            emptyText="Sin biografía"
             renderPreview={v => <p className="profile-bio"><BioText text={v} /></p>}
           />
         </div>

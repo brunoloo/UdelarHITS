@@ -170,9 +170,11 @@
 
 /* ── EDIT / PREVIEW TABS ── */
 /* Los tabs reusan .section-tabs/.tab (global). Van flush arriba del cuerpo,
-   que ya trae su propio padding. */
+   que ya trae su propio padding. El margin-bottom separa el underline de los
+   tabs del borde superior del textarea/preview (si no, se tocan). */
 .edit-tabs {
   padding: 0 12px;
+  margin-bottom: 12px;
 }
 
 /* Descripción: alta por defecto y auto-expandible (JS setea height al
@@ -196,14 +198,11 @@
   flex-direction: column;
   gap: 8px;
 }
-/* Alto mínimo para que el modal no “salte” al alternar con el textarea. */
-.edit-preview .cat-desc {
+/* Alto mínimo para que el modal no “salte” al alternar con el textarea, y para
+   que la preview vacía conserve su área (sin texto placeholder). */
+.edit-preview .cat-desc,
+.edit-preview .profile-bio {
   min-height: 200px;
-}
-
-.edit-preview-empty {
-  color: var(--text-muted);
-  font-style: italic;
 }
 
 .edit-preview-note {

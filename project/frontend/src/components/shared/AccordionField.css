@@ -1,0 +1,71 @@
+/* ── ACCORDION FIELD ──
+   Caja con borde (como .edit-field / el input de título). El borde y el foco los
+   da .acc-field; el campo de adentro va SIN borde propio para no duplicarlo. */
+.acc-field {
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.acc-field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Header / resumen: clickable. Cerrado muestra el texto-resumen + chevron;
+   abierto queda como una barra con solo el chevron (para colapsar). */
+.acc-field-summary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 11px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  text-align: left;
+}
+.acc-field-summary-text {
+  min-width: 0;
+  font-size: 15px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Sin contenido: se ve como el placeholder del input de título. */
+.acc-field-summary-text--empty {
+  color: var(--text-muted);
+}
+.acc-field-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+.acc-field--open .acc-field-chevron {
+  transform: rotate(180deg);
+}
+
+/* Cuerpo colapsable: animación de altura con el truco grid-rows 0fr → 1fr. */
+.acc-field-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+.acc-field--open .acc-field-collapse {
+  grid-template-rows: 1fr;
+}
+.acc-field-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* El campo de adentro pierde su borde/sombra propios (el borde lo da .acc-field). */
+.acc-field .edit-field,
+.acc-field .edit-field:focus-within {
+  border: none;
+  box-shadow: none;
+}
