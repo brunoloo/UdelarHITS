@@ -238,6 +238,15 @@
   width: 420px;
 }
 
+/* Modal ancho: para contenido cuya descripción se muestra a lo ancho del área de
+   contenido (p. ej. editar categoría, con arte ASCII en la descripción). Así la
+   vista previa tiene un ancho parecido al de la página/panel de crear y las
+   líneas largas no se cortan. En mobile el max-width: 100% del .modal base lo
+   mantiene dentro del viewport. */
+.modal--wide {
+  width: 900px;
+}
+
 /* ── CHANGE PASSWORD MODAL EXTRAS ── */
 .cp-forgot-link {
   font-size: 13px;
