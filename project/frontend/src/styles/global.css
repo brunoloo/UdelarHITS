@@ -21,3 +21,45 @@ a.mention-link {
 a.mention-link:hover {
   text-decoration: underline;
 }
+
+/* ── SECTION TABS ──
+   Sistema de tabs compartido por CategoryPage, TopicPage, ProfilePage y el modal
+   de editar categoría. Vive en el CSS global (bundle inicial), NO en un chunk de
+   página lazy: si estuviera en category.css (code-split), al entrar directo a
+   /user/:nick (que no carga ese chunk) los tabs se renderizaban sin estilo hasta
+   que —o nunca— llegaba el CSS → FOUC en hard reload. Los overrides por página
+   (p. ej. `.profile-page .section-tabs`) y los de mobile (responsive.css) siguen
+   viviendo en sus archivos y se apilan encima por especificidad/orden. */
+.section-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 8px;
+  gap: 4px;
+  margin-bottom: 0;
+}
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.count {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.section-panel { padding: 16px 0; }
