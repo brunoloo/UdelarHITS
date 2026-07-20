@@ -2,15 +2,15 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import './Modal.css'
 
-export function Modal({ isOpen, onClose, title, children, headerAction, className = '', backdropClassName = '', closeOnBackdrop = true }) {
+export function Modal({ isOpen, onClose, title, children, headerAction, className = '', backdropClassName = '', closeOnBackdrop = true, closeOnEscape = true }) {
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || !closeOnEscape) return
     function handleKey(e) {
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, closeOnEscape])
 
   // Se renderiza en document.body para que el modal quede centrado en la pantalla
   // aunque su origen esté dentro de un contenedor con transform (p. ej. el panel
