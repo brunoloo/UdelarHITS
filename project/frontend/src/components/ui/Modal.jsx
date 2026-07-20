@@ -2,7 +2,12 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import './Modal.css'
 
-export function Modal({ isOpen, onClose, title, children, headerAction, className = '', backdropClassName = '', closeOnBackdrop = true, closeOnEscape = true }) {
+// Por defecto los modales se cierran ÚNICAMENTE con la cruz (o sus botones):
+// ni el click fuera ni Escape cierran, para no perder lo que se está editando.
+// Los visores de imagen (avatar/pfp, lightbox) son componentes aparte y sí
+// cierran al clickear fuera. Un modal puntual puede reactivar el cierre por
+// backdrop/Escape con closeOnBackdrop / closeOnEscape.
+export function Modal({ isOpen, onClose, title, children, headerAction, className = '', backdropClassName = '', closeOnBackdrop = false, closeOnEscape = false }) {
   useEffect(() => {
     if (!isOpen || !closeOnEscape) return
     function handleKey(e) {

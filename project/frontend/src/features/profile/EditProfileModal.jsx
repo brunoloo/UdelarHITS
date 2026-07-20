@@ -5,6 +5,8 @@ import { useMutation } from '@tanstack/react-query'
 import { apiPatch, apiDelete, apiGet } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
 import { Modal } from '../../components/ui/Modal'
+import { PreviewTextField } from '../../components/shared/PreviewTextField'
+import { BioText } from '../../utils/renderBioWithLinks'
 import { useAuth } from '../../context/AuthContext'
 import './EditProfileModal.css'
 
@@ -286,18 +288,16 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
               onChange={e => setNombre(e.target.value)}
             />
           </div>
-          <div className="edit-field">
-            <div className="edit-field-label">
-              <span>Biografía</span>
-              <span className="edit-field-counter">{bio.length} / 160</span>
-            </div>
-            <textarea
-              maxLength={160}
-              rows={3}
-              value={bio}
-              onChange={e => setBio(e.target.value)}
-            />
-          </div>
+          <PreviewTextField
+            key={isOpen ? 'open' : 'closed'}
+            value={bio}
+            onChange={setBio}
+            label="Biografía"
+            maxLength={160}
+            placeholder="Contá algo sobre vos"
+            emptyText="Sin biografía"
+            renderPreview={v => <p className="profile-bio"><BioText text={v} /></p>}
+          />
         </div>
       </Modal>
 

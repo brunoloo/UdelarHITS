@@ -271,14 +271,7 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
   )
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Editar categoría"
-      headerAction={saveBtn}
-      closeOnBackdrop={false}
-      closeOnEscape={false}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Editar categoría" headerAction={saveBtn}>
       <div className="edit-body">
         <CategoryDescriptionField
           key={isOpen ? 'open' : 'closed'}
