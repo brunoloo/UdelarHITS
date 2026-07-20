@@ -391,10 +391,13 @@ const deleteAvatarById = async (id) => {
   return rows[0] || null;
 };
 
-const getSuggestedUsers = async (userId, limit = 10) => {
+// Fallback (cold start): usuarios más activos que no sigo, ordenados por
+// actividad total. Es el algoritmo "clásico": se usa cuando el usuario no
+// participó en ninguna categoría, así la sección nunca queda vacía.
+const getSuggestedUsersFallback = async (userId, limit) => {
   const q = `
     SELECT u.id, u.nickname, u.nombre, u.url_imagen,
-      (SELECT COUNT(*) FROM contenido c WHERE c.autor_id = u.id) AS actividad
+      (SELECT COUNT(*) FROM contenido c WHERE c.autor_id = u.id) AS score
     FROM usuario u
     WHERE u.estado = 'activo'
       AND u.id != $1
@@ -406,7 +409,122 @@ const getSuggestedUsers = async (userId, limit = 10) => {
         UNION
         SELECT bloqueador_id FROM bloqueo WHERE bloqueado_id = $1
       )
-    ORDER BY actividad DESC, u.fecha_creacion DESC
+    ORDER BY score DESC, u.fecha_creacion DESC
+    LIMIT $2
+  `;
+  const { rows } = await pool.query(q, [userId, limit]);
+  return rows;
+};
+
+// Sugerencia de usuarios por AFINIDAD. Score = suma de señales, con un
+// multiplicador por recencia:
+//   +3  por cada categoría en común (ambos comentaron ahí)
+//   +1  por cada etiqueta en común (categorías distintas pero mismo tema)
+//   +2  por cada seguidor mutuo (gente que sigo que también lo sigue)
+//   ×1.5 / ×1.2 / ×1.0  según su última actividad (7d / 30d / +30d)
+//
+// La categoría de un comentario se resuelve por su campo directo (comentario
+// suelto en categoría) O por el tema comentado (comentario.tema_id →
+// tema.categoria_id): el CHECK del schema garantiza exactamente uno de los dos.
+// Devuelve TODOS los candidatos (score 0 incluidos) para no dejar la sección
+// vacía; los de mayor afinidad primero, desempatando por actividad reciente.
+const getSuggestedUsers = async (userId, limit = 10) => {
+  // Cold start: sin comentarios visibles no hay señales de afinidad posibles
+  // (mis_categorias vacío) → algoritmo clásico.
+  const actividad = await pool.query(
+    `SELECT 1
+       FROM comentario com
+       JOIN contenido con ON con.id = com.contenido_id
+      WHERE con.autor_id = $1 AND com.estado = 'visible'
+      LIMIT 1`,
+    [userId]
+  );
+  if (actividad.rowCount === 0) {
+    return getSuggestedUsersFallback(userId, limit);
+  }
+
+  const q = `
+    WITH mis_categorias AS (
+      -- Categorías donde participo (comentario visible), resolviendo la
+      -- categoría por el campo directo o vía el tema comentado.
+      SELECT DISTINCT COALESCE(com.categoria_id, t.categoria_id) AS categoria_id
+      FROM comentario com
+      JOIN contenido con ON con.id = com.contenido_id
+      LEFT JOIN tema t ON t.contenido_id = com.tema_id
+      WHERE con.autor_id = $1 AND com.estado = 'visible'
+    ),
+    mis_etiquetas AS (
+      SELECT DISTINCT ce.etiqueta_id
+      FROM categoria_etiqueta ce
+      WHERE ce.categoria_id IN (SELECT categoria_id FROM mis_categorias)
+    ),
+    mis_seguidos AS (
+      SELECT seguido_id FROM usuario_seguidor
+      WHERE seguidor_id = $1 AND estado = 'aceptado'
+    ),
+    -- Exclusiones: a quiénes sigo (cualquier estado) y bloqueos en ambos sentidos.
+    excluidos AS (
+      SELECT seguido_id AS id FROM usuario_seguidor WHERE seguidor_id = $1
+      UNION SELECT bloqueado_id FROM bloqueo WHERE bloqueador_id = $1
+      UNION SELECT bloqueador_id FROM bloqueo WHERE bloqueado_id = $1
+    ),
+    candidatos AS (
+      SELECT u.id, u.nickname, u.nombre, u.url_imagen
+      FROM usuario u
+      WHERE u.id <> $1
+        AND u.estado = 'activo'
+        AND u.id NOT IN (SELECT id FROM excluidos)
+    ),
+    -- Categoría efectiva de cada comentario visible de un candidato.
+    cand_comentario_cat AS (
+      SELECT con.autor_id AS usuario_id,
+             COALESCE(com.categoria_id, t.categoria_id) AS categoria_id
+      FROM comentario com
+      JOIN contenido con ON con.id = com.contenido_id
+      LEFT JOIN tema t ON t.contenido_id = com.tema_id
+      WHERE com.estado = 'visible'
+        AND con.autor_id IN (SELECT id FROM candidatos)
+    ),
+    score_categorias AS (
+      SELECT usuario_id, COUNT(DISTINCT categoria_id) * 3 AS pts
+      FROM cand_comentario_cat
+      WHERE categoria_id IN (SELECT categoria_id FROM mis_categorias)
+      GROUP BY usuario_id
+    ),
+    score_etiquetas AS (
+      SELECT cc.usuario_id, COUNT(DISTINCT ce.etiqueta_id) AS pts
+      FROM cand_comentario_cat cc
+      JOIN categoria_etiqueta ce ON ce.categoria_id = cc.categoria_id
+      WHERE ce.etiqueta_id IN (SELECT etiqueta_id FROM mis_etiquetas)
+      GROUP BY cc.usuario_id
+    ),
+    score_social AS (
+      SELECT s.seguido_id AS usuario_id, COUNT(*) * 2 AS pts
+      FROM usuario_seguidor s
+      WHERE s.seguidor_id IN (SELECT seguido_id FROM mis_seguidos)
+        AND s.estado = 'aceptado'
+        AND s.seguido_id IN (SELECT id FROM candidatos)
+      GROUP BY s.seguido_id
+    ),
+    ultima_actividad AS (
+      SELECT con.autor_id AS usuario_id, MAX(con.fecha_creacion) AS ultima
+      FROM contenido con
+      WHERE con.autor_id IN (SELECT id FROM candidatos)
+      GROUP BY con.autor_id
+    )
+    SELECT ca.id, ca.nickname, ca.nombre, ca.url_imagen,
+      (COALESCE(sc.pts, 0) + COALESCE(se.pts, 0) + COALESCE(ss.pts, 0))
+      * CASE
+          WHEN ua.ultima >= NOW() - INTERVAL '7 days'  THEN 1.5
+          WHEN ua.ultima >= NOW() - INTERVAL '30 days' THEN 1.2
+          ELSE 1.0
+        END AS score
+    FROM candidatos ca
+    LEFT JOIN score_categorias sc ON sc.usuario_id = ca.id
+    LEFT JOIN score_etiquetas  se ON se.usuario_id = ca.id
+    LEFT JOIN score_social     ss ON ss.usuario_id = ca.id
+    LEFT JOIN ultima_actividad ua ON ua.usuario_id = ca.id
+    ORDER BY score DESC, ua.ultima DESC NULLS LAST
     LIMIT $2
   `;
   const { rows } = await pool.query(q, [userId, limit]);

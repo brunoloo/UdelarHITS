@@ -168,6 +168,51 @@
 
 .edit-field-counter.limit { color: var(--danger); }
 
+/* ── EDIT / PREVIEW TABS ── */
+/* Los tabs reusan .section-tabs/.tab (global). Van flush arriba del cuerpo,
+   que ya trae su propio padding. */
+.edit-tabs {
+  padding: 0 12px;
+}
+
+/* Descripción: alta por defecto y auto-expandible (JS setea height al
+   scrollHeight); el max-height corta el crecimiento y habilita scroll para
+   que el modal no se vuelva infinito.
+   Doble clase (.edit-field.edit-field--desc) a propósito: sube la especificidad
+   por encima de `.edit-field textarea` (base), que vive en otro chunk de CSS y
+   podría cargarse después de este por ser CategoryPage code-split. */
+.edit-field.edit-field--desc textarea {
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* ── PREVIEW ── */
+.edit-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edit-preview-content {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  min-height: 200px;
+  max-width: 100%;
+}
+
+.edit-preview-empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.edit-preview-note {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* ── DANGER ZONE ── */
 .modal-danger-zone {
   display: flex;
