@@ -88,9 +88,9 @@
   margin-bottom: 6px;
   letter-spacing: -0.3px;
 }
-/* .cat-desc (+ .bio-link) se movió a styles/global.css (bundle inicial) para que
-   la vista previa de crear/editar categoría renderice idéntico a la página en
-   cualquier ruta. Ver comentario allá. */
+/* La descripción de categoría usa .category-description-content, definida en
+   styles/global.css (bundle inicial) y compartida con la vista previa del modal
+   crear/editar para que rendericen idéntico en cualquier ruta. Ver comentario allá. */
 .cat-tags {
   display: flex;
   flex-wrap: wrap;

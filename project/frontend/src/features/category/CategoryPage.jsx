@@ -654,7 +654,7 @@ export function CategoryPage() {
               )}
               <div className="cat-header-info">
                 <h1 className="cat-title">{cat.titulo}</h1>
-                <p className="cat-desc"><ReadMore text={cat.descripcion} maxLength={500} /></p>
+                <p className="category-description-content"><ReadMore text={cat.descripcion} maxLength={500} /></p>
               </div>
               <DropdownMenu items={dropdownItems} />
             </div>

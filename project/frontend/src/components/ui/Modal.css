@@ -190,9 +190,9 @@
 }
 
 /* ── PREVIEW ──
-   La preview NO estiliza el texto: usa <p class="cat-desc"> + ReadMore, el mismo
-   markup que la página de categoría real, para que se vea idéntico. Acá solo el
-   layout del bloque (tab preview) y la nota/placeholder. */
+   La preview NO estiliza el texto: usa la clase compartida .category-description-content
+   (+ ReadMore), la misma que la descripción real de la categoría, para que se vea
+   idéntico. Acá solo el layout del bloque (tab preview) y la nota/placeholder. */
 .edit-preview {
   display: flex;
   flex-direction: column;
@@ -203,7 +203,7 @@
 }
 /* Alto mínimo para que el modal no “salte” al alternar con el textarea, y para
    que la preview vacía conserve su área (sin texto placeholder). */
-.edit-preview .cat-desc,
+.edit-preview .category-description-content,
 .edit-preview .profile-bio {
   min-height: 200px;
 }
