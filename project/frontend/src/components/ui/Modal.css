@@ -240,13 +240,13 @@
   width: 420px;
 }
 
-/* Modal ancho: para contenido cuya descripción se muestra a lo ancho del área de
-   contenido (p. ej. editar categoría, con arte ASCII en la descripción). Así la
-   vista previa tiene un ancho parecido al de la página/panel de crear y las
-   líneas largas no se cortan. En mobile el max-width: 100% del .modal base lo
-   mantiene dentro del viewport. */
+/* Modal de editar categoría: apenas más ancho que el base para que la caja del
+   editor/preview envuelva cómoda la columna de la descripción (ver el max-width del
+   contrato .category-description-content). No hace falta más: el arte se renderiza a
+   ese ancho de columna, no al ancho del modal. En mobile el max-width: 100% del
+   .modal base lo mantiene dentro del viewport. */
 .modal--wide {
-  width: 900px;
+  width: 640px;
 }
 
 /* ── CHANGE PASSWORD MODAL EXTRAS ── */

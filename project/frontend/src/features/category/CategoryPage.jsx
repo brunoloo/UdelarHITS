@@ -654,10 +654,18 @@ export function CategoryPage() {
               )}
               <div className="cat-header-info">
                 <h1 className="cat-title">{cat.titulo}</h1>
-                <p className="category-description-content"><ReadMore text={cat.descripcion} maxLength={500} /></p>
               </div>
               <DropdownMenu items={dropdownItems} />
             </div>
+
+            {/* La descripción va en su PROPIA fila (no comprimida al lado del ícono):
+                así usa el ancho de la tarjeta —con el tope de .category-description-content—
+                y el arte ASCII tiene lugar. El editor y la preview usan el mismo ancho. */}
+            {cat.descripcion && (
+              <p className="category-description-content cat-desc-row">
+                <ReadMore text={cat.descripcion} maxLength={500} />
+              </p>
+            )}
 
             {etiquetas.length > 0 && (
               <div className="cat-tags">

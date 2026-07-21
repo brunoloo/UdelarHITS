@@ -29,9 +29,11 @@
 }
 .cat-header-top {
   display: flex;
-  align-items: flex-start;
+  /* Ícono + título (+ menú) centrados en su fila; la descripción va debajo, en su
+     propia fila a lo ancho de la tarjeta (ver .cat-desc-row). */
+  align-items: center;
   gap: 16px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .cat-icon-wrap {
   width: 56px;
@@ -85,12 +87,17 @@
   font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 6px;
+  margin-bottom: 0;
   letter-spacing: -0.3px;
 }
 /* La descripción de categoría usa .category-description-content, definida en
-   styles/global.css (bundle inicial) y compartida con la vista previa del modal
-   crear/editar para que rendericen idéntico en cualquier ruta. Ver comentario allá. */
+   styles/global.css (bundle inicial) y compartida con la vista previa y el editor
+   del modal crear/editar para que rendericen idéntico en cualquier ruta. Ver allá.
+   .cat-desc-row la coloca en su propia fila a lo ancho de la tarjeta (el ancho de
+   columna real lo pone el max-width del contrato compartido). */
+.cat-desc-row {
+  margin: 0 0 12px;
+}
 .cat-tags {
   display: flex;
   flex-wrap: wrap;

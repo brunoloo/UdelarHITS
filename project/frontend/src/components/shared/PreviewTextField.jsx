@@ -17,6 +17,10 @@ export function PreviewTextField({
   maxLength = 750,
   placeholder,
   renderPreview,
+  // editorClassName: clase para el <textarea> del editor. Permite que quien consume
+  // haga que el textarea envuelva el texto igual que su preview (misma fuente/ancho),
+  // así lo que se edita coincide con lo que se verá publicado.
+  editorClassName,
   // hideNote: no renderar la nota "puede variar…" dentro de la preview. Se usa
   // cuando quien consume la quiere mostrar por fuera (p. ej. debajo del panel).
   hideNote = false,
@@ -67,6 +71,7 @@ export function PreviewTextField({
           </div>
           <textarea
             ref={textareaRef}
+            className={editorClassName}
             maxLength={maxLength}
             placeholder={placeholder}
             value={value}
