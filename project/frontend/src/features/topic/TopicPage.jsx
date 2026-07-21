@@ -22,6 +22,8 @@ import { timeAgo } from '../../utils/timeAgo'
 import { trackCreateComment } from '../../utils/analytics'
 import { TopicContentField } from './TopicContentField'
 import { PreviewHint } from '../../components/shared/PreviewHint'
+import { AccordionField } from '../../components/shared/AccordionField'
+import { descriptionSummary } from '../category/categoryFieldSummary'
 import '../category/category.css'
 import './topic.css'
 
@@ -38,6 +40,8 @@ export function TopicPage() {
 
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editCuerpo, setEditCuerpo] = useState('')
+  // Acordeón de la descripción en el modal de editar (mismo patrón que categoría).
+  const [editDescOpen, setEditDescOpen] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [historyModalOpen, setHistoryModalOpen] = useState(false)
   const [historyEntries, setHistoryEntries] = useState([])
@@ -60,7 +64,10 @@ export function TopicPage() {
   })
 
   useEffect(() => {
-    if (editModalOpen && topic) setEditCuerpo(topic.cuerpo || '')
+    if (editModalOpen && topic) {
+      setEditCuerpo(topic.cuerpo || '')
+      setEditDescOpen(false) // el acordeón arranca cerrado (muestra el resumen)
+    }
   }, [editModalOpen, topic])
 
   const editMutation = useMutation({
@@ -382,15 +389,23 @@ export function TopicPage() {
         }
       >
         <div className="edit-body">
-          <TopicContentField
-            key={editModalOpen ? 'open' : 'closed'}
-            value={editCuerpo}
-            onChange={setEditCuerpo}
-            maxLength={1000}
-            placeholder="Desarrollá tu idea"
-          />
-          {/* Nota fuera del perímetro del campo de contenido. */}
-          <PreviewHint />
+          <AccordionField
+            open={editDescOpen}
+            onToggle={() => setEditDescOpen(o => !o)}
+            title="Descripción"
+            summary={descriptionSummary(editCuerpo)}
+            hasContent={!!editCuerpo.trim()}
+          >
+            <TopicContentField
+              key={editModalOpen ? 'open' : 'closed'}
+              value={editCuerpo}
+              onChange={setEditCuerpo}
+              maxLength={1000}
+              placeholder="Desarrollá tu idea"
+            />
+          </AccordionField>
+          {/* Nota fuera del perímetro del panel de descripción. */}
+          {editDescOpen && <PreviewHint />}
         </div>
       </Modal>
 

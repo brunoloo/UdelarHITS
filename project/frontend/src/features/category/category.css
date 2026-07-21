@@ -451,20 +451,10 @@
 .edit-field textarea {
   min-height: 70px;
   line-height: 1.45;
-  /* Scrollbar personalizado (mismo criterio que Modal / TagSelector / búsqueda):
-     fino, thumb en var(--border-strong), track transparente. Reemplaza la barra
-     blanca por defecto del navegador en los paneles de descripción (crear
-     categoría, crear tema, etc.). */
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
+  /* El scrollbar personalizado de estos textarea se movió a styles/global.css
+     (bundle inicial) para que aparezca también donde no se carga category.css
+     (p. ej. el panel de crear categoría en Home). */
 }
-.edit-field textarea::-webkit-scrollbar { width: 6px; }
-.edit-field textarea::-webkit-scrollbar-track { background: transparent; }
-.edit-field textarea::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: var(--radius);
-}
-.edit-field textarea::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 .edit-field-counter { font-size: 12px; color: var(--text-muted); }
 .edit-field-counter.limit { color: var(--danger); }
 

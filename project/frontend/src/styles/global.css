@@ -151,3 +151,21 @@ a.mention-link:hover {
 .topic-header-body .bio-link:hover {
   text-decoration: underline;
 }
+
+/* ── SCROLLBAR DE LOS TEXTAREA DE DESCRIPCIÓN ──
+   Barra fina (mismo criterio que Modal / TagSelector / búsqueda) que reemplaza la
+   barra blanca por defecto del navegador en los textarea de descripción/contenido
+   (crear categoría, crear tema, editar categoría, editar tema). Vive en el bundle
+   inicial —y no en category.css (chunk lazy)— para que aparezca en TODOS esos lugares,
+   incluido el panel de crear categoría en Home (que no carga category.css). */
+.edit-field textarea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.edit-field textarea::-webkit-scrollbar { width: 6px; }
+.edit-field textarea::-webkit-scrollbar-track { background: transparent; }
+.edit-field textarea::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius);
+}
+.edit-field textarea::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

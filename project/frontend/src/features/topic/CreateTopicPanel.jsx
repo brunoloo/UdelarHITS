@@ -8,11 +8,16 @@ import { trackCreateTopic } from '../../utils/analytics'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { TopicContentField } from './TopicContentField'
 import { PreviewHint } from '../../components/shared/PreviewHint'
+import { AccordionField } from '../../components/shared/AccordionField'
+import { descriptionSummary } from '../category/categoryFieldSummary'
 
 export function CreateTopicPanel({ categoryId, user }) {
   const [open, setOpen] = useState(false)
   const [titulo, setTitulo] = useState('')
   const [cuerpo, setCuerpo] = useState('')
+  // Acordeón de la descripción (mismo patrón que crear categoría). 'desc' | null.
+  const [openField, setOpenField] = useState(null)
+  const togglePanel = p => setOpenField(cur => (cur === p ? null : p))
   const { showToast } = useToast()
   const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
@@ -46,6 +51,7 @@ export function CreateTopicPanel({ categoryId, user }) {
     setOpen(false)
     setTitulo('')
     setCuerpo('')
+    setOpenField(null)
     mutation.reset()
   }
 
@@ -108,14 +114,22 @@ export function CreateTopicPanel({ categoryId, user }) {
                 autoFocus
               />
             </div>
-            <TopicContentField
-              value={cuerpo}
-              onChange={setCuerpo}
-              maxLength={1000}
-              placeholder="Desarrollá tu idea"
-            />
-            {/* Nota fuera del perímetro del campo de contenido. */}
-            <PreviewHint />
+            <AccordionField
+              open={openField === 'desc'}
+              onToggle={() => togglePanel('desc')}
+              title="Descripción"
+              summary={descriptionSummary(cuerpo)}
+              hasContent={!!cuerpo.trim()}
+            >
+              <TopicContentField
+                value={cuerpo}
+                onChange={setCuerpo}
+                maxLength={1000}
+                placeholder="Desarrollá tu idea"
+              />
+            </AccordionField>
+            {/* Nota fuera del perímetro del panel de descripción. */}
+            {openField === 'desc' && <PreviewHint />}
           </div>
         </div>
         <div className="create-cat-panel-footer">
