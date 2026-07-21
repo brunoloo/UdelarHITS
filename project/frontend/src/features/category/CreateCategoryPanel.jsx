@@ -10,6 +10,7 @@ import { UserAvatar } from '../../components/shared/UserAvatar'
 import { TagSelector } from '../../components/ui/TagSelector'
 import { CategoryDescriptionField } from './CategoryDescriptionField'
 import { AccordionField } from '../../components/shared/AccordionField'
+import { PreviewHint } from '../../components/shared/PreviewHint'
 import { descriptionSummary, tagsSummary } from './categoryFieldSummary'
 
 export function CreateCategoryPanel() {
@@ -119,7 +120,7 @@ export function CreateCategoryPanel() {
             <div className="cc-form">
               <div className="edit-field">
                 <div className="edit-field-label">
-                  <span>Título (mínimo 3 caracteres*)</span>
+                  <span>Título</span>
                   <span className={`edit-field-counter${titulo.length >= 95 ? ' limit' : ''}`}>
                     {titulo.length} / 100
                   </span>
@@ -147,6 +148,8 @@ export function CreateCategoryPanel() {
                   placeholder="¿De qué va esta categoría?"
                 />
               </AccordionField>
+              {/* Nota fuera del perímetro del panel de descripción. */}
+              {openField === 'desc' && <PreviewHint />}
               <AccordionField
                 open={openField === 'tags'}
                 onToggle={() => togglePanel('tags')}
@@ -156,7 +159,7 @@ export function CreateCategoryPanel() {
               >
                 <div className="edit-field">
                   <div className="edit-field-label">
-                    <span>Etiquetas (*)</span>
+                    <span />
                     <span className="edit-field-counter">{selectedTags.length} / 10</span>
                   </div>
                   <TagSelector

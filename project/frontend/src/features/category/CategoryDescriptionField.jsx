@@ -11,9 +11,9 @@ export function CategoryDescriptionField({ value, onChange, maxLength = 750, pla
     <PreviewTextField
       value={value}
       onChange={onChange}
-      label="Descripción (*)"
       maxLength={maxLength}
       placeholder={placeholder}
+      hideNote
       renderPreview={v => <p className="cat-desc"><ReadMore text={v} maxLength={500} /></p>}
     />
   )

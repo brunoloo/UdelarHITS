@@ -17,6 +17,9 @@ export function PreviewTextField({
   maxLength = 750,
   placeholder,
   renderPreview,
+  // hideNote: no renderar la nota "puede variar…" dentro de la preview. Se usa
+  // cuando quien consume la quiere mostrar por fuera (p. ej. debajo del panel).
+  hideNote = false,
 }) {
   const [tab, setTab] = useState('editar')
   const textareaRef = useRef(null)
@@ -56,6 +59,7 @@ export function PreviewTextField({
       {tab === 'editar' ? (
         <div className="edit-field edit-field--desc">
           <div className="edit-field-label">
+            {/* span vacío cuando no hay label: mantiene el contador a la derecha */}
             <span>{label}</span>
             <span className={`edit-field-counter${value.length >= maxLength - 20 ? ' limit' : ''}`}>
               {value.length} / {maxLength}
@@ -75,9 +79,11 @@ export function PreviewTextField({
               mismo contenedor/estilos en blanco (renderPreview('') devuelve un
               contenedor vacío). */}
           {renderPreview(value)}
-          <p className="edit-preview-note">
-            La vista previa puede variar ligeramente según el dispositivo.
-          </p>
+          {!hideNote && (
+            <p className="edit-preview-note">
+              La vista previa puede variar ligeramente según el dispositivo.
+            </p>
+          )}
         </div>
       )}
     </div>

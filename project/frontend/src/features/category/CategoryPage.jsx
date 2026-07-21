@@ -13,6 +13,7 @@ import { Tag } from '../../components/ui/Tag'
 import { TagSelector } from '../../components/ui/TagSelector'
 import { CategoryDescriptionField } from './CategoryDescriptionField'
 import { AccordionField } from '../../components/shared/AccordionField'
+import { PreviewHint } from '../../components/shared/PreviewHint'
 import { descriptionSummary, tagsSummary } from './categoryFieldSummary'
 import { useSaved } from '../../hooks/useSaved'
 import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
@@ -295,6 +296,8 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
             placeholder="¿De qué va esta categoría?"
           />
         </AccordionField>
+        {/* Nota fuera del perímetro del panel de descripción. */}
+        {openField === 'desc' && <PreviewHint />}
         <AccordionField
           open={openField === 'tags'}
           onToggle={() => togglePanel('tags')}
@@ -304,7 +307,7 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
         >
           <div className="edit-field">
             <div className="edit-field-label">
-              <span>Etiquetas (*)</span>
+              <span />
               <span className="edit-field-counter">{selectedTags.length} / 10</span>
             </div>
             <TagSelector

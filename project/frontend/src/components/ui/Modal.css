@@ -197,6 +197,9 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  /* Mismo padding que .edit-field (el del textarea en el tab Editar): así el
+     texto de la preview respira y queda alineado con el del textarea. */
+  padding: 8px 10px 6px;
 }
 /* Alto mínimo para que el modal no “salte” al alternar con el textarea, y para
    que la preview vacía conserve su área (sin texto placeholder). */
