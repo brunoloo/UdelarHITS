@@ -118,7 +118,7 @@ export function TopicPage() {
     if (editMutation.isPending) return
     // Botón siempre habilitado: validamos acá y avisamos por toast (igual que categoría).
     if (editCuerpo.trim().length < 1) {
-      showToast('El contenido debe contener al menos un carácter', 'error')
+      showToast('La descripción debe contener al menos un carácter', 'error')
       return
     }
     editMutation.mutate(editCuerpo.trim())

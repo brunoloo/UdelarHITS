@@ -80,11 +80,11 @@ a.mention-link:hover {
    textarea trae sus propios defaults (font-size 15px, line-height 1.45) → sin fijarlas
    divergen. Al fijarlas, el texto envuelve (wrap) en el MISMO punto en los tres.
 
-   max-width: es el ancho de la columna de lectura, compartido por los tres. En la
-   página la descripción va en su PROPIA fila a lo ancho de la tarjeta (no comprimida
-   al lado del ícono), con este tope; el editor y la preview usan el mismo tope. Así
-   el arte ancho entra sin romperse y se ve igual en los tres. (En ventanas muy
-   angostas —tarjeta < tope— la página puede quedar algo más angosta que el editor.)
+   Ancho: SIN tope (igual que el cuerpo del tema en TopicPage). La descripción va en
+   su PROPIA fila a lo ancho de la tarjeta (no comprimida al lado del ícono), llegando
+   cerca del menú de ⋮. El editor y la preview usan el mismo criterio (100% de su
+   contenedor); para que la preview del modal reproduzca el ancho de la página, el
+   modal de edición se ensancha al ancho de la columna de contenido (ver .modal--wide).
 
    El textarea entra al contrato con especificidad .edit-field textarea.<clase> para
    ganarle a la base `.edit-field textarea`. NO agregar acá padding/fondo/borde/
@@ -104,7 +104,6 @@ a.mention-link:hover {
   -webkit-font-variant-ligatures: none;
   tab-size: 8;
   -moz-tab-size: 8;
-  max-width: 560px;
 }
 .category-description-content { color: var(--text-secondary); }
 .category-description-content .bio-link {

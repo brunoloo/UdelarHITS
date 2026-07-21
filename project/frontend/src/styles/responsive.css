@@ -99,6 +99,13 @@
     max-width: 100vw;
   }
 
+  /* En desktop el modal ancho sigue la columna de contenido (calc(100vw - 724px) en
+     Modal.css); en mobile no existe ese layout, así que se comporta como el modal
+     base y el max-width:100% del .modal lo recorta al viewport. */
+  .modal--wide {
+    width: 600px;
+  }
+
   /* ── HEADER ── */
   header {
     padding: 0 12px;

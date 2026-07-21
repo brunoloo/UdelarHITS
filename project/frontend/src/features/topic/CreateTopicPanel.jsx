@@ -59,7 +59,7 @@ export function CreateTopicPanel({ categoryId, user }) {
       return
     }
     if (cuerpo.trim().length < 1) {
-      showToast('El contenido debe contener al menos un carácter', 'error')
+      showToast('La descripción debe contener al menos un carácter', 'error')
       return
     }
     mutation.mutate()
@@ -125,7 +125,7 @@ export function CreateTopicPanel({ categoryId, user }) {
             type="button"
             onClick={handleSubmit}
           >
-            {mutation.isPending ? 'Creando...' : 'Crear tema'}
+            {mutation.isPending ? 'Creando...' : 'Crear'}
           </button>
         </div>
       </div>

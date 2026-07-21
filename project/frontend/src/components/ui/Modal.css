@@ -246,13 +246,18 @@
   width: 420px;
 }
 
-/* Modal de editar categoría: apenas más ancho que el base para que la caja del
-   editor/preview envuelva cómoda la columna de la descripción (ver el max-width del
-   contrato .category-description-content). No hace falta más: el arte se renderiza a
-   ese ancho de columna, no al ancho del modal. En mobile el max-width: 100% del
-   .modal base lo mantiene dentro del viewport. */
+/* Modal de editar categoría/tema: se ensancha al ancho de la COLUMNA DE CONTENIDO
+   (.page > main), para que la descripción/cuerpo en la preview envuelva en el mismo
+   punto que en la página real (que ocupa esa columna a lo ancho). En desktop la
+   columna mide siempre viewport − 744px (left-nav 200 + padding 30+210 + sidebar 280
+   + gap 24; ver AppLayout.css/responsive.css). El offset es 724 y no 744: son los
+   744px de la columna menos ~20px para compensar que el padding interno del modal
+   (edit-body + edit-preview) es ~20px mayor por lado que el de la tarjeta, de modo que
+   la COLUMNA DE TEXTO de la preview quede exactamente igual de ancha que la de la
+   página. Si cambia ese layout/padding, actualizar el número. En mobile (≤768px) no
+   hay ese layout: se usa un ancho fijo que el max-width:100% del .modal base recorta. */
 .modal--wide {
-  width: 640px;
+  width: calc(100vw - 724px);
 }
 
 /* ── CHANGE PASSWORD MODAL EXTRAS ── */
