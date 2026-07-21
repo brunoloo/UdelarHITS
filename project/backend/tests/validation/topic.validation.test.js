@@ -33,11 +33,18 @@ describe('validación de creación de tema', () => {
     expect(res.status).toBe(400);
   });
 
-  test('cuerpo de más de 500 caracteres → 400', async () => {
+  test('cuerpo de más de 1000 caracteres → 400', async () => {
     const u = await registerAndLogin();
     const cat = await createCategory(u.cookie);
-    const res = await crear(u.cookie, { categoria_id: cat.id, titulo: 'Título', cuerpo: 'a'.repeat(501) });
+    const res = await crear(u.cookie, { categoria_id: cat.id, titulo: 'Título', cuerpo: 'a'.repeat(1001) });
     expect(res.status).toBe(400);
+  });
+
+  test('cuerpo de 1000 caracteres → 201 (límite ampliado)', async () => {
+    const u = await registerAndLogin();
+    const cat = await createCategory(u.cookie);
+    const res = await crear(u.cookie, { categoria_id: cat.id, titulo: 'Título', cuerpo: 'a'.repeat(1000) });
+    expect(res.status).toBe(201);
   });
 
   test('creación válida → 201', async () => {
@@ -101,11 +108,11 @@ describe('validación de edición de tema', () => {
     expect(res.status).toBe(400);
   });
 
-  test('cuerpo de más de 500 caracteres → 400', async () => {
+  test('cuerpo de más de 1000 caracteres → 400', async () => {
     const u = await registerAndLogin();
     const topic = await createTopic(u.cookie);
     const id = topic.id ?? topic.contenido_id;
-    const res = await editar(u.cookie, id, { cuerpo: 'a'.repeat(501) });
+    const res = await editar(u.cookie, id, { cuerpo: 'a'.repeat(1001) });
     expect(res.status).toBe(400);
   });
 

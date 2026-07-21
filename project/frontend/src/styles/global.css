@@ -115,3 +115,40 @@ a.mention-link:hover {
 .category-description-content .bio-link:hover {
   text-decoration: underline;
 }
+
+/* ── CONTENIDO DE TEMA (contrato de render compartido) ──
+   Mismo criterio que .category-description-content, para el cuerpo del tema: se
+   renderiza igual en TopicPage (<div class="topic-header-body">), en la vista previa
+   del editor (crear/editar tema) y en el <textarea> del editor, así lo que se escribe
+   coincide con lo que se publica. Todas las props tipográficas explícitas (no
+   heredadas) para que el portal del modal no las cambie. Vive en el bundle inicial
+   porque el panel "crear tema" se muestra dentro de CategoryPage, que no carga
+   topic.css. Difiere de categoría en el line-height (1.65) y en que NO tiene tope de
+   ancho (el cuerpo del tema ocupa el ancho de la tarjeta, no es una columna angosta). */
+.topic-header-body,
+.edit-field textarea.topic-content-editor {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: normal;
+  word-spacing: normal;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-variant-ligatures: none;
+  -webkit-font-variant-ligatures: none;
+  tab-size: 8;
+  -moz-tab-size: 8;
+}
+.topic-header-body {
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.topic-header-body .bio-link {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+}
+.topic-header-body .bio-link:hover {
+  text-decoration: underline;
+}

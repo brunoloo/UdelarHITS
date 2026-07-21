@@ -204,8 +204,14 @@
 /* Alto mínimo para que el modal no “salte” al alternar con el textarea, y para
    que la preview vacía conserve su área (sin texto placeholder). */
 .edit-preview .category-description-content,
-.edit-preview .profile-bio {
+.edit-preview .profile-bio,
+.edit-preview .topic-header-body {
   min-height: 200px;
+}
+/* En la página el cuerpo del tema lleva margin-bottom; en la preview el .edit-preview
+   ya maneja el espaciado, así que lo anulamos para que no “salte” al alternar tabs. */
+.edit-preview .topic-header-body {
+  margin-bottom: 0;
 }
 
 .edit-preview-note {

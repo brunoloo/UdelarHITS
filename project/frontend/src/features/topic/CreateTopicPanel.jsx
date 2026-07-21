@@ -6,6 +6,8 @@ import { useToast } from '../../hooks/useToast'
 import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { trackCreateTopic } from '../../utils/analytics'
 import { UserAvatar } from '../../components/shared/UserAvatar'
+import { TopicContentField } from './TopicContentField'
+import { PreviewHint } from '../../components/shared/PreviewHint'
 
 export function CreateTopicPanel({ categoryId, user }) {
   const [open, setOpen] = useState(false)
@@ -47,11 +49,19 @@ export function CreateTopicPanel({ categoryId, user }) {
     mutation.reset()
   }
 
-  const canSubmit = titulo.trim().length >= 3 && cuerpo.trim().length >= 1
-
   function handleSubmit() {
     if (!requireAuth('Debes iniciar sesión para crear un tema')) return
-    if (!canSubmit || mutation.isPending) return
+    if (mutation.isPending) return
+    // El botón nunca está deshabilitado: validamos acá y avisamos con un toast rojo
+    // del PRIMER requisito que falle (mismo criterio que crear categoría).
+    if (titulo.trim().length < 3) {
+      showToast('El título debe contener al menos 3 caracteres', 'error')
+      return
+    }
+    if (cuerpo.trim().length < 1) {
+      showToast('El contenido debe contener al menos un carácter', 'error')
+      return
+    }
     mutation.mutate()
   }
 
@@ -84,8 +94,10 @@ export function CreateTopicPanel({ categoryId, user }) {
           <div className="cc-form">
             <div className="edit-field">
               <div className="edit-field-label">
-                <span>Título (mínimo 3 caracteres*)</span>
-                <span className="edit-field-counter">{titulo.length} / 100</span>
+                <span>Título</span>
+                <span className={`edit-field-counter${titulo.length >= 95 ? ' limit' : ''}`}>
+                  {titulo.length} / 100
+                </span>
               </div>
               <input
                 type="text"
@@ -96,27 +108,21 @@ export function CreateTopicPanel({ categoryId, user }) {
                 autoFocus
               />
             </div>
-            <div className="edit-field">
-              <div className="edit-field-label">
-                <span>Contenido (*)</span>
-                <span className="edit-field-counter">{cuerpo.length} / 500</span>
-              </div>
-              <textarea
-                maxLength={500}
-                rows={4}
-                placeholder="Desarrollá tu idea"
-                value={cuerpo}
-                onChange={e => setCuerpo(e.target.value)}
-              />
-            </div>
+            <TopicContentField
+              value={cuerpo}
+              onChange={setCuerpo}
+              maxLength={1000}
+              placeholder="Desarrollá tu idea"
+            />
+            {/* Nota fuera del perímetro del campo de contenido. */}
+            <PreviewHint />
           </div>
         </div>
         <div className="create-cat-panel-footer">
-          <button className="cc-cancel" type="button" onClick={closePanel}>Cancelar</button>
+          <button className="cc-cancel" type="button" onClick={closePanel} disabled={mutation.isPending}>Cancelar</button>
           <button
             className="save-btn"
             type="button"
-            disabled={!canSubmit || mutation.isPending}
             onClick={handleSubmit}
           >
             {mutation.isPending ? 'Creando...' : 'Crear tema'}

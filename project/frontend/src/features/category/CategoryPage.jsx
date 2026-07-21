@@ -292,7 +292,7 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
             key={isOpen ? 'open' : 'closed'}
             value={desc}
             onChange={setDesc}
-            maxLength={750}
+            maxLength={1000}
             placeholder="¿De qué va esta categoría?"
           />
         </AccordionField>

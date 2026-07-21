@@ -20,6 +20,8 @@ import { buildReplyFormData } from '../../utils/attachments'
 import { nuevaEncuesta, pollValido } from '../../utils/poll'
 import { timeAgo } from '../../utils/timeAgo'
 import { trackCreateComment } from '../../utils/analytics'
+import { TopicContentField } from './TopicContentField'
+import { PreviewHint } from '../../components/shared/PreviewHint'
 import '../category/category.css'
 import './topic.css'
 
@@ -111,6 +113,16 @@ export function TopicPage() {
     },
     onError: (err) => showToast(err.message || 'No se pudo fijar', 'error'),
   })
+
+  function handleEditSave() {
+    if (editMutation.isPending) return
+    // Botón siempre habilitado: validamos acá y avisamos por toast (igual que categoría).
+    if (editCuerpo.trim().length < 1) {
+      showToast('El contenido debe contener al menos un carácter', 'error')
+      return
+    }
+    editMutation.mutate(editCuerpo.trim())
+  }
 
   function handleCommentSubmit() {
     if (!requireAuth('Debes iniciar sesión para comentar')) return
@@ -357,31 +369,28 @@ export function TopicPage() {
         isOpen={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         title="Editar tema"
+        className="modal--wide"
         headerAction={
           <button
             className="save-btn"
             type="button"
-            disabled={editCuerpo.trim().length < 1 || editMutation.isPending}
-            onClick={() => editMutation.mutate(editCuerpo.trim())}
+            disabled={editMutation.isPending}
+            onClick={handleEditSave}
           >
             {editMutation.isPending ? 'Guardando...' : 'Guardar'}
           </button>
         }
       >
         <div className="edit-body">
-          <div className="edit-field">
-            <div className="edit-field-label">
-              <span>Contenido</span>
-              <span className="edit-field-counter">{editCuerpo.length} / 500</span>
-            </div>
-            <textarea
-              maxLength={500}
-              rows={5}
-              value={editCuerpo}
-              onChange={e => setEditCuerpo(e.target.value)}
-              autoFocus
-            />
-          </div>
+          <TopicContentField
+            key={editModalOpen ? 'open' : 'closed'}
+            value={editCuerpo}
+            onChange={setEditCuerpo}
+            maxLength={1000}
+            placeholder="Desarrollá tu idea"
+          />
+          {/* Nota fuera del perímetro del campo de contenido. */}
+          <PreviewHint />
         </div>
       </Modal>
 

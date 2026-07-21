@@ -54,11 +54,6 @@
   color: var(--text-muted);
 }
 
-.topic-header-body {
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.65;
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin-bottom: 12px;
-}
+/* .topic-header-body (+ .bio-link) se movió a styles/global.css (bundle inicial) y
+   ahora es el contrato de tipografía compartido con la vista previa y el textarea del
+   editor de tema, para que rendericen idéntico en cualquier ruta. Ver comentario allá. */

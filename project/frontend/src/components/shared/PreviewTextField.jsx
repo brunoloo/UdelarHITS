@@ -14,7 +14,7 @@ export function PreviewTextField({
   value,
   onChange,
   label,
-  maxLength = 750,
+  maxLength = 1000,
   placeholder,
   renderPreview,
   // editorClassName: clase para el <textarea> del editor. Permite que quien consume

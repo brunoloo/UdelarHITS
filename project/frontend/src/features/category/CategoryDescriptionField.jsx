@@ -8,7 +8,7 @@ import { PreviewTextField } from '../../components/shared/PreviewTextField'
 //   • el textarea usa class="category-description-editor" (misma fuente y ancho),
 // así el arte ASCII, los espacios y el wrap coinciden entre editar, preview y página.
 // Compartido entre editar (EditCategoryModal) y crear (CreateCategoryPanel).
-export function CategoryDescriptionField({ value, onChange, maxLength = 750, placeholder }) {
+export function CategoryDescriptionField({ value, onChange, maxLength = 1000, placeholder }) {
   return (
     <PreviewTextField
       value={value}

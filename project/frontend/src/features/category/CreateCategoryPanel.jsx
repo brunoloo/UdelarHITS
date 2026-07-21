@@ -144,7 +144,7 @@ export function CreateCategoryPanel() {
                 <CategoryDescriptionField
                   value={descripcion}
                   onChange={setDescripcion}
-                  maxLength={750}
+                  maxLength={1000}
                   placeholder="¿De qué va esta categoría?"
                 />
               </AccordionField>

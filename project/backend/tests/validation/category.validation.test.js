@@ -43,10 +43,16 @@ describe('validación de creación de categoría', () => {
     expect(res.status).toBe(400);
   });
 
-  test('descripción de más de 750 caracteres → 400', async () => {
+  test('descripción de más de 1000 caracteres → 400', async () => {
     const u = await registerAndLogin();
-    const res = await crear(u.cookie, base({ descripcion: 'a'.repeat(751) }));
+    const res = await crear(u.cookie, base({ descripcion: 'a'.repeat(1001) }));
     expect(res.status).toBe(400);
+  });
+
+  test('descripción de 1000 caracteres → 201 (límite ampliado)', async () => {
+    const u = await registerAndLogin();
+    const res = await crear(u.cookie, base({ descripcion: 'a'.repeat(1000) }));
+    expect(res.status).toBe(201);
   });
 
   test('etiqueta con ID inexistente → 400', async () => {
@@ -83,10 +89,10 @@ const editar = (cookie, id, body) =>
   request(app).patch(`/api/categories/${id}`).set('Cookie', cookie).send(body);
 
 describe('validación de edición de categoría', () => {
-  test('descripción de más de 750 caracteres → 400', async () => {
+  test('descripción de más de 1000 caracteres → 400', async () => {
     const u = await registerAndLogin();
     const cat = await createCategory(u.cookie);
-    const res = await editar(u.cookie, cat.id, { descripcion: 'a'.repeat(751) });
+    const res = await editar(u.cookie, cat.id, { descripcion: 'a'.repeat(1001) });
     expect(res.status).toBe(400);
   });
 
