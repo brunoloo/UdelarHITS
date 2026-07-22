@@ -349,7 +349,7 @@ header .search-bar {
   display: block;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .mobile-search-btn {
     display: grid;
     place-items: center;

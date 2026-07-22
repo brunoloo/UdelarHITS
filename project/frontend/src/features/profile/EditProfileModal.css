@@ -120,13 +120,13 @@
   justify-content: center;
 }
 
-/* ── MOBILE (≤768px) — tap-to-reveal ──
+/* ── MOBILE (≤1024px) — tap-to-reveal ──
    En táctil no hay hover, así que los controles de cámara/eliminar se revelan al
    TOCAR el avatar o el banner (clase .revealed que setea React) y se ocultan al
    tocar afuera. Por defecto quedan ocultos y sin recibir tap, para que el primer
    toque revele en vez de disparar un botón. Se neutraliza el :hover "pegado" del
    táctil para que el estado lo maneje React. Desktop (hover) no se toca. */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   /* En pantallas angostas el modal se achica y el banner (aspect-ratio 4/1)
      quedaba de ~80px: el avatar de 112px con margin-top:-60px lo tapaba casi
      por completo ("desaparecía") y se veía enorme. Fijamos una altura de banner

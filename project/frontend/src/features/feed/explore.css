@@ -369,7 +369,7 @@
 /* ── Mobile ── */
 /* En pantallas chicas las etiquetas de la "Categoría de la semana" no entraban
    en una sola fila y desbordaban la card. Solo en mobile las dejamos envolver. */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .hero-tags {
     flex-wrap: wrap;
   }

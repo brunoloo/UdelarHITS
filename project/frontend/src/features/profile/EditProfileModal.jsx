@@ -34,7 +34,7 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
   // revelan al TOCAR el avatar o el banner. 'avatar' | 'banner' | null. En
   // desktop no se usa (el reveal es por hover vía CSS).
   const [revealed, setRevealed] = useState(null)
-  const isTouch = () => window.matchMedia('(max-width: 768px)').matches
+  const isTouch = () => window.matchMedia('(max-width: 1024px)').matches
 
   useEffect(() => {
     if (isOpen && profile) {

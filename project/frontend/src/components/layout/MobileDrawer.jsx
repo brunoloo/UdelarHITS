@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import './MobileDrawer.css'
 
-// Drawer lateral para mobile (≤768px). Se abre con swipe right desde el borde
+// Drawer lateral para mobile (≤1024px). Se abre con swipe right desde el borde
 // izquierdo o tocando la columna indicadora, y se cierra con swipe left o
 // tocando el overlay. Replica las opciones del LeftNav (sin Administración) y
 // reutiliza sus estilos (.nav-item). Solo visible en mobile vía CSS; en desktop
@@ -16,7 +16,7 @@ export function MobileDrawer() {
     let startX = 0
     let startY = 0
     let tracking = false
-    const isMobile = () => window.matchMedia('(max-width: 768px)').matches
+    const isMobile = () => window.matchMedia('(max-width: 1024px)').matches
     const EDGE = 24   // zona del borde izquierdo para iniciar la apertura
     const THRESHOLD = 50 // desplazamiento horizontal mínimo del swipe
 

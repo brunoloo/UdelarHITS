@@ -254,7 +254,7 @@
    744px de la columna menos ~20px para compensar que el padding interno del modal
    (edit-body + edit-preview) es ~20px mayor por lado que el de la tarjeta, de modo que
    la COLUMNA DE TEXTO de la preview quede exactamente igual de ancha que la de la
-   página. Si cambia ese layout/padding, actualizar el número. En mobile (≤768px) no
+   página. Si cambia ese layout/padding, actualizar el número. En mobile (≤1024px) no
    hay ese layout: se usa un ancho fijo que el max-width:100% del .modal base recorta. */
 .modal--wide {
   width: calc(100vw - 724px);

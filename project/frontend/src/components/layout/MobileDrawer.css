@@ -1,5 +1,5 @@
 /* ── MOBILE DRAWER ──
-   Solo se muestra en mobile (≤768px). En desktop está completamente oculto,
+   Solo se muestra en mobile (≤1024px). En desktop está completamente oculto,
    por lo que no afecta el layout de escritorio. Reutiliza .nav-item y
    .nav-divider del LeftNav para mantener la consistencia visual. */
 
@@ -9,7 +9,7 @@
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   /* Columna indicadora angosta en el borde izquierdo, siempre visible. */
   .mobile-drawer-edge {
     display: flex;

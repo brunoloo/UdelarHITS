@@ -87,9 +87,9 @@
   background: var(--bg);
 }
 
-/* ── RESPONSIVE — MOBILE ≤ 768px ─────────────────────────────── */
+/* ── RESPONSIVE — MOBILE ≤ 1024px ────────────────────────────── */
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   :root {
     --header-h: 48px;
   }
