@@ -166,6 +166,7 @@
   color: var(--text-muted);
 }
 
+.edit-field-counter.warn { color: var(--status-warning-text); }
 .edit-field-counter.limit { color: var(--danger); }
 
 /* ── EDIT / PREVIEW TABS ── */

@@ -121,7 +121,7 @@ export function CreateCategoryPanel() {
               <div className="edit-field">
                 <div className="edit-field-label">
                   <span>Título</span>
-                  <span className={`edit-field-counter${titulo.length >= 95 ? ' limit' : ''}`}>
+                  <span className={`edit-field-counter${titulo.length >= 100 ? ' limit' : titulo.length >= 95 ? ' warn' : ''}`}>
                     {titulo.length} / 100
                   </span>
                 </div>

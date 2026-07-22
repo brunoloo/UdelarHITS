@@ -456,6 +456,7 @@
      (p. ej. el panel de crear categoría en Home). */
 }
 .edit-field-counter { font-size: 12px; color: var(--text-muted); }
+.edit-field-counter.warn { color: var(--status-warning-text); }
 .edit-field-counter.limit { color: var(--danger); }
 
 /* ── TAGS SELECTOR (edit modal) ── */

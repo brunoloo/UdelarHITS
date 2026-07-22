@@ -173,6 +173,12 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
+  /* Un nombre largo se recorta con puntos suspensivos en vez de desbordar
+     y empujar el contador fuera de la tarjeta. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar-cat-count {
@@ -180,6 +186,7 @@
   color: var(--text-muted);
   white-space: nowrap;
   margin-left: 8px;
+  flex-shrink: 0;
 }
 
 /* ── ACTIVE USERS ── */
