@@ -97,7 +97,9 @@ function NewCatsCard({ categories }) {
               className="sidebar-cat-item"
             >
               <span className="sidebar-cat-title">{c.titulo}</span>
-              <span className="sidebar-cat-count">{Number(c.contador_temas) || 0} temas</span>
+              <span className="sidebar-cat-count">
+                {Number(c.contador_temas) || 0} temas · {Number(c.contador_comentarios) || 0} comentarios
+              </span>
             </Link>
           ))
         )}
