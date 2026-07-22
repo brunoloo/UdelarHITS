@@ -33,7 +33,7 @@ export function SearchDropdown({ results, query, categories, onClose, onTagClick
               </div>
               <div className="search-item-info">
                 <div className="search-item-title">{c.titulo}</div>
-                <div className="search-item-sub">{Number(c.contador_temas) || 0} temas</div>
+                <div className="search-item-sub">{Number(c.contador_comentarios) || 0} comentarios</div>
               </div>
             </Link>
           ))}
