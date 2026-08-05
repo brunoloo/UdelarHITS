@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
 import { resolveAutor } from '../shared/AuthorDisplay'
 import { UserAvatar } from '../shared/UserAvatar'
+import { FACULTADES, facultadBySigla } from '../../config/facultades'
 import './Sidebar.css'
 
 const SIDEBAR_PAGES = ['/', '/recent', '/popular', '/explore']
@@ -73,6 +74,36 @@ function PopularTagsCard({ categories }) {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// Acceso rápido por facultad: las 16 facultades de la Udelar, siempre visibles
+// y en orden fijo (lista hardcodeada en config/facultades.js). Cada ficha filtra
+// el feed por su etiqueta (?etiqueta=SIGLA) y deja la píldora en el buscador. Sin
+// contadores, sin logos: punto de color + sigla en mayúsculas.
+function FacultiesCard({ activeEtiqueta }) {
+  const activeSigla = facultadBySigla(activeEtiqueta)?.sigla ?? null
+  return (
+    <div className="sidebar-card">
+      <div className="sidebar-card-header">Facultades</div>
+      <div className="sidebar-card-body">
+        <div className="sidebar-fac-grid">
+          {FACULTADES.map(f => (
+            <Link
+              key={f.sigla}
+              to={`/?etiqueta=${encodeURIComponent(f.sigla)}`}
+              className={`sidebar-fac${f.sigla === activeSigla ? ' sidebar-fac--active' : ''}`}
+              style={{ '--fac-color': f.color }}
+              title={f.nombre}
+              aria-label={f.nombre}
+            >
+              <span className="sidebar-fac-dot" aria-hidden="true" />
+              <span className="sidebar-fac-sigla">{f.sigla}</span>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -319,7 +350,9 @@ function TopicSidebarContent({ topicId }) {
 
 export function Sidebar() {
   const { user, loading } = useAuth()
-  const { pathname } = useLocation()
+  const location = useLocation()
+  const { pathname } = location
+  const activeEtiqueta = new URLSearchParams(location.search).get('etiqueta')
   const categoryMatch = useMatch('/category/:id')
   const catId = categoryMatch?.params?.id
   const topicMatch = useMatch('/topic/:id')
@@ -364,13 +397,17 @@ export function Sidebar() {
       {!loading && !user && <JoinBanner />}
 
       {pathname === '/' && (
-        <CommunityCard categoryCount={categoryCount} />
+        <>
+          <CommunityCard categoryCount={categoryCount} />
+          <FacultiesCard activeEtiqueta={activeEtiqueta} />
+        </>
       )}
 
       {pathname === '/recent' && (
         <>
           <PopularTagsCard categories={categories} />
           <CommunityCard categoryCount={categoryCount} topicCount={recentTopics.length} />
+          <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
 
@@ -378,6 +415,7 @@ export function Sidebar() {
         <>
           <NewCatsCard categories={categories} />
           <CommunityCard categoryCount={categoryCount} />
+          <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
 
@@ -385,6 +423,7 @@ export function Sidebar() {
         <>
           <ActiveUsersCard />
           <CommunityCard categoryCount={categoryCount} />
+          <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
     </aside>

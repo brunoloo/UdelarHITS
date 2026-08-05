@@ -346,3 +346,52 @@
   color: var(--text-muted);
   font-style: italic;
 }
+
+/* ── CARD DE FACULTADES (acceso rápido por etiqueta) ── */
+.sidebar-fac-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.sidebar-fac {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.sidebar-fac:hover {
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+.sidebar-fac-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fac-color);
+  flex-shrink: 0;
+}
+
+.sidebar-fac-sigla {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-fac--active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
