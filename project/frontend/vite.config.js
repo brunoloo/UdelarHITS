@@ -21,8 +21,46 @@ function stripCrossorigin() {
   }
 }
 
+// Inlinea en index.html el CSS del entry que Vite deja como <link rel="stylesheet">
+// bloqueante. Sin CDN delante de Railway, cada uno de esos <link> es un round-trip
+// serial que bloquea el render (index.css + UserAvatar.css). Inlinearlos deja el
+// arranque con CERO requests de CSS bloqueantes.
+//
+// Solo toca los <link> que Vite pone en index.html (el CSS del grafo eager). El
+// CSS de rutas lazy NO está acá: Vite lo inyecta por JS al cargar cada chunk, así
+// que sigue en archivos aparte y cacheables. El CSP lo permite (style-src trae
+// 'unsafe-inline'; verificado contra la config de helmet en backend/src/app.js).
+// El <script> inline de tema no se toca → su hash sha256 del CSP no cambia.
+function inlineEntryCss() {
+  return {
+    name: 'inline-entry-css',
+    transformIndexHtml: {
+      // 'post': después de que Vite inyectó los <link>/<script> del build.
+      order: 'post',
+      handler(html, ctx) {
+        // ctx.bundle solo existe en build; en dev no hay CSS emitido que inlinear.
+        if (!ctx.bundle) return html
+        // Matchea únicamente <link rel="stylesheet" ... href="/algo.css" ...> en
+        // una línea (los del entry). El <link> de fuentes en <noscript> va en
+        // varias líneas y apunta a fonts.googleapis (no a /*.css), así que no cae.
+        return html.replace(
+          /<link rel="stylesheet"[^>\n]*\shref="\/([^"]+\.css)"[^>\n]*>\s*/g,
+          (tag, fileName) => {
+            const asset = ctx.bundle[fileName]
+            if (!asset || asset.type !== 'asset') return tag
+            const css = typeof asset.source === 'string'
+              ? asset.source
+              : Buffer.from(asset.source).toString('utf8')
+            return `<style>${css}</style>`
+          }
+        )
+      },
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [react(), stripCrossorigin()],
+  plugins: [react(), stripCrossorigin(), inlineEntryCss()],
   server: {
     port: 5173,
     allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app', '.ngrok.io'],
