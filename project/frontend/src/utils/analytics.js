@@ -40,9 +40,16 @@ export function initAnalytics() {
 }
 
 // Envío genérico de eventos. Todas las funciones de abajo pasan por acá. No-op
-// si el tracking está deshabilitado o gtag todavía no cargó.
+// si el tracking está deshabilitado.
 function track(eventName, params) {
-  if (!ENABLED || typeof window === 'undefined' || typeof window.gtag !== 'function') return
+  if (!ENABLED || typeof window === 'undefined') return
+  // Self-init idempotente: el init "real" quedó diferido a requestIdleCallback
+  // (ver main.jsx), pero un evento puede dispararse antes de ese idle — el más
+  // común, el primer page_view de RootLayout en el mount. initAnalytics define
+  // window.gtag de forma síncrona (el <script> externo es async), así que este
+  // fallback captura ese evento sin volver a meter el init en la ruta crítica.
+  if (typeof window.gtag !== 'function') initAnalytics()
+  if (typeof window.gtag !== 'function') return
   window.gtag('event', eventName, params || {})
 }
 
