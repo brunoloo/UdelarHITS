@@ -97,17 +97,18 @@ export function FeedPage() {
       )
     : (feedData?.pages ?? []).flatMap(p => p.data)
 
-  // Nombre completo de la facultad para el empty state (cae a la sigla si la
-  // etiqueta no es una facultad).
-  const etiquetaNombre = etiquetaParam
-    ? (facultadBySigla(etiquetaParam)?.nombre ?? etiquetaParam)
+  // El mensaje muestra la etiqueta tal como la buscó el usuario (la sigla), no el
+  // nombre completo de la facultad: si busca FARTES, el mensaje dice FARTES, no
+  // "Artes" (que confunde). Para facultades va en mayúsculas, igual que la píldora.
+  const etiquetaLabel = etiquetaParam
+    ? (facultadBySigla(etiquetaParam) ? etiquetaParam.toUpperCase() : etiquetaParam)
     : null
 
   function emptyMessage() {
-    if (etiquetaParam && !qParam) return `Todavía no hay categorías que incluyan la etiqueta ${etiquetaNombre}`
+    if (etiquetaParam && !qParam) return `Todavía no hay categorías que incluyan la etiqueta ${etiquetaLabel}`
     if (!qParam) return 'No se encontraron categorías.'
     const isKnownTag = allTagNames.some(t => norm(t) === norm(qParam))
-    if (etiquetaParam) return `Todavía no hay categorías que incluyan la etiqueta ${etiquetaNombre} para "${qParam}".`
+    if (etiquetaParam) return `Todavía no hay categorías que incluyan la etiqueta ${etiquetaLabel} para "${qParam}".`
     if (isKnownTag) return `Todavía no hay categorías con la etiqueta "${qParam}".`
     return `No se encontraron categorías para "${qParam}".`
   }
