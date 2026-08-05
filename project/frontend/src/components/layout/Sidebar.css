@@ -1,4 +1,9 @@
 /* ── SIDEBAR ── */
+/* El `top` lo ajusta useFollowSticky (Sidebar.jsx) en runtime para lograr el
+   comportamiento tipo Twitter: cuando el sidebar es más alto que el viewport,
+   acompaña el scroll del feed y se frena al llegar a su tope (abajo al bajar,
+   arriba al subir), sin cortar contenido ni scrollbar interno. El valor de acá
+   es el estado inicial / fallback sin JS. */
 .sidebar {
   width: 280px;
   flex-shrink: 0;
@@ -9,24 +14,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  /* Cuando el sidebar es más alto que el viewport (ej. Recientes: Etiquetas +
-     Comunidad + Facultades), al ser sticky su parte inferior quedaba inalcanzable
-     si el feed era más corto. Le damos su propio scroll interno acotado a la
-     altura visible; la barra queda fina (mismo criterio que el dropdown de
-     búsqueda) y solo aparece cuando hace falta. */
-  max-height: calc(100vh - var(--header-h) - 48px);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
 }
-
-.sidebar::-webkit-scrollbar { width: 6px; }
-.sidebar::-webkit-scrollbar-track { background: transparent; }
-.sidebar::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: var(--radius);
-}
-.sidebar::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 .sidebar-card {
   background: var(--surface);

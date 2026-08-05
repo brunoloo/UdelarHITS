@@ -5,6 +5,7 @@ import { apiGet } from '../../api/client'
 import { resolveAutor } from '../shared/AuthorDisplay'
 import { UserAvatar } from '../shared/UserAvatar'
 import { FACULTADES, facultadBySigla } from '../../config/facultades'
+import { useFollowSticky } from '../../hooks/useFollowSticky'
 import './Sidebar.css'
 
 const SIDEBAR_PAGES = ['/', '/recent', '/popular', '/explore']
@@ -353,6 +354,8 @@ export function Sidebar() {
   const location = useLocation()
   const { pathname } = location
   const activeEtiqueta = new URLSearchParams(location.search).get('etiqueta')
+  // topGap = --header-h (56px) + 24px de aire, igual que el `top` del CSS.
+  const sidebarRef = useFollowSticky({ topGap: 80, bottomGap: 24 })
   const categoryMatch = useMatch('/category/:id')
   const catId = categoryMatch?.params?.id
   const topicMatch = useMatch('/topic/:id')
@@ -376,7 +379,7 @@ export function Sidebar() {
 
   if (catId) {
     return (
-      <aside className="sidebar">
+      <aside className="sidebar" ref={sidebarRef}>
         <CategorySidebarContent catId={catId} />
       </aside>
     )
@@ -384,7 +387,7 @@ export function Sidebar() {
 
   if (topicId) {
     return (
-      <aside className="sidebar">
+      <aside className="sidebar" ref={sidebarRef}>
         <TopicSidebarContent topicId={topicId} />
       </aside>
     )
@@ -393,7 +396,7 @@ export function Sidebar() {
   const categoryCount = catsLoading ? null : categories.length
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" ref={sidebarRef}>
       {!loading && !user && <JoinBanner />}
 
       {pathname === '/' && (
