@@ -1,13 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { UserAvatar } from '../shared/UserAvatar'
-import { SavedPanel } from './SavedPanel'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { useSocket } from '../../context/SocketContext'
 import './LeftNav.css'
+
+// SavedPanel es un panel deslizable que NO se ve en el primer paint. Importarlo
+// estático lo metía —junto con toda su cadena: CommentEntry -> CommentCard ->
+// Modal + ReportModal + mini-cards— en el entry chunk del arranque. Cargándolo
+// lazy, esa cadena sale de la ruta crítica —y con ella el <link> bloqueante de
+// Modal.css en index.html— y se baja recién al primer open del panel.
+const SavedPanel = lazy(() => import('./SavedPanel').then(m => ({ default: m.SavedPanel })))
 
 function notifTimeAgo(dateStr) {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
@@ -145,6 +151,12 @@ export function LeftNav() {
   const [activePanel, setActivePanel] = useState(null)
   const panelOpen = activePanel === 'notif'
   const savedOpen = activePanel === 'saved'
+  // Una vez abierto, SavedPanel queda montado aunque savedOpen vuelva a false:
+  // así conserva la animación de cierre (desmontarlo al cerrar la cortaría). El
+  // chunk lazy se baja en ese primer open. Se "engancha" en render (no en un
+  // effect) para no disparar setState dentro de useEffect.
+  const [savedMounted, setSavedMounted] = useState(false)
+  if (savedOpen && !savedMounted) setSavedMounted(true)
   const [notifications, setNotifications] = useState(null)
   const [notifLoading, setNotifLoading] = useState(false)
   const panelRef = useRef(null)
@@ -510,11 +522,15 @@ export function LeftNav() {
         </div>
       </div>
 
-      <SavedPanel
-        open={savedOpen}
-        panelRef={savedPanelRef}
-        onClose={() => setActivePanel(null)}
-      />
+      {savedMounted && (
+        <Suspense fallback={null}>
+          <SavedPanel
+            open={savedOpen}
+            panelRef={savedPanelRef}
+            onClose={() => setActivePanel(null)}
+          />
+        </Suspense>
+      )}
     </>
   )
 }
