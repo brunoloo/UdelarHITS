@@ -816,3 +816,58 @@ Fusionar las queries de pertenencia/visibleSince, devolver la primera página de
 - **SQL:** `EXPLAIN (ANALYZE, BUFFERS)` antes/después de cada índice; `pg_stat_statements` en producción para el ranking real de queries.
 - **HTTP:** `curl -s -o /dev/null -w '%{size_download} %{time_total}\n' --compressed https://.../assets/index-*.js` antes/después del fix de compression.
 - **Frontend:** pestaña Network con "Disable cache" off para ver el efecto de staleTime; React Query Devtools (`@tanstack/react-query-devtools`, solo dev) para ver refetches; Lighthouse para LCP antes/después del code splitting.
+
+---
+
+## 8. Optimización de LCP móvil (rama `perf/mobile-lcp`)
+
+Baseline Lighthouse móvil de `https://udelarhits.com/`: Rendimiento 72, **LCP 5,4 s**, FCP 2,9 s, TBT 170 ms, CLS 0,064. Meta: LCP < 2,5 s, FCP < 1,8 s, sin degradar TBT (< 200 ms) ni CLS (< 0,1).
+
+> **Nota de método.** Estos cambios se hicieron en un entorno sin acceso de red a producción (egreso bloqueado) ni base de datos, así que **no hay tabla Lighthouse antes/después medida acá**: el LCP de producción depende del TTFB real y del feed servido por la DB, que no se pueden reproducir. La evidencia de cada cambio es el análisis de la cadena de requests (sobre el código) y los deltas del `vite build`, que son deterministas. La validación de LCP/FCP contra producción queda pendiente del autor (Lighthouse móvil tras el deploy). Varios ítems que la auditoría original tenía en cola (code splitting §5.2, `enabled: !authLoading` §3.2) ya estaban aplicados al empezar esta fase.
+
+**Resumen de deltas del `vite build` (entry chunk del arranque):**
+
+| Métrica del build | Antes | Después |
+|---|---|---|
+| JS del entry (`index-*.js`) | 341,75 kB / 100,27 kB gzip | **319,54 kB / 95,59 kB gzip** |
+| Requests de CSS **bloqueantes** en `index.html` | 3 (`index` 55,4 + `Modal` 3,8 + `UserAvatar` 0,7 kB) | **0** (inlineados) |
+| `<link rel=modulepreload>` en el arranque | 10 | **7** |
+| Round-trips seriales HTML→LCP (feed) | 2 (`/users/me` → feed) | **1** (en paralelo) |
+| Init de GA4 | síncrono, antes de `createRoot` | diferido a `requestIdleCallback` |
+
+### 8.1 El feed del Home viajaba serial detrás de `/users/me`
+
+**Hallazgo.** Entre FCP (2,9 s) y LCP (5,4 s) había ~2,5 s. Leyendo la cadena: `AuthContext` dispara `GET /users/me` en el mount y `FeedPage` tenía `enabled: !qParam && !authLoading` con `queryKey` que incluía `user?.id`. El feed (el fetch más caro) quedaba **deshabilitado hasta que resolvía `/users/me`** — un round-trip completo en serie antes de poder pintar el elemento LCP (el primer card del feed). El `user?.id` en la key era para evitar el doble-fetch al resolver auth (§3.2).
+
+**Implementación** (`FeedPage.jsx`). `queryKey` fija `['categories','feed']` y `enabled: !qParam` → el feed arranca en el mount, en paralelo con `/users/me`. Es seguro porque `/api/categories/feed` ya usa `optionalAuth` y personaliza desde la cookie JWT (que el navegador adjunta en cada request), así que el cliente no necesita saber quién es el usuario primero. La key fija no cambia al resolver auth → no reintroduce el doble-fetch. La coherencia entre sesiones la garantiza `queryClient.clear()` en login/logout/verifyEmail (`AuthContext`).
+
+**Impacto medido.** Un round-trip menos en la ruta crítica del LCP (de 2 requests seriales a 1). El feed y `/users/me` ahora se solapan. Verificación de LCP en producción: pendiente.
+
+### 8.2 CSS del entry como `<link>` bloqueante (round-trips sin CDN)
+
+**Hallazgo.** Vite dejaba el CSS del grafo eager como `<link rel="stylesheet">` bloqueantes en `index.html`. Sin CDN delante de Railway, cada uno es un round-trip serial que bloquea el primer paint. El problema no es el peso sino los round-trips.
+
+**Implementación** (`vite.config.js`, plugin `inlineEntryCss`). En build, se reemplazan esos `<link>` por `<style>` con el CSS emitido (leído del bundle). El CSS de rutas lazy **no** se toca (Vite lo inyecta por JS al cargar cada chunk → sigue en archivos cacheables aparte). Se verificó contra la config de helmet que `style-src` trae `'unsafe-inline'`; el `<script>` inline de tema no se toca, así que su hash sha256 del CSP sigue coincidiendo con `app.js`. Sin riesgo de FOUC/CLS: el `<style>` va en `<head>`, equivalente a render-blocking.
+Decisión de umbral: la auditoría sugería no inlinear si el CSS del entry supera 25 KiB **sin comprimir** (acá ~46 KiB); se inlineó igual porque el costo real en el cable es ~8,5 KiB gzip (`compression()` en el origen) e `index.html` es `no-cache` (revalida con 304 entre deploys).
+
+**Impacto medido.** Requests de CSS bloqueantes en el arranque: **3 → 0**. CSS del entry: 55,4 → 45,7 kB (el resto salió a chunks lazy por §8.3).
+
+### 8.3 `SavedPanel` arrastraba `Modal` (y su cadena) al entry chunk
+
+**Hallazgo.** `Modal` figuraba en el `modulepreload` del arranque pese a no verse en el primer paint. Rastreando el grafo eager: `LeftNav` (shell, dentro de `AppLayout`) importaba `SavedPanel` de forma estática, y `SavedPanel → CommentEntry → CommentCard → Modal + ReportModal + mini-cards`. Toda esa cadena viajaba en el entry solo por eso.
+
+**Implementación** (`LeftNav.jsx`). `SavedPanel` pasa a `React.lazy`, montado al primer open del panel (queda montado después para conservar la animación de cierre). El "enganche" se hace en render, no en `useEffect`, para no introducir un `setState`-en-effect nuevo (eslint quedó igual que en `HEAD`).
+
+**Impacto medido.** JS del entry: 341,75 → 319,54 kB (gzip 100,27 → 95,59). Cae el `<link>` bloqueante de `Modal.css` en `index.html`. `modulepreload`: 10 → 7 (salen `Modal`, `createLucideIcon` y `analytics`). 23/23 tests del frontend en verde.
+
+### 8.4 Init de GA4 en la ruta crítica de render
+
+**Hallazgo.** `main.jsx` llamaba `initAnalytics()` de forma síncrona **antes** de `createRoot().render()`: en producción eso inyectaba el `<script>` de gtag.js dentro de la ventana crítica del primer render.
+
+**Implementación** (`main.jsx` + `analytics.js`). El init se difiere a `requestIdleCallback` (fallback `setTimeout`) con `import()` dinámico, después del primer render. `track()` hace self-init idempotente, así que ningún evento disparado antes del idle-callback se pierde (p. ej. el primer `page_view` de `RootLayout`): `initAnalytics` define `window.gtag` de forma síncrona y el `<script>` externo es `async`.
+
+**Impacto medido.** La inyección del script de gtag sale de la ruta crítica de render. Alcance honesto: el chunk `analytics` (0,7 kB gzip) dejó el `modulepreload` como efecto colateral de §8.3, pero no se persiguió sacarlo del grafo eager por completo (exigiría `import()` dinámico en ~5-6 archivos del layout para ahorrar 0,7 kB, no justifica el churn).
+
+### 8.5 Redistribución forzada (§Fase 4) — no accionable
+
+**Hallazgo.** El audit de "redistribución forzada" figura en el reporte como *Sin puntuar* y con fuente `[sin asignación]`: no afecta el score y ni siquiera está atribuido a un archivo. Atribuirlo requiere `sourcemap` + volver a correr Lighthouse **contra producción**, que no es posible desde este entorno. **No se tocó** (regla: no aplicar cambios sin evidencia de que atacan el cuello de botella medido).
