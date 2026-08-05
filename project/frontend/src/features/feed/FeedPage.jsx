@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
-import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
 import { CategoryCard } from '../../components/shared/CategoryCard'
 import { CreateCategoryPanel } from '../category/CreateCategoryPanel'
@@ -24,13 +23,25 @@ function CategorySkeleton() {
 export function FeedPage() {
   const [searchParams] = useSearchParams()
   const qParam = searchParams.get('q')
-  const { user, loading: authLoading } = useAuth()
 
   // Feed del Home: paginado por cursor, personalizado si hay sesión.
-  // La queryKey incluye el usuario para rearmar el feed al entrar/salir.
-  // enabled espera a que AuthContext resuelva /users/me: sin eso, el primer
-  // render dispara el feed con key 'anon' y al llegar el usuario la key cambia
-  // y se vuelve a pedir — el fetch más caro de la app, dos veces por arranque.
+  //
+  // Se dispara en el MOUNT, sin esperar a que AuthContext resuelva /users/me.
+  // El endpoint /categories/feed usa optionalAuth (ver category.routes.js): lee
+  // la cookie JWT que el navegador ya adjunta en cada request (apiGet →
+  // credentials:'include') y personaliza server-side, así que no necesita que el
+  // cliente sepa quién es el usuario primero. Antes, enabled esperaba authLoading
+  // y la queryKey incluía user?.id, con lo que el feed (el fetch más caro)
+  // quedaba SERIAL detrás de /users/me. Ahora ambos requests viajan en PARALELO
+  // → un round-trip menos en la ruta crítica del LCP.
+  //
+  // La queryKey es FIJA (sin user?.id) a propósito: si dependiera del id, al
+  // resolver auth la key cambiaría y el feed se pediría dos veces por arranque
+  // (el doble-fetch que el enabled original vino a evitar). La coherencia entre
+  // sesiones la garantiza AuthContext, que hace queryClient.clear() en
+  // login/logout/verifyEmail → el feed se refetchea con la cookie nueva. El
+  // resto de los setUser (editar perfil, settings, socket) son del MISMO
+  // usuario, no cambian la personalización.
   const {
     data: feedData,
     isLoading: loadingFeed,
@@ -38,12 +49,12 @@ export function FeedPage() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ['categories', 'feed', user?.id ?? 'anon'],
+    queryKey: ['categories', 'feed'],
     queryFn: ({ pageParam }) =>
       apiGet(`/categories/feed?limit=${PAGE_SIZE}${pageParam ? `&cursor=${encodeURIComponent(pageParam)}` : ''}`),
     initialPageParam: null,
     getNextPageParam: lastPage => lastPage.nextCursor ?? undefined,
-    enabled: !qParam && !authLoading,
+    enabled: !qParam,
   })
 
   // Búsqueda (?q=): filtra client-side sobre la lista completa, como antes.
@@ -76,9 +87,9 @@ export function FeedPage() {
 
   const allTagNames = Object.values(allTagsGrouped).flat().map(t => t.nombre)
 
-  // Mientras auth resuelve, el query del feed está deshabilitado (no "cargando"):
-  // sin authLoading acá se pintaría el estado vacío por un instante.
-  const isLoading = qParam ? loadingAll : (authLoading || loadingFeed)
+  // El feed ahora arranca en el mount, así que loadingFeed ya cubre el estado
+  // inicial (antes hacía falta authLoading acá porque el query esperaba a auth).
+  const isLoading = qParam ? loadingAll : loadingFeed
   const displayCategories = qParam
     ? allCategories.filter(c =>
         parseEtiquetas(c.etiquetas).some(e => norm(e) === norm(qParam)) ||
