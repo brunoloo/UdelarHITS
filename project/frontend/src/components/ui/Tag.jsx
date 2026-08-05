@@ -12,7 +12,12 @@ export function Tag({ label, clickable = true }) {
         onClick={e => {
           e.stopPropagation()
           e.preventDefault()
-          navigate(`/?q=${encodeURIComponent(label)}`)
+          // Filtro EXACTO por etiqueta (no ?q=): un chip ES una etiqueta, así que
+          // clickearlo filtra por igualdad y deja la píldora en el buscador. `label`
+          // es el etiqueta.nombre (nunca nombre_display), que es con lo que matchea
+          // el backend. Con ?q= reaparecía el caso "Arquitectura" (substring de
+          // título) a un click de distancia.
+          navigate(`/?etiqueta=${encodeURIComponent(label)}`)
         }}
       >
         {label}
