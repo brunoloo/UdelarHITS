@@ -104,10 +104,10 @@ export function FeedPage() {
     : null
 
   function emptyMessage() {
-    if (etiquetaParam && !qParam) return `Todavía no hay categorías de ${etiquetaNombre}`
+    if (etiquetaParam && !qParam) return `Todavía no hay categorías que incluyan la etiqueta ${etiquetaNombre}`
     if (!qParam) return 'No se encontraron categorías.'
     const isKnownTag = allTagNames.some(t => norm(t) === norm(qParam))
-    if (etiquetaParam) return `Todavía no hay categorías de ${etiquetaNombre} para "${qParam}".`
+    if (etiquetaParam) return `Todavía no hay categorías que incluyan la etiqueta ${etiquetaNombre} para "${qParam}".`
     if (isKnownTag) return `Todavía no hay categorías con la etiqueta "${qParam}".`
     return `No se encontraron categorías para "${qParam}".`
   }
