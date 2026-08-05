@@ -829,17 +829,17 @@ Baseline Lighthouse móvil de `https://udelarhits.com/`: Rendimiento 72, **LCP 5
 
 | Métrica del build | Antes | Después |
 |---|---|---|
-| JS del entry (`index-*.js`) | 341,75 kB / 100,27 kB gzip | **319,54 kB / 95,59 kB gzip** |
+| JS del entry (`index-*.js`) | 341,75 kB / 100,27 kB gzip | **319,06 kB / 95,38 kB gzip** |
 | Requests de CSS **bloqueantes** en `index.html` | 3 (`index` 55,4 + `Modal` 3,8 + `UserAvatar` 0,7 kB) | **0** (inlineados) |
 | `<link rel=modulepreload>` en el arranque | 10 | **7** |
 | Round-trips seriales HTML→LCP (feed) | 2 (`/users/me` → feed) | **1** (en paralelo) |
-| Init de GA4 | síncrono, antes de `createRoot` | diferido a `requestIdleCallback` |
+| Init de GA4 | síncrono, antes de `createRoot` | **sin cambio** (intento revertido — ver §8.4) |
 
 ### 8.1 El feed del Home viajaba serial detrás de `/users/me`
 
 **Hallazgo.** Entre FCP (2,9 s) y LCP (5,4 s) había ~2,5 s. Leyendo la cadena: `AuthContext` dispara `GET /users/me` en el mount y `FeedPage` tenía `enabled: !qParam && !authLoading` con `queryKey` que incluía `user?.id`. El feed (el fetch más caro) quedaba **deshabilitado hasta que resolvía `/users/me`** — un round-trip completo en serie antes de poder pintar el elemento LCP (el primer card del feed). El `user?.id` en la key era para evitar el doble-fetch al resolver auth (§3.2).
 
-**Implementación** (`FeedPage.jsx`). `queryKey` fija `['categories','feed']` y `enabled: !qParam` → el feed arranca en el mount, en paralelo con `/users/me`. Es seguro porque `/api/categories/feed` ya usa `optionalAuth` y personaliza desde la cookie JWT (que el navegador adjunta en cada request), así que el cliente no necesita saber quién es el usuario primero. La key fija no cambia al resolver auth → no reintroduce el doble-fetch. La coherencia entre sesiones la garantiza `queryClient.clear()` en login/logout/verifyEmail (`AuthContext`).
+**Implementación** (`FeedPage.jsx`). `queryKey` fija `['categories','feed']` y `enabled: !qParam` → el feed arranca en el mount, en paralelo con `/users/me`. Es seguro porque `/api/categories/feed` ya usa `optionalAuth` y personaliza desde la cookie JWT (que el navegador adjunta en cada request), así que el cliente no necesita saber quién es el usuario primero. La key fija no cambia al resolver auth → no reintroduce el doble-fetch. La coherencia entre sesiones la garantiza `AuthContext`, que en login/logout/verifyEmail invalida las queries activas con `invalidateQueries` (en logout, además, `removeQueries({ type: 'inactive' })` para purgar datos del usuario que se va) → el feed montado se refetchea con la cookie nueva. **Nota:** con la key fija, `clear()` por sí solo **no** alcanza — no refetchea una query activa/montada, deja la data vieja hasta recargar; ver el fix de esa regresión en el commit del `invalidateQueries`.
 
 **Impacto medido.** Un round-trip menos en la ruta crítica del LCP (de 2 requests seriales a 1). El feed y `/users/me` ahora se solapan. Verificación de LCP en producción: pendiente.
 
@@ -858,15 +858,19 @@ Decisión de umbral: la auditoría sugería no inlinear si el CSS del entry supe
 
 **Implementación** (`LeftNav.jsx`). `SavedPanel` pasa a `React.lazy`, montado al primer open del panel (queda montado después para conservar la animación de cierre). El "enganche" se hace en render, no en `useEffect`, para no introducir un `setState`-en-effect nuevo (eslint quedó igual que en `HEAD`).
 
-**Impacto medido.** JS del entry: 341,75 → 319,54 kB (gzip 100,27 → 95,59). Cae el `<link>` bloqueante de `Modal.css` en `index.html`. `modulepreload`: 10 → 7 (salen `Modal`, `createLucideIcon` y `analytics`). 23/23 tests del frontend en verde.
+**Impacto medido.** JS del entry: 341,75 → 319,54 kB (gzip 100,27 → 95,59; con la §8.4 revertida el número final queda en **319,06 kB / 95,38 kB gzip**). Cae el `<link>` bloqueante de `Modal.css` en `index.html`. `modulepreload`: 10 → 7 (salen `Modal` y `createLucideIcon`; `analytics` tampoco aparece, pero porque queda embebido en el entry chunk, no como chunk aparte). 23/23 tests del frontend en verde.
 
-### 8.4 Init de GA4 en la ruta crítica de render
+### 8.4 Init de GA4 en la ruta crítica de render — **intentado y revertido**
 
-**Hallazgo.** `main.jsx` llamaba `initAnalytics()` de forma síncrona **antes** de `createRoot().render()`: en producción eso inyectaba el `<script>` de gtag.js dentro de la ventana crítica del primer render.
+**Hallazgo.** `main.jsx` llamaba `initAnalytics()` de forma síncrona **antes** de `createRoot().render()`, inyectando el `<script>` de gtag.js dentro de la ventana crítica del primer render.
 
-**Implementación** (`main.jsx` + `analytics.js`). El init se difiere a `requestIdleCallback` (fallback `setTimeout`) con `import()` dinámico, después del primer render. `track()` hace self-init idempotente, así que ningún evento disparado antes del idle-callback se pierde (p. ej. el primer `page_view` de `RootLayout`): `initAnalytics` define `window.gtag` de forma síncrona y el `<script>` externo es `async`.
+**Intento.** Se difirió el init a `requestIdleCallback` (fallback `setTimeout`) con `import()` dinámico de `analytics.js` en `main.jsx`, más un self-init idempotente en `track()` para no perder eventos disparados antes del idle-callback.
 
-**Impacto medido.** La inyección del script de gtag sale de la ruta crítica de render. Alcance honesto: el chunk `analytics` (0,7 kB gzip) dejó el `modulepreload` como efecto colateral de §8.3, pero no se persiguió sacarlo del grafo eager por completo (exigiría `import()` dinámico en ~5-6 archivos del layout para ahorrar 0,7 kB, no justifica el churn).
+**Por qué se revirtió.** El `import()` dinámico **no** sacó `analytics` del bundle inicial. `analytics.js` lo importan **estáticamente** 5+ módulos del grafo crítico (`RootLayout`, `Header`, `MobileSearch`, `FollowButton`, `CommentThread`, …), así que Rollup no puede separarlo y avisa con `INEFFECTIVE_DYNAMIC_IMPORT`: el módulo queda dentro del entry chunk igual que antes. Resultado: cero beneficio (mismo peso en el arranque) y complejidad de más (`requestIdleCallback` + `import()` + self-init). Se volvió al `import` estático + `initAnalytics()` directo en `main.jsx`.
+
+Migrar esos 5+ importadores a `import()` dinámico **tampoco se hizo**: `analytics` pesa 0,99 KiB sobre un entry de ~319 KiB — no justifica tocar 5 componentes más y volver toda la telemetría asíncrona.
+
+**Impacto medido.** Ninguno (revertido). El entry chunk quedó en 319,06 kB, sin crecer respecto al estado post-§8.3, y sin el warning `INEFFECTIVE_DYNAMIC_IMPORT`. Analytics sigue funcionando con init síncrono como en el baseline. Aprendizaje: para que `import()` dinámico aísle un módulo, **ningún** módulo del grafo eager puede importarlo estático.
 
 ### 8.5 Redistribución forzada (§Fase 4) — no accionable
 
