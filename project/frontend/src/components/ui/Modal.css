@@ -261,6 +261,19 @@
   width: calc(100vw - 724px);
 }
 
+/* El override de mobile vive ACÁ (no solo en responsive.css) a propósito: Modal.css
+   viaja en el chunk de CategoryPage (code-split) y se inyecta DESPUÉS de responsive.css,
+   así que el `.modal--wide` de esta hoja pisaría por orden de fuente al de la media query
+   global (misma especificidad; las media queries no suman). Sin esta regla, en mobile
+   gana `calc(100vw - 724px)`, que da negativo → width 0 → el modal se colapsa (se ve el
+   backdrop pero no la tarjeta). Al vivir en el mismo archivo, esta media query siempre
+   cascada después de la base y gana. Mismo problema que documenta .edit-field--desc arriba. */
+@media (max-width: 1024px) {
+  .modal--wide {
+    width: 600px;
+  }
+}
+
 /* ── CHANGE PASSWORD MODAL EXTRAS ── */
 .cp-forgot-link {
   font-size: 13px;

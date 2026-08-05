@@ -101,7 +101,10 @@
 
   /* En desktop el modal ancho sigue la columna de contenido (calc(100vw - 724px) en
      Modal.css); en mobile no existe ese layout, así que se comporta como el modal
-     base y el max-width:100% del .modal lo recorta al viewport. */
+     base y el max-width:100% del .modal lo recorta al viewport.
+     OJO: el override que realmente manda vive en Modal.css (misma media query), porque
+     ese archivo es code-split y se inyecta después de este, pisando por orden de fuente.
+     Este se deja como refuerzo/documentación pero por sí solo no alcanza. */
   .modal--wide {
     width: 600px;
   }
