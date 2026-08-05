@@ -1,4 +1,9 @@
 /* ── SIDEBAR ── */
+/* El `top` lo ajusta useFollowSticky (Sidebar.jsx) en runtime para lograr el
+   comportamiento tipo Twitter: cuando el sidebar es más alto que el viewport,
+   acompaña el scroll del feed y se frena al llegar a su tope (abajo al bajar,
+   arriba al subir), sin cortar contenido ni scrollbar interno. El valor de acá
+   es el estado inicial / fallback sin JS. */
 .sidebar {
   width: 280px;
   flex-shrink: 0;
@@ -345,4 +350,53 @@
   font-size: 13px;
   color: var(--text-muted);
   font-style: italic;
+}
+
+/* ── CARD DE FACULTADES (acceso rápido por etiqueta) ── */
+.sidebar-fac-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.sidebar-fac {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.sidebar-fac:hover {
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+.sidebar-fac-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fac-color);
+  flex-shrink: 0;
+}
+
+.sidebar-fac-sigla {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-fac--active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--text-primary);
 }

@@ -567,6 +567,10 @@ CREATE INDEX idx_reporte_categoria ON reporte(categoria_id) WHERE categoria_id I
 CREATE UNIQUE INDEX uq_reporte_usuario_contenido ON reporte(usuario_id, contenido_id) WHERE contenido_id IS NOT NULL;
 CREATE UNIQUE INDEX uq_reporte_usuario_categoria ON reporte(usuario_id, categoria_id) WHERE categoria_id IS NOT NULL;
 CREATE INDEX idx_reaccion_contenido ON reaccion(contenido_id);
+-- Filtro exacto por etiqueta (?etiqueta=): entra por etiqueta_id, que es el
+-- segundo campo de la PK (categoria_id, etiqueta_id) y por eso no la aprovecha.
+-- Ver migrations/migration_fase21_idx_etiqueta_filtro.sql. Mantener en sync.
+CREATE INDEX idx_cat_etiqueta_etiqueta ON categoria_etiqueta(etiqueta_id);
 
 -- Índices de performance (ver migrations/migration_performance_indices.sql,
 -- que es la versión aplicable a una base ya creada, con la explicación de

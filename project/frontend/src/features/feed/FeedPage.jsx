@@ -5,6 +5,7 @@ import { apiGet } from '../../api/client'
 import { CategoryCard } from '../../components/shared/CategoryCard'
 import { CreateCategoryPanel } from '../category/CreateCategoryPanel'
 import { parseEtiquetas, normSearch as norm } from '../../utils/parseEtiquetas'
+import { facultadBySigla } from '../../config/facultades'
 import './feed.css'
 
 const PAGE_SIZE = 20
@@ -23,6 +24,8 @@ function CategorySkeleton() {
 export function FeedPage() {
   const [searchParams] = useSearchParams()
   const qParam = searchParams.get('q')
+  const etiquetaParam = searchParams.get('etiqueta')
+  const isFiltering = !!qParam || !!etiquetaParam
 
   // Feed del Home: paginado por cursor, personalizado si hay sesión.
   //
@@ -56,14 +59,18 @@ export function FeedPage() {
       apiGet(`/categories/feed?limit=${PAGE_SIZE}${pageParam ? `&cursor=${encodeURIComponent(pageParam)}` : ''}`),
     initialPageParam: null,
     getNextPageParam: lastPage => lastPage.nextCursor ?? undefined,
-    enabled: !qParam,
+    enabled: !isFiltering,
   })
 
-  // Búsqueda (?q=): filtra client-side sobre la lista completa, como antes.
+  // Búsqueda filtrada. El filtro EXACTO por etiqueta lo resuelve el backend
+  // (?etiqueta=), y el texto libre `q` se aplica client-side encima —así el
+  // contador y la lista salen del mismo request y ?q= mantiene su comportamiento.
   const { data: allCategories = [], isLoading: loadingAll } = useQuery({
-    queryKey: ['categories', 'active'],
-    queryFn: () => apiGet('/categories/active').then(r => r.data),
-    enabled: !!qParam,
+    queryKey: ['categories', 'active', etiquetaParam ?? null],
+    queryFn: () =>
+      apiGet(`/categories/active${etiquetaParam ? `?etiqueta=${encodeURIComponent(etiquetaParam)}` : ''}`)
+        .then(r => r.data),
+    enabled: isFiltering,
     staleTime: 5 * 60 * 1000,
   })
 
@@ -77,7 +84,7 @@ export function FeedPage() {
   // Sentinel del infinite scroll: al entrar al viewport pide la página siguiente.
   const sentinelRef = useRef(null)
   useEffect(() => {
-    if (qParam || !hasNextPage) return
+    if (isFiltering || !hasNextPage) return
     const el = sentinelRef.current
     if (!el) return
     const observer = new IntersectionObserver(entries => {
@@ -85,23 +92,36 @@ export function FeedPage() {
     }, { rootMargin: '400px' })
     observer.observe(el)
     return () => observer.disconnect()
-  }, [qParam, hasNextPage, isFetchingNextPage, fetchNextPage])
+  }, [isFiltering, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const allTagNames = Object.values(allTagsGrouped).flat().map(t => t.nombre)
 
-  // El feed ahora arranca en el mount, así que loadingFeed ya cubre el estado
-  // inicial (antes hacía falta authLoading acá porque el query esperaba a auth).
-  const isLoading = qParam ? loadingAll : loadingFeed
-  const displayCategories = qParam
+  // El feed arranca en el mount, así que loadingFeed ya cubre el estado inicial
+  // (antes hacía falta authLoading acá porque el query esperaba a auth).
+  // `allCategories` ya viene filtrado por etiqueta desde el backend; sobre eso
+  // aplicamos el texto libre `q` (título substring OR etiqueta exacta). Sin
+  // filtros, el feed paginado normal.
+  const isLoading = isFiltering ? loadingAll : loadingFeed
+  const displayCategories = isFiltering
     ? allCategories.filter(c =>
+        !qParam ||
         parseEtiquetas(c.etiquetas).some(e => norm(e) === norm(qParam)) ||
         norm(c.titulo).includes(norm(qParam))
       )
     : (feedData?.pages ?? []).flatMap(p => p.data)
 
+  // El mensaje muestra la etiqueta tal como la buscó el usuario (la sigla), no el
+  // nombre completo de la facultad: si busca FARTES, el mensaje dice FARTES, no
+  // "Artes" (que confunde). Para facultades va en mayúsculas, igual que la píldora.
+  const etiquetaLabel = etiquetaParam
+    ? (facultadBySigla(etiquetaParam) ? etiquetaParam.toUpperCase() : etiquetaParam)
+    : null
+
   function emptyMessage() {
+    if (etiquetaParam && !qParam) return `Todavía no hay categorías que incluyan la etiqueta ${etiquetaLabel}`
     if (!qParam) return 'No se encontraron categorías.'
     const isKnownTag = allTagNames.some(t => norm(t) === norm(qParam))
+    if (etiquetaParam) return `Todavía no hay categorías que incluyan la etiqueta ${etiquetaLabel} para "${qParam}".`
     if (isKnownTag) return `Todavía no hay categorías con la etiqueta "${qParam}".`
     return `No se encontraron categorías para "${qParam}".`
   }
@@ -118,7 +138,21 @@ export function FeedPage() {
             <CategorySkeleton />
           </>
         ) : displayCategories.length === 0 ? (
-          <div className="feed-empty">{emptyMessage()}</div>
+          <div className="feed-empty">
+            <p className="feed-empty-msg">{emptyMessage()}</p>
+            {etiquetaParam && (
+              <button
+                type="button"
+                className="feed-empty-cta"
+                onClick={() => {
+                  window.scrollTo({ top: 0 })
+                  window.dispatchEvent(new CustomEvent('open-create-category'))
+                }}
+              >
+                Crear la primera
+              </button>
+            )}
+          </div>
         ) : (
           <>
             {/* priority solo en el primer card: su adjunto es el candidato LCP
@@ -126,7 +160,7 @@ export function FeedPage() {
             {displayCategories.map((c, i) => (
               <CategoryCard key={c.id} category={c} priority={i === 0} />
             ))}
-            {!qParam && (
+            {!isFiltering && (
               <div ref={sentinelRef}>
                 {isFetchingNextPage && <CategorySkeleton />}
               </div>

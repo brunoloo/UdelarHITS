@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
@@ -71,6 +71,14 @@ export function CreateCategoryPanel() {
     setPanelOpen(false)
     mutation.reset()
   }
+
+  // El empty state del feed filtrado ("Crear la primera") abre este panel a
+  // través de un evento, ya que vive en la misma página pero en otro componente.
+  useEffect(() => {
+    function onOpen() { openPanel() }
+    window.addEventListener('open-create-category', onOpen)
+    return () => window.removeEventListener('open-create-category', onOpen)
+  }, [])
 
   function handleSubmit() {
     if (!requireAuth('Debes iniciar sesión para crear una categoría')) return

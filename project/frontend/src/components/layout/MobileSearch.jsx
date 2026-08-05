@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useSiteSearch } from '../../hooks/useSiteSearch'
 import { trackSearch } from '../../utils/analytics'
 import { SearchDropdown } from './SearchDropdown'
+import { SearchPill } from './SearchPill'
 
 // Búsqueda en mobile: lupa a la izquierda del header que abre un overlay a
 // pantalla completa con el mismo comportamiento que la barra de desktop
@@ -15,12 +16,25 @@ export function MobileSearch() {
   const inputRef = useRef(null)
   const { query, setQuery, setQueryFromFilter, results, setResults, categories, reset } = useSiteSearch()
 
-  // Al abrir el overlay, si el Home está filtrado por una etiqueta (?q=),
-  // precargamos su nombre en el input para que se vea qué filtro está activo
-  // (mismo indicador que la barra de desktop).
+  // Fuente de verdad = URL. En el Home, `etiqueta` se muestra como píldora y `q`
+  // es el texto libre del input (mismo indicador que la barra de desktop).
+  const isHome = location.pathname === '/'
+  const params = new URLSearchParams(location.search)
+  const activeEtiqueta = isHome ? params.get('etiqueta') : null
+  const activeQ = isHome ? params.get('q') : null
+
+  function goSearch({ q, etiqueta }) {
+    const p = new URLSearchParams()
+    if (etiqueta) p.set('etiqueta', etiqueta)
+    if (q) p.set('q', q)
+    const qs = p.toString()
+    navigate(qs ? `/?${qs}` : '/')
+  }
+
+  // Al abrir el overlay, reflejamos el texto libre `q` activo (la etiqueta se ve
+  // como píldora, no como texto).
   function openSearch() {
-    const q = new URLSearchParams(location.search).get('q')
-    if (location.pathname === '/' && q) setQueryFromFilter(q)
+    if (isHome && (activeQ || activeEtiqueta)) setQueryFromFilter(activeQ || '')
     setOpen(true)
   }
 
@@ -64,6 +78,12 @@ export function MobileSearch() {
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
+              {activeEtiqueta && (
+                <SearchPill
+                  etiqueta={activeEtiqueta}
+                  onRemove={() => goSearch({ q: query.trim() || null, etiqueta: null })}
+                />
+              )}
               <input
                 ref={inputRef}
                 type="text"
@@ -74,7 +94,14 @@ export function MobileSearch() {
                 onKeyDown={e => {
                   if (e.key === 'Enter') {
                     const q = query.trim()
-                    if (q) { trackSearch(q); navigate(`/?q=${encodeURIComponent(q)}`); close() }
+                    if (q || activeEtiqueta) {
+                      if (q) trackSearch(q)
+                      goSearch({ q: q || null, etiqueta: activeEtiqueta })
+                      close()
+                    }
+                  } else if (e.key === 'Backspace' && query === '' && activeEtiqueta) {
+                    e.preventDefault()
+                    goSearch({ q: null, etiqueta: null })
                   }
                 }}
               />
@@ -93,9 +120,8 @@ export function MobileSearch() {
                 categories={categories}
                 onClose={close}
                 onTagClick={tag => {
-                  setQuery(tag)
                   setResults(null)
-                  navigate(`/?q=${encodeURIComponent(tag)}`)
+                  goSearch({ etiqueta: tag })
                   close()
                 }}
               />

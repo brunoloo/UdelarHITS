@@ -100,7 +100,10 @@ const updateCategory = async (req, res) => {
 
 const getActiveCategories = async (req, res) => {
   try {
-    const categories = await getActiveCategoriesService();
+    const categories = await getActiveCategoriesService({
+      q: req.query.q,
+      etiqueta: req.query.etiqueta,
+    });
     return res.status(200).json({ ok: true, data: categories });
   } catch (error) {
     return res.status(500).json({ ok: false, message: 'Internal server error' });

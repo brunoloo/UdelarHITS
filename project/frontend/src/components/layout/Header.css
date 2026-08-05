@@ -41,32 +41,43 @@ header .search-bar {
   position: relative;
 }
 
-.search-bar input {
-  width: 100%;
-  padding: 8px 16px 8px 40px;
+/* El contenedor visual del campo: lupa + (píldora) + input parecen un solo
+   campo. El borde/fondo viven acá, no en el <input>, para poder meter la
+   píldora como hermano del texto. */
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 5px 14px;
   border: 1px solid var(--border);
   border-radius: 20px;
   background: var(--bg);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  color: var(--text-primary);
-  outline: none;
   transition: border-color 0.15s, background 0.15s;
 }
 
-.search-bar input:focus {
+.search-field:focus-within {
   border-color: var(--accent);
   background: var(--surface);
 }
 
-.search-bar input::placeholder { color: var(--text-muted); }
+.search-field-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  padding: 2px 0;
+}
+
+.search-field-input::placeholder { color: var(--text-muted); }
 
 .search-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
   color: var(--text-muted);
+  flex-shrink: 0;
   pointer-events: none;
 }
 

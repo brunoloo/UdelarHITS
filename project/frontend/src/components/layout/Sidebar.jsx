@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
 import { resolveAutor } from '../shared/AuthorDisplay'
 import { UserAvatar } from '../shared/UserAvatar'
+import { FACULTADES, facultadBySigla } from '../../config/facultades'
+import { useFollowSticky } from '../../hooks/useFollowSticky'
 import './Sidebar.css'
 
 const SIDEBAR_PAGES = ['/', '/recent', '/popular', '/explore']
@@ -66,13 +68,43 @@ function PopularTagsCard({ categories }) {
         ) : (
           <div className="sidebar-tags-wrap">
             {tags.map(t => (
-              <Link key={t.etiqueta} to={`/?q=${encodeURIComponent(t.etiqueta)}`} className="sidebar-tag">
+              <Link key={t.etiqueta} to={`/?etiqueta=${encodeURIComponent(t.etiqueta)}`} className="sidebar-tag">
                 <span className="sidebar-tag-name">{t.etiqueta}</span>
                 <span className="sidebar-tag-count">{t.frecuencia}</span>
               </Link>
             ))}
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// Acceso rápido por facultad: las 16 facultades de la Udelar, siempre visibles
+// y en orden fijo (lista hardcodeada en config/facultades.js). Cada ficha filtra
+// el feed por su etiqueta (?etiqueta=SIGLA) y deja la píldora en el buscador. Sin
+// contadores, sin logos: punto de color + sigla en mayúsculas.
+function FacultiesCard({ activeEtiqueta }) {
+  const activeSigla = facultadBySigla(activeEtiqueta)?.sigla ?? null
+  return (
+    <div className="sidebar-card">
+      <div className="sidebar-card-header">Facultades</div>
+      <div className="sidebar-card-body">
+        <div className="sidebar-fac-grid">
+          {FACULTADES.map(f => (
+            <Link
+              key={f.sigla}
+              to={`/?etiqueta=${encodeURIComponent(f.sigla)}`}
+              className={`sidebar-fac${f.sigla === activeSigla ? ' sidebar-fac--active' : ''}`}
+              style={{ '--fac-color': f.color }}
+              title={f.nombre}
+              aria-label={f.nombre}
+            >
+              <span className="sidebar-fac-dot" aria-hidden="true" />
+              <span className="sidebar-fac-sigla">{f.sigla}</span>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -319,7 +351,11 @@ function TopicSidebarContent({ topicId }) {
 
 export function Sidebar() {
   const { user, loading } = useAuth()
-  const { pathname } = useLocation()
+  const location = useLocation()
+  const { pathname } = location
+  const activeEtiqueta = new URLSearchParams(location.search).get('etiqueta')
+  // topGap = --header-h (56px) + 24px de aire, igual que el `top` del CSS.
+  const sidebarRef = useFollowSticky({ topGap: 80, bottomGap: 24 })
   const categoryMatch = useMatch('/category/:id')
   const catId = categoryMatch?.params?.id
   const topicMatch = useMatch('/topic/:id')
@@ -343,7 +379,7 @@ export function Sidebar() {
 
   if (catId) {
     return (
-      <aside className="sidebar">
+      <aside className="sidebar" ref={sidebarRef}>
         <CategorySidebarContent catId={catId} />
       </aside>
     )
@@ -351,7 +387,7 @@ export function Sidebar() {
 
   if (topicId) {
     return (
-      <aside className="sidebar">
+      <aside className="sidebar" ref={sidebarRef}>
         <TopicSidebarContent topicId={topicId} />
       </aside>
     )
@@ -360,17 +396,21 @@ export function Sidebar() {
   const categoryCount = catsLoading ? null : categories.length
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" ref={sidebarRef}>
       {!loading && !user && <JoinBanner />}
 
       {pathname === '/' && (
-        <CommunityCard categoryCount={categoryCount} />
+        <>
+          <CommunityCard categoryCount={categoryCount} />
+          <FacultiesCard activeEtiqueta={activeEtiqueta} />
+        </>
       )}
 
       {pathname === '/recent' && (
         <>
           <PopularTagsCard categories={categories} />
           <CommunityCard categoryCount={categoryCount} topicCount={recentTopics.length} />
+          <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
 
@@ -378,6 +418,7 @@ export function Sidebar() {
         <>
           <NewCatsCard categories={categories} />
           <CommunityCard categoryCount={categoryCount} />
+          <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
 
@@ -385,6 +426,7 @@ export function Sidebar() {
         <>
           <ActiveUsersCard />
           <CommunityCard categoryCount={categoryCount} />
+          <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
     </aside>

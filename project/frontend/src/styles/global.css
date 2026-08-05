@@ -169,3 +169,61 @@ a.mention-link:hover {
   border-radius: var(--radius);
 }
 .edit-field textarea::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── PÍLDORA DE FILTRO POR ETIQUETA ──
+   Vive dentro del contenedor del buscador (barra de desktop y overlay de mobile),
+   por eso es shared. Lleva el color de la facultad vía la variable --pill-color,
+   que setea el componente con el hex del config (o var(--accent) si la etiqueta
+   no es una facultad). El tinte usa color-mix para funcionar en ambos temas
+   sobre el fondo del campo. */
+.search-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  max-width: 170px;
+  padding: 3px 5px 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--pill-color) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pill-color) 42%, transparent);
+}
+
+.search-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pill-color);
+  flex-shrink: 0;
+}
+
+.search-pill-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.2px;
+}
+
+.search-pill--fac .search-pill-label { text-transform: uppercase; }
+
+.search-pill-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.search-pill-remove:hover {
+  background: color-mix(in srgb, var(--pill-color) 26%, transparent);
+  color: var(--text-primary);
+}

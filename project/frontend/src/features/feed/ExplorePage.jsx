@@ -35,7 +35,7 @@ function HeroCard({ category }) {
         <div className="hero-tags">
           {etiquetas.map(e => (
             <button key={e} type="button" className="hero-tag hero-tag--link"
-              onClick={ev => { ev.preventDefault(); navigate(`/?q=${encodeURIComponent(e)}`) }}>
+              onClick={ev => { ev.preventDefault(); navigate(`/?etiqueta=${encodeURIComponent(e)}`) }}>
               {e}
             </button>
           ))}
