@@ -1,0 +1,17 @@
+# robots.txt de UdelarHITS
+# Servido como archivo real desde frontend/dist/ (Vite copia public/ a la raíz
+# del build) ANTES del fallback SPA de Express, así Search Console recibe
+# directivas y no el index.html.
+
+User-agent: *
+Allow: /
+
+# Rutas sin valor de indexación (privadas o utilitarias):
+Disallow: /settings
+Disallow: /admin
+Disallow: /chat
+Disallow: /setup-profile
+Disallow: /redirect
+Disallow: /api/
+
+Sitemap: https://udelarhits.com/sitemap.xml
