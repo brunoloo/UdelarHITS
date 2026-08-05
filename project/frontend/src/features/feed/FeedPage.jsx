@@ -37,11 +37,13 @@ export function FeedPage() {
   //
   // La queryKey es FIJA (sin user?.id) a propósito: si dependiera del id, al
   // resolver auth la key cambiaría y el feed se pediría dos veces por arranque
-  // (el doble-fetch que el enabled original vino a evitar). La coherencia entre
-  // sesiones la garantiza AuthContext, que hace queryClient.clear() en
-  // login/logout/verifyEmail → el feed se refetchea con la cookie nueva. El
-  // resto de los setUser (editar perfil, settings, socket) son del MISMO
-  // usuario, no cambian la personalización.
+  // (el doble-fetch que el enabled original vino a evitar). Con key fija, el
+  // cambio de sesión NO rearma la query solo, así que AuthContext invalida
+  // explícitamente en login/logout/verifyEmail (queryClient.invalidateQueries)
+  // → el feed montado se refetchea con la cookie nueva. (clear() no alcanza: no
+  // refetchea queries activas con key fija.) El resto de los setUser (editar
+  // perfil, settings, socket) son del MISMO usuario, no cambian la
+  // personalización.
   const {
     data: feedData,
     isLoading: loadingFeed,

@@ -18,10 +18,16 @@ export function AuthProvider({ children }) {
 
   async function login(credentials) {
     const res = await apiPost('/auth/login', credentials)
-    // Drop any cached data from a previous session so per-user fields (e.g.
-    // mi_reaccion) aren't shown for the newly logged-in user.
-    queryClient.clear()
     setUser(res.data.user)
+    // El feed usa queryKey FIJA ['categories','feed'] (ya no depende de user.id),
+    // así que un cambio de sesión no rearma la query por sí solo: hay que
+    // invalidar para que la query ACTIVA (el feed montado) se vuelva a pedir
+    // personalizada. invalidateQueries es lo que refetchea queries activas;
+    // clear() no lo hace de forma confiable con key fija (destruye la query y el
+    // observer montado se queda con la data vieja hasta recargar o vencer el
+    // staleTime). La cache anónima previa no es sensible, así que alcanza con
+    // invalidar todo (marca stale las inactivas + refetch de las activas).
+    queryClient.invalidateQueries()
     return res
   }
 
@@ -34,8 +40,10 @@ export function AuthProvider({ children }) {
   // Paso 2 del registro: confirma el código, crea la cuenta e inicia sesión.
   async function verifyEmail(payload) {
     const res = await apiPost('/auth/verify-email', payload)
-    queryClient.clear()
     setUser(res.data)
+    // Mismo caso que login: es un alta que además inicia sesión. Invalidar para
+    // que el feed activo (y todo lo dependiente de identidad) se refetchee.
+    queryClient.invalidateQueries()
     return res
   }
 
@@ -47,8 +55,22 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     await apiPost('/auth/logout')
-    queryClient.clear()
     setUser(null)
+    // Al salir hay que descartar TODO lo que sea del usuario que se va (feed,
+    // perfil, notificaciones, unread-count, mensajes): si otra persona entra en
+    // el mismo navegador sin recargar, no debe ver nada del anterior.
+    //
+    // No se usa clear() porque destruiría también el feed montado ANTES de que
+    // pueda refetchear, dejándolo con la data personalizada vieja. En su lugar:
+    //   1) invalidateQueries → refetch de las queries ACTIVAS con la cookie ya
+    //      borrada (el feed vuelve al genérico, el badge de no-leídos se vacía),
+    //   2) removeQueries({ type: 'inactive' }) → purga la data cacheada de las
+    //      vistas NO montadas del usuario anterior.
+    // Entre las dos se descarta todo lo del usuario previo, pero sin cortar el
+    // refetch de lo que está en pantalla. El orden importa: invalidar primero
+    // (mientras las queries activas existen), después remover las inactivas.
+    queryClient.invalidateQueries()
+    queryClient.removeQueries({ type: 'inactive' })
   }
 
   return (
