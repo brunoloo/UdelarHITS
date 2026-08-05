@@ -296,9 +296,53 @@ const CATEGORY_CARD_QUERY = `
     GROUP BY c.id, u.nickname, u.estado
 `;
 
-const getActiveCategories = async () => {
-  const q = `${CATEGORY_CARD_QUERY} ORDER BY c.titulo DESC`;
-  const { rows } = await pool.query(q);
+// Listado de cards de categorías activas, con dos filtros opcionales y
+// combinables (AND):
+//   - etiqueta: igualdad exacta sobre etiqueta.nombre (nunca substring). Misma
+//     normalización que el resto de las búsquedas (unaccent + lower), así
+//     ?etiqueta=quimica resuelve a "Química" sin tildes en la URL.
+//   - q: texto libre, substring sobre el título O igualdad de nombre de etiqueta
+//     (misma semántica que el filtro client-side del feed, que se mantiene).
+// Se envuelve CATEGORY_CARD_QUERY como subquery (mismo patrón que getChronoFeed)
+// y se filtra con EXISTS para no duplicar filas. Etiqueta inexistente → EXISTS
+// falso para todas → lista vacía (sin error).
+const getActiveCategories = async ({ q = null, etiqueta = null } = {}) => {
+  const params = [];
+  const conds = [];
+
+  const etiquetaVal = etiqueta != null ? String(etiqueta).trim() : '';
+  if (etiquetaVal !== '') {
+    params.push(etiquetaVal);
+    conds.push(`EXISTS (
+      SELECT 1 FROM categoria_etiqueta ce
+      JOIN etiqueta e ON e.id = ce.etiqueta_id
+      WHERE ce.categoria_id = card.id
+        AND unaccent(lower(e.nombre)) = unaccent(lower($${params.length}))
+    )`);
+  }
+
+  const qVal = q != null ? String(q).trim() : '';
+  if (qVal !== '') {
+    params.push(qVal);
+    const i = params.length;
+    conds.push(`(
+      strpos(unaccent(lower(card.titulo)), unaccent(lower($${i}))) > 0
+      OR EXISTS (
+        SELECT 1 FROM categoria_etiqueta ce2
+        JOIN etiqueta e2 ON e2.id = ce2.etiqueta_id
+        WHERE ce2.categoria_id = card.id
+          AND unaccent(lower(e2.nombre)) = unaccent(lower($${i}))
+      )
+    )`);
+  }
+
+  const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
+  const query = `
+    SELECT card.* FROM (${CATEGORY_CARD_QUERY}) card
+    ${where}
+    ORDER BY card.titulo DESC
+  `;
+  const { rows } = await pool.query(query, params);
   return rows;
 };
 

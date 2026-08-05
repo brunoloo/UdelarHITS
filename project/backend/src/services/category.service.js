@@ -226,8 +226,8 @@ const updateCategoryService = async (userId, userRol, categoryId, { descripcion,
   return await updateCategoryById(categoryId, { descripcion, etiquetas, icono }, userId);
 };
 
-const getActiveCategoriesService = async () => {
-  return await getActiveCategories();
+const getActiveCategoriesService = async (filter = {}) => {
+  return await getActiveCategories(filter);
 };
 
 const getCategoryIndexService = async () => {
