@@ -13,7 +13,7 @@ export function FollowersModal({ isOpen, onClose, title, users, myFollowing = []
   if (!isOpen) return null
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} className="followers-modal">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} className="followers-modal" closeOnBackdrop>
       <div className="follow-list">
         {(!users || users.length === 0) ? (
           <div className="follow-list-empty">
