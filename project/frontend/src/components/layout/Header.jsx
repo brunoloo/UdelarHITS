@@ -5,6 +5,7 @@ import { UserAvatar } from '../shared/UserAvatar'
 import { useSiteSearch } from '../../hooks/useSiteSearch'
 import { trackSearch } from '../../utils/analytics'
 import { SearchDropdown } from './SearchDropdown'
+import { SearchPill } from './SearchPill'
 import { MobileSearch } from './MobileSearch'
 import './Header.css'
 
@@ -20,18 +21,33 @@ export function Header() {
   const { query, setQuery, setQueryFromFilter, results, setResults, categories, reset } = useSiteSearch()
   const searchRef = useRef(null)
 
-  // La barra de búsqueda refleja la etiqueta activa del Home (?q=): así el
-  // usuario ve escrito el nombre del filtro (desde una etiqueta, la sidebar,
-  // explorar o la propia búsqueda) y sabe que está viendo el Home filtrado.
-  // En cualquier otra página o sin filtro, la barra queda vacía.
+  // Fuente de verdad del filtro = la URL. En el Home, `etiqueta` se muestra como
+  // píldora dentro del buscador y `q` es el texto libre que va en el <input>.
+  const isHome = location.pathname === '/'
+  const params = new URLSearchParams(location.search)
+  const activeEtiqueta = isHome ? params.get('etiqueta') : null
+  const activeQ = isHome ? params.get('q') : null
+
+  // Navega al Home con el filtro dado (q/etiqueta), armando el query string.
+  // Fuente única para Enter, quitar píldora y click de etiqueta.
+  function goSearch({ q, etiqueta }) {
+    const p = new URLSearchParams()
+    if (etiqueta) p.set('etiqueta', etiqueta)
+    if (q) p.set('q', q)
+    const qs = p.toString()
+    navigate(qs ? `/?${qs}` : '/')
+  }
+
+  // El <input> refleja el texto libre `q` (no la etiqueta). Con un filtro activo
+  // —sea etiqueta o q— reflejamos sin reabrir el dropdown; en cualquier otra
+  // página o sin filtro, la barra queda vacía.
   useEffect(() => {
-    const q = new URLSearchParams(location.search).get('q')
-    if (location.pathname === '/' && q) {
-      setQueryFromFilter(q)
+    if (isHome && (activeQ || activeEtiqueta)) {
+      setQueryFromFilter(activeQ || '')
     } else {
       reset()
     }
-  }, [location, setQueryFromFilter, reset])
+  }, [location, isHome, activeQ, activeEtiqueta, setQueryFromFilter, reset])
 
   // Cerrar menú de usuario al click afuera
   useEffect(() => {
@@ -72,34 +88,51 @@ export function Header() {
       </Link>
 
       <div className="search-bar" ref={searchRef}>
-        <svg
-          className="search-icon"
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" />
-        </svg>
-        <input
-          type="text"
-          placeholder="Busca lo que quieras..."
-          autoComplete="off"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              const q = query.trim()
-              if (q) {
-                trackSearch(q)
-                navigate(`/?q=${encodeURIComponent(q)}`)
+        <div className="search-field">
+          <svg
+            className="search-icon"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+          {activeEtiqueta && (
+            <SearchPill
+              etiqueta={activeEtiqueta}
+              // Quitar la píldora conserva el texto ya escrito como búsqueda.
+              onRemove={() => goSearch({ q: query.trim() || null, etiqueta: null })}
+            />
+          )}
+          <input
+            type="text"
+            className="search-field-input"
+            // El placeholder solo se muestra cuando no hay texto (React lo maneja
+            // solo: con la píldora puesta pero sin texto, se sigue viendo).
+            placeholder="Busca lo que quieras..."
+            autoComplete="off"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                const q = query.trim()
+                if (q || activeEtiqueta) {
+                  if (q) trackSearch(q)
+                  goSearch({ q: q || null, etiqueta: activeEtiqueta })
+                }
+              } else if (e.key === 'Backspace' && query === '' && activeEtiqueta) {
+                // Patrón estándar de campos con tokens: backspace con el input
+                // vacío borra la píldora.
+                e.preventDefault()
+                goSearch({ q: null, etiqueta: null })
               }
-            }
-          }}
-        />
+            }}
+          />
+        </div>
         {results && (
           <SearchDropdown
             results={results}
@@ -107,12 +140,9 @@ export function Header() {
             categories={categories}
             onClose={() => setResults(null)}
             onTagClick={tag => {
-              // setQueryFromFilter (no setQuery) para que la barra quede con el
-              // nombre de la etiqueta pero el dropdown no se reabra: así al
-              // clickear la etiqueta se cierra el buscador para mejor visión.
-              setQueryFromFilter(tag)
+              // Click en una etiqueta = aplicar el filtro exacto por etiqueta.
               setResults(null)
-              navigate(`/?q=${encodeURIComponent(tag)}`)
+              goSearch({ etiqueta: tag })
             }}
           />
         )}

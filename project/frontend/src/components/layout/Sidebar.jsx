@@ -66,7 +66,7 @@ function PopularTagsCard({ categories }) {
         ) : (
           <div className="sidebar-tags-wrap">
             {tags.map(t => (
-              <Link key={t.etiqueta} to={`/?q=${encodeURIComponent(t.etiqueta)}`} className="sidebar-tag">
+              <Link key={t.etiqueta} to={`/?etiqueta=${encodeURIComponent(t.etiqueta)}`} className="sidebar-tag">
                 <span className="sidebar-tag-name">{t.etiqueta}</span>
                 <span className="sidebar-tag-count">{t.frecuencia}</span>
               </Link>
