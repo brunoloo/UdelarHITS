@@ -8,6 +8,7 @@ import { RootLayout } from './components/layout/RootLayout'
 import { AppLayout } from './components/layout/AppLayout'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AdminRoute } from './components/auth/AdminRoute'
+import { RouteError } from './components/error/RouteError'
 
 // Eager: FeedPage ES la ruta del Home. Cargarla lazy agregaría un round-trip de
 // chunk en el arranque y empeoraría el LCP, justo lo contrario de lo buscado.
@@ -17,23 +18,43 @@ import { FeedPage } from './features/feed/FeedPage'
 // demanda (code splitting). Los boundaries <Suspense> están en AppLayout (rutas
 // del shell) y RootLayout (rutas standalone). Los módulos exportan componentes
 // con nombre, así que se remapea a default para React.lazy.
-const LoginPage = lazy(() => import('./features/auth/LoginPage').then(m => ({ default: m.LoginPage })))
-const RegisterPage = lazy(() => import('./features/auth/RegisterPage').then(m => ({ default: m.RegisterPage })))
-const RecentPage = lazy(() => import('./features/feed/RecentPage').then(m => ({ default: m.RecentPage })))
-const PopularPage = lazy(() => import('./features/feed/PopularPage').then(m => ({ default: m.PopularPage })))
-const ExplorePage = lazy(() => import('./features/feed/ExplorePage').then(m => ({ default: m.ExplorePage })))
-const CategoryPage = lazy(() => import('./features/category/CategoryPage').then(m => ({ default: m.CategoryPage })))
-const TopicPage = lazy(() => import('./features/topic/TopicPage').then(m => ({ default: m.TopicPage })))
-const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then(m => ({ default: m.ProfilePage })))
-const SettingsPage = lazy(() => import('./features/settings/SettingsPage').then(m => ({ default: m.SettingsPage })))
-const AboutPage = lazy(() => import('./features/about/AboutPage').then(m => ({ default: m.AboutPage })))
-const RulesPage = lazy(() => import('./features/about/RulesPage').then(m => ({ default: m.RulesPage })))
-const ContentPoliciesPage = lazy(() => import('./features/about/ContentPoliciesPage').then(m => ({ default: m.ContentPoliciesPage })))
-const ModerationPage = lazy(() => import('./features/about/ModerationPage').then(m => ({ default: m.ModerationPage })))
-const RedirectPage = lazy(() => import('./features/redirect/RedirectPage').then(m => ({ default: m.RedirectPage })))
-const AdminPage = lazy(() => import('./features/admin/AdminPage').then(m => ({ default: m.AdminPage })))
-const ChatPage = lazy(() => import('./features/chat/ChatPage').then(m => ({ default: m.ChatPage })))
-const SetupProfilePage = lazy(() => import('./features/auth/SetupProfilePage').then(m => ({ default: m.SetupProfilePage })))
+//
+// `lazyPage` centraliza ese remapeo y, además, blinda el caso de chunk viejo
+// tras un deploy: si el hosting responde el index.html (fallback SPA) en vez del
+// .js con hash viejo, el import() resuelve con un módulo SIN el export esperado.
+// Sin este chequeo, `m[name]` sería undefined y React.lazy lanzaría un TypeError
+// genérico ("Cannot read properties of undefined") que el errorElement NO
+// reconocería como fallo de chunk. Lanzamos un mensaje que sí matchea
+// isChunkLoadError para que el boundary recargue en vez de mostrar el error duro.
+function lazyPage(loader, name) {
+  return lazy(() =>
+    loader().then((m) => {
+      const Component = m[name]
+      if (!Component) {
+        throw new Error(`Failed to fetch dynamically imported module: ${name}`)
+      }
+      return { default: Component }
+    })
+  )
+}
+
+const LoginPage = lazyPage(() => import('./features/auth/LoginPage'), 'LoginPage')
+const RegisterPage = lazyPage(() => import('./features/auth/RegisterPage'), 'RegisterPage')
+const RecentPage = lazyPage(() => import('./features/feed/RecentPage'), 'RecentPage')
+const PopularPage = lazyPage(() => import('./features/feed/PopularPage'), 'PopularPage')
+const ExplorePage = lazyPage(() => import('./features/feed/ExplorePage'), 'ExplorePage')
+const CategoryPage = lazyPage(() => import('./features/category/CategoryPage'), 'CategoryPage')
+const TopicPage = lazyPage(() => import('./features/topic/TopicPage'), 'TopicPage')
+const ProfilePage = lazyPage(() => import('./features/profile/ProfilePage'), 'ProfilePage')
+const SettingsPage = lazyPage(() => import('./features/settings/SettingsPage'), 'SettingsPage')
+const AboutPage = lazyPage(() => import('./features/about/AboutPage'), 'AboutPage')
+const RulesPage = lazyPage(() => import('./features/about/RulesPage'), 'RulesPage')
+const ContentPoliciesPage = lazyPage(() => import('./features/about/ContentPoliciesPage'), 'ContentPoliciesPage')
+const ModerationPage = lazyPage(() => import('./features/about/ModerationPage'), 'ModerationPage')
+const RedirectPage = lazyPage(() => import('./features/redirect/RedirectPage'), 'RedirectPage')
+const AdminPage = lazyPage(() => import('./features/admin/AdminPage'), 'AdminPage')
+const ChatPage = lazyPage(() => import('./features/chat/ChatPage'), 'ChatPage')
+const SetupProfilePage = lazyPage(() => import('./features/auth/SetupProfilePage'), 'SetupProfilePage')
 
 function NotFoundPage() {
   return (
@@ -48,27 +69,41 @@ function NotFoundPage() {
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    // errorElement de nivel raíz: atrapa los errores de las rutas standalone
+    // (login, chat, about, setup, redirect) que no cuelgan de AppLayout, y
+    // cualquier error que no haya sido capturado por un boundary más cercano.
+    errorElement: <RouteError />,
     children: [
       {
         path: '/',
         element: <AppLayout />,
         children: [
-          { index: true, element: <FeedPage /> },
-          { path: 'recent', element: <RecentPage /> },
-          { path: 'popular', element: <PopularPage /> },
-          { path: 'explore', element: <ExplorePage /> },
-          { path: 'category/:id', element: <CategoryPage /> },
-          { path: 'topic/:id', element: <TopicPage /> },
-          { path: 'user/:nickname', element: <ProfilePage /> },
           {
-            path: 'settings',
-            element: <ProtectedRoute><SettingsPage /></ProtectedRoute>,
+            // Ruta pathless sin element (React Router renderiza un <Outlet/> por
+            // defecto): su único fin es dar un errorElement a TODAS las rutas del
+            // shell sin repetirlo en cada una. Como el boundary vive dentro del
+            // Outlet de AppLayout, la pantalla de error se pinta en el <main> y
+            // conserva el shell (header/nav/sidebar) alrededor.
+            errorElement: <RouteError />,
+            children: [
+              { index: true, element: <FeedPage /> },
+              { path: 'recent', element: <RecentPage /> },
+              { path: 'popular', element: <PopularPage /> },
+              { path: 'explore', element: <ExplorePage /> },
+              { path: 'category/:id', element: <CategoryPage /> },
+              { path: 'topic/:id', element: <TopicPage /> },
+              { path: 'user/:nickname', element: <ProfilePage /> },
+              {
+                path: 'settings',
+                element: <ProtectedRoute><SettingsPage /></ProtectedRoute>,
+              },
+              {
+                path: 'admin',
+                element: <AdminRoute><AdminPage /></AdminRoute>,
+              },
+              { path: '*', element: <NotFoundPage /> },
+            ],
           },
-          {
-            path: 'admin',
-            element: <AdminRoute><AdminPage /></AdminRoute>,
-          },
-          { path: '*', element: <NotFoundPage /> },
         ],
       },
       {
