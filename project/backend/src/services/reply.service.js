@@ -39,7 +39,7 @@ const validarEncuesta = (encuesta) => {
   return { opciones, duracionSegundos: Math.floor(dur) };
 };
 
-const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, comentario_padre_id, encuesta }, files = []) => {
+const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, comentario_padre_id, es_home, encuesta }, files = []) => {
   const cuerpoLimpio = cuerpo?.trim() || '';
   const encuestaValidada = validarEncuesta(encuesta);
 
@@ -50,13 +50,27 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     throw err;
   }
 
-  if (!tema_id && !categoria_id && !comentario_padre_id) {
+  // Ámbito home: comentario de primer nivel que no vive en ninguna categoría ni
+  // tema. Se pide EXPLÍCITAMENTE con es_home=true (nunca implícito en "todo
+  // NULL", para no crear comentarios huérfanos por un bug). Una respuesta a un
+  // comentario de home hereda el ámbito del padre (más abajo), no manda el flag.
+  const wantsHome = es_home === true || es_home === 'true';
+  let esHome = false;
+  if (wantsHome) {
+    if (tema_id || categoria_id || comentario_padre_id) {
+      const err = new Error('Un comentario de Home no puede tener categoría, tema ni comentario padre');
+      err.code = 'BAD_REQUEST';
+      throw err;
+    }
+    esHome = true;
+  } else if (!tema_id && !categoria_id && !comentario_padre_id) {
     const err = new Error('Debe especificar una categoría, un tema o un comentario padre');
     err.code = 'BAD_REQUEST';
     throw err;
   }
 
-  // Si es respuesta a un comentario, heredar el tema/categoría del padre
+  // Si es respuesta a un comentario, heredar el ámbito del padre (tema,
+  // categoría o home).
   let padre = null;
   if (comentario_padre_id) {
     padre = await getReplyById(comentario_padre_id);
@@ -70,10 +84,11 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       err.code = 'FORBIDDEN';
       throw err;
     }
-    // Heredar tema_id o categoria_id del padre
+    // Heredar tema_id / categoria_id / es_home del padre
     if (!tema_id && !categoria_id) {
       tema_id = padre.tema_id || null;
       categoria_id = padre.categoria_id || null;
+      if (padre.es_home) esHome = true;
     }
   }
 
@@ -118,7 +133,8 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     cuerpo: cuerpoLimpio,
     tema_id: tema_id || null,
     categoria_id: categoria_id || null,
-    comentario_padre_id: comentario_padre_id || null
+    comentario_padre_id: comentario_padre_id || null,
+    es_home: esHome
   });
 
   // Notificar al autor del comentario padre que recibió una respuesta.
@@ -128,7 +144,9 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       ? `/topic/${padre.tema_id}?commentId=${created.contenido_id}`
       : padre.categoria_id
         ? `/category/${padre.categoria_id}?tab=comentarios&commentId=${created.contenido_id}`
-        : null;
+        : padre.es_home
+          ? `/comment/${created.contenido_id}`
+          : null;
     const { rows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [autorId]);
     const nick = rows[0]?.nickname;
     await createNotification({
@@ -234,7 +252,9 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
         ? `/topic/${created.tema_id}?commentId=${created.contenido_id}`
         : created.categoria_id
           ? `/category/${created.categoria_id}?tab=comentarios&commentId=${created.contenido_id}`
-          : null;
+          : created.es_home
+            ? `/comment/${created.contenido_id}`
+            : null;
 
       for (const mu of mentionedUsers) {
         if (alreadyNotified.has(mu.id)) continue;

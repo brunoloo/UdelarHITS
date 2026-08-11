@@ -29,6 +29,7 @@ const createReply = async (req, res) => {
       tema_id: clean(req.body.tema_id),
       categoria_id: clean(req.body.categoria_id),
       comentario_padre_id: clean(req.body.comentario_padre_id),
+      es_home: clean(req.body.es_home),
       encuesta,
     };
 
