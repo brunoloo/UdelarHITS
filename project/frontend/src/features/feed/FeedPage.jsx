@@ -1,14 +1,21 @@
 import { useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
-import { apiGet } from '../../api/client'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { apiGet, apiPost } from '../../api/client'
 import { CategoryCard } from '../../components/shared/CategoryCard'
+import { CommentCard } from '../../components/shared/CommentCard'
 import { CreateCategoryPanel } from '../category/CreateCategoryPanel'
+import { CreateCommentPanel } from '../../components/shared/CreateCommentPanel'
+import { buildReplyFormData } from '../../utils/attachments'
+import { trackCreateComment } from '../../utils/analytics'
+import { useToast } from '../../hooks/useToast'
 import { parseEtiquetas, normSearch as norm } from '../../utils/parseEtiquetas'
 import { facultadBySigla } from '../../config/facultades'
 import './feed.css'
 
 const PAGE_SIZE = 20
+
+const FEED_KEY = ['categories', 'feed']
 
 function CategorySkeleton() {
   return (
@@ -21,11 +28,41 @@ function CategorySkeleton() {
   )
 }
 
+// Skeleton del tipo comentario del feed mixto (avatar + líneas de cuerpo).
+function CommentSkeleton() {
+  return (
+    <div className="skeleton-card skeleton-card--comment">
+      <div className="skeleton skeleton--avatar" />
+      <div className="skeleton-card-lines">
+        <div className="skeleton" style={{ height: 11, width: '35%', marginBottom: 10 }} />
+        <div className="skeleton" style={{ height: 12, width: '85%', marginBottom: 4 }} />
+        <div className="skeleton" style={{ height: 12, width: '60%' }} />
+      </div>
+    </div>
+  )
+}
+
 export function FeedPage() {
   const [searchParams] = useSearchParams()
   const qParam = searchParams.get('q')
   const etiquetaParam = searchParams.get('etiqueta')
   const isFiltering = !!qParam || !!etiquetaParam
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const { showToast } = useToast()
+
+  // Responder a un comentario de Home desde el feed: publica la respuesta y
+  // refresca el feed (el contador de respuestas de la card se recalcula). El
+  // hilo completo vive en /comment/:id (misma navegación que en categoría).
+  async function handleHomeReply(parentId, text, files, poll) {
+    const res = await apiPost('/replies/create',
+      buildReplyFormData({ cuerpo: text, comentario_padre_id: parentId }, files, poll))
+    trackCreateComment('reply')
+    if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
+    else showToast('Respuesta publicada', 'success')
+    queryClient.invalidateQueries({ queryKey: FEED_KEY })
+    return res
+  }
 
   // Feed del Home: paginado por cursor, personalizado si hay sesión.
   //
@@ -54,7 +91,7 @@ export function FeedPage() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ['categories', 'feed'],
+    queryKey: FEED_KEY,
     queryFn: ({ pageParam }) =>
       apiGet(`/categories/feed?limit=${PAGE_SIZE}${pageParam ? `&cursor=${encodeURIComponent(pageParam)}` : ''}`),
     initialPageParam: null,
@@ -129,12 +166,15 @@ export function FeedPage() {
   return (
     <div className="feed-page">
       <CreateCategoryPanel />
+      {/* Publicar un comentario de Home (foro global). Mismo compositor que
+          CategoryPage; el comentario se mezcla en el feed de abajo. */}
+      <CreateCommentPanel scopeFields={{ es_home: true }} invalidateKey={FEED_KEY} />
 
       <div className="categories-feed">
         {isLoading ? (
           <>
             <CategorySkeleton />
-            <CategorySkeleton />
+            <CommentSkeleton />
             <CategorySkeleton />
           </>
         ) : displayCategories.length === 0 ? (
@@ -155,14 +195,33 @@ export function FeedPage() {
           </div>
         ) : (
           <>
-            {/* priority solo en el primer card: su adjunto es el candidato LCP
-                del Home → carga eager + fetchpriority=high, el resto lazy. */}
+            {/* Feed mixto: cada ítem trae un discriminador `tipo`. Los de la
+                búsqueda filtrada son sólo categorías (sin `tipo`). La key lleva
+                el tipo porque categoria.id y comentario.id son secuencias
+                independientes y podrían colisionar. priority solo en el primer
+                card: su adjunto es el candidato LCP del Home. */}
             {displayCategories.map((c, i) => (
-              <CategoryCard key={c.id} category={c} priority={i === 0} />
+              c.tipo === 'comentario' ? (
+                <CommentCard
+                  key={`comentario-${c.id}`}
+                  comment={c}
+                  role="reply"
+                  onCardClick={() => navigate(`/comment/${c.id}`)}
+                  onReply={handleHomeReply}
+                  invalidateKey={FEED_KEY}
+                />
+              ) : (
+                <CategoryCard key={`categoria-${c.id}`} category={c} priority={i === 0} />
+              )
             ))}
             {!isFiltering && (
               <div ref={sentinelRef}>
-                {isFetchingNextPage && <CategorySkeleton />}
+                {isFetchingNextPage && (
+                  <>
+                    <CategorySkeleton />
+                    <CommentSkeleton />
+                  </>
+                )}
               </div>
             )}
           </>

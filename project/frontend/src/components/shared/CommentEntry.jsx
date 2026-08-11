@@ -9,13 +9,18 @@ import './CommentEntry.css'
 export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate }) {
   const navigate = useNavigate()
 
+  // Comentario de Home: no tiene contenedor del que derivar la URL — su permalink
+  // ES la página del comentario (/comment/:id), independiente del ámbito.
+  const isHome = r.tipo === 'home'
   // Para comentarios en categoría abrimos su tab de comentarios; si no, el
   // drill-down (?commentId) no encuentra el comentario.
-  const base = r.tipo === 'tema'
-    ? `/topic/${encodeURIComponent(r.destino_id)}`
-    : `/category/${encodeURIComponent(r.destino_id)}?tab=comentarios`
+  const base = isHome
+    ? `/comment/${encodeURIComponent(r.id)}`
+    : r.tipo === 'tema'
+      ? `/topic/${encodeURIComponent(r.destino_id)}`
+      : `/category/${encodeURIComponent(r.destino_id)}?tab=comentarios`
   const sep = base.includes('?') ? '&' : '?'
-  const commentHref = `${base}${sep}commentId=${encodeURIComponent(r.id)}`
+  const commentHref = isHome ? base : `${base}${sep}commentId=${encodeURIComponent(r.id)}`
 
   const isReply = !!r.comentario_padre_id
   let prefix, titleText, titleHref
@@ -27,6 +32,10 @@ export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate })
     titleHref = (!padreInactivo && r.padre_autor_nickname)
       ? `/user/${encodeURIComponent(r.padre_autor_nickname)}`
       : null
+  } else if (isHome) {
+    prefix = 'en'
+    titleText = 'Home'
+    titleHref = '/'
   } else if (r.tipo === 'tema') {
     prefix = 'en tema'
     if (r.tema_estado === 'inactivo') { titleText = 'inactivo'; titleHref = null }

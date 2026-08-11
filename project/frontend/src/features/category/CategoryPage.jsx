@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { TopicCard } from '../../components/shared/TopicCard'
 import { CommentThread } from '../../components/shared/CommentThread'
+import { CreateCommentPanel } from '../../components/shared/CreateCommentPanel'
 import { CategoryIcon } from '../../components/shared/CategoryIcon'
 import { IconPickerModal } from './IconPickerModal'
 import { Modal } from '../../components/ui/Modal'
@@ -23,15 +24,9 @@ import { ReadMore } from '../../components/ui/ReadMore'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { useToast } from '../../hooks/useToast'
-import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { CreateTopicPanel } from '../topic/CreateTopicPanel'
 import { ReportModal } from '../../components/shared/ReportModal'
-import { UserAvatar } from '../../components/shared/UserAvatar'
-import { AttachmentButton, AttachmentPreviews } from '../../components/shared/AttachmentPicker'
-import { PollButton, PollEditor } from '../../components/shared/PollEditor'
-import { buildReplyFormData } from '../../utils/attachments'
-import { nuevaEncuesta, pollValido } from '../../utils/poll'
-import { trackCreateComment, trackSubscribeCategory } from '../../utils/analytics'
+import { trackSubscribeCategory } from '../../utils/analytics'
 import './category.css'
 
 // ── SKELETONS ──────────────────────────────────────────────────────────────────
@@ -51,116 +46,6 @@ function TopicSkeleton() {
         <div className="skeleton" style={{ height: 12, width: '45%' }} />
       </div>
     </>
-  )
-}
-
-// ── CREATE COMMENT PANEL ───────────────────────────────────────────────────────
-function CreateCommentPanel({ categoryId, user }) {
-  const [open, setOpen] = useState(false)
-  const [cuerpo, setCuerpo] = useState('')
-  const [files, setFiles] = useState([])
-  const [poll, setPoll] = useState(null)
-  const { showToast } = useToast()
-  const requireAuth = useRequireAuth()
-  const queryClient = useQueryClient()
-
-  const mutation = useMutation({
-    mutationFn: () => apiPost('/replies/create', buildReplyFormData(
-      { cuerpo: cuerpo.trim(), categoria_id: categoryId },
-      files,
-      poll,
-    )),
-    onSuccess: (res) => {
-      trackCreateComment('direct')
-      if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
-      else showToast('Comentario publicado', 'success')
-      setOpen(false)
-      setCuerpo('')
-      setFiles([])
-      setPoll(null)
-      queryClient.invalidateQueries({ queryKey: ['replies', 'category', categoryId] })
-    },
-    onError: (err) => {
-      showToast(err.message || 'Error al publicar', 'error')
-    },
-  })
-
-  function closePanel() {
-    setOpen(false)
-    setCuerpo('')
-    setFiles([])
-    setPoll(null)
-    mutation.reset()
-  }
-
-  const canSubmit = cuerpo.trim().length >= 1 || files.length > 0 || pollValido(poll)
-
-  function handleSubmit() {
-    if (!requireAuth('Debes iniciar sesión para comentar')) return
-    if (!canSubmit || mutation.isPending) return
-    mutation.mutate()
-  }
-
-  const avatarContent = (
-    <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size={36} />
-  )
-
-  if (!open) {
-    return (
-      <section className="create-topic">
-        <button className="create-topic-trigger" type="button" onClick={() => setOpen(true)}>
-          <span className="ct-avatar ct-avatar-comment" aria-hidden="true">{avatarContent}</span>
-          <span className="ct-placeholder">Publicar comentario</span>
-          <span className="ct-cta">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            Comentar
-          </span>
-        </button>
-      </section>
-    )
-  }
-
-  return (
-    <section className="create-topic">
-      <div className="create-cat-panel open">
-        <div className="create-cat-panel-body">
-          <span className="ct-avatar ct-avatar-comment" aria-hidden="true">{avatarContent}</span>
-          <div className="cc-form">
-            <div className="edit-field">
-              <div className="edit-field-label">
-                <span>Comentario (*)</span>
-                <span className="edit-field-counter">{cuerpo.length} / 5000</span>
-              </div>
-              <textarea
-                maxLength={5000}
-                rows={4}
-                placeholder="Escribí tu comentario"
-                value={cuerpo}
-                onChange={e => setCuerpo(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <AttachmentPreviews files={files} onChange={setFiles} />
-            <PollEditor poll={poll} onChange={setPoll} onRemove={() => setPoll(null)} />
-          </div>
-        </div>
-        <div className="create-cat-panel-footer">
-          <AttachmentButton files={files} onChange={setFiles} disabled={mutation.isPending} className="attach-btn--indent" />
-          <PollButton active={!!poll} onActivate={() => setPoll(nuevaEncuesta())} disabled={mutation.isPending} />
-          <button className="cc-cancel" type="button" onClick={closePanel}>Cancelar</button>
-          <button
-            className="save-btn"
-            type="button"
-            disabled={!canSubmit || mutation.isPending}
-            onClick={handleSubmit}
-          >
-            {mutation.isPending ? 'Publicando...' : 'Comentar'}
-          </button>
-        </div>
-      </div>
-    </section>
   )
 }
 
@@ -753,7 +638,12 @@ export function CategoryPage() {
       {/* Comments panel */}
       {activeTab === 'comentarios' && (
         <div className="section-panel">
-          {isActive && <CreateCommentPanel categoryId={id} user={user} />}
+          {isActive && (
+            <CreateCommentPanel
+              scopeFields={{ categoria_id: id }}
+              invalidateKey={['replies', 'category', id]}
+            />
+          )}
           {repliesLoading ? (
             <div className="feed-empty">Cargando comentarios...</div>
           ) : (
