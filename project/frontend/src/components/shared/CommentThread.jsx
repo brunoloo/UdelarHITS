@@ -7,12 +7,15 @@ import { trackCreateComment } from '../../utils/analytics'
 import { CommentCard } from './CommentCard'
 import './CommentCard.css'
 
-export function CommentThread({ comments, invalidateKey, initialCommentId, onInitialDrillDone, canPin = false, onTogglePin }) {
+export function CommentThread({ comments, invalidateKey, initialCommentId, initialStack = null, onExit = null, onInitialDrillDone, canPin = false, onTogglePin }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
   const lastDrilledId = useRef(null)
 
-  const [stack, setStack] = useState([])
+  // initialStack: siembra el hilo "ya adentro" de un comentario (permalink
+  // /comment/:id, que arranca mostrando el comentario con sus respuestas). En
+  // CategoryPage/TopicPage no se pasa → arranca vacío, como siempre.
+  const [stack, setStack] = useState(() => initialStack || [])
   const [highlightedId, setHighlightedId] = useState(null)
 
   useEffect(() => {
@@ -71,10 +74,17 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
   }
 
   function goBack() {
-    setStack(prev => {
-      const next = prev.slice(0, -1)
-      return next
-    })
+    // "Volver" sube un nivel en el hilo. En un permalink el hilo arranca sobre un
+    // piso (initialStack): al llegar a ese piso, "Volver" sale de la página
+    // (onExit) en vez de dejar el stack por debajo del comentario abierto. Sin
+    // initialStack/onExit (categoría/tema) el piso es 0 y se comporta igual que
+    // antes: sube un nivel y desaparece al volver a la lista.
+    const floor = initialStack ? initialStack.length : 0
+    if (stack.length <= floor) {
+      onExit?.()
+      return
+    }
+    setStack(prev => prev.slice(0, -1))
   }
 
   function handleReply(parentId, text, files, poll) {

@@ -6,9 +6,15 @@ import { CommentThread } from '../../components/shared/CommentThread'
 // Página de hilo de un comentario, independiente del ámbito (categoría, tema o
 // Home). Es el permalink que usan las notificaciones, guardados y el perfil para
 // los comentarios de Home, que no tienen un contenedor del que derivar la URL.
-// Reutiliza CommentThread: siembra el hilo con la raíz de la cadena de ancestros
-// y deja que el drill-down por `initialCommentId` resalte el comentario pedido
-// (mismo comportamiento que el deep-link de un comentario de categoría).
+//
+// Reutiliza CommentThread sembrándolo YA ADENTRO del comentario (initialStack =
+// la cadena de ancestros, con el comentario pedido como último): así abrir un
+// comentario de Home muestra "el comentario con su hilo" (equivalente a clickear
+// un comentario para ver sus respuestas), no una lista con un ítem para clickear.
+//
+// Hay UN solo "Volver" (el de CommentThread): sube un nivel mientras haya drill,
+// y en el piso (el comentario abierto) sale de la página vía onExit. CommentPage
+// NO renderiza su propio "Volver" (antes se apilaban dos).
 export function CommentPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -23,21 +29,16 @@ export function CommentPage() {
     return <div className="feed-page"><div className="feed-empty">Comentario no encontrado.</div></div>
   }
 
-  // La cadena viene ordenada por profundidad DESC: la raíz primero, el
-  // comentario pedido último (profundidad 0).
-  const root = chain[0]
-
+  // La cadena viene ordenada por profundidad DESC: la raíz primero, el comentario
+  // pedido último → como stack inicial, el comentario pedido queda de currentParent
+  // (se muestra con sus respuestas debajo).
   return (
     <div className="feed-page">
-      <button className="back-btn" type="button" onClick={() => navigate(-1)}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 12H5M12 5l-7 7 7 7"/>
-        </svg>
-        Volver
-      </button>
       <CommentThread
-        comments={[root]}
-        initialCommentId={id}
+        key={id}
+        comments={[]}
+        initialStack={chain}
+        onExit={() => navigate(-1)}
         invalidateKey={['comment', id]}
       />
     </div>
