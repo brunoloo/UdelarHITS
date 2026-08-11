@@ -47,7 +47,8 @@ const getContenidoTipo = async (contenidoId) => {
       t.categoria_id AS tema_categoria_id,
       c.estado AS comentario_estado,
       c.tema_id AS comentario_tema_id,
-      c.categoria_id AS comentario_categoria_id
+      c.categoria_id AS comentario_categoria_id,
+      c.es_home AS comentario_es_home
     FROM contenido con
     LEFT JOIN tema t ON t.contenido_id = con.id
     LEFT JOIN comentario c ON c.contenido_id = con.id
@@ -73,7 +74,8 @@ const getContenidoTipo = async (contenidoId) => {
     autor_id: r.autor_id,
     estado: r.comentario_estado,
     tema_id: r.comentario_tema_id,
-    categoria_id: r.comentario_categoria_id
+    categoria_id: r.comentario_categoria_id,
+    es_home: r.comentario_es_home
   };
 };
 

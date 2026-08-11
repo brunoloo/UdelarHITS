@@ -1,6 +1,6 @@
 import { createReporte, countReportesByContenido, getContenidoTipo, createReporteCategoria, countReportesByCategoria,
   getReportBreakdownByContenido, getReportBreakdownByCategoria } from '../repositories/report.repository.js';
-import { debeInactivar } from '../config/reportConfig.js';
+import { debeInactivar, debeInactivarHome } from '../config/reportConfig.js';
 import { inactivarTemaPorModeracion, inactivarComentarioPorModeracion, inactivarCategoriaPorModeracion } from './moderation.service.js';
 
 // =========================================================
@@ -88,11 +88,19 @@ async function reportarContenido(usuarioId, contenidoId, motivo) {
   }
  
   const total = await countReportesByContenido(id);
-  // Umbral dinámico dual: pondera reportes de participantes vs visitantes de la
-  // categoría del contenido. El desglose (n/p/v) NO se expone en la respuesta
-  // para no filtrar tamaño de participación ni internals de moderación.
-  const { n, p, v } = await getReportBreakdownByContenido(id);
-  const inactivar = debeInactivar({ n, p, v });
+  // Comentario de Home: no tiene categoría → la fórmula dual no aplica. Usa un
+  // umbral plano y explícito (reportConfig.HOME) sobre los reportantes distintos.
+  // El resto (tema / comentario de categoría) usa el umbral dinámico dual, que
+  // pondera reportes de participantes vs visitantes de la categoría del
+  // contenido. El desglose (n/p/v) NO se expone en la respuesta para no filtrar
+  // tamaño de participación ni internals de moderación.
+  let inactivar;
+  if (contenido.tipo === 'comentario' && contenido.es_home) {
+    inactivar = debeInactivarHome(total);
+  } else {
+    const { n, p, v } = await getReportBreakdownByContenido(id);
+    inactivar = debeInactivar({ n, p, v });
+  }
 
   let moderacion = null;
   if (inactivar) {

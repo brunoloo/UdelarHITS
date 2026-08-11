@@ -33,6 +33,17 @@ export const REPORT_THRESHOLD = {
   // Umbral de visitantes = max(VISITANTE_MIN, umbralParticipantes * VISITANTE_MULT).
   VISITANTE_MIN: envInt('UMBRAL_VISITANTE_MIN', 10),
   VISITANTE_MULT: envNum('UMBRAL_VISITANTE_MULT', 2),
+
+  // Umbral para comentarios de HOME (portada, foro global). No tienen categoría
+  // → no hay participantes ni comunidad que ponderen el reporte: la fórmula
+  // dual (participantes vs visitantes) no aplica. Se usa un umbral PLANO de
+  // reportantes distintos, EXPLÍCITO y ajustable por separado, para que un
+  // comentario en portada no quede regido por el piso de visitantes "por
+  // accidente". Se fija deliberadamente en 10 (no más bajo): la portada es la
+  // superficie de máxima visibilidad, así que un puñado de reportes no debería
+  // poder tumbar contenido visto por todos, y sin comunidad que lo respalde un
+  // umbral chico facilitaría la censura por brigading.
+  HOME: envInt('UMBRAL_HOME', 10),
 };
 
 // Compat: cota mínima de participantes. Representa "el umbral base": con una
@@ -79,4 +90,15 @@ const debeInactivar = ({ n = 0, p = 0, v = 0 } = {}) => {
   return p >= umbralParticipantes(n) || v >= umbralVisitantes(n);
 };
 
-export { debeInactivar, umbralParticipantes, umbralVisitantes };
+/**
+ * Decide si un comentario de HOME debe inactivarse por reportes. Umbral plano de
+ * reportantes distintos (la fórmula dual participante/visitante no aplica sin
+ * categoría). Función PURA.
+ * @param {number} totalReportes - Reportes distintos sobre el comentario.
+ * @returns {boolean}
+ */
+const debeInactivarHome = (totalReportes = 0) => {
+  return (Number(totalReportes) || 0) >= REPORT_THRESHOLD.HOME;
+};
+
+export { debeInactivar, debeInactivarHome, umbralParticipantes, umbralVisitantes };
