@@ -1,9 +1,9 @@
-/* Estilos del compositor compartido. Se co-ubican acá (y se importan desde el
-   componente) para que NO dependa del CSS de la página que lo monta: el trigger
-   colapsado usa las clases .create-topic* / .ct-* que sólo existían en
-   category.css, así que en el Home (feed.css) el botón salía sin estilo. Los
-   valores son idénticos a los de category.css; al coincidir selector y valor, la
-   duplicación en Category/Topic es inofensiva. */
+/* Estilos del "trigger" colapsado de los paneles de crear (.create-topic* /
+   .ct-*). FUENTE ÚNICA: la comparten CreateCommentPanel (compositor de
+   comentario) y CreateTopicPanel (crear tema), que la importan directamente, así
+   no dependen del CSS de la página que los monta. Antes vivían en category.css,
+   por eso el compositor de comentario salía sin estilo en el Home (feed.css, que
+   no importa category.css). */
 
 .create-topic { margin: 0 0 10px 0; }
 

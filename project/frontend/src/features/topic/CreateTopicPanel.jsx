@@ -10,6 +10,7 @@ import { TopicContentField } from './TopicContentField'
 import { PreviewHint } from '../../components/shared/PreviewHint'
 import { AccordionField } from '../../components/shared/AccordionField'
 import { descriptionSummary } from '../category/categoryFieldSummary'
+import '../../components/shared/CreatePanel.css'
 
 export function CreateTopicPanel({ categoryId, user }) {
   const [open, setOpen] = useState(false)
