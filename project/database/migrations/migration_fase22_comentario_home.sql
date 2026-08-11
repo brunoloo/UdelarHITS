@@ -36,9 +36,11 @@ ALTER TABLE comentario ADD CONSTRAINT comentario_target_check CHECK (
   (tema_id IS NOT NULL)::int + (categoria_id IS NOT NULL)::int + (es_home)::int = 1
 );
 
--- Índice parcial para el stream de comentarios de Home del feed (solo las filas
--- home, que son una fracción del total).
+-- Índice parcial para el stream de comentarios de Home del feed. El feed sólo
+-- consulta comentarios de Home de PRIMER NIVEL (comentario_padre_id IS NULL), así
+-- que el predicado del índice replica exactamente ese filtro para quedar lo más
+-- chico y selectivo posible.
 CREATE INDEX IF NOT EXISTS idx_comentario_home
-  ON comentario(contenido_id) WHERE es_home = TRUE;
+  ON comentario(contenido_id) WHERE es_home = TRUE AND comentario_padre_id IS NULL;
 
 COMMIT;

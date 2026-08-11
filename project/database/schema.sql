@@ -285,8 +285,10 @@ CREATE TABLE comentario (
 -- Índices para jerarquía de comentarios
 CREATE INDEX idx_comentario_tema_id ON comentario(tema_id);
 CREATE INDEX idx_comentario_padre_id ON comentario(comentario_padre_id);
--- Stream de comentarios de Home del feed (solo las filas home).
-CREATE INDEX idx_comentario_home ON comentario(contenido_id) WHERE es_home = TRUE;
+-- Stream de comentarios de Home del feed: sólo comentarios de Home de primer
+-- nivel (el feed nunca lista respuestas), para un índice chico y selectivo.
+CREATE INDEX idx_comentario_home ON comentario(contenido_id)
+  WHERE es_home = TRUE AND comentario_padre_id IS NULL;
 
 -- historial de edición de comentario
 CREATE TABLE historial_edicion_comentario (
