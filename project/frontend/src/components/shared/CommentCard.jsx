@@ -321,7 +321,7 @@ export function CommentCard({
 
         {replyOpen && !editing && (
           <CommentForm
-            placeholder="Respuesta (*)"
+            placeholder="Respuesta"
             submitLabel="Responder"
             autoFocus
             onCancel={() => setReplyOpen(false)}
