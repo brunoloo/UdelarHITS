@@ -10,6 +10,7 @@ import { PollButton, PollEditor } from './PollEditor'
 import { buildReplyFormData } from '../../utils/attachments'
 import { nuevaEncuesta, pollValido } from '../../utils/poll'
 import { trackCreateComment } from '../../utils/analytics'
+import './CreateCommentPanel.css'
 
 // Compositor de comentario compartido (textarea + adjuntos + encuesta). Mismo
 // componente que usa CategoryPage para "Publicar comentario"; se reutiliza en el

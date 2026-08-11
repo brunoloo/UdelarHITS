@@ -360,6 +360,9 @@ export function Sidebar() {
   const catId = categoryMatch?.params?.id
   const topicMatch = useMatch('/topic/:id')
   const topicId = topicMatch?.params?.id
+  // El permalink de un comentario (incluidos los de Home) vive a nivel foro
+  // global: muestra el mismo sidebar que el Home (comunidad + facultades).
+  const isComment = !!useMatch('/comment/:id')
 
   // Índice liviano: la sidebar solo muestra título/contador/fecha de las
   // categorías nuevas — no necesita la card completa de /categories/active.
@@ -375,7 +378,7 @@ export function Sidebar() {
     enabled: pathname === '/recent',
   })
 
-  if (!SIDEBAR_PAGES.includes(pathname) && !catId && !topicId) return null
+  if (!SIDEBAR_PAGES.includes(pathname) && !catId && !topicId && !isComment) return null
 
   if (catId) {
     return (
@@ -399,7 +402,7 @@ export function Sidebar() {
     <aside className="sidebar" ref={sidebarRef}>
       {!loading && !user && <JoinBanner />}
 
-      {pathname === '/' && (
+      {(pathname === '/' || isComment) && (
         <>
           <CommunityCard categoryCount={categoryCount} />
           <FacultiesCard activeEtiqueta={activeEtiqueta} />
