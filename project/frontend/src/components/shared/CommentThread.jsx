@@ -7,7 +7,7 @@ import { trackCreateComment } from '../../utils/analytics'
 import { CommentCard } from './CommentCard'
 import './CommentCard.css'
 
-export function CommentThread({ comments, invalidateKey, initialCommentId, initialStack = null, onExit = null, onInitialDrillDone, canPin = false, onTogglePin }) {
+export function CommentThread({ comments, invalidateKey, invalidateKeys = null, initialCommentId, initialStack = null, onExit = null, onInitialDrillDone, canPin = false, onTogglePin }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
   const lastDrilledId = useRef(null)
@@ -57,14 +57,17 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, initi
     mutationFn: ({ parentId, cuerpo, files, poll }) => apiPost('/replies/create',
       buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files, poll)
     ),
-    onSuccess: (res) => {
+    onSuccess: (res, { parentId }) => {
       trackCreateComment('reply')
       if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
       else showToast('Respuesta publicada', 'success')
-      if (currentParent) {
-        queryClient.invalidateQueries({ queryKey: ['replies', currentParent.id, 'replies'] })
-      }
+      // Hijos del comentario al que se respondió (la lista que muestra el hilo)
+      // + las claves de contexto del contenedor (perfil/guardados no pasan
+      // ninguna; CategoryPage/TopicPage pasan la suya; el permalink pasa el
+      // contexto del comentario y el feed del Home). Ver invalidateKeys.
+      queryClient.invalidateQueries({ queryKey: ['replies', parentId, 'replies'] })
       if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
+      for (const k of (invalidateKeys || [])) queryClient.invalidateQueries({ queryKey: k })
     },
     onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
   })
@@ -122,6 +125,7 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, initi
                 showThreadLine={showThreadLine}
                 onReply={handleReply}
                 invalidateKey={invalidateKey}
+                invalidateKeys={invalidateKeys}
               />
             )
           })}
@@ -147,6 +151,7 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, initi
               onDrillDown={drillDown}
               onReply={handleReply}
               invalidateKey={invalidateKey}
+              invalidateKeys={invalidateKeys}
               canPin={canPin && !currentParent}
               onTogglePin={onTogglePin}
             />

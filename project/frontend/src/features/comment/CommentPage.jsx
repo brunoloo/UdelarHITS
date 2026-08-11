@@ -40,6 +40,10 @@ export function CommentPage() {
         initialStack={chain}
         onExit={() => navigate(-1)}
         invalidateKey={['comment', id]}
+        // Al responder o eliminar en el permalink: refrescar el hilo (['replies']
+        // cubre la lista de hijos en cualquier nivel), el contexto que carga esta
+        // página, y el contador de respuestas del feed del Home.
+        invalidateKeys={[['replies'], ['comment', id], ['categories', 'feed']]}
       />
     </div>
   )

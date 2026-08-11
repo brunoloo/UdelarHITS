@@ -30,6 +30,7 @@ export function CommentCard({
   onDrillDown,
   onCardClick,
   invalidateKey,
+  invalidateKeys = null,
   canPin = false,
   onTogglePin,
 }) {
@@ -53,12 +54,20 @@ export function CommentCard({
   const canEdit = isAuthor && !isHidden
   const canDelete = (isAuthor || isAdmin) && !isHidden
 
+  // Invalida la key de contexto del contenedor + las claves extra (el permalink
+  // pasa el hilo, el contexto del comentario y el feed del Home, para que borrar
+  // una respuesta refresque el hilo y el contador sin recargar).
+  function invalidateAll() {
+    if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
+    for (const k of (invalidateKeys || [])) queryClient.invalidateQueries({ queryKey: k })
+  }
+
   const editMutation = useMutation({
     mutationFn: (cuerpo) => apiPatch(`/replies/update/${comment.id}`, { cuerpo }),
     onSuccess: () => {
       showToast('Comentario actualizado', 'success')
       setEditing(false)
-      if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
+      invalidateAll()
     },
     onError: (err) => showToast(err.message || 'Error al editar', 'error'),
   })
@@ -67,7 +76,7 @@ export function CommentCard({
     mutationFn: () => apiDelete(`/replies/delete/${comment.id}`),
     onSuccess: (data) => {
       showToast(data?.message || 'Comentario eliminado', 'success')
-      if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
+      invalidateAll()
     },
     onError: (err) => showToast(err.message || 'Error al eliminar', 'error'),
   })
