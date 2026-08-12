@@ -377,6 +377,15 @@
     padding-left: 12px;
   }
 
+  /* En el hilo, las respuestas quedan indentadas y pierden ancho: la barra de
+     acciones no entra y "N respuestas" se parte en dos líneas. En esas cards
+     (nunca el comentario padre, que va a ancho completo como ancestro) mostramos
+     solo el ícono + el número, ocultando la palabra. El aria-label del contador
+     conserva el texto completo para lectores de pantalla. */
+  .comment-thread + .comment-replies .comment-reply-word {
+    display: none;
+  }
+
   /* ── COMMENT FORM ── */
   .inline-reply-panel {
     padding: 10px;
