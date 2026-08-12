@@ -5,7 +5,7 @@ import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCa
 import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId,
   updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory,
-  getReplyContext, getLikedCommentsByUserId } from '../repositories/reply.repository.js';
+  getReplyContext, getLikedCommentsByUserId, countHomeComments } from '../repositories/reply.repository.js';
 import { getLikesPrivacyById } from '../repositories/user.repository.js';
 import { canViewUserContent } from './access.service.js';
 import { isBlocked } from '../repositories/block.repository.js';
@@ -579,7 +579,11 @@ const getReplyContextService = async (commentId, userId = null) => {
   return chain;
 };
 
-export { createReplyService, getRepliesByCategoryIdService, getRepliesByTopicIdService,
+const getHomeCommentCountService = async () => {
+  return await countHomeComments();
+};
+
+export { createReplyService, getHomeCommentCountService, getRepliesByCategoryIdService, getRepliesByTopicIdService,
   deleteReplyService, getMyRepliesService, getRepliesByUserIdService, updateReplyService,
   getReplyByIdService, getRepliesByCommentIdService, getReplyEditHistoryService,
   getReplyContextService, getLikedCommentsByUserIdService };

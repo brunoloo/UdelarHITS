@@ -16,6 +16,9 @@ import './feed.css'
 const PAGE_SIZE = 20
 
 const FEED_KEY = ['categories', 'feed']
+// Contador de comentarios de Home del sidebar de Comunidad: se refresca al
+// publicar/eliminar un comentario de Home de primer nivel.
+const HOME_COUNT_KEY = ['replies', 'home', 'count']
 
 function CategorySkeleton() {
   return (
@@ -168,7 +171,7 @@ export function FeedPage() {
       <CreateCategoryPanel />
       {/* Publicar un comentario de Home (foro global). Mismo compositor que
           CategoryPage; el comentario se mezcla en el feed de abajo. */}
-      <CreateCommentPanel scopeFields={{ es_home: true }} invalidateKey={FEED_KEY} />
+      <CreateCommentPanel scopeFields={{ es_home: true }} invalidateKey={FEED_KEY} invalidateKeys={[HOME_COUNT_KEY]} />
 
       <div className="categories-feed">
         {isLoading ? (
@@ -209,6 +212,7 @@ export function FeedPage() {
                   onCardClick={() => navigate(`/comment/${c.id}`)}
                   onReply={handleHomeReply}
                   invalidateKey={FEED_KEY}
+                  invalidateKeys={[HOME_COUNT_KEY]}
                 />
               ) : (
                 <CategoryCard key={`categoria-${c.id}`} category={c} priority={i === 0} />

@@ -20,6 +20,7 @@ import './CreatePanel.css'
 export function CreateCommentPanel({
   scopeFields,
   invalidateKey,
+  invalidateKeys = null,
   source = 'direct',
   placeholder = 'Publicar comentario',
 }) {
@@ -47,6 +48,7 @@ export function CreateCommentPanel({
       setFiles([])
       setPoll(null)
       if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
+      for (const k of (invalidateKeys || [])) queryClient.invalidateQueries({ queryKey: k })
     },
     onError: (err) => {
       showToast(err.message || 'Error al publicar', 'error')

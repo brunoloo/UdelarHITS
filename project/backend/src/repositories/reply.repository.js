@@ -411,6 +411,19 @@ const getReplyContext = async (commentId, userId = null) => {
   return rows;
 };
 
+// Cantidad de comentarios de Home de PRIMER NIVEL y visibles (los que se ven en
+// el feed del Home). Excluye respuestas (comentario_padre_id NOT NULL) y
+// comentarios de categoría/tema (es_home = FALSE).
+const countHomeComments = async () => {
+  const q = `
+    SELECT COUNT(*)::int AS total
+    FROM comentario
+    WHERE es_home = TRUE AND comentario_padre_id IS NULL AND estado = 'visible'
+  `;
+  const { rows } = await pool.query(q);
+  return rows[0].total;
+};
+
 // ── Stream B del feed del Home: comentarios de Home de primer nivel y visibles ──
 // Misma forma de card que getRepliesByCategoryId (autor, likes, mi_reaccion,
 // contador_respuestas, adjuntos, encuesta con estado del viewer, estado). Se
@@ -482,7 +495,7 @@ const getHomeCommentsPersonalized = async (usuarioId, { limit, cursorScore = nul
   return rows;
 };
 
-export { createReply, getHomeCommentsChrono, getHomeCommentsPersonalized,
+export { createReply, countHomeComments, getHomeCommentsChrono, getHomeCommentsPersonalized,
   getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
   getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies,
   hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx, getReplyEditHistory,
