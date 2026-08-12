@@ -6,6 +6,7 @@ import { registerAndLogin, createCategory, createTopic, createReply, createHomeR
 const post = (cookie, body) => request(app).post('/api/replies/create').set('Cookie', cookie).send(body);
 const getNotifs = (cookie) => request(app).get('/api/notifications').set('Cookie', cookie).then(r => r.body.data);
 const idOf = (x) => x.id ?? x.contenido_id;
+const homeCount = () => request(app).get('/api/replies/home/count').then(r => r.body.data.total);
 
 // PNG 1x1 real (magic numbers válidos) para el caso con adjunto.
 const png = Buffer.from(
@@ -135,6 +136,38 @@ describe('Comentarios de Home — aislamiento', () => {
 
     const notifs = await getNotifs(visitor.cookie);
     expect(notifs.find(x => x.tipo === 'comentario_categoria_seguida')).toBeUndefined();
+  });
+});
+
+describe('Contador de comentarios de Home (sidebar Comunidad)', () => {
+  test('cuenta SOLO comentarios de Home de primer nivel y visibles', async () => {
+    const u = await registerAndLogin();
+    expect(await homeCount()).toBe(0);
+
+    const h1 = await createHomeReply(u.cookie, { cuerpo: 'home 1' });
+    await createHomeReply(u.cookie, { cuerpo: 'home 2' });
+    expect(await homeCount()).toBe(2);
+
+    // Respuesta a un comentario de Home → NO cuenta (no es primer nivel).
+    await post(u.cookie, { cuerpo: 'respuesta', comentario_padre_id: idOf(h1) });
+    // Comentario de categoría y de tema → NO cuentan (no son de Home).
+    const cat = await createCategory(u.cookie);
+    await createReply(u.cookie, { categoria_id: cat.id, cuerpo: 'en categoría' });
+    await createReply(u.cookie, { cuerpo: 'en tema' }); // el helper crea un tema
+
+    expect(await homeCount()).toBe(2);
+  });
+
+  test('un comentario de Home oculto (soft-delete con respuestas) no cuenta', async () => {
+    const a = await registerAndLogin();
+    const b = await registerAndLogin();
+    const padre = await createHomeReply(a.cookie, { cuerpo: 'padre' });
+    await post(b.cookie, { cuerpo: 'hija', comentario_padre_id: idOf(padre) });
+    expect(await homeCount()).toBe(1);
+
+    // Borrar el padre (tiene respuestas) → soft-delete → estado 'oculto' → no cuenta.
+    await request(app).delete(`/api/replies/delete/${padre.contenido_id}`).set('Cookie', a.cookie);
+    expect(await homeCount()).toBe(0);
   });
 });
 

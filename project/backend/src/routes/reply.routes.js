@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply,
     getMyReplies, getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory,
-    getReplyContext, getLikedReplies } from '../controllers/reply.controller.js';
+    getReplyContext, getLikedReplies, getHomeCommentCount } from '../controllers/reply.controller.js';
 import { protect, isAdmin, optionalAuth } from '../middlewares/auth.middleware.js';
 import { uploadAttachments } from '../config/multer.js';
 
@@ -27,6 +27,8 @@ const handleAttachments = (req, res, next) => {
 router.post('/create', protect, handleAttachments, createReply);     // Publicar comentario (con adjuntos)
 
 router.get('/me', protect, getMyReplies);                            // Listar mis comentarios
+
+router.get('/home/count', getHomeCommentCount);                      // Cantidad de comentarios de Home (1er nivel, visibles)
 
 router.get('/:id/history', getReplyEditHistory);                     // Obtener historial de edición
 

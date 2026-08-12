@@ -1,7 +1,7 @@
 import { createReplyService, getRepliesByCategoryIdService,
   getRepliesByTopicIdService, deleteReplyService, getMyRepliesService,
   getRepliesByUserIdService, updateReplyService, getRepliesByCommentIdService, getReplyByIdService, getReplyEditHistoryService,
-  getReplyContextService, getLikedCommentsByUserIdService } from '../services/reply.service.js';
+  getReplyContextService, getLikedCommentsByUserIdService, getHomeCommentCountService } from '../services/reply.service.js';
 import { detectAttachmentType } from '../utils/validateAttachment.js';
 
 const createReply = async (req, res) => {
@@ -142,6 +142,15 @@ const getReplyById = async (req, res) => {
   }
 };
 
+const getHomeCommentCount = async (req, res) => {
+  try {
+    const total = await getHomeCommentCountService();
+    return res.status(200).json({ ok: true, data: { total } });
+  } catch {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 const getRepliesByComment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -192,4 +201,4 @@ const getReplyContext = async (req, res) => {
 
 export { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply, getMyReplies,
   getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory,
-  getReplyContext, getLikedReplies };
+  getReplyContext, getLikedReplies, getHomeCommentCount };
