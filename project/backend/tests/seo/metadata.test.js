@@ -131,24 +131,79 @@ describe('Metadata de tema', () => {
 });
 
 describe('Metadata de perfil', () => {
-  test('perfil activo: og:* con nickname y biografía, pero noindex', async () => {
+  // Nota de privacidad: la preview og:* la genera el servidor desde la BD,
+  // esquivando el `protect` de GET /api/users/:nickname. Por eso SOLO las
+  // cuentas públicas y activas exponen nickname/biografía/avatar; el resto
+  // (privadas, inactivas, baneadas, inexistentes) recibe metadata genérica.
+  const BIO = 'Estudiante de ingeniería con datos privados sensibles';
+
+  async function setBio(cookie) {
+    await request(app).patch('/api/users/me').set('Cookie', cookie).send({ biografia: BIO });
+  }
+
+  test('cuenta pública activa: og:* con nickname, biografía y avatar; noindex', async () => {
     const a = await registerAndLogin();
-    await request(app).patch('/api/users/me')
-      .set('Cookie', a.cookie)
-      .send({ biografia: 'Estudiante de ingeniería' });
+    await setBio(a.cookie);
+    // Avatar directo en BD (evita depender de Cloudinary en test).
+    await pool.query(`UPDATE usuario SET url_imagen = $2 WHERE LOWER(nickname) = LOWER($1)`,
+      [a.user.nickname, 'https://res.cloudinary.com/demo/image/upload/avatar.jpg']);
 
     const res = await request(app).get(`/user/${a.user.nickname}`);
     expect(res.status).toBe(200);
     expect(metaProp(res.text, 'og:title')).toBe(a.user.nickname);
-    expect(metaProp(res.text, 'og:description')).toBe('Estudiante de ingeniería');
+    expect(metaProp(res.text, 'og:description')).toBe(BIO);
     expect(metaProp(res.text, 'og:type')).toBe('profile');
-    // Ver perfiles requiere cuenta → no se indexan.
+    expect(metaProp(res.text, 'og:image')).toBe('https://res.cloudinary.com/demo/image/upload/avatar.jpg');
+    // Ver perfiles requiere cuenta → no se indexan, en ningún caso.
     expect(metaName(res.text, 'robots')).toBe('noindex, follow');
   });
 
-  test('perfil inexistente: noindex', async () => {
+  test('cuenta PRIVADA: metadata genérica, sin nickname/biografía/avatar; noindex', async () => {
+    const a = await registerAndLogin();
+    await setBio(a.cookie);
+    await pool.query(`UPDATE usuario SET privado = TRUE, url_imagen = $2 WHERE LOWER(nickname) = LOWER($1)`,
+      [a.user.nickname, 'https://res.cloudinary.com/demo/image/upload/avatar.jpg']);
+
+    const res = await request(app).get(`/user/${a.user.nickname}`);
+    expect(res.status).toBe(200);
+    // Genérica: nada del usuario real.
+    expect(metaProp(res.text, 'og:title')).toBe('Perfil en UdelarHITS');
+    expect(res.text).not.toContain(BIO);
+    expect(res.text).not.toContain(a.user.nickname);
+    expect(metaProp(res.text, 'og:image')).not.toContain('avatar.jpg');
+    expect(metaName(res.text, 'robots')).toBe('noindex, follow');
+  });
+
+  test('cuenta BANEADA: metadata genérica, sin biografía; noindex', async () => {
+    const a = await registerAndLogin();
+    await setBio(a.cookie);
+    await pool.query(`UPDATE usuario SET estado = 'ban' WHERE LOWER(nickname) = LOWER($1)`,
+      [a.user.nickname]);
+
+    const res = await request(app).get(`/user/${a.user.nickname}`);
+    expect(res.status).toBe(200);
+    expect(metaProp(res.text, 'og:title')).toBe('Perfil en UdelarHITS');
+    expect(res.text).not.toContain(BIO);
+    expect(metaName(res.text, 'robots')).toBe('noindex, follow');
+  });
+
+  test('cuenta INACTIVA: metadata genérica, sin biografía; noindex', async () => {
+    const a = await registerAndLogin();
+    await setBio(a.cookie);
+    await pool.query(`UPDATE usuario SET estado = 'inactivo' WHERE LOWER(nickname) = LOWER($1)`,
+      [a.user.nickname]);
+
+    const res = await request(app).get(`/user/${a.user.nickname}`);
+    expect(res.status).toBe(200);
+    expect(metaProp(res.text, 'og:title')).toBe('Perfil en UdelarHITS');
+    expect(res.text).not.toContain(BIO);
+    expect(metaName(res.text, 'robots')).toBe('noindex, follow');
+  });
+
+  test('perfil inexistente: metadata genérica con noindex', async () => {
     const res = await request(app).get('/user/no_existe_nadie_xyz');
     expect(res.status).toBe(200);
+    expect(metaProp(res.text, 'og:title')).toBe('Perfil en UdelarHITS');
     expect(metaName(res.text, 'robots')).toBe('noindex, follow');
   });
 });

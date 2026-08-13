@@ -40,12 +40,14 @@ export async function getTopicSeoData(id) {
   return rows[0] || null;
 }
 
-// Metadata pública de un perfil por nickname (case-insensitive, igual que el
-// resto de los lookups de usuario). Se trae biografía y flags para decidir la
-// preview social y el noindex.
+// Metadata de un perfil por nickname (case-insensitive, igual que el resto de
+// los lookups de usuario). Se traen `estado` y `privado` para decidir si el
+// perfil puede exponer datos: la API sirve el perfil detrás de `protect`, así
+// que la preview social NO debe filtrar nickname/biografía/avatar de cuentas
+// privadas, inactivas o baneadas (el service aplica ese criterio).
 export async function getProfileSeoData(nickname) {
   const q = `
-    SELECT nickname, biografia, estado, privado
+    SELECT nickname, biografia, url_imagen, estado, privado
     FROM usuario
     WHERE LOWER(nickname) = LOWER($1)
     LIMIT 1

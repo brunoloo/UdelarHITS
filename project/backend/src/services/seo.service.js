@@ -105,12 +105,21 @@ export async function resolveTopicSeo(param) {
 }
 
 // ── Perfil ───────────────────────────────────────────────────────────────────
-// Decisión explícita: los perfiles NO se indexan (`noindex`). Ver un perfil
-// requiere cuenta (GET /api/users/:nickname está detrás de `protect`), así que
-// para Googlebot la página es contenido detrás de login: indexarla generaría
-// resultados sin valor (thin/cloaked). Aun así SÍ inyectamos og:* para que al
-// compartir el link en WhatsApp/Telegram aparezca una preview con nickname y
-// biografía — la preview la genera el servidor desde la BD, no la API pública.
+// Dos capas de decisión:
+//
+//   1) Indexación: los perfiles NUNCA se indexan (`noindex`). Ver un perfil
+//      requiere cuenta (GET /api/users/:nickname está detrás de `protect`), así
+//      que para Googlebot es contenido tras login: indexarlo daría resultados
+//      thin/cloaked.
+//
+//   2) Privacidad de la preview social (og:*): la preview la genera el servidor
+//      desde la BD, esquivando el `protect` de la API. Por eso SOLO se inyectan
+//      nickname, biografía y avatar cuando la cuenta es PÚBLICA y está ACTIVA.
+//      Para cuentas con `privado = true`, `estado` inactivo/baneado —o perfiles
+//      inexistentes— se sirve metadata GENÉRICA del sitio (sin nickname real,
+//      sin biografía, sin avatar). Esto respeta `usuario.privado` y la política
+//      de privacidad publicada, y de paso hace indistinguible "privada" de "no
+//      existe" (no se pueden enumerar cuentas privadas).
 export async function resolveProfileSeo(nickname) {
   let row;
   try {
@@ -119,8 +128,10 @@ export async function resolveProfileSeo(nickname) {
     return { meta: null, canonicalPath: null };
   }
 
-  if (!row || row.estado !== 'activo') {
-    return { meta: noindexMeta(), canonicalPath: null };
+  const isPublicActive = !!row && row.estado === 'activo' && row.privado === false;
+
+  if (!isPublicActive) {
+    return { meta: genericProfileMeta(), canonicalPath: null };
   }
 
   const url = `${SITE_URL}/user/${encodeURIComponent(row.nickname)}`;
@@ -136,9 +147,26 @@ export async function resolveProfileSeo(nickname) {
       ogDescription: description,
       ogUrl: url,
       ogType: 'profile',
+      // Avatar como og:image SOLO en cuentas públicas activas; si no tiene
+      // avatar, injectSeoMeta cae a la imagen por defecto del sitio.
+      ogImage: row.url_imagen || undefined,
       robots: 'noindex, follow',
     },
     canonicalPath: null, // el nickname es el canónico; no hay slug que redirigir
+  };
+}
+
+// Metadata genérica del sitio para perfiles que no pueden exponer datos (cuenta
+// privada, inactiva, baneada o inexistente). Sin nickname real, sin biografía y
+// sin avatar: og:image queda en la imagen por defecto del sitio.
+function genericProfileMeta() {
+  return {
+    title: `Perfil en ${SITE_NAME}`,
+    description: DEFAULT_DESCRIPTION,
+    ogTitle: `Perfil en ${SITE_NAME}`,
+    ogDescription: DEFAULT_DESCRIPTION,
+    ogType: 'profile',
+    robots: 'noindex, follow',
   };
 }
 
