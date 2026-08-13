@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { topicPath } from '../../utils/slug'
 import './TopicCardMini.css'
 
 // Versión reducida de la TopicCard: título + descripción + cantidad de
@@ -12,7 +13,7 @@ export function TopicCardMini({ topic, onNavigate }) {
   return (
     <div
       className="topic-mini-card"
-      onClick={() => { onNavigate?.(); navigate(`/topic/${encodeURIComponent(id)}`) }}
+      onClick={() => { onNavigate?.(); navigate(topicPath(id, topic.titulo)) }}
     >
       <div className="topic-mini-title">{topic.titulo}</div>
 

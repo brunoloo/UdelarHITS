@@ -4,6 +4,7 @@ import { UserAvatar } from './UserAvatar'
 import { DropdownMenu } from '../ui/DropdownMenu'
 import { PinIcon } from './PinIcon'
 import { timeAgo } from '../../utils/timeAgo'
+import { topicPath } from '../../utils/slug'
 import './TopicCard.css'
 
 // canPin / onTogglePin: solo el moderador (creador) de la categoría los recibe,
@@ -25,7 +26,7 @@ export function TopicCard({ topic, canPin = false, onTogglePin }) {
   function handleCardClick(e) {
     // No navegar si el click fue en un link o en un botón/menú interno.
     if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.comment-menu-wrap')) return
-    navigate(`/topic/${encodeURIComponent(contenido_id)}`)
+    navigate(topicPath(contenido_id, titulo))
   }
 
   const pinItems = [{
