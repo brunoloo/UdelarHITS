@@ -546,6 +546,12 @@ const getPopularCategories = async (days = 7, limit = 20) => {
     com_act AS (
       SELECT COALESCE(com.categoria_id, tt.categoria_id) AS categoria_id,
         COUNT(*) AS comentarios_recientes,
+        -- Comentarios DIRECTOS a la categoría y de PRIMER NIVEL (mismo criterio
+        -- que contador_comentarios / el tab "Comentarios"): excluye las
+        -- respuestas anidadas y los comentarios que cuelgan de temas. Es lo que
+        -- muestra la card (hero "Categoría de la semana" / Populares); el conteo
+        -- crudo de arriba sigue alimentando el ranking y la presencia.
+        COUNT(*) FILTER (WHERE com.categoria_id IS NOT NULL AND com.comentario_padre_id IS NULL) AS comentarios_directos_recientes,
         SUM(POWER(0.5, GREATEST(EXTRACT(EPOCH FROM (NOW() - con.fecha_creacion)) / 3600.0, 0) / $3)) AS score
       FROM comentario com
       JOIN contenido con ON con.id = com.contenido_id
@@ -563,6 +569,7 @@ const getPopularCategories = async (days = 7, limit = 20) => {
       ARRAY_AGG(DISTINCT e.nombre) FILTER (WHERE e.nombre IS NOT NULL) AS etiquetas,
       COALESCE(ta.temas_recientes, 0) AS temas_recientes,
       COALESCE(ca.comentarios_recientes, 0) AS comentarios_recientes,
+      COALESCE(ca.comentarios_directos_recientes, 0) AS comentarios_directos_recientes,
       (COALESCE(ta.temas_recientes, 0) + COALESCE(ca.comentarios_recientes, 0)) AS actividad_total,
       (COALESCE(ta.score, 0) * $4 + COALESCE(ca.score, 0) * $5) AS actividad_score
     FROM categoria c
@@ -573,7 +580,7 @@ const getPopularCategories = async (days = 7, limit = 20) => {
     LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.estado = 'activa'
       AND (COALESCE(ta.temas_recientes, 0) + COALESCE(ca.comentarios_recientes, 0)) > 0
-    GROUP BY c.id, u.nickname, ta.temas_recientes, ta.score, ca.comentarios_recientes, ca.score
+    GROUP BY c.id, u.nickname, ta.temas_recientes, ta.score, ca.comentarios_recientes, ca.comentarios_directos_recientes, ca.score
     ORDER BY actividad_score DESC, c.fecha_creacion DESC
     LIMIT $2
   `;

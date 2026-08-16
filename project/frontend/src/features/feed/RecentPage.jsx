@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { apiGet } from '../../api/client'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiGet, apiPost } from '../../api/client'
 import { TopicCard } from '../../components/shared/TopicCard'
+import { CommentEntry } from '../../components/shared/CommentEntry'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
+import { buildReplyFormData } from '../../utils/attachments'
+import { useToast } from '../../hooks/useToast'
 import { Tag } from '../../components/ui/Tag'
 import { timeAgo } from '../../utils/timeAgo'
 import './feed.css'
@@ -62,10 +65,27 @@ const TABS = [
   { key: 'todos', label: 'Todos' },
   { key: 'temas', label: 'Temas' },
   { key: 'categorias', label: 'Categorías' },
+  { key: 'comentarios', label: 'Comentarios' },
 ]
 
 export function RecentPage() {
   const [tab, setTab] = useState('todos')
+  const queryClient = useQueryClient()
+  const { showToast } = useToast()
+
+  const replyMutation = useMutation({
+    mutationFn: ({ parentId, cuerpo, files, poll }) =>
+      apiPost('/replies/create', buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files, poll)),
+    onSuccess: (res) => {
+      if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
+      else showToast('Respuesta publicada', 'success')
+      queryClient.invalidateQueries({ queryKey: ['replies', 'recent'] })
+    },
+    onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
+  })
+
+  const handleReply = (parentId, text, files, poll) =>
+    replyMutation.mutateAsync({ parentId, cuerpo: text, files, poll })
 
   const { data: topics = [], isLoading: loadingTopics } = useQuery({
     queryKey: ['topics', 'recent'],
@@ -80,7 +100,14 @@ export function RecentPage() {
     staleTime: 5 * 60 * 1000,
   })
 
-  const isLoading = loadingTopics || loadingCats
+  // Comentarios recientes de toda la plataforma (Home, categoría y tema), en la
+  // misma forma de card que consume CommentEntry (perfil/guardados).
+  const { data: comments = [], isLoading: loadingComments } = useQuery({
+    queryKey: ['replies', 'recent'],
+    queryFn: () => apiGet('/replies/recent?limit=30').then(r => r.data),
+  })
+
+  const isLoading = loadingTopics || loadingCats || loadingComments
 
   const items = (() => {
     const list = []
@@ -89,6 +116,9 @@ export function RecentPage() {
     }
     if (tab === 'todos' || tab === 'categorias') {
       categories.forEach(c => list.push({ type: 'categoria', data: c, date: new Date(c.fecha_creacion) }))
+    }
+    if (tab === 'todos' || tab === 'comentarios') {
+      comments.forEach(c => list.push({ type: 'comentario', data: c, date: new Date(c.fecha_creacion) }))
     }
     return list.sort((a, b) => b.date - a.date)
   })()
@@ -116,11 +146,22 @@ export function RecentPage() {
       ) : items.length === 0 ? (
         <div className="feed-empty">No hay contenido reciente todavía.</div>
       ) : (
-        items.map((item, i) =>
-          item.type === 'tema'
-            ? <TopicCard key={item.data.id || item.data.contenido_id || i} topic={item.data} />
-            : <RecentCategoryCard key={item.data.id || i} category={item.data} />
-        )
+        items.map((item, i) => {
+          if (item.type === 'tema') {
+            return <TopicCard key={`t-${item.data.id || item.data.contenido_id || i}`} topic={item.data} />
+          }
+          if (item.type === 'categoria') {
+            return <RecentCategoryCard key={`c-${item.data.id || i}`} category={item.data} />
+          }
+          return (
+            <CommentEntry
+              key={`m-${item.data.id || i}`}
+              comment={item.data}
+              invalidateKey={['replies', 'recent']}
+              onReply={handleReply}
+            />
+          )
+        })
       )}
     </div>
   )

@@ -18,7 +18,9 @@ function HeroCard({ category }) {
   const etiquetas = allEtiquetas.slice(0, 5)
   const extraCount = allEtiquetas.length - 5
   const temas = Number(category.temas_recientes) || 0
-  const comentarios = Number(category.comentarios_recientes) || 0
+  // Solo comentarios de primer nivel directos a la categoría (no respuestas ni
+  // comentarios de temas), igual que el contador total de la card.
+  const comentarios = Number(category.comentarios_directos_recientes) || 0
   return (
     <Link className="hero-card" to={`/category/${encodeURIComponent(category.id)}`}>
       <div className="hero-label">Categoría de la semana</div>

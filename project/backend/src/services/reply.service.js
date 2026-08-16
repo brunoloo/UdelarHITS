@@ -5,7 +5,7 @@ import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCa
 import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId,
   updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory,
-  getReplyContext, getLikedCommentsByUserId, countHomeComments } from '../repositories/reply.repository.js';
+  getReplyContext, getLikedCommentsByUserId, countHomeComments, getRecentReplies } from '../repositories/reply.repository.js';
 import { getLikesPrivacyById } from '../repositories/user.repository.js';
 import { canViewUserContent } from './access.service.js';
 import { isBlocked } from '../repositories/block.repository.js';
@@ -583,7 +583,14 @@ const getHomeCommentCountService = async () => {
   return await countHomeComments();
 };
 
+// Comentarios recientes de toda la plataforma. Mismo saneo de límite que los
+// temas recientes (1..50, default 30).
+const getRecentRepliesService = async (limit, viewerId = null) => {
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 30, 1), 50);
+  return await getRecentReplies(safeLimit, viewerId);
+};
+
 export { createReplyService, getHomeCommentCountService, getRepliesByCategoryIdService, getRepliesByTopicIdService,
   deleteReplyService, getMyRepliesService, getRepliesByUserIdService, updateReplyService,
   getReplyByIdService, getRepliesByCommentIdService, getReplyEditHistoryService,
-  getReplyContextService, getLikedCommentsByUserIdService };
+  getReplyContextService, getLikedCommentsByUserIdService, getRecentRepliesService };

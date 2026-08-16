@@ -184,6 +184,67 @@ const getRepliesByUserId = async (userId, viewerId = null) => {
   return rows;
 };
 
+// Comentarios recientes de TODA la plataforma (Home, categoría y tema), en la
+// misma forma de card que consume CommentEntry/CommentCard. Incluye tanto los
+// comentarios de primer nivel como las respuestas. Solo devuelve comentarios
+// visibles cuyo contenedor está activo — mismo criterio de "recientes" que los
+// temas (getRecentTopics): nada de contenedores inactivos. El más nuevo primero;
+// el id desempata para no repetir ni saltar en empates de fecha.
+const getRecentReplies = async (limit = 30, viewerId = null) => {
+  const q = `
+    SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
+      con.cuerpo, con.fecha_creacion, con.autor_id,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
+      CASE
+        WHEN com.tema_id IS NOT NULL THEN 'tema'
+        WHEN com.categoria_id IS NOT NULL THEN 'categoria'
+        ELSE 'home'
+      END AS tipo,
+      com.es_home,
+      COALESCE(
+        CASE WHEN t.estado = 'inactivo' THEN NULL ELSE t.titulo END,
+        CASE WHEN cat.estado = 'inactiva' THEN NULL ELSE cat.titulo END
+      ) AS destino_titulo,
+      COALESCE(com.tema_id, com.categoria_id) AS destino_id,
+      CASE
+        WHEN com.tema_id IS NOT NULL THEN tc.estado
+        WHEN com.categoria_id IS NOT NULL THEN cat.estado
+        ELSE NULL
+      END AS categoria_estado,
+      t.estado AS tema_estado,
+      com.comentario_padre_id,
+      (SELECT u_p.nickname
+         FROM contenido con_p
+         JOIN usuario u_p ON u_p.id = con_p.autor_id
+        WHERE con_p.id = com.comentario_padre_id) AS padre_autor_nickname,
+      (SELECT u_p.estado
+         FROM contenido con_p
+         JOIN usuario u_p ON u_p.id = con_p.autor_id
+        WHERE con_p.id = com.comentario_padre_id) AS padre_autor_estado,
+      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
+      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
+      (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
+      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano, 'estado', a.estado) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
+      ${encuestaSubquery('$2')} AS encuesta
+    FROM comentario com
+    JOIN contenido con ON con.id = com.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
+    LEFT JOIN tema t ON t.contenido_id = com.tema_id
+    LEFT JOIN categoria tc ON tc.id = t.categoria_id
+    LEFT JOIN categoria cat ON cat.id = com.categoria_id
+    WHERE com.estado = 'visible'
+      AND (
+        com.es_home = TRUE
+        OR (com.tema_id IS NOT NULL AND t.estado = 'activo' AND tc.estado = 'activa')
+        OR (com.tema_id IS NULL AND com.categoria_id IS NOT NULL AND cat.estado = 'activa')
+      )
+    ORDER BY con.fecha_creacion DESC, com.contenido_id DESC
+    LIMIT $1
+  `;
+  const { rows } = await pool.query(q, [limit, viewerId]);
+  return rows;
+};
+
 const getLikedCommentsByUserId = async (userId, viewerId = null) => {
   // Comentarios a los que el usuario $1 dio "me gusta", en la misma forma que
   // consume CommentCard. El INNER JOIN con comentario excluye reacciones sobre
@@ -496,7 +557,7 @@ const getHomeCommentsPersonalized = async (usuarioId, { limit, cursorScore = nul
 };
 
 export { createReply, countHomeComments, getHomeCommentsChrono, getHomeCommentsPersonalized,
-  getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
+  getRecentReplies, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
   getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies,
   hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx, getReplyEditHistory,
   getReplyContext, getLikedCommentsByUserId }
