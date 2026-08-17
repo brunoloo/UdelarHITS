@@ -1,7 +1,8 @@
 import { createReplyService, getRepliesByCategoryIdService,
   getRepliesByTopicIdService, deleteReplyService, getMyRepliesService,
   getRepliesByUserIdService, updateReplyService, getRepliesByCommentIdService, getReplyByIdService, getReplyEditHistoryService,
-  getReplyContextService, getLikedCommentsByUserIdService } from '../services/reply.service.js';
+  getReplyContextService, getLikedCommentsByUserIdService, getHomeCommentCountService,
+  getRecentRepliesService } from '../services/reply.service.js';
 import { detectAttachmentType } from '../utils/validateAttachment.js';
 
 const createReply = async (req, res) => {
@@ -29,6 +30,7 @@ const createReply = async (req, res) => {
       tema_id: clean(req.body.tema_id),
       categoria_id: clean(req.body.categoria_id),
       comentario_padre_id: clean(req.body.comentario_padre_id),
+      es_home: clean(req.body.es_home),
       encuesta,
     };
 
@@ -141,6 +143,25 @@ const getReplyById = async (req, res) => {
   }
 };
 
+const getHomeCommentCount = async (req, res) => {
+  try {
+    const total = await getHomeCommentCountService();
+    return res.status(200).json({ ok: true, data: { total } });
+  } catch {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const getRecentReplies = async (req, res) => {
+  try {
+    const viewerId = req.user?.id || null;
+    const replies = await getRecentRepliesService(req.query.limit, viewerId);
+    return res.status(200).json({ ok: true, data: replies });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 const getRepliesByComment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -191,4 +212,4 @@ const getReplyContext = async (req, res) => {
 
 export { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply, getMyReplies,
   getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory,
-  getReplyContext, getLikedReplies };
+  getReplyContext, getLikedReplies, getHomeCommentCount, getRecentReplies };

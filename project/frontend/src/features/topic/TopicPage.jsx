@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
-import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { resolveAutor } from '../../components/shared/AuthorDisplay'
 import { UserAvatar } from '../../components/shared/UserAvatar'
@@ -13,13 +12,10 @@ import { useSaved } from '../../hooks/useSaved'
 import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
 import { Modal } from '../../components/ui/Modal'
 import { CommentThread } from '../../components/shared/CommentThread'
+import { CreateCommentPanel } from '../../components/shared/CreateCommentPanel'
 import { ReportModal } from '../../components/shared/ReportModal'
-import { AttachmentButton, AttachmentPreviews } from '../../components/shared/AttachmentPicker'
-import { PollButton, PollEditor } from '../../components/shared/PollEditor'
-import { buildReplyFormData } from '../../utils/attachments'
-import { nuevaEncuesta, pollValido } from '../../utils/poll'
 import { timeAgo } from '../../utils/timeAgo'
-import { trackCreateComment } from '../../utils/analytics'
+import { parseId } from '../../utils/slug'
 import { TopicContentField } from './TopicContentField'
 import { PreviewHint } from '../../components/shared/PreviewHint'
 import { AccordionField } from '../../components/shared/AccordionField'
@@ -28,14 +24,16 @@ import '../category/category.css'
 import './topic.css'
 
 export function TopicPage() {
-  const { id } = useParams()
+  // La URL puede traer slug (/topic/5-como-estudiar): el lookup usa solo el id
+  // numérico líder, para que links con slug y sin slug resuelvan igual.
+  const { id: idParam } = useParams()
+  const id = parseId(idParam)
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const commentIdParam = searchParams.get('commentId')
   const { user } = useAuth()
   const { showToast } = useToast()
   const { isSaved, toggleSaved } = useSaved()
-  const requireAuth = useRequireAuth()
   const queryClient = useQueryClient()
 
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -46,10 +44,6 @@ export function TopicPage() {
   const [historyModalOpen, setHistoryModalOpen] = useState(false)
   const [historyEntries, setHistoryEntries] = useState([])
   const [historyIndex, setHistoryIndex] = useState(0)
-  const [commentText, setCommentText] = useState('')
-  const [commentFiles, setCommentFiles] = useState([])
-  const [commentPoll, setCommentPoll] = useState(null)
-  const [commentFormOpen, setCommentFormOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
 
   const { data: topic, isLoading, isError } = useQuery({
@@ -90,25 +84,6 @@ export function TopicPage() {
     onError: (err) => showToast(err.message || 'Error al eliminar', 'error'),
   })
 
-  const commentMutation = useMutation({
-    mutationFn: (cuerpo) => apiPost('/replies/create',
-      buildReplyFormData({ cuerpo, tema_id: id }, commentFiles, commentPoll)
-    ),
-    onSuccess: (res) => {
-      // El backend publica el comentario aunque los adjuntos fallen (p. ej.
-      // cuota de almacenamiento); si pasó eso, avisa con la advertencia.
-      trackCreateComment('direct')
-      if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
-      else showToast('Comentario publicado', 'success')
-      setCommentText('')
-      setCommentFiles([])
-      setCommentPoll(null)
-      setCommentFormOpen(false)
-      queryClient.invalidateQueries({ queryKey: ['replies', 'topic', id] })
-    },
-    onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
-  })
-
   // Fijar/desanclar un comentario del tema (solo el creador del tema).
   const pinCommentMutation = useMutation({
     mutationFn: (comment) => comment.fijado
@@ -129,13 +104,6 @@ export function TopicPage() {
       return
     }
     editMutation.mutate(editCuerpo.trim())
-  }
-
-  function handleCommentSubmit() {
-    if (!requireAuth('Debes iniciar sesión para comentar')) return
-    const vacio = commentText.trim().length < 1 && commentFiles.length === 0 && !pollValido(commentPoll)
-    if (vacio || commentMutation.isPending) return
-    commentMutation.mutate(commentText.trim())
   }
 
   async function loadHistory() {
@@ -296,66 +264,10 @@ export function TopicPage() {
 
       <section className="section-panel active">
         {!isInactive && (
-          <section className="create-topic" aria-label="Publicar comentario">
-            {!commentFormOpen ? (
-              <button
-                className="create-topic-trigger"
-                type="button"
-                onClick={() => setCommentFormOpen(true)}
-              >
-                <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size="sm" />
-                <span className="ct-placeholder">Publicar comentario</span>
-                <span className="ct-cta">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 5v14M5 12h14"/>
-                  </svg>
-                  Comentar
-                </span>
-              </button>
-            ) : (
-              <div className="create-cat-panel open">
-                <div className="create-cat-panel-body">
-                  <div className="cc-form">
-                    <div className="edit-field">
-                      <div className="edit-field-label">
-                        <span>Comentario (*)</span>
-                        <span className="edit-field-counter">{commentText.length} / 5000</span>
-                      </div>
-                      <textarea
-                        maxLength={5000}
-                        rows={4}
-                        placeholder="Escribí tu comentario"
-                        value={commentText}
-                        onChange={e => setCommentText(e.target.value)}
-                        autoFocus
-                      />
-                    </div>
-                    <AttachmentPreviews files={commentFiles} onChange={setCommentFiles} />
-                    <PollEditor poll={commentPoll} onChange={setCommentPoll} onRemove={() => setCommentPoll(null)} />
-                  </div>
-                </div>
-                <div className="create-cat-panel-footer">
-                  <AttachmentButton files={commentFiles} onChange={setCommentFiles} disabled={commentMutation.isPending} />
-                  <PollButton active={!!commentPoll} onActivate={() => setCommentPoll(nuevaEncuesta())} disabled={commentMutation.isPending} />
-                  <button
-                    className="cc-cancel"
-                    type="button"
-                    onClick={() => { setCommentFormOpen(false); setCommentText(''); setCommentFiles([]); setCommentPoll(null) }}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    className="save-btn"
-                    type="button"
-                    disabled={(commentText.trim().length < 1 && commentFiles.length === 0 && !pollValido(commentPoll)) || commentMutation.isPending}
-                    onClick={handleCommentSubmit}
-                  >
-                    {commentMutation.isPending ? 'Publicando...' : 'Comentar'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
+          <CreateCommentPanel
+            scopeFields={{ tema_id: id }}
+            invalidateKey={['replies', 'topic', id]}
+          />
         )}
 
         <CommentThread

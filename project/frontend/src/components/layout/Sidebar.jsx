@@ -21,7 +21,7 @@ function JoinBanner() {
   )
 }
 
-function CommunityCard({ categoryCount, topicCount }) {
+function CommunityCard({ categoryCount, homeCommentCount, topicCount }) {
   return (
     <div className="sidebar-card">
       <div className="sidebar-card-header">Comunidad</div>
@@ -29,6 +29,12 @@ function CommunityCard({ categoryCount, topicCount }) {
         <div className="stat-row">
           <span className="stat-row-label">Categorías activas</span>
           <span className="stat-row-value">{categoryCount ?? '—'}</span>
+        </div>
+        {/* Solo comentarios de Home de primer nivel (los que se publican directo
+            en el Home): no cuentan los de categoría/tema ni las respuestas. */}
+        <div className="stat-row">
+          <span className="stat-row-label">Comentarios</span>
+          <span className="stat-row-value">{homeCommentCount ?? '—'}</span>
         </div>
         {topicCount != null && (
           <div className="stat-row">
@@ -360,6 +366,9 @@ export function Sidebar() {
   const catId = categoryMatch?.params?.id
   const topicMatch = useMatch('/topic/:id')
   const topicId = topicMatch?.params?.id
+  // El permalink de un comentario (incluidos los de Home) vive a nivel foro
+  // global: muestra el mismo sidebar que el Home (comunidad + facultades).
+  const isComment = !!useMatch('/comment/:id')
 
   // Índice liviano: la sidebar solo muestra título/contador/fecha de las
   // categorías nuevas — no necesita la card completa de /categories/active.
@@ -375,7 +384,14 @@ export function Sidebar() {
     enabled: pathname === '/recent',
   })
 
-  if (!SIDEBAR_PAGES.includes(pathname) && !catId && !topicId) return null
+  // Cantidad de comentarios de Home de primer nivel (los directos al Home).
+  const { data: homeCommentCount } = useQuery({
+    queryKey: ['replies', 'home', 'count'],
+    queryFn: () => apiGet('/replies/home/count').then(r => r.data?.total ?? 0),
+    staleTime: 30 * 1000,
+  })
+
+  if (!SIDEBAR_PAGES.includes(pathname) && !catId && !topicId && !isComment) return null
 
   if (catId) {
     return (
@@ -399,9 +415,9 @@ export function Sidebar() {
     <aside className="sidebar" ref={sidebarRef}>
       {!loading && !user && <JoinBanner />}
 
-      {pathname === '/' && (
+      {(pathname === '/' || isComment) && (
         <>
-          <CommunityCard categoryCount={categoryCount} />
+          <CommunityCard categoryCount={categoryCount} homeCommentCount={homeCommentCount} />
           <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
@@ -409,7 +425,7 @@ export function Sidebar() {
       {pathname === '/recent' && (
         <>
           <PopularTagsCard categories={categories} />
-          <CommunityCard categoryCount={categoryCount} topicCount={recentTopics.length} />
+          <CommunityCard categoryCount={categoryCount} homeCommentCount={homeCommentCount} topicCount={recentTopics.length} />
           <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
@@ -417,7 +433,7 @@ export function Sidebar() {
       {pathname === '/popular' && (
         <>
           <NewCatsCard categories={categories} />
-          <CommunityCard categoryCount={categoryCount} />
+          <CommunityCard categoryCount={categoryCount} homeCommentCount={homeCommentCount} />
           <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
@@ -425,7 +441,7 @@ export function Sidebar() {
       {pathname === '/explore' && (
         <>
           <ActiveUsersCard />
-          <CommunityCard categoryCount={categoryCount} />
+          <CommunityCard categoryCount={categoryCount} homeCommentCount={homeCommentCount} />
           <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}

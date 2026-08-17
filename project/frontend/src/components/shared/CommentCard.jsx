@@ -30,6 +30,7 @@ export function CommentCard({
   onDrillDown,
   onCardClick,
   invalidateKey,
+  invalidateKeys = null,
   canPin = false,
   onTogglePin,
 }) {
@@ -53,12 +54,20 @@ export function CommentCard({
   const canEdit = isAuthor && !isHidden
   const canDelete = (isAuthor || isAdmin) && !isHidden
 
+  // Invalida la key de contexto del contenedor + las claves extra (el permalink
+  // pasa el hilo, el contexto del comentario y el feed del Home, para que borrar
+  // una respuesta refresque el hilo y el contador sin recargar).
+  function invalidateAll() {
+    if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
+    for (const k of (invalidateKeys || [])) queryClient.invalidateQueries({ queryKey: k })
+  }
+
   const editMutation = useMutation({
     mutationFn: (cuerpo) => apiPatch(`/replies/update/${comment.id}`, { cuerpo }),
     onSuccess: () => {
       showToast('Comentario actualizado', 'success')
       setEditing(false)
-      if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
+      invalidateAll()
     },
     onError: (err) => showToast(err.message || 'Error al editar', 'error'),
   })
@@ -67,7 +76,7 @@ export function CommentCard({
     mutationFn: () => apiDelete(`/replies/delete/${comment.id}`),
     onSuccess: (data) => {
       showToast(data?.message || 'Comentario eliminado', 'success')
-      if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
+      invalidateAll()
     },
     onError: (err) => showToast(err.message || 'Error al eliminar', 'error'),
   })
@@ -290,11 +299,14 @@ export function CommentCard({
                 Responder
               </button>
               {replyCount > 0 && (
-                <span className="comment-action-info">
+                <span
+                  className="comment-action-info"
+                  aria-label={`${replyCount} ${replyCount === 1 ? 'respuesta' : 'respuestas'}`}
+                >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                   </svg>
-                  {replyCount} {replyCount === 1 ? 'respuesta' : 'respuestas'}
+                  {replyCount} <span className="comment-reply-word">{replyCount === 1 ? 'respuesta' : 'respuestas'}</span>
                 </span>
               )}
               <button
@@ -312,7 +324,7 @@ export function CommentCard({
 
         {replyOpen && !editing && (
           <CommentForm
-            placeholder="Respuesta (*)"
+            placeholder="Respuesta"
             submitLabel="Responder"
             autoFocus
             onCancel={() => setReplyOpen(false)}

@@ -272,15 +272,23 @@ CREATE TABLE comentario (
   motivo_inactivacion     motivo_inactivacion NULL,
   fecha_inactivacion      TIMESTAMPTZ NULL,
   inactivado_directo      BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Fase 22: comentario de Home (foro global, sin categoría ni tema). El ámbito
+  -- home se marca con este flag explícito, nunca con "los dos FK en NULL", para
+  -- que un bug no pueda crear comentarios huérfanos.
+  es_home                 BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Tres ámbitos mutuamente excluyentes: exactamente uno presente.
   CONSTRAINT comentario_target_check CHECK (
-    (tema_id IS NOT NULL AND categoria_id IS NULL) OR
-    (tema_id IS NULL AND categoria_id IS NOT NULL)
+    (tema_id IS NOT NULL)::int + (categoria_id IS NOT NULL)::int + (es_home)::int = 1
   )
 );
 
 -- Índices para jerarquía de comentarios
 CREATE INDEX idx_comentario_tema_id ON comentario(tema_id);
 CREATE INDEX idx_comentario_padre_id ON comentario(comentario_padre_id);
+-- Stream de comentarios de Home del feed: sólo comentarios de Home de primer
+-- nivel (el feed nunca lista respuestas), para un índice chico y selectivo.
+CREATE INDEX idx_comentario_home ON comentario(contenido_id)
+  WHERE es_home = TRUE AND comentario_padre_id IS NULL;
 
 -- historial de edición de comentario
 CREATE TABLE historial_edicion_comentario (

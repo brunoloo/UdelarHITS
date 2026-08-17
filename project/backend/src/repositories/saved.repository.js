@@ -93,13 +93,22 @@ const getSavedComentarios = async (usuarioId) => {
     SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
       con.cuerpo, con.fecha_creacion, con.autor_id,
       u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
-      CASE WHEN com.tema_id IS NOT NULL THEN 'tema' ELSE 'categoria' END AS tipo,
+      CASE
+        WHEN com.tema_id IS NOT NULL THEN 'tema'
+        WHEN com.categoria_id IS NOT NULL THEN 'categoria'
+        ELSE 'home'
+      END AS tipo,
+      com.es_home,
       COALESCE(
         CASE WHEN t.estado = 'inactivo' THEN NULL ELSE t.titulo END,
         CASE WHEN cat.estado = 'inactiva' THEN NULL ELSE cat.titulo END
       ) AS destino_titulo,
       COALESCE(com.tema_id, com.categoria_id) AS destino_id,
-      CASE WHEN com.tema_id IS NOT NULL THEN tc.estado ELSE cat.estado END AS categoria_estado,
+      CASE
+        WHEN com.tema_id IS NOT NULL THEN tc.estado
+        WHEN com.categoria_id IS NOT NULL THEN cat.estado
+        ELSE NULL
+      END AS categoria_estado,
       t.estado AS tema_estado,
       com.comentario_padre_id,
       (SELECT u_p.nickname FROM contenido con_p JOIN usuario u_p ON u_p.id = con_p.autor_id WHERE con_p.id = com.comentario_padre_id) AS padre_autor_nickname,

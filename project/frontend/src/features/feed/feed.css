@@ -64,6 +64,22 @@
   margin-bottom: 10px;
 }
 
+/* Skeleton del tipo comentario del feed mixto: avatar + líneas de cuerpo. */
+.skeleton-card--comment {
+  display: flex;
+  gap: 12px;
+}
+.skeleton--avatar {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+.skeleton-card-lines {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* ── CREATE CATEGORY TRIGGER ── */
 .create-cat {
   margin-bottom: 10px;

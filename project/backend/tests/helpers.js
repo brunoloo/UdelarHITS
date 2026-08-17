@@ -163,3 +163,15 @@ export async function createReply(cookie, over = {}) {
   }
   return res.body.data;
 }
+
+// Comentario de Home (foro global, sin categoría ni tema). Se pide explícito con
+// es_home=true. Aceptá `over` para adjuntar encuesta u otros campos.
+export async function createHomeReply(cookie, over = {}) {
+  const body = { cuerpo: 'Comentario de Home', es_home: true, ...over };
+  const res = await request(app).post('/api/replies/create')
+    .set('Cookie', cookie).send(body);
+  if (res.status >= 400) {
+    throw new Error(`createHomeReply falló (${res.status}): ${JSON.stringify(res.body)}`);
+  }
+  return res.body.data;
+}

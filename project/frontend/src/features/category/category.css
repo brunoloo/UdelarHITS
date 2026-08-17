@@ -164,54 +164,9 @@
    estén disponibles desde el primer frame en todas las rutas — incluida
    ProfilePage, que los usa pero no carga este chunk. Ver comentario allá. */
 
-/* ── CREATE TOPIC TRIGGER ── */
-.create-topic { margin: 0 0 10px 0; }
-.create-topic-trigger {
-  width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 12px 14px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
-  text-align: left;
-  font-family: 'DM Sans', sans-serif;
-}
-.create-topic-trigger:hover {
-  background: var(--surface-2);
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-1);
-}
-.ct-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--accent-gradient-end, var(--accent)));
-  flex-shrink: 0;
-  overflow: hidden;
-}
-.ct-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.ct-placeholder { flex: 1; color: var(--text-muted); font-size: 14px; }
-.ct-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--accent);
-  color: var(--text-on-accent);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 7px 14px;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
+/* El trigger colapsado (.create-topic* / .ct-*) vive ahora en la fuente única
+   components/shared/CreatePanel.css, importada por CreateTopicPanel y
+   CreateCommentPanel (antes se duplicaba acá y salía sin estilo en el Home). */
 
 /* ── COMMENT CARD ── */
 .comment-card {

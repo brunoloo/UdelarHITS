@@ -26,7 +26,9 @@ function PopularCard({ category, rank }) {
   const count = Number(category.contador_temas) || 0
   const commentCount = Number(category.contador_comentarios) || 0
   const temasRecientes = Number(category.temas_recientes) || 0
-  const comentariosRecientes = Number(category.comentarios_recientes) || 0
+  // Solo comentarios de primer nivel directos a la categoría (no respuestas ni
+  // comentarios de temas), igual que el contador total de la card.
+  const comentariosRecientes = Number(category.comentarios_directos_recientes) || 0
 
   return (
     <Link className="popular-card" to={`/category/${encodeURIComponent(category.id)}`}>

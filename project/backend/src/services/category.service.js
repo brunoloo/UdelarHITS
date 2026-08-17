@@ -10,7 +10,8 @@ import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   subscribeCategory, unsubscribeCategory, isSubscribedCategory } from '../repositories/category.repository.js';
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
-import { FEED } from '../config/feedConfig.js';
+import { getHomeCommentsChrono, getHomeCommentsPersonalized } from '../repositories/reply.repository.js';
+import { FEED, CADENCIA_HOME } from '../config/feedConfig.js';
 import { isValidCategoryIcon } from '../config/categoryIcons.js';
 
 const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }) => {
@@ -234,24 +235,80 @@ const getCategoryIndexService = async () => {
   return await getCategoryIndex();
 };
 
-// ── Feed del Home (paginado por cursor) ──
-// El cursor codifica en base64url el modo y la posición: {m:'p', s, id} para
-// el feed personalizado (score + id) o {m:'c', f, id} para el cronológico
-// (fecha + id). El modo va adentro para detectar cursores de otro modo
-// (p. ej. el usuario cerró sesión a mitad de scroll) y rechazarlos.
+// ── Feed del Home: dos streams intercalados por cadencia ──
+// El Home mezcla categorías (stream A) y comentarios de Home (stream B). Cada
+// stream se rankea SOLO contra ítems de su tipo y luego se intercalan con una
+// cadencia fija (CADENCIA_HOME): no compiten en un único ranking, así que no hay
+// que calibrar magnitudes entre tipos. El balance se ajusta con la cadencia.
+//
+// El cursor (base64url, versionado v:2) lleva el estado de AMBOS streams más la
+// posición dentro del patrón de cadencia, para que el corte de página no
+// reinicie el intercalado:
+//   { v:2, m:'p'|'c', cat:{s,id}|{f,id}|null, com:{s,id}|{f,id}|null, slot:n }
+// null = ese stream se agotó. `m` distingue personalizado/cronológico para
+// rechazar un cursor de otro modo (login/logout a mitad de scroll). v:2 hace que
+// un cursor viejo (formato Fase <22) devuelva 400 en vez de reinterpretarse mal.
+const CADENCE_PATTERN = [
+  ...Array(CADENCIA_HOME.categorias).fill('categoria'),
+  ...Array(CADENCIA_HOME.comentarios).fill('comentario'),
+];
+const CADENCE_LEN = CADENCE_PATTERN.length;
+
 const encodeFeedCursor = (payload) =>
   Buffer.from(JSON.stringify(payload)).toString('base64url');
+
+// Valida la parte de un stream del cursor. Tres formas posibles:
+//   null → stream agotado (no se vuelve a pedir)
+//   {}   → activo pero sin avanzar (se pide desde el inicio). Ocurre cuando una
+//          página no consumió nada de ese stream (p. ej. páginas muy chicas).
+//   {id, s|f} → posición del último ítem consumido, según el modo.
+const validStreamCursor = (c, mode) => {
+  if (c === null) return true;
+  if (typeof c !== 'object') return false;
+  if (Object.keys(c).length === 0) return true;
+  if (!/^\d+$/.test(String(c.id))) return false;
+  return mode === 'p' ? /^\d+$/.test(String(c.s)) : !isNaN(Date.parse(c.f));
+};
 
 const decodeFeedCursor = (cursor) => {
   try {
     const p = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
-    if (p?.m === 'p' && /^\d+$/.test(String(p.s)) && /^\d+$/.test(String(p.id))) return p;
-    if (p?.m === 'c' && !isNaN(Date.parse(p.f)) && /^\d+$/.test(String(p.id))) return p;
+    if (p?.v === 2 && (p.m === 'p' || p.m === 'c')
+        && Number.isInteger(p.slot) && p.slot >= 0
+        && validStreamCursor(p.cat ?? null, p.m)
+        && validStreamCursor(p.com ?? null, p.m)) {
+      return { v: 2, m: p.m, cat: p.cat ?? null, com: p.com ?? null, slot: p.slot };
+    }
   } catch { /* cae al throw de abajo */ }
   const err = new Error('Cursor de paginación inválido');
   err.code = 'BAD_REQUEST';
   throw err;
 };
+
+// Intercalado determinístico de los dos streams (ya ordenados) según la cadencia,
+// arrancando en `startSlot`. `slot` avanza una posición por cada ítem colocado;
+// si el stream preferido por ese slot está agotado, se toma del otro (sin dejar
+// huecos). Devuelve los ítems y cuántos se consumieron de cada stream.
+function interleaveStreams(cats, coms, startSlot, pageSize) {
+  const items = [];
+  let ci = 0, mi = 0;
+  let slot = ((startSlot % CADENCE_LEN) + CADENCE_LEN) % CADENCE_LEN;
+  while (items.length < pageSize && (ci < cats.length || mi < coms.length)) {
+    const pref = CADENCE_PATTERN[slot];
+    let picked = null;
+    if (pref === 'categoria') {
+      if (ci < cats.length) picked = { kind: 'categoria', row: cats[ci++] };
+      else if (mi < coms.length) picked = { kind: 'comentario', row: coms[mi++] };
+    } else {
+      if (mi < coms.length) picked = { kind: 'comentario', row: coms[mi++] };
+      else if (ci < cats.length) picked = { kind: 'categoria', row: cats[ci++] };
+    }
+    if (!picked) break; // defensivo: ambos agotados
+    items.push(picked);
+    slot = (slot + 1) % CADENCE_LEN;
+  }
+  return { items, usedCat: ci, usedCom: mi, endSlot: slot };
+}
 
 const getCategoryFeedService = async (user, { limit, cursor } = {}) => {
   const parsed = parseInt(limit, 10);
@@ -262,6 +319,7 @@ const getCategoryFeedService = async (user, { limit, cursor } = {}) => {
 
   // Personalizado solo si hay usuario con alguna señal (participación,
   // suscripción o likes). Cold start / invitado → cronológico, como Recientes.
+  // El modo aplica a AMBOS streams.
   const personalized = user ? await hasFeedSignals(user.id) : false;
   const mode = personalized ? 'p' : 'c';
 
@@ -275,50 +333,85 @@ const getCategoryFeedService = async (user, { limit, cursor } = {}) => {
     }
   }
 
-  // Se pide una fila extra solo para saber si hay página siguiente.
-  const rows = personalized
-    ? await getPersonalizedFeed(user.id, {
-        limit: pageSize + 1,
-        cursorScore: cur?.s ?? null,
-        cursorId: cur?.id ?? null,
-      })
-    : await getChronoFeed({
-        limit: pageSize + 1,
-        cursorFecha: cur?.f ?? null,
-        cursorId: cur?.id ?? null,
-      });
+  // Se pide una fila extra por stream para saber si quedan más; y como una página
+  // podría llenarse toda de un tipo (si el otro se agotó), pageSize+1 alcanza para
+  // llenarla desde cualquiera de los dos.
+  const fetchN = pageSize + 1;
+  const catActive = !cur || cur.cat !== null; // false = agotado en páginas previas
+  const comActive = !cur || cur.com !== null;
+  // {} = "activo, desde el inicio" (página 1, o un stream que una página previa
+  // no llegó a tocar); distinto de null (agotado).
+  const catCur = cur ? cur.cat : {};
+  const comCur = cur ? cur.com : {};
+  const startSlot = cur ? cur.slot : 0;
 
-  const hasMore = rows.length > pageSize;
-  const items = rows.slice(0, pageSize);
+  const [cats, coms] = await Promise.all([
+    catActive
+      ? (personalized
+          ? getPersonalizedFeed(user.id, { limit: fetchN, cursorScore: catCur?.s ?? null, cursorId: catCur?.id ?? null })
+          : getChronoFeed({ limit: fetchN, cursorFecha: catCur?.f ?? null, cursorId: catCur?.id ?? null }))
+      : Promise.resolve([]),
+    comActive
+      ? (personalized
+          ? getHomeCommentsPersonalized(user.id, { limit: fetchN, cursorScore: comCur?.s ?? null, cursorId: comCur?.id ?? null })
+          : getHomeCommentsChrono({ limit: fetchN, cursorFecha: comCur?.f ?? null, cursorId: comCur?.id ?? null, viewerId: user?.id ?? null }))
+      : Promise.resolve([]),
+  ]);
 
-  let nextCursor = null;
-  if (hasMore) {
-    const last = items[items.length - 1];
-    nextCursor = personalized
-      ? encodeFeedCursor({ m: 'p', s: String(last.score), id: String(last.id) })
-      : encodeFeedCursor({ m: 'c', f: new Date(last.fecha_creacion).toISOString(), id: String(last.id) });
-  }
+  const { items, usedCat, usedCom, endSlot } = interleaveStreams(cats, coms, startSlot, pageSize);
 
-  // score es interno del ranking, no parte del contrato de la card. fijada_hasta
-  // tampoco se expone crudo: se colapsa a un booleano `fijada` más abajo.
-  for (const item of items) { delete item.score; delete item.fijada_hasta; item.fijada = false; }
+  // Cursor de cada stream para la próxima página:
+  //   null            → agotado (consumimos todo lo que había)
+  //   incoming (igual) → no se consumió nada de ese stream en esta página
+  //   última key       → posición del último ítem consumido
+  const nextStreamCursor = (active, incoming, rows, used) => {
+    if (!active) return null;
+    const exhausted = used === rows.length && rows.length < fetchN;
+    if (exhausted) return null;
+    if (used === 0) return incoming;
+    const last = rows[used - 1];
+    return personalized
+      ? { s: String(last.score), id: String(last.id) }
+      : { f: new Date(last.fecha_creacion).toISOString(), id: String(last.id) };
+  };
 
-  // Categoría fijada por un admin: encabeza el feed y sólo en la primera página.
-  // Vive fuera del cursor (se excluye del feed regular en el repo), así no duplica
-  // ni desajusta la paginación. Expira sola cuando fijada_hasta <= NOW().
+  const nextCat = nextStreamCursor(catActive, catCur, cats, usedCat);
+  const nextCom = nextStreamCursor(comActive, comCur, coms, usedCom);
+  const hasMore = nextCat !== null || nextCom !== null;
+  const nextCursor = hasMore
+    ? encodeFeedCursor({ v: 2, m: mode, cat: nextCat, com: nextCom, slot: endSlot })
+    : null;
+
+  // Normalizar a la forma de card + discriminador `tipo`. score/fijada_hasta son
+  // internos del ranking, no parte del contrato de la card.
+  const out = items.map(({ kind, row }) => {
+    if (kind === 'categoria') {
+      delete row.score; delete row.fijada_hasta; row.fijada = false;
+      row.tipo = 'categoria';
+    } else {
+      delete row.score;
+      row.tipo = 'comentario';
+    }
+    return row;
+  });
+
+  // Categoría fijada por un admin: encabeza el feed y sólo en la primera página,
+  // FUERA del intercalado. Vive fuera del cursor (se excluye del stream A en el
+  // repo), así no duplica ni desajusta la paginación. Expira sola (fijada_hasta).
   if (!cursor) {
     const pinned = await getPinnedHomeCategory();
     if (pinned) {
       delete pinned.score;
       delete pinned.fijada_hasta;
       pinned.fijada = true;
-      // Defensa: el feed regular ya la excluye, pero evitamos duplicarla igual.
-      const rest = items.filter(it => String(it.id) !== String(pinned.id));
+      pinned.tipo = 'categoria';
+      // Defensa: el stream A ya la excluye, pero evitamos duplicarla igual.
+      const rest = out.filter(it => !(it.tipo === 'categoria' && String(it.id) === String(pinned.id)));
       return { items: [pinned, ...rest], nextCursor };
     }
   }
 
-  return { items, nextCursor };
+  return { items: out, nextCursor };
 };
 
 const getParticipantsByCategoryIdService = async (userId, categoriaId) => {

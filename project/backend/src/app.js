@@ -14,6 +14,7 @@ import maintenanceMiddleware from './middleware/maintenance.js';
 
 // Import routes
 import API from './routes/API.js';
+import SEORoutes from './routes/seo.routes.js';
 
 // Express
 const app = express();
@@ -222,6 +223,13 @@ app.use('/api/reports', limiterIf(reporteLimiter));
 
 // routes
 app.use("/api", API);
+
+// SEO: documentos HTML con metadata inyectada (categorías, temas, perfiles),
+// sitemap.xml y robots.txt. DEBE ir después de /api y ANTES del catch-all de la
+// SPA: intercepta las rutas de detalle para que Googlebot y WhatsApp/Telegram
+// vean metadata real por URL en vez del index.html genérico. Las rutas que no
+// matchean acá siguen al catch-all con la metadata por defecto (home, /about…).
+app.use(SEORoutes);
 
 // SPA fallback: cualquier ruta que no sea /api ni /central devuelve el index.html
 // de React. Los pedidos a /assets/* son archivos reales del build: si no los

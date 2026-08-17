@@ -1,7 +1,8 @@
 import pool from '../config/db.js';
 import { encuestaSubquery } from './encuesta.repository.js';
+import { FEED_COMENTARIO_HOME as CH } from '../config/feedConfig.js';
 
-const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario_padre_id }) => {
+const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario_padre_id, es_home = false }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -14,10 +15,10 @@ const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario
     const contenido = contenidoRows[0];
 
     const { rows: comentarioRows } = await client.query(`
-      INSERT INTO comentario (contenido_id, tema_id, categoria_id, comentario_padre_id)
-      VALUES ($1, $2, $3, $4)
-      RETURNING contenido_id, tema_id, categoria_id, comentario_padre_id, estado
-    `, [contenido.id, tema_id || null, categoria_id || null, comentario_padre_id || null]);
+      INSERT INTO comentario (contenido_id, tema_id, categoria_id, comentario_padre_id, es_home)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING contenido_id, tema_id, categoria_id, comentario_padre_id, es_home, estado
+    `, [contenido.id, tema_id || null, categoria_id || null, comentario_padre_id || null, !!es_home]);
     const comentario = comentarioRows[0];
 
     await client.query('COMMIT');
@@ -85,14 +86,15 @@ const deleteReplyById = async (id) => {
 const getReplyById = async (id) => {
   const q = `
     SELECT com.contenido_id AS id, con.autor_id, con.cuerpo, com.estado,
-      com.tema_id, com.categoria_id, com.comentario_padre_id,
+      com.tema_id, com.categoria_id, com.comentario_padre_id, com.es_home,
       COALESCE(
         CASE WHEN t.estado = 'inactivo' THEN NULL ELSE t.titulo END,
         CASE WHEN cat.estado = 'inactiva' THEN NULL ELSE cat.titulo END
       ) AS destino_titulo,
       CASE
         WHEN com.tema_id IS NOT NULL THEN 'tema'
-        ELSE 'categoria'
+        WHEN com.categoria_id IS NOT NULL THEN 'categoria'
+        ELSE 'home'
       END AS tipo
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
@@ -108,10 +110,12 @@ const getReplyById = async (id) => {
 const getRepliesByAuthorId = async (autorId) => {
   const q = `
     SELECT com.contenido_id AS id, con.cuerpo, con.fecha_creacion,
-      CASE 
+      CASE
         WHEN com.tema_id IS NOT NULL THEN 'tema'
-        ELSE 'categoria'
+        WHEN com.categoria_id IS NOT NULL THEN 'categoria'
+        ELSE 'home'
       END AS tipo,
+      com.es_home,
       COALESCE(
         CASE WHEN t.estado = 'inactivo' THEN NULL ELSE t.titulo END,
         CASE WHEN cat.estado = 'inactiva' THEN NULL ELSE cat.titulo END
@@ -138,8 +142,10 @@ const getRepliesByUserId = async (userId, viewerId = null) => {
       u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
       CASE
         WHEN com.tema_id IS NOT NULL THEN 'tema'
-        ELSE 'categoria'
+        WHEN com.categoria_id IS NOT NULL THEN 'categoria'
+        ELSE 'home'
       END AS tipo,
+      com.es_home,
       COALESCE(
         CASE WHEN t.estado = 'inactivo' THEN NULL ELSE t.titulo END,
         CASE WHEN cat.estado = 'inactiva' THEN NULL ELSE cat.titulo END
@@ -147,7 +153,8 @@ const getRepliesByUserId = async (userId, viewerId = null) => {
       COALESCE(com.tema_id, com.categoria_id) AS destino_id,
       CASE
         WHEN com.tema_id IS NOT NULL THEN tc.estado
-        ELSE cat.estado
+        WHEN com.categoria_id IS NOT NULL THEN cat.estado
+        ELSE NULL
       END AS categoria_estado,
       t.estado AS tema_estado,
       com.comentario_padre_id,
@@ -177,6 +184,67 @@ const getRepliesByUserId = async (userId, viewerId = null) => {
   return rows;
 };
 
+// Comentarios recientes de TODA la plataforma (Home, categoría y tema), en la
+// misma forma de card que consume CommentEntry/CommentCard. Incluye tanto los
+// comentarios de primer nivel como las respuestas. Solo devuelve comentarios
+// visibles cuyo contenedor está activo — mismo criterio de "recientes" que los
+// temas (getRecentTopics): nada de contenedores inactivos. El más nuevo primero;
+// el id desempata para no repetir ni saltar en empates de fecha.
+const getRecentReplies = async (limit = 30, viewerId = null) => {
+  const q = `
+    SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
+      con.cuerpo, con.fecha_creacion, con.autor_id,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
+      CASE
+        WHEN com.tema_id IS NOT NULL THEN 'tema'
+        WHEN com.categoria_id IS NOT NULL THEN 'categoria'
+        ELSE 'home'
+      END AS tipo,
+      com.es_home,
+      COALESCE(
+        CASE WHEN t.estado = 'inactivo' THEN NULL ELSE t.titulo END,
+        CASE WHEN cat.estado = 'inactiva' THEN NULL ELSE cat.titulo END
+      ) AS destino_titulo,
+      COALESCE(com.tema_id, com.categoria_id) AS destino_id,
+      CASE
+        WHEN com.tema_id IS NOT NULL THEN tc.estado
+        WHEN com.categoria_id IS NOT NULL THEN cat.estado
+        ELSE NULL
+      END AS categoria_estado,
+      t.estado AS tema_estado,
+      com.comentario_padre_id,
+      (SELECT u_p.nickname
+         FROM contenido con_p
+         JOIN usuario u_p ON u_p.id = con_p.autor_id
+        WHERE con_p.id = com.comentario_padre_id) AS padre_autor_nickname,
+      (SELECT u_p.estado
+         FROM contenido con_p
+         JOIN usuario u_p ON u_p.id = con_p.autor_id
+        WHERE con_p.id = com.comentario_padre_id) AS padre_autor_estado,
+      (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
+      (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
+      (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
+      (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano, 'estado', a.estado) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
+      ${encuestaSubquery('$2')} AS encuesta
+    FROM comentario com
+    JOIN contenido con ON con.id = com.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
+    LEFT JOIN tema t ON t.contenido_id = com.tema_id
+    LEFT JOIN categoria tc ON tc.id = t.categoria_id
+    LEFT JOIN categoria cat ON cat.id = com.categoria_id
+    WHERE com.estado = 'visible'
+      AND (
+        com.es_home = TRUE
+        OR (com.tema_id IS NOT NULL AND t.estado = 'activo' AND tc.estado = 'activa')
+        OR (com.tema_id IS NULL AND com.categoria_id IS NOT NULL AND cat.estado = 'activa')
+      )
+    ORDER BY con.fecha_creacion DESC, com.contenido_id DESC
+    LIMIT $1
+  `;
+  const { rows } = await pool.query(q, [limit, viewerId]);
+  return rows;
+};
+
 const getLikedCommentsByUserId = async (userId, viewerId = null) => {
   // Comentarios a los que el usuario $1 dio "me gusta", en la misma forma que
   // consume CommentCard. El INNER JOIN con comentario excluye reacciones sobre
@@ -187,8 +255,10 @@ const getLikedCommentsByUserId = async (userId, viewerId = null) => {
       u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
       CASE
         WHEN com.tema_id IS NOT NULL THEN 'tema'
-        ELSE 'categoria'
+        WHEN com.categoria_id IS NOT NULL THEN 'categoria'
+        ELSE 'home'
       END AS tipo,
+      com.es_home,
       COALESCE(
         CASE WHEN t.estado = 'inactivo' THEN NULL ELSE t.titulo END,
         CASE WHEN cat.estado = 'inactiva' THEN NULL ELSE cat.titulo END
@@ -196,7 +266,8 @@ const getLikedCommentsByUserId = async (userId, viewerId = null) => {
       COALESCE(com.tema_id, com.categoria_id) AS destino_id,
       CASE
         WHEN com.tema_id IS NOT NULL THEN tc.estado
-        ELSE cat.estado
+        WHEN com.categoria_id IS NOT NULL THEN cat.estado
+        ELSE NULL
       END AS categoria_estado,
       t.estado AS tema_estado,
       com.comentario_padre_id,
@@ -401,7 +472,92 @@ const getReplyContext = async (commentId, userId = null) => {
   return rows;
 };
 
-export { createReply, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
+// Cantidad de comentarios de Home de PRIMER NIVEL y visibles (los que se ven en
+// el feed del Home). Excluye respuestas (comentario_padre_id NOT NULL) y
+// comentarios de categoría/tema (es_home = FALSE).
+const countHomeComments = async () => {
+  const q = `
+    SELECT COUNT(*)::int AS total
+    FROM comentario
+    WHERE es_home = TRUE AND comentario_padre_id IS NULL AND estado = 'visible'
+  `;
+  const { rows } = await pool.query(q);
+  return rows[0].total;
+};
+
+// ── Stream B del feed del Home: comentarios de Home de primer nivel y visibles ──
+// Misma forma de card que getRepliesByCategoryId (autor, likes, mi_reaccion,
+// contador_respuestas, adjuntos, encuesta con estado del viewer, estado). Se
+// ordena SOLO contra otros comentarios de Home; el servicio lo intercala con el
+// stream de categorías por cadencia (no compiten en un mismo ranking).
+
+// Fragmento de columnas de la card. `viewer` es el placeholder del usuario para
+// mi_reaccion / voto de encuesta ('$4' en chrono, '$1' en personalizado).
+const homeCommentCard = (viewer) => `
+  com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion,
+  con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
+  con.fecha_creacion, u.estado AS autor_estado,
+  (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
+  (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
+  (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = ${viewer} LIMIT 1) AS mi_reaccion,
+  (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano, 'estado', a.estado) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
+  ${encuestaSubquery(viewer)} AS encuesta`;
+
+// Modo cronológico (invitado / cold start): fecha_creacion DESC, id DESC.
+// Cursor compuesto (fecha, id) para no repetir ni saltar en empates de fecha.
+const getHomeCommentsChrono = async ({ limit, cursorFecha = null, cursorId = null, viewerId = null }) => {
+  const q = `
+    SELECT ${homeCommentCard('$4')}
+    FROM comentario com
+    JOIN contenido con ON con.id = com.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
+    WHERE com.es_home = TRUE AND com.comentario_padre_id IS NULL AND com.estado = 'visible'
+      AND ($2::timestamptz IS NULL
+       OR (con.fecha_creacion, com.contenido_id) < ($2::timestamptz, $3::bigint))
+    ORDER BY con.fecha_creacion DESC, com.contenido_id DESC
+    LIMIT $1
+  `;
+  const { rows } = await pool.query(q, [limit, cursorFecha, cursorId, viewerId]);
+  return rows;
+};
+
+// Modo personalizado: score propio (novedad + popularidad + sigue-al-autor),
+// entero y estable dentro del día → el cursor (score, id) pagina sin repetir.
+const getHomeCommentsPersonalized = async (usuarioId, { limit, cursorScore = null, cursorId = null }) => {
+  const q = `
+    WITH scored AS (
+      SELECT com.contenido_id AS id,
+        ( ${CH.W_NOVEDAD_DIA} * GREATEST(0,
+            ${CH.NOVEDAD_DIAS} - FLOOR(EXTRACT(EPOCH FROM (NOW() - con.fecha_creacion)) / 86400))
+        + ${CH.W_POPULARIDAD} * (
+            (SELECT COUNT(*) FROM reaccion r WHERE r.contenido_id = com.contenido_id AND r.tipo = 'meGusta')
+          + (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible')
+          )
+        + CASE WHEN EXISTS (
+            SELECT 1 FROM usuario_seguidor us
+            WHERE us.seguidor_id = $1 AND us.seguido_id = con.autor_id AND us.estado = 'aceptado'
+          ) THEN ${CH.W_SIGUE_AUTOR} ELSE 0 END
+        )::bigint AS score
+      FROM comentario com
+      JOIN contenido con ON con.id = com.contenido_id
+      WHERE com.es_home = TRUE AND com.comentario_padre_id IS NULL AND com.estado = 'visible'
+    )
+    SELECT ${homeCommentCard('$1')}, s.score
+    FROM comentario com
+    JOIN contenido con ON con.id = com.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
+    JOIN scored s ON s.id = com.contenido_id
+    WHERE ($3::bigint IS NULL
+       OR (s.score, com.contenido_id) < ($3::bigint, $4::bigint))
+    ORDER BY s.score DESC, com.contenido_id DESC
+    LIMIT $2
+  `;
+  const { rows } = await pool.query(q, [usuarioId, limit, cursorScore, cursorId]);
+  return rows;
+};
+
+export { createReply, countHomeComments, getHomeCommentsChrono, getHomeCommentsPersonalized,
+  getRecentReplies, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
   getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies,
   hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx, getReplyEditHistory,
   getReplyContext, getLikedCommentsByUserId }

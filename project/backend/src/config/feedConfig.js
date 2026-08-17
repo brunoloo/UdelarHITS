@@ -45,3 +45,39 @@ export const FEED = {
   NOVEDAD_DIAS: 14,
   W_NOVEDAD_DIA: 8,     // máx. 8*14 = 112 el día de creación
 };
+
+// =========================================================
+// Feed del Home: dos streams intercalados por cadencia
+// =========================================================
+// El Home mezcla DOS tipos de ítem: categorías (stream A) y comentarios de Home
+// (stream B). No compiten en un único ranking — cada stream se ordena SOLO
+// contra ítems de su mismo tipo y luego se INTERCALAN con una cadencia fija.
+// Ventaja: el score de cada tipo solo tiene que ordenar bien dentro de su tipo
+// (no hay que calibrar magnitudes entre categorías y comentarios), y el balance
+// del feed se ajusta con un único valor —la cadencia— en vez de con pesos.
+//
+// Patrón: CADENCIA_HOME.categorias categorías, luego CADENCIA_HOME.comentarios
+// comentarios, y se repite. Si un stream se agota, el otro llena los slots
+// restantes sin dejar huecos (foro solo con comentarios → feed de comentarios,
+// y viceversa).
+export const CADENCIA_HOME = { categorias: 2, comentarios: 3 };
+
+// Score del stream B (comentarios de Home). Como no compite con las categorías,
+// sus pesos NO necesitan ser comparables con FEED.* — solo ordenar comentarios
+// entre sí. Igual que el score de categorías, es ENTERO y estable dentro del día
+// (novedad por días enteros) para que el cursor (score, id) pagine sin repetir.
+//
+//   score = novedad + popularidad + sigue_al_autor
+//
+// Sin usuario (o cold start) el stream B cae a orden cronológico, igual que el A.
+export const FEED_COMENTARIO_HOME = {
+  // Novedad: boost lineal que decae por día, piso 0.
+  NOVEDAD_DIAS: 14,
+  W_NOVEDAD_DIA: 8,      // máx. 8*14 = 112 el día de creación
+
+  // Popularidad: interacción acumulada (likes + respuestas directas visibles).
+  W_POPULARIDAD: 5,      // puntos por cada like o respuesta
+
+  // Interés/participación: el viewer sigue (aceptado) al autor del comentario.
+  W_SIGUE_AUTOR: 500,
+};

@@ -1,6 +1,20 @@
 /* ── Recent page ── */
 .recent-page {
   width: 100%;
+  /* Gap ítem→ítem único para la lista mixta (temas · categorías · comentarios),
+     así ninguno queda más junto que otro. Derivado del único token de layout
+     disponible (--radius), sin hardcodear el valor. Es más grande que el gap
+     chico del label del comentario (.comment-entry-head), para que ese label
+     quede pegado a SU card y separado del ítem anterior. */
+  --recent-item-gap: calc(var(--radius) * 2);
+}
+
+/* El espaciado entre ítems sale de un margen uniforme (mismo valor para los tres
+   tipos), no de los márgenes propios que las cards heredan de otras vistas. */
+.recent-page .topic-card,
+.recent-page .recent-cat-card,
+.recent-page .comment-entry {
+  margin-bottom: var(--recent-item-gap);
 }
 
 .recent-title {
@@ -66,7 +80,6 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
-  margin-bottom: 10px;
   text-decoration: none;
   color: inherit;
   transition: border-color .15s;

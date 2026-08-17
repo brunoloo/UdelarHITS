@@ -7,12 +7,15 @@ import { trackCreateComment } from '../../utils/analytics'
 import { CommentCard } from './CommentCard'
 import './CommentCard.css'
 
-export function CommentThread({ comments, invalidateKey, initialCommentId, onInitialDrillDone, canPin = false, onTogglePin }) {
+export function CommentThread({ comments, invalidateKey, invalidateKeys = null, initialCommentId, initialStack = null, onExit = null, onInitialDrillDone, canPin = false, onTogglePin }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
   const lastDrilledId = useRef(null)
 
-  const [stack, setStack] = useState([])
+  // initialStack: siembra el hilo "ya adentro" de un comentario (permalink
+  // /comment/:id, que arranca mostrando el comentario con sus respuestas). En
+  // CategoryPage/TopicPage no se pasa → arranca vacío, como siempre.
+  const [stack, setStack] = useState(() => initialStack || [])
   const [highlightedId, setHighlightedId] = useState(null)
 
   useEffect(() => {
@@ -54,14 +57,17 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
     mutationFn: ({ parentId, cuerpo, files, poll }) => apiPost('/replies/create',
       buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files, poll)
     ),
-    onSuccess: (res) => {
+    onSuccess: (res, { parentId }) => {
       trackCreateComment('reply')
       if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
       else showToast('Respuesta publicada', 'success')
-      if (currentParent) {
-        queryClient.invalidateQueries({ queryKey: ['replies', currentParent.id, 'replies'] })
-      }
+      // Hijos del comentario al que se respondió (la lista que muestra el hilo)
+      // + las claves de contexto del contenedor (perfil/guardados no pasan
+      // ninguna; CategoryPage/TopicPage pasan la suya; el permalink pasa el
+      // contexto del comentario y el feed del Home). Ver invalidateKeys.
+      queryClient.invalidateQueries({ queryKey: ['replies', parentId, 'replies'] })
       if (invalidateKey) queryClient.invalidateQueries({ queryKey: invalidateKey })
+      for (const k of (invalidateKeys || [])) queryClient.invalidateQueries({ queryKey: k })
     },
     onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
   })
@@ -71,10 +77,17 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
   }
 
   function goBack() {
-    setStack(prev => {
-      const next = prev.slice(0, -1)
-      return next
-    })
+    // "Volver" sube un nivel en el hilo. En un permalink el hilo arranca sobre un
+    // piso (initialStack): al llegar a ese piso, "Volver" sale de la página
+    // (onExit) en vez de dejar el stack por debajo del comentario abierto. Sin
+    // initialStack/onExit (categoría/tema) el piso es 0 y se comporta igual que
+    // antes: sube un nivel y desaparece al volver a la lista.
+    const floor = initialStack ? initialStack.length : 0
+    if (stack.length <= floor) {
+      onExit?.()
+      return
+    }
+    setStack(prev => prev.slice(0, -1))
   }
 
   function handleReply(parentId, text, files, poll) {
@@ -112,6 +125,7 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
                 showThreadLine={showThreadLine}
                 onReply={handleReply}
                 invalidateKey={invalidateKey}
+                invalidateKeys={invalidateKeys}
               />
             )
           })}
@@ -137,6 +151,7 @@ export function CommentThread({ comments, invalidateKey, initialCommentId, onIni
               onDrillDown={drillDown}
               onReply={handleReply}
               invalidateKey={invalidateKey}
+              invalidateKeys={invalidateKeys}
               canPin={canPin && !currentParent}
               onTogglePin={onTogglePin}
             />

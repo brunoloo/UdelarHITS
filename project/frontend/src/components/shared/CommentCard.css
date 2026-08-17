@@ -184,9 +184,13 @@
 }
 
 /* ── Ancestor cards (thread stack) ── */
-.comment-card--ancestor {
-  margin-bottom: 0;
-}
+/* Los ancestros conservan el margin-bottom base de .comment-card (10px), para
+   que la separación vertical padre→respuesta sea la misma en TODOS los
+   contextos. Antes esto valía 0 acá, pero en CategoryPage/TopicPage el
+   .comment-card de category.css (misma especificidad, cargado después) lo
+   pisaba a 10px; en el Home (/comment), sin category.css, quedaba en 0 y la
+   respuesta se veía pegada al padre. Al no forzar 0, el margen sale del mismo
+   .comment-card base en los tres lados. */
 
 .comment-card--ancestor + .comment-card--ancestor {
   margin-top: -1px;
