@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { io } from 'socket.io-client'
 import { useAuth } from './AuthContext'
 
 const SocketContext = createContext(null)
@@ -13,9 +12,17 @@ export function SocketProvider({ children }) {
       setSocket(null)
       return
     }
-    const s = io({ withCredentials: true })
-    setSocket(s)
-    return () => { s.disconnect() }
+    let s = null
+    let cancelled = false
+    import('socket.io-client').then(({ io }) => {
+      if (cancelled) return
+      s = io({ withCredentials: true })
+      setSocket(s)
+    })
+    return () => {
+      cancelled = true
+      if (s) s.disconnect()
+    }
   }, [user])
 
   return (

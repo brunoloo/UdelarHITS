@@ -16,15 +16,17 @@ const ENABLED = Boolean(GA_ID) && import.meta.env.PROD
 // Carga el script de gtag.js una sola vez y arranca la config. Idempotente:
 // llamarla más de una vez no reinyecta el script. No-op si el tracking está
 // deshabilitado (dev, o sin Measurement ID).
+//
+// dataLayer y gtag() se definen de inmediato (costo cero: solo un array y una
+// función). Así los eventos disparados antes de que cargue el script se encolan
+// en dataLayer y gtag.js los procesa al arrancar — no se pierden pageviews.
+// El <script> pesado (163 KiB) se inyecta recién después de window.load +
+// requestIdleCallback para no competir con React por el hilo principal durante
+// el render inicial (LCP).
 export function initAnalytics() {
   if (!ENABLED || typeof window === 'undefined') return
   if (window.__ga4Initialized) return
   window.__ga4Initialized = true
-
-  const script = document.createElement('script')
-  script.async = true
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`
-  document.head.appendChild(script)
 
   window.dataLayer = window.dataLayer || []
   // gtag empuja los argumentos crudos a dataLayer; se define así (function, no
@@ -37,6 +39,25 @@ export function initAnalytics() {
   // ruta de React Router (ver trackPageView + RootLayout), evitando duplicar el
   // hit inicial que gtag enviaría por su cuenta.
   gtag('config', GA_ID, { send_page_view: false })
+
+  function loadScript() {
+    const script = document.createElement('script')
+    script.async = true
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`
+    document.head.appendChild(script)
+  }
+
+  if (document.readyState === 'complete') {
+    loadScript()
+  } else {
+    window.addEventListener('load', () => {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(loadScript)
+      } else {
+        setTimeout(loadScript, 0)
+      }
+    })
+  }
 }
 
 // Envío genérico de eventos. Todas las funciones de abajo pasan por acá. No-op
