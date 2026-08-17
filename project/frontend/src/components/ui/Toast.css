@@ -37,3 +37,18 @@
   border-color: var(--status-info-border);
   color: var(--status-info-text);
 }
+
+/* En mobile el toast (position:fixed, centrado) con white-space:nowrap y sin
+   max-width crecía más ancho que el viewport: los mensajes largos (p. ej. el de
+   caracteres permitidos del nickname en /register) se salían por ambos lados y no
+   se podían leer. Lo acotamos al ancho de pantalla y dejamos que el texto envuelva
+   en varias líneas. Desktop queda igual (regla sólo dentro del media query). */
+@media (max-width: 1024px) {
+  .toast {
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
+    white-space: normal;
+    overflow-wrap: break-word;
+    text-align: center;
+  }
+}
