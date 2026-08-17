@@ -10,6 +10,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import passport from './config/passport.js';
 import pool from './config/db.js';
+import maintenanceMiddleware from './middleware/maintenance.js';
 
 // Import routes
 import API from './routes/API.js';
@@ -19,6 +20,12 @@ const app = express();
 
 // Confiar en el proxy (Ngrok, Cloudflare, etc.) para que Rate Limiter obtenga la IP real
 app.set('trust proxy', 1);
+
+// Modo mantenimiento de emergencia: si MAINTENANCE_MODE=true, responde 503 con
+// el HTML estático en TODAS las rutas (excepto /health para que Railway no mate
+// el contenedor). Va antes de TODO para que ni Helmet, ni static, ni la DB se
+// toquen. Activar en Railway: setear la env var y redesplegar.
+app.use(maintenanceMiddleware);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
