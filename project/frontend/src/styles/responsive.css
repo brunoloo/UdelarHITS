@@ -562,9 +562,19 @@
     height: 260px;
   }
 
-  /* Profile tabs: scrollable, no word clipping */
-  .profile-page .section-tabs {
+  /* Profile tabs: scrollable, no word clipping.
+     El centrado de las tabs vive en profile.css (.profile-page .section-tabs, sin
+     media query) y, al ser un chunk lazy que carga DESPUÉS de este archivo, ganaba
+     por orden de fuente a igual especificidad: en mobile las tabs quedaban
+     `justify-content: center` y, al desbordar, el excedente se derramaba hacia la
+     izquierda cortando la primera tab (scrollLeft queda en 0 — NO es un problema de
+     scroll). Con `safe center` se mantienen centradas cuando entran y arrancan
+     desde el inicio cuando desbordan, sin cortar ninguna. Se repite la clase
+     (.section-tabs.section-tabs) sólo para subir especificidad y ganarle al centrado
+     del chunk lazy; `flex-start` queda como fallback para navegadores sin `safe`. */
+  .profile-page .section-tabs.section-tabs {
     justify-content: flex-start;
+    justify-content: safe center;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
