@@ -15,6 +15,7 @@ import { CommentThread } from '../../components/shared/CommentThread'
 import { CreateCommentPanel } from '../../components/shared/CreateCommentPanel'
 import { ReportModal } from '../../components/shared/ReportModal'
 import { timeAgo } from '../../utils/timeAgo'
+import { parseId } from '../../utils/slug'
 import { TopicContentField } from './TopicContentField'
 import { PreviewHint } from '../../components/shared/PreviewHint'
 import { AccordionField } from '../../components/shared/AccordionField'
@@ -23,7 +24,10 @@ import '../category/category.css'
 import './topic.css'
 
 export function TopicPage() {
-  const { id } = useParams()
+  // La URL puede traer slug (/topic/5-como-estudiar): el lookup usa solo el id
+  // numérico líder, para que links con slug y sin slug resuelvan igual.
+  const { id: idParam } = useParams()
+  const id = parseId(idParam)
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const commentIdParam = searchParams.get('commentId')

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Tag } from '../ui/Tag'
 import { CategoryIcon } from './CategoryIcon'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
+import { categoryPath } from '../../utils/slug'
 import './CategoryCardMini.css'
 
 // Versión reducida de la CategoryCard: ícono + título + descripción + etiquetas
@@ -23,7 +24,7 @@ export function CategoryCardMini({ category, className = '', onNavigate }) {
   return (
     <Link
       className={`category-mini-card${className ? ' ' + className : ''}`}
-      to={`/category/${encodeURIComponent(id)}`}
+      to={categoryPath(id, titulo)}
       onClick={onNavigate}
     >
       <div className="category-mini-head">

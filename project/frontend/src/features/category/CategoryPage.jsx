@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
+import { parseId } from '../../utils/slug'
 import { TopicCard } from '../../components/shared/TopicCard'
 import { CommentThread } from '../../components/shared/CommentThread'
 import { CreateCommentPanel } from '../../components/shared/CreateCommentPanel'
@@ -268,7 +269,10 @@ function PinHomeModal({ isOpen, onClose, onConfirm, isPending }) {
 
 // ── MAIN PAGE ──────────────────────────────────────────────────────────────────
 export function CategoryPage() {
-  const { id } = useParams()
+  // La URL puede traer slug (/category/5-parciales-de-logica): el lookup usa solo
+  // el id numérico líder. Así los links con slug resuelven igual que los viejos.
+  const { id: idParam } = useParams()
+  const id = parseId(idParam)
   const { user } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
