@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet, apiPost } from '../../api/client'
 import { UserAvatar } from '../../components/shared/UserAvatar'
@@ -168,6 +168,7 @@ function Carousel({ children, className = '' }) {
 // ── User mini card ──
 function UserMiniCard({ user, onFollowed }) {
   const { showToast } = useToast()
+  const queryClient = useQueryClient()
   const [leaving, setLeaving] = useState(false)
   const mutation = useMutation({
     mutationFn: () => apiPost(`/users/${encodeURIComponent(user.nickname)}/follow`, {}),
@@ -176,6 +177,15 @@ function UserMiniCard({ user, onFollowed }) {
     onSuccess: () => {
       setLeaving(true)
       setTimeout(() => onFollowed(), 300)
+      // El dismiss local de arriba es solo feedback optimista y se pierde al
+      // desmontar Explorar: sin invalidar, la cache de sugeridos queda vieja y
+      // al volver reaparecen los seguidos (solo un F5 lo arreglaba). Invalidamos
+      // todas las queries que leen la relación de seguimiento — mismas keys que
+      // el FollowButton compartido: sugeridos, mi perfil ('me', con sus
+      // contadores y listas) y cualquier perfil ajeno cacheado (prefijo 'user').
+      queryClient.invalidateQueries({ queryKey: ['users', 'suggested'] })
+      queryClient.invalidateQueries({ queryKey: ['me'] })
+      queryClient.invalidateQueries({ queryKey: ['user'] })
     },
     onError: err => showToast(err.message || 'Error', 'error'),
   })
