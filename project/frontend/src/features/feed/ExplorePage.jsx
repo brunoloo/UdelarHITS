@@ -29,9 +29,7 @@ function HeroCard({ category }) {
       <div className="hero-stats">
         <span>{temas} {temas === 1 ? 'tema' : 'temas'} esta semana</span>
         <span>·</span>
-        <span>{comentarios} {comentarios === 1 ? 'comentario' : 'comentarios'}</span>
-        <span>·</span>
-        <span>{Number(category.contador_temas) || 0} temas en total</span>
+        <span>{comentarios} {comentarios === 1 ? 'comentario' : 'comentarios'} esta semana</span>
       </div>
       {etiquetas.length > 0 && (
         <div className="hero-tags">
