@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { escapeLike } from '../utils/escapeLike.js';
 
 const findByEmailOrNickname = async ({ nickname, email }) => {
   const q = `
@@ -344,18 +345,21 @@ const searchUsers = async (query, viewerId = null) => {
     SELECT id, nickname, nombre, url_imagen
     FROM usuario
     WHERE estado = 'activo'
-      AND (nickname ILIKE $1 OR nombre ILIKE $1)
+      AND (nickname ILIKE $1 ESCAPE '\\' OR nombre ILIKE $1 ESCAPE '\\')
       ${viewerId ? `AND id NOT IN (
         SELECT bloqueado_id FROM bloqueo WHERE bloqueador_id = $3
         UNION
         SELECT bloqueador_id FROM bloqueo WHERE bloqueado_id = $3
       )` : ''}
     ORDER BY
-      CASE WHEN nickname ILIKE $2 THEN 0 ELSE 1 END,
+      CASE WHEN nickname ILIKE $2 ESCAPE '\\' THEN 0 ELSE 1 END,
       nickname ASC
     LIMIT 5
   `;
-  const params = [`%${query}%`, `${query}%`];
+  // Escapar comodines LIKE (%/_/\) del input: sin esto "100%" o "a_b" matchean de
+  // más. La cláusula ESCAPE '\' de arriba hace efectivo el escape.
+  const like = escapeLike(query);
+  const params = [`%${like}%`, `${like}%`];
   if (viewerId) params.push(viewerId);
   const { rows } = await pool.query(q, params);
   return rows;

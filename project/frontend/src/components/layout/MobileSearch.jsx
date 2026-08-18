@@ -14,27 +14,33 @@ export function MobileSearch() {
   const navigate = useNavigate()
   const location = useLocation()
   const inputRef = useRef(null)
-  const { query, setQuery, setQueryFromFilter, results, setResults, categories, reset } = useSiteSearch()
+  const { query, setQuery, setQueryFromFilter, results, reset } = useSiteSearch()
 
-  // Fuente de verdad = URL. En el Home, `etiqueta` se muestra como píldora y `q`
-  // es el texto libre del input (mismo indicador que la barra de desktop).
+  // Fuente de verdad = URL. `etiqueta` se muestra como píldora y `q` como texto
+  // del input, tanto en el Home (solo-etiqueta) como en /search (mismo indicador
+  // que la barra de desktop).
   const isHome = location.pathname === '/'
+  const isSearchPage = location.pathname === '/search'
+  const reflectsFilter = isHome || isSearchPage
   const params = new URLSearchParams(location.search)
-  const activeEtiqueta = isHome ? params.get('etiqueta') : null
-  const activeQ = isHome ? params.get('q') : null
+  const activeEtiqueta = reflectsFilter ? params.get('etiqueta') : null
+  const activeQ = reflectsFilter ? params.get('q') : null
 
+  // Con texto libre (`q`) la búsqueda vive en /search; solo-etiqueta sigue siendo
+  // el filtro del Home (?etiqueta=).
   function goSearch({ q, etiqueta }) {
     const p = new URLSearchParams()
     if (etiqueta) p.set('etiqueta', etiqueta)
     if (q) p.set('q', q)
     const qs = p.toString()
-    navigate(qs ? `/?${qs}` : '/')
+    if (q) navigate(`/search?${qs}`)
+    else navigate(qs ? `/?${qs}` : '/')
   }
 
   // Al abrir el overlay, reflejamos el texto libre `q` activo (la etiqueta se ve
   // como píldora, no como texto).
   function openSearch() {
-    if (isHome && (activeQ || activeEtiqueta)) setQueryFromFilter(activeQ || '')
+    if (reflectsFilter && (activeQ || activeEtiqueta)) setQueryFromFilter(activeQ || '')
     setOpen(true)
   }
 
@@ -117,13 +123,7 @@ export function MobileSearch() {
               <SearchDropdown
                 results={results}
                 query={query.trim()}
-                categories={categories}
                 onClose={close}
-                onTagClick={tag => {
-                  setResults(null)
-                  goSearch({ etiqueta: tag })
-                  close()
-                }}
               />
             )}
           </div>

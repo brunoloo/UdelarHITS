@@ -18,36 +18,41 @@ export function Header() {
   const menuRef = useRef(null)
 
   // Búsqueda de desktop: misma lógica que el overlay de mobile (hook compartido).
-  const { query, setQuery, setQueryFromFilter, results, setResults, categories, reset } = useSiteSearch()
+  const { query, setQuery, setQueryFromFilter, results, setResults, reset } = useSiteSearch()
   const searchRef = useRef(null)
 
-  // Fuente de verdad del filtro = la URL. En el Home, `etiqueta` se muestra como
-  // píldora dentro del buscador y `q` es el texto libre que va en el <input>.
+  // Fuente de verdad del filtro = la URL. El input refleja `q` y la píldora
+  // refleja `etiqueta` tanto en el Home (solo-etiqueta) como en /search (texto,
+  // eventualmente combinado con etiqueta).
   const isHome = location.pathname === '/'
+  const isSearchPage = location.pathname === '/search'
+  const reflectsFilter = isHome || isSearchPage
   const params = new URLSearchParams(location.search)
-  const activeEtiqueta = isHome ? params.get('etiqueta') : null
-  const activeQ = isHome ? params.get('q') : null
+  const activeEtiqueta = reflectsFilter ? params.get('etiqueta') : null
+  const activeQ = reflectsFilter ? params.get('q') : null
 
-  // Navega al Home con el filtro dado (q/etiqueta), armando el query string.
-  // Fuente única para Enter, quitar píldora y click de etiqueta.
+  // Navega con el filtro dado. Con texto libre (`q`) la búsqueda vive en /search
+  // (cuatro secciones, match server-side); solo-etiqueta (sin texto) sigue siendo
+  // el filtro del Home (?etiqueta=). Fuente única para Enter y quitar píldora.
   function goSearch({ q, etiqueta }) {
     const p = new URLSearchParams()
     if (etiqueta) p.set('etiqueta', etiqueta)
     if (q) p.set('q', q)
     const qs = p.toString()
-    navigate(qs ? `/?${qs}` : '/')
+    if (q) navigate(`/search?${qs}`)
+    else navigate(qs ? `/?${qs}` : '/')
   }
 
   // El <input> refleja el texto libre `q` (no la etiqueta). Con un filtro activo
   // —sea etiqueta o q— reflejamos sin reabrir el dropdown; en cualquier otra
   // página o sin filtro, la barra queda vacía.
   useEffect(() => {
-    if (isHome && (activeQ || activeEtiqueta)) {
+    if (reflectsFilter && (activeQ || activeEtiqueta)) {
       setQueryFromFilter(activeQ || '')
     } else {
       reset()
     }
-  }, [location, isHome, activeQ, activeEtiqueta, setQueryFromFilter, reset])
+  }, [location, reflectsFilter, activeQ, activeEtiqueta, setQueryFromFilter, reset])
 
   // Cerrar menú de usuario al click afuera
   useEffect(() => {
@@ -137,13 +142,7 @@ export function Header() {
           <SearchDropdown
             results={results}
             query={query.trim()}
-            categories={categories}
             onClose={() => setResults(null)}
-            onTagClick={tag => {
-              // Click en una etiqueta = aplicar el filtro exacto por etiqueta.
-              setResults(null)
-              goSearch({ etiqueta: tag })
-            }}
           />
         )}
       </div>
