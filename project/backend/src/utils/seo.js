@@ -167,8 +167,10 @@ function upsertCanonical(html, href) {
 //
 // meta: objeto con valores YA CRUDOS (sin escapar); esta función escapa todo.
 //   { title, description, canonical, ogTitle, ogDescription, ogUrl, ogType,
-//     ogImage, robots }
+//     ogImage, ogImageWidth, ogImageHeight, robots }
 // Campos ausentes caen a defaults sensatos. `robots` controla index/noindex.
+// `ogImageWidth`/`ogImageHeight` permiten declarar las dimensiones reales de la
+// imagen (por defecto 1200×630); necesario cuando og:image es un avatar cuadrado.
 // ─────────────────────────────────────────────────────────────────────────────
 export function injectSeoMeta(baseHtml, meta = {}) {
   if (!baseHtml) return baseHtml;
@@ -181,6 +183,8 @@ export function injectSeoMeta(baseHtml, meta = {}) {
   const ogUrl = escapeHtml(meta.ogUrl || meta.canonical || `${SITE_URL}/`);
   const ogType = escapeHtml(meta.ogType || 'website');
   const ogImage = escapeHtml(meta.ogImage || DEFAULT_OG_IMAGE);
+  const ogImageWidth = String(meta.ogImageWidth || 1200);
+  const ogImageHeight = String(meta.ogImageHeight || 630);
   const robots = escapeHtml(meta.robots || 'index, follow');
 
   let html = baseHtml;
@@ -193,6 +197,8 @@ export function injectSeoMeta(baseHtml, meta = {}) {
   html = upsertMeta(html, 'property', 'og:type', ogType);
   html = upsertMeta(html, 'property', 'og:url', ogUrl);
   html = upsertMeta(html, 'property', 'og:image', ogImage);
+  html = upsertMeta(html, 'property', 'og:image:width', ogImageWidth);
+  html = upsertMeta(html, 'property', 'og:image:height', ogImageHeight);
   html = upsertMeta(html, 'property', 'og:site_name', escapeHtml(SITE_NAME));
   html = upsertMeta(html, 'name', 'twitter:card', 'summary_large_image');
   return html;

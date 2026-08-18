@@ -68,6 +68,25 @@ export async function getSitemapCategories() {
   return rows;
 }
 
+// Metadata de un comentario por contenido_id. Devuelve el cuerpo, el estado y
+// el título del tema o categoría contenedora (para contexto en la preview).
+export async function getCommentSeoData(id) {
+  const q = `
+    SELECT c.contenido_id AS id, co.cuerpo, c.estado,
+      c.tema_id, c.categoria_id, c.es_home,
+      t.titulo AS tema_titulo,
+      cat.titulo AS categoria_titulo
+    FROM comentario c
+    JOIN contenido co ON co.id = c.contenido_id
+    LEFT JOIN tema t ON t.contenido_id = c.tema_id
+    LEFT JOIN categoria cat ON cat.id = COALESCE(c.categoria_id, t.categoria_id)
+    WHERE c.contenido_id = $1
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [id]);
+  return rows[0] || null;
+}
+
 // Temas activos (dentro de categorías activas) para el sitemap.
 export async function getSitemapTopics() {
   const q = `

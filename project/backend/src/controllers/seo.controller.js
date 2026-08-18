@@ -1,6 +1,6 @@
 import { loadBaseHtml, injectSeoMeta, SITE_URL } from '../utils/seo.js';
 import {
-  resolveCategorySeo, resolveTopicSeo, resolveProfileSeo,
+  resolveCategorySeo, resolveTopicSeo, resolveCommentSeo, resolveProfileSeo,
   buildSitemapXml, buildRobotsTxt,
 } from '../services/seo.service.js';
 
@@ -49,6 +49,11 @@ export async function categoryDocument(req, res, next) {
 
 export async function topicDocument(req, res, next) {
   const resolved = await resolveTopicSeo(req.params.id);
+  return sendDocument(req, res, next, resolved);
+}
+
+export async function commentDocument(req, res, next) {
+  const resolved = await resolveCommentSeo(req.params.id);
   return sendDocument(req, res, next, resolved);
 }
 
