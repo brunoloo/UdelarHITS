@@ -155,14 +155,13 @@ export async function resolveCommentSeo(param) {
 //      que para Googlebot es contenido tras login: indexarlo daría resultados
 //      thin/cloaked.
 //
-//   2) Privacidad de la preview social (og:*): la preview la genera el servidor
-//      desde la BD, esquivando el `protect` de la API. Por eso SOLO se inyectan
-//      nickname, biografía y avatar cuando la cuenta es PÚBLICA y está ACTIVA.
-//      Para cuentas con `privado = true`, `estado` inactivo/baneado —o perfiles
-//      inexistentes— se sirve metadata GENÉRICA del sitio (sin nickname real,
-//      sin biografía, sin avatar). Esto respeta `usuario.privado` y la política
-//      de privacidad publicada, y de paso hace indistinguible "privada" de "no
-//      existe" (no se pueden enumerar cuentas privadas).
+//   2) Privacidad de la preview social (og:*): la preview expone exactamente lo
+//      que la página de perfil expone, ni más ni menos. Toda cuenta ACTIVA
+//      (pública o privada) muestra nickname y avatar, porque cualquier usuario
+//      autenticado los ve en la página. La biografía solo se incluye para
+//      cuentas PÚBLICAS: `protect` bloquea el acceso sin sesión, así que un
+//      visitante sin login nunca ve la bio de una cuenta privada en la página.
+//      Cuentas inactivas, baneadas o inexistentes → metadata genérica.
 export async function resolveProfileSeo(nickname) {
   let row;
   try {
@@ -171,15 +170,15 @@ export async function resolveProfileSeo(nickname) {
     return { meta: null, canonicalPath: null };
   }
 
-  const isPublicActive = !!row && row.estado === 'activo' && row.privado === false;
-
-  if (!isPublicActive) {
+  if (!row || row.estado !== 'activo') {
     return { meta: genericProfileMeta(), canonicalPath: null };
   }
 
   const url = `${SITE_URL}/user/${encodeURIComponent(row.nickname)}`;
-  const description =
-    truncateDescription(row.biografia) || `Perfil de ${row.nickname} en ${SITE_NAME}`;
+
+  const description = !row.privado
+    ? (truncateDescription(row.biografia) || `Perfil de ${row.nickname} en ${SITE_NAME}`)
+    : `Perfil de ${row.nickname} en ${SITE_NAME}`;
 
   const hasAvatar = !!row.url_imagen;
 

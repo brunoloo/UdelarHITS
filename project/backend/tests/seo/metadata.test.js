@@ -398,18 +398,18 @@ describe('Metadata de perfil', () => {
     expect(metaProp(res.text, 'og:image:height')).toBe('630');
   });
 
-  test('cuenta PRIVADA: metadata genérica, sin nickname/biografía/avatar; noindex', async () => {
+  test('cuenta PRIVADA activa: og:title con nickname, og:image con avatar, sin biografía; noindex', async () => {
     const a = await registerAndLogin();
     await setBio(a.cookie);
     await pool.query(`UPDATE usuario SET privado = TRUE, url_imagen = $2 WHERE LOWER(nickname) = LOWER($1)`,
-      [a.user.nickname, 'https://res.cloudinary.com/demo/image/upload/avatar.jpg']);
+      [a.user.nickname, 'https://res.cloudinary.com/demo/image/upload/v1234/avatars/avatar.jpg']);
 
     const res = await request(app).get(`/user/${a.user.nickname}`);
     expect(res.status).toBe(200);
-    expect(metaProp(res.text, 'og:title')).toBe('Perfil en UdelarHITS');
+    expect(metaProp(res.text, 'og:title')).toBe(a.user.nickname);
     expect(res.text).not.toContain(BIO);
-    expect(res.text).not.toContain(a.user.nickname);
-    expect(metaProp(res.text, 'og:image')).not.toContain('avatar.jpg');
+    expect(metaProp(res.text, 'og:image')).toContain('avatar.jpg');
+    expect(metaProp(res.text, 'og:image')).toContain(`c_fill,w_${AVATAR_OG_SIZE},h_${AVATAR_OG_SIZE}`);
     expect(metaName(res.text, 'robots')).toBe('noindex, follow');
   });
 
