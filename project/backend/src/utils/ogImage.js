@@ -19,15 +19,18 @@ import { SITE_URL, DEFAULT_OG_IMAGE } from './seo.js';
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
 
-// IDs públicos de las plantillas-base en Cloudinary. Cada una tiene fondo de un
-// color distinto + branding del sitio — subirlas una vez al account es suficiente.
+// IDs públicos de las plantillas-base en Cloudinary. Sin prefijo de carpeta:
+// las plantillas se suben por el panel web (Dynamic Folders), donde la carpeta
+// es solo organización visual y NO forma parte del public_id. Distinto de los
+// avatares, que se suben desde el código con `folder` en las opciones y SÍ
+// incluyen el path (p.ej. udelarhits/avatars/abc).
 //   categoría → azul accent (#2563eb)
 //   tema      → azul oscuro (#1d4ed8)
 //   comentario→ navy (#0f1a2e)
 const TEMPLATE_IDS = {
-  category: 'udelarhits/og-base-category',
-  topic:    'udelarhits/og-base-topic',
-  comment:  'udelarhits/og-base-comment',
+  category: 'og-base-category',
+  topic:    'og-base-topic',
+  comment:  'og-base-comment',
 };
 
 const FALLBACK_IMAGES = {
@@ -94,8 +97,8 @@ export function buildOgImageUrl(type, rawTitle) {
 
   return `https://res.cloudinary.com/${cloudName}/image/upload/`
     + `w_${OG_WIDTH},h_${OG_HEIGHT},c_fill/`
-    + `l_text:Arial_20_bold:${typeLabel},co_rgb:ffffffcc,g_north_west,x_60,y_50/`
-    + `l_text:Arial_52_bold:${encodedTitle},co_rgb:ffffff,w_1000,c_fit,g_west,x_100,y_40`
+    + `l_text:Arial_20_bold:${typeLabel},co_rgb:ffffffcc,g_north_west,x_80,y_50/`
+    + `l_text:Arial_48_bold:${encodedTitle},co_rgb:ffffff,w_960,c_fit,g_center,y_30`
     + `/${templateId}`;
 }
 
