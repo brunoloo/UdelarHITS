@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
-  categoryDocument, topicDocument, profileDocument, noindexDocument,
-  sitemapDocument, robotsDocument,
+  categoryDocument, topicDocument, commentDocument, profileDocument,
+  noindexDocument, sitemapDocument, robotsDocument,
 } from '../controllers/seo.controller.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -19,6 +19,7 @@ router.get('/sitemap.xml', sitemapDocument);
 // Rutas de detalle con metadata dinámica + slug (301 al canónico si no coincide).
 router.get('/category/:id', categoryDocument);
 router.get('/topic/:id', topicDocument);
+router.get('/comment/:id', commentDocument);
 router.get('/user/:nickname', profileDocument);
 
 // Rutas de la SPA que no deben indexarse (privadas o sin valor de búsqueda).

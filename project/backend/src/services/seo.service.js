@@ -1,11 +1,14 @@
 import {
   getCategorySeoData, getTopicSeoData, getProfileSeoData,
-  getSitemapCategories, getSitemapTopics,
+  getCommentSeoData, getSitemapCategories, getSitemapTopics,
 } from '../repositories/seo.repository.js';
 import {
-  SITE_URL, SITE_NAME, DEFAULT_DESCRIPTION,
+  SITE_URL, SITE_NAME, DEFAULT_DESCRIPTION, DEFAULT_OG_IMAGE,
   slugify, parseLeadingId, buildCanonicalPath, truncateDescription, escapeHtml,
 } from '../utils/seo.js';
+import {
+  buildOgImageUrl, avatarForOg, OG_WIDTH, OG_HEIGHT, AVATAR_OG_SIZE,
+} from '../utils/ogImage.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Servicio de SEO. Resuelve la metadata de cada ruta de detalle y construye el
@@ -21,8 +24,6 @@ import {
 //     canonicalPath→ path canónico "/category/5-slug" o null (sin redirect posible)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Metadata "noindex" para contenido inexistente/inactivo/privado: la SPA pintará
-// su propio 404 o su pantalla de login; le decimos a Google que no lo indexe.
 function noindexMeta() {
   return {
     title: SITE_NAME,
@@ -40,7 +41,6 @@ export async function resolveCategorySeo(param) {
   try {
     row = await getCategorySeoData(id);
   } catch {
-    // Falla de BD: servir el HTML por defecto (sin tocar), nunca 500.
     return { meta: null, canonicalPath: null };
   }
 
@@ -61,6 +61,9 @@ export async function resolveCategorySeo(param) {
       ogDescription: description,
       ogUrl: canonicalUrl,
       ogType: 'website',
+      ogImage: buildOgImageUrl('category', row.titulo),
+      ogImageWidth: OG_WIDTH,
+      ogImageHeight: OG_HEIGHT,
       robots: 'index, follow',
     },
     canonicalPath,
@@ -79,7 +82,6 @@ export async function resolveTopicSeo(param) {
     return { meta: null, canonicalPath: null };
   }
 
-  // El tema debe estar activo Y su categoría contenedora también.
   if (!row || row.estado !== 'activo' || row.categoria_estado !== 'activa') {
     return { meta: noindexMeta(), canonicalPath: null };
   }
@@ -98,9 +100,50 @@ export async function resolveTopicSeo(param) {
       ogDescription: description,
       ogUrl: canonicalUrl,
       ogType: 'article',
+      ogImage: buildOgImageUrl('topic', row.titulo),
+      ogImageWidth: OG_WIDTH,
+      ogImageHeight: OG_HEIGHT,
       robots: 'index, follow',
     },
     canonicalPath,
+  };
+}
+
+// ── Comentario ──────────────────────────────────────────────────────────────
+export async function resolveCommentSeo(param) {
+  const id = parseLeadingId(param);
+  if (!id) return { meta: noindexMeta(), canonicalPath: null };
+
+  let row;
+  try {
+    row = await getCommentSeoData(id);
+  } catch {
+    return { meta: null, canonicalPath: null };
+  }
+
+  if (!row || row.estado !== 'visible') {
+    return { meta: noindexMeta(), canonicalPath: null };
+  }
+
+  const contextTitle = row.tema_titulo || row.categoria_titulo || SITE_NAME;
+  const bodyPreview = truncateDescription(row.cuerpo) || `Comentario en ${contextTitle}`;
+  const url = `${SITE_URL}/comment/${id}`;
+
+  return {
+    meta: {
+      title: `Comentario en ${contextTitle} · ${SITE_NAME}`,
+      description: bodyPreview,
+      canonical: url,
+      ogTitle: bodyPreview,
+      ogDescription: `Comentario en ${contextTitle}`,
+      ogUrl: url,
+      ogType: 'article',
+      ogImage: buildOgImageUrl('comment', row.cuerpo),
+      ogImageWidth: OG_WIDTH,
+      ogImageHeight: OG_HEIGHT,
+      robots: 'noindex, follow',
+    },
+    canonicalPath: null,
   };
 }
 
@@ -112,14 +155,12 @@ export async function resolveTopicSeo(param) {
 //      que para Googlebot es contenido tras login: indexarlo daría resultados
 //      thin/cloaked.
 //
-//   2) Privacidad de la preview social (og:*): la preview la genera el servidor
-//      desde la BD, esquivando el `protect` de la API. Por eso SOLO se inyectan
-//      nickname, biografía y avatar cuando la cuenta es PÚBLICA y está ACTIVA.
-//      Para cuentas con `privado = true`, `estado` inactivo/baneado —o perfiles
-//      inexistentes— se sirve metadata GENÉRICA del sitio (sin nickname real,
-//      sin biografía, sin avatar). Esto respeta `usuario.privado` y la política
-//      de privacidad publicada, y de paso hace indistinguible "privada" de "no
-//      existe" (no se pueden enumerar cuentas privadas).
+//   2) Privacidad de la preview social (og:*): la preview expone exactamente lo
+//      que la página de perfil expone, ni más ni menos. Toda cuenta ACTIVA
+//      (pública o privada) muestra nickname, avatar y biografía, porque
+//      cualquier usuario autenticado los ve en la página. Ocultar alguno en la
+//      preview haría que el link se vea peor sin proteger nada.
+//      Cuentas inactivas, baneadas o inexistentes → metadata genérica.
 export async function resolveProfileSeo(nickname) {
   let row;
   try {
@@ -128,15 +169,16 @@ export async function resolveProfileSeo(nickname) {
     return { meta: null, canonicalPath: null };
   }
 
-  const isPublicActive = !!row && row.estado === 'activo' && row.privado === false;
-
-  if (!isPublicActive) {
+  if (!row || row.estado !== 'activo') {
     return { meta: genericProfileMeta(), canonicalPath: null };
   }
 
   const url = `${SITE_URL}/user/${encodeURIComponent(row.nickname)}`;
+
   const description =
     truncateDescription(row.biografia) || `Perfil de ${row.nickname} en ${SITE_NAME}`;
+
+  const hasAvatar = !!row.url_imagen;
 
   return {
     meta: {
@@ -147,18 +189,15 @@ export async function resolveProfileSeo(nickname) {
       ogDescription: description,
       ogUrl: url,
       ogType: 'profile',
-      // Avatar como og:image SOLO en cuentas públicas activas; si no tiene
-      // avatar, injectSeoMeta cae a la imagen por defecto del sitio.
-      ogImage: row.url_imagen || undefined,
+      ogImage: hasAvatar ? avatarForOg(row.url_imagen) : undefined,
+      ogImageWidth: hasAvatar ? AVATAR_OG_SIZE : undefined,
+      ogImageHeight: hasAvatar ? AVATAR_OG_SIZE : undefined,
       robots: 'noindex, follow',
     },
-    canonicalPath: null, // el nickname es el canónico; no hay slug que redirigir
+    canonicalPath: null,
   };
 }
 
-// Metadata genérica del sitio para perfiles que no pueden exponer datos (cuenta
-// privada, inactiva, baneada o inexistente). Sin nickname real, sin biografía y
-// sin avatar: og:image queda en la imagen por defecto del sitio.
 function genericProfileMeta() {
   return {
     title: `Perfil en ${SITE_NAME}`,
@@ -183,13 +222,9 @@ function urlEntry(loc, lastmod) {
   return `  <url>\n${parts.join('\n')}\n  </url>`;
 }
 
-// Rutas estáticas públicas de la SPA (contenido de "La Central" y navegación).
 const STATIC_PATHS = ['/', '/recent', '/popular', '/explore', '/about', '/about/rules', '/about/policies', '/about/moderation'];
 
 export async function buildSitemapXml() {
-  // Con el volumen actual se genera por request. Si crece, cachear acá el string
-  // resultante con un TTL corto (p. ej. 10 min) — TODO: agregar cache cuando el
-  // número de categorías/temas lo justifique.
   const [categories, topics] = await Promise.all([
     getSitemapCategories(),
     getSitemapTopics(),
@@ -231,7 +266,6 @@ export function buildRobotsTxt() {
   return [
     'User-agent: *',
     'Allow: /',
-    // API y rutas privadas / detrás de sesión: no aportan a la búsqueda.
     'Disallow: /api/',
     'Disallow: /settings',
     'Disallow: /admin',
@@ -240,7 +274,6 @@ export function buildRobotsTxt() {
     'Disallow: /register',
     'Disallow: /setup-profile',
     'Disallow: /redirect',
-    // Perfiles: ver un perfil requiere cuenta → fuera del índice.
     'Disallow: /user/',
     '',
     `Sitemap: ${SITE_URL}/sitemap.xml`,
@@ -248,5 +281,4 @@ export function buildRobotsTxt() {
   ].join('\n');
 }
 
-// Exponer slugify por si el controller lo necesita para logs/diagnóstico.
 export { slugify };

@@ -2,8 +2,20 @@ import request from 'supertest';
 import app from '../../src/app.js';
 import pool from '../../src/config/db.js';
 import { registerAndLogin, createCategory, createTopic } from '../helpers.js';
+import { SITE_URL } from '../../src/utils/seo.js';
 
 // ─── sitemap.xml dinámico + robots.txt ───
+
+// Las URLs públicas se verifican contra el dominio configurado en el entorno
+// (SITE_URL), no contra un dominio hardcodeado: así el test no se rompe si
+// cambia el dominio o se agrega staging. Pero además se exige que la URL sea
+// ABSOLUTA y bien formada — si la construcción devolviera una ruta relativa, el
+// test debe fallar igual.
+const isAbsoluteHttpUrl = (u) => {
+  if (typeof u !== 'string' || !/^https?:\/\/[^/]+/.test(u)) return false;
+  try { new URL(u); return true; } catch { return false; }
+};
+const sitemapLocs = (xml) => [...xml.matchAll(/<loc>([^<]*)<\/loc>/g)].map((m) => m[1]);
 
 describe('GET /sitemap.xml', () => {
   test('XML válido con categorías y temas activos (URLs con slug + lastmod)', async () => {
@@ -24,14 +36,20 @@ describe('GET /sitemap.xml', () => {
     expect(res.text).toContain('<?xml version="1.0" encoding="UTF-8"?>');
     expect(res.text).toContain('<urlset');
 
-    // URLs con slug y absolutas.
-    expect(res.text).toContain(`https://udelarhits.com/category/${cat.id}-programacion-uno`);
-    expect(res.text).toContain(`https://udelarhits.com/topic/${topicId}-recursion-y-punteros`);
+    // Toda <loc> del sitemap debe ser una URL absoluta y bien formada (nunca
+    // una ruta relativa), sea cual sea el dominio configurado.
+    const urls = sitemapLocs(res.text);
+    expect(urls.length).toBeGreaterThan(0);
+    for (const u of urls) expect(isAbsoluteHttpUrl(u)).toBe(true);
+
+    // URLs con slug, apuntando al dominio configurado en el entorno (SITE_URL).
+    expect(res.text).toContain(`<loc>${SITE_URL}/category/${cat.id}-programacion-uno</loc>`);
+    expect(res.text).toContain(`<loc>${SITE_URL}/topic/${topicId}-recursion-y-punteros</loc>`);
     // lastmod presente (ISO).
     expect(res.text).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}T/);
     // Rutas estáticas públicas.
-    expect(res.text).toContain('https://udelarhits.com/');
-    expect(res.text).toContain('https://udelarhits.com/about');
+    expect(res.text).toContain(`<loc>${SITE_URL}/</loc>`);
+    expect(res.text).toContain(`<loc>${SITE_URL}/about</loc>`);
   });
 
   test('excluye categorías y temas inactivos', async () => {
@@ -65,6 +83,12 @@ describe('GET /robots.txt', () => {
     expect(res.text).toContain('Disallow: /api/');
     expect(res.text).toContain('Disallow: /settings');
     expect(res.text).toContain('Disallow: /user/');
-    expect(res.text).toContain('Sitemap: https://udelarhits.com/sitemap.xml');
+
+    // La línea Sitemap apunta al dominio configurado y es una URL absoluta.
+    expect(res.text).toContain(`Sitemap: ${SITE_URL}/sitemap.xml`);
+    const sitemapLine = res.text.split('\n').find((l) => l.startsWith('Sitemap:'));
+    expect(sitemapLine).toBeTruthy();
+    const sitemapUrl = sitemapLine.replace('Sitemap:', '').trim();
+    expect(isAbsoluteHttpUrl(sitemapUrl)).toBe(true);
   });
 });
