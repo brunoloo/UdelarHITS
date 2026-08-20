@@ -157,10 +157,9 @@ export async function resolveCommentSeo(param) {
 //
 //   2) Privacidad de la preview social (og:*): la preview expone exactamente lo
 //      que la página de perfil expone, ni más ni menos. Toda cuenta ACTIVA
-//      (pública o privada) muestra nickname y avatar, porque cualquier usuario
-//      autenticado los ve en la página. La biografía solo se incluye para
-//      cuentas PÚBLICAS: `protect` bloquea el acceso sin sesión, así que un
-//      visitante sin login nunca ve la bio de una cuenta privada en la página.
+//      (pública o privada) muestra nickname, avatar y biografía, porque
+//      cualquier usuario autenticado los ve en la página. Ocultar alguno en la
+//      preview haría que el link se vea peor sin proteger nada.
 //      Cuentas inactivas, baneadas o inexistentes → metadata genérica.
 export async function resolveProfileSeo(nickname) {
   let row;
@@ -176,9 +175,8 @@ export async function resolveProfileSeo(nickname) {
 
   const url = `${SITE_URL}/user/${encodeURIComponent(row.nickname)}`;
 
-  const description = !row.privado
-    ? (truncateDescription(row.biografia) || `Perfil de ${row.nickname} en ${SITE_NAME}`)
-    : `Perfil de ${row.nickname} en ${SITE_NAME}`;
+  const description =
+    truncateDescription(row.biografia) || `Perfil de ${row.nickname} en ${SITE_NAME}`;
 
   const hasAvatar = !!row.url_imagen;
 

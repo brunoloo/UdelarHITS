@@ -71,10 +71,16 @@ export function truncateTitle(text, max = MAX_TITLE_LENGTH) {
 
 // ── Encoding para text overlay de Cloudinary ────────────────────────────────
 // El texto va en el path de la URL como parte del parámetro `l_text:style:TEXT`.
-// Se necesita URL-encoding estándar (encodeURIComponent) para que caracteres
-// como espacios, signos de interrogación y acentos no rompan el path.
+// encodeURIComponent codifica caracteres especiales, pero Cloudinary decodifica
+// el percent-encoding ANTES de parsear la transformación. La coma (%2C) y la
+// barra (%2F) son separadores estructurales de Cloudinary: si se decodifican,
+// rompen el parse y la URL devuelve 400/404. Se necesita doble codificación
+// para estos caracteres (%2C → %252C, %2F → %252F) para que sobrevivan la
+// primera pasada de decode como literales.
 export function encodeCloudinaryText(text) {
-  return encodeURIComponent(text);
+  return encodeURIComponent(text)
+    .replace(/%2C/gi, '%252C')
+    .replace(/%2F/gi, '%252F');
 }
 
 // ── Construcción de la URL de OG image ──────────────────────────────────────

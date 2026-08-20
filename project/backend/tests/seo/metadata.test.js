@@ -85,6 +85,27 @@ describe('ogImage.js — encodeCloudinaryText', () => {
     const encoded = encodeCloudinaryText('Programación');
     expect(encoded).toContain('%');
   });
+
+  test('doble-codifica coma para que sobreviva el decode de Cloudinary', () => {
+    const encoded = encodeCloudinaryText('Buenas, alguien');
+    expect(encoded).toContain('%252C');
+    expect(encoded).not.toContain('%2C');
+  });
+
+  test('doble-codifica barra para que sobreviva el decode de Cloudinary', () => {
+    const encoded = encodeCloudinaryText('E/S en disco');
+    expect(encoded).toContain('%252F');
+    expect(encoded).not.toContain('%2F');
+  });
+
+  test('título con coma, barra y espacios se codifica correctamente', () => {
+    const encoded = encodeCloudinaryText('Buenas, alguien que esté cursando E/S?');
+    expect(encoded).toContain('%252C');
+    expect(encoded).toContain('%252F');
+    expect(encoded).not.toContain('%2C');
+    expect(encoded).not.toContain('%2F');
+    expect(encoded).toContain('%3F');
+  });
 });
 
 describe('ogImage.js — buildOgImageUrl', () => {
@@ -135,6 +156,21 @@ describe('ogImage.js — buildOgImageUrl', () => {
     expect(url).toContain('cloudinary');
     expect(url).toContain('%3F%3F%3F');
     expect(url).not.toContain('???');
+  });
+
+  test('título con coma doble-codifica %2C a %252C', () => {
+    process.env.CLOUDINARY_CLOUD_NAME = 'testcloud';
+    const url = buildOgImageUrl('topic', 'Buenas, alguien que esté cursando');
+    expect(url).toContain('cloudinary');
+    expect(url).toContain('%252C');
+    expect(url).not.toMatch(/%2C(?!5)/);
+  });
+
+  test('título con barra doble-codifica %2F a %252F', () => {
+    process.env.CLOUDINARY_CLOUD_NAME = 'testcloud';
+    const url = buildOgImageUrl('comment', 'E/S en disco');
+    expect(url).toContain('cloudinary');
+    expect(url).toContain('%252F');
   });
 });
 
@@ -398,7 +434,7 @@ describe('Metadata de perfil', () => {
     expect(metaProp(res.text, 'og:image:height')).toBe('630');
   });
 
-  test('cuenta PRIVADA activa: og:title con nickname, og:image con avatar, sin biografía; noindex', async () => {
+  test('cuenta PRIVADA activa: og:title con nickname, og:image con avatar, biografía en og:description; noindex', async () => {
     const a = await registerAndLogin();
     await setBio(a.cookie);
     await pool.query(`UPDATE usuario SET privado = TRUE, url_imagen = $2 WHERE LOWER(nickname) = LOWER($1)`,
@@ -407,7 +443,7 @@ describe('Metadata de perfil', () => {
     const res = await request(app).get(`/user/${a.user.nickname}`);
     expect(res.status).toBe(200);
     expect(metaProp(res.text, 'og:title')).toBe(a.user.nickname);
-    expect(res.text).not.toContain(BIO);
+    expect(metaProp(res.text, 'og:description')).toBe(BIO);
     expect(metaProp(res.text, 'og:image')).toContain('avatar.jpg');
     expect(metaProp(res.text, 'og:image')).toContain(`c_fill,w_${AVATAR_OG_SIZE},h_${AVATAR_OG_SIZE}`);
     expect(metaName(res.text, 'robots')).toBe('noindex, follow');
