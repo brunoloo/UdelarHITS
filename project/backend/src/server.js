@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './config/env.js';
 import http from 'http';
 import app from './app.js';
 import pool from './config/db.js';

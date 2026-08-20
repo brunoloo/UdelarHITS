@@ -23,6 +23,12 @@ export const isVisionConfigured = () => Boolean(process.env.GOOGLE_VISION_API_KE
 //   { safe: true }                       → segura, o check desactivado/falló (fallback)
 //   { safe: false, scores: { adult, racy } } → marcada por Vision
 export const checkImageSafety = async (imageUrl) => {
+  // Nunca pegar a la API real desde los tests, aunque una GOOGLE_VISION_API_KEY
+  // se haya filtrado al entorno (mismo cortocircuito que uploadToCloudinary y
+  // sendEmail). Vision cobra por llamada; una suite jamás debe consumir cuota.
+  // Los tests que necesitan ejercer la moderación mockean este módulo.
+  if (process.env.NODE_ENV === 'test') return { safe: true };
+
   const apiKey = process.env.GOOGLE_VISION_API_KEY;
 
   // Sin API key: check desactivado silenciosamente (permite dev/test sin key).
