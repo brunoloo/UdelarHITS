@@ -1,6 +1,6 @@
 import { useEffect, useRef, Suspense } from 'react'
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom'
-import { trackPageView, trackLogin } from '../../utils/analytics'
+import { beginPageView, trackLogin } from '../../utils/analytics'
 import { Skeleton } from '../ui/Skeleton'
 
 // Layout raíz sin path: envuelve TODAS las rutas para poder registrar el
@@ -10,9 +10,11 @@ export function RootLayout() {
   const [searchParams, setSearchParams] = useSearchParams()
   const googleLoginHandled = useRef(false)
 
-  // Un page_view por cada cambio de ruta (pathname o querystring).
+  // Un page_view por cada cambio de ruta (pathname o querystring). El hit se
+  // emite con el título ya resuelto que reporta cada vista vía useDocumentTitle
+  // (ver analytics.js): acá solo se arranca el ciclo de la navegación.
   useEffect(() => {
-    trackPageView(location.pathname + location.search)
+    beginPageView(location.pathname + location.search)
   }, [location.pathname, location.search])
 
   // El login con Google es un flujo de redirect del backend: para usuarios

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import './about.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 const LOCK_ICON = (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -10,6 +11,7 @@ const LOCK_ICON = (
 )
 
 export function RulesPage() {
+  useDocumentTitle()
   useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
     <div className="about-page-wrap">

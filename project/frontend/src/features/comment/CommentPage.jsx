@@ -2,6 +2,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '../../api/client'
 import { CommentThread } from '../../components/shared/CommentThread'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import { commentTitle } from '../../utils/pageTitle'
 
 // Página de hilo de un comentario, independiente del ámbito (categoría, tema o
 // Home). Es el permalink que usan las notificaciones, guardados y el perfil para
@@ -23,6 +25,13 @@ export function CommentPage() {
     queryKey: ['comment', id],
     queryFn: () => apiGet(`/replies/${id}/context`).then(r => r.data),
   })
+
+  // La cadena viene ordenada por profundidad DESC: el comentario pedido es el
+  // último. De él sale el ámbito (tema/categoría) para el título, con el mismo
+  // formato del servidor ("Comentario en <contexto> · UdelarHITS"). Si el
+  // comentario no existe/está oculto → título genérico.
+  const requested = Array.isArray(chain) && chain.length ? chain[chain.length - 1] : null
+  useDocumentTitle(commentTitle(requested), !isLoading)
 
   if (isLoading) return <div className="feed-page"><div className="feed-empty">Cargando...</div></div>
   if (isError || !chain || chain.length === 0) {

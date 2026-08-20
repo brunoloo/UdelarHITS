@@ -8,6 +8,7 @@ import { RootLayout } from './components/layout/RootLayout'
 import { AppLayout } from './components/layout/AppLayout'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AdminRoute } from './components/auth/AdminRoute'
+import { useDocumentTitle } from './hooks/useDocumentTitle'
 
 // Eager: FeedPage ES la ruta del Home. Cargarla lazy agregaría un round-trip de
 // chunk en el arranque y empeoraría el LCP, justo lo contrario de lo buscado.
@@ -37,6 +38,7 @@ const ChatPage = lazy(() => import('./features/chat/ChatPage').then(m => ({ defa
 const SetupProfilePage = lazy(() => import('./features/auth/SetupProfilePage').then(m => ({ default: m.SetupProfilePage })))
 
 function NotFoundPage() {
+  useDocumentTitle()
   return (
     <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
       <h1>404 — Página no encontrada</h1>

@@ -5,6 +5,7 @@ import { useSocket } from '../../context/SocketContext'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import './chat.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 function timeLabel(dateStr) {
   const d = new Date(dateStr)
@@ -20,6 +21,7 @@ function timeLabel(dateStr) {
 }
 
 export function ChatPage() {
+  useDocumentTitle()
   const { nickname } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()

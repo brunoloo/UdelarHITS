@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import './about.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 export function ModerationPage() {
+  useDocumentTitle()
   useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
     <div className="about-page-wrap">

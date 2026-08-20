@@ -11,6 +11,7 @@ import { Tag } from '../../components/ui/Tag'
 import { timeAgo } from '../../utils/timeAgo'
 import './feed.css'
 import './recent.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 function Skeleton() {
   return (
@@ -69,6 +70,7 @@ const TABS = [
 ]
 
 export function RecentPage() {
+  useDocumentTitle()
   const [tab, setTab] = useState('todos')
   const queryClient = useQueryClient()
   const { showToast } = useToast()
