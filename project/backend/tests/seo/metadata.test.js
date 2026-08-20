@@ -6,6 +6,15 @@ import {
   buildOgImageUrl, stripEmojis, truncateTitle, encodeCloudinaryText,
   avatarForOg, OG_WIDTH, OG_HEIGHT, AVATAR_OG_SIZE,
 } from '../../src/utils/ogImage.js';
+import { SITE_URL } from '../../src/utils/seo.js';
+
+// canonical/og:url se verifican contra el dominio configurado (SITE_URL), no un
+// dominio hardcodeado, y además se exige que sean URLs absolutas y bien
+// formadas: si la construcción devolviera una ruta relativa, el test falla.
+const isAbsoluteHttpUrl = (u) => {
+  if (typeof u !== 'string' || !/^https?:\/\/[^/]+/.test(u)) return false;
+  try { new URL(u); return true; } catch { return false; }
+};
 
 // ─── Metadata dinámica por ruta (inyección de <meta> en el index.html) ───
 // El servidor intercepta /category/:id, /topic/:id, /comment/:id y
@@ -191,8 +200,15 @@ describe('Metadata de categoría', () => {
     expect(metaProp(res.text, 'og:type')).toBe('website');
     expect(metaProp(res.text, 'og:site_name')).toBe('UdelarHITS');
     expect(metaName(res.text, 'twitter:card')).toBe('summary_large_image');
-    expect(canonical(res.text)).toBe(`https://udelarhits.com/category/${cat.id}-parciales-de-logica`);
-    expect(metaProp(res.text, 'og:url')).toBe(`https://udelarhits.com/category/${cat.id}-parciales-de-logica`);
+    const expectedUrl = `${SITE_URL}/category/${cat.id}-parciales-de-logica`;
+    const canonicalUrl = canonical(res.text);
+    const ogUrl = metaProp(res.text, 'og:url');
+    // Absolutas y bien formadas (no rutas relativas).
+    expect(isAbsoluteHttpUrl(canonicalUrl)).toBe(true);
+    expect(isAbsoluteHttpUrl(ogUrl)).toBe(true);
+    // Apuntan al dominio configurado en el entorno.
+    expect(canonicalUrl).toBe(expectedUrl);
+    expect(ogUrl).toBe(expectedUrl);
   });
 
   test('og:image se genera (no es la genérica del sitio)', async () => {
