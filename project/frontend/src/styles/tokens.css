@@ -129,3 +129,175 @@
   --skeleton-1: #1e2d3d;
   --skeleton-2: #243547;
 }
+
+/* ── PALETAS DE COLOR PERSONALIZADAS ─────────────────────────────
+   Hermanas de claro/oscuro (mismo selector data-theme, no se combinan).
+   Todas son de familia clara: fondo pastel apagado + texto oscuro del
+   mismo matiz. La lista de ids vive en src/config/themes.js.
+
+   CADA PALETA REDEFINE 18 tokens: superficies (4), bordes (3),
+   texto (4), acento (5), skeletons (2).
+
+   OMISIÓN DELIBERADA — cada paleta HEREDA de :root (tema claro), no los
+   redefine: los 13 tokens semánticos (--danger + --status-*), las 3
+   sombras (--shadow-*) y --modal-overlay. Los semánticos NO se tiñen a
+   propósito: el rojo de error tiene que seguir comunicando error, y como
+   :root ES el tema claro, heredarlos evita que diverjan en silencio si
+   mañana se ajusta uno. Los overlays sobre imágenes (--overlay-dark-*)
+   ya son excepción global (siempre oscuros) y tampoco se tocan.
+
+   Bordes decorativos a ~1.2-1.5:1 contra el fondo, igual que claro/oscuro:
+   la separación de superficies la da la elevación (superficie blanca +
+   sombra), no el borde. El texto (≥4.5:1) y el acento (≥3:1 contra fondo,
+   ≥4.5:1 texto-sobre-acento) sí cumplen contraste: son color con
+   significado, no decoración. */
+
+:root[data-theme="rosa"] {
+  --bg: #FDF2F5;
+  --surface: #ffffff;
+  --surface-2: #faf4f6;
+  --surface-translucent: rgba(255, 255, 255, 0.92);
+
+  --border: #ebdbe0;
+  --border-strong: #dabec7;
+  --thread-line: #e1ccd3;
+
+  --text-primary: #481e2c;
+  --text-secondary: #67424e;
+  --text-muted: #7c5a65;
+  --text-on-accent: #ffffff;
+
+  --accent: #ba2c5b;
+  --accent-light: #f9e7ed;
+  --accent-strong: #9c214a;
+  --accent-gradient-end: #db668d;
+  --focus-ring: rgba(186, 44, 91, 0.15);
+
+  --skeleton-1: #f4ebee;
+  --skeleton-2: #eddee3;
+}
+
+:root[data-theme="coral"] {
+  --bg: #FDF1ED;
+  --surface: #ffffff;
+  --surface-2: #faf6f4;
+  --surface-translucent: rgba(255, 255, 255, 0.92);
+
+  --border: #ebdedb;
+  --border-strong: #dac3be;
+  --thread-line: #e1d0cc;
+
+  --text-primary: #48261e;
+  --text-secondary: #644740;
+  --text-muted: #795f58;
+  --text-on-accent: #ffffff;
+
+  --accent: #c54526;
+  --accent-light: #f9eae7;
+  --accent-strong: #a6381c;
+  --accent-gradient-end: #e27e65;
+  --focus-ring: rgba(197, 69, 38, 0.15);
+
+  --skeleton-1: #f4edeb;
+  --skeleton-2: #ede1de;
+}
+
+:root[data-theme="arena"] {
+  --bg: #FDF6EA;
+  --surface: #ffffff;
+  --surface-2: #faf8f4;
+  --surface-translucent: rgba(255, 255, 255, 0.92);
+
+  --border: #ebe5db;
+  --border-strong: #dad0be;
+  --thread-line: #e1d9cc;
+
+  --text-primary: #41331b;
+  --text-secondary: #5d513c;
+  --text-muted: #706551;
+  --text-on-accent: #ffffff;
+
+  --accent: #8f6419;
+  --accent-light: #f9f2e7;
+  --accent-strong: #6e4c11;
+  --accent-gradient-end: #da992b;
+  --focus-ring: rgba(143, 100, 25, 0.15);
+
+  --skeleton-1: #f4f1eb;
+  --skeleton-2: #ede7de;
+}
+
+:root[data-theme="verde"] {
+  --bg: #F1F8F1;
+  --surface: #ffffff;
+  --surface-2: #f4faf5;
+  --surface-translucent: rgba(255, 255, 255, 0.92);
+
+  --border: #dbebdd;
+  --border-strong: #bedac2;
+  --thread-line: #cce1cf;
+
+  --text-primary: #183a1d;
+  --text-secondary: #345139;
+  --text-muted: #49654d;
+  --text-on-accent: #ffffff;
+
+  --accent: #257e34;
+  --accent-light: #e7f9ea;
+  --accent-strong: #1a6126;
+  --accent-gradient-end: #39c651;
+  --focus-ring: rgba(37, 126, 52, 0.15);
+
+  --skeleton-1: #ebf4ed;
+  --skeleton-2: #deede1;
+}
+
+:root[data-theme="celeste"] {
+  --bg: #EEF4FB;
+  --surface: #ffffff;
+  --surface-2: #f4f7fa;
+  --surface-translucent: rgba(255, 255, 255, 0.92);
+
+  --border: #dbe2eb;
+  --border-strong: #becbda;
+  --thread-line: #ccd5e1;
+
+  --text-primary: #1e3148;
+  --text-secondary: #425267;
+  --text-muted: #5a697c;
+  --text-on-accent: #ffffff;
+
+  --accent: #226bc3;
+  --accent-light: #e7eff9;
+  --accent-strong: #1957a3;
+  --accent-gradient-end: #5f9ae3;
+  --focus-ring: rgba(34, 107, 195, 0.15);
+
+  --skeleton-1: #ebeff4;
+  --skeleton-2: #dee5ed;
+}
+
+:root[data-theme="lavanda"] {
+  --bg: #F4F1FA;
+  --surface: #ffffff;
+  --surface-2: #f7f4fa;
+  --surface-translucent: rgba(255, 255, 255, 0.92);
+
+  --border: #e1dbeb;
+  --border-strong: #c8beda;
+  --thread-line: #d3cce1;
+
+  --text-primary: #322150;
+  --text-secondary: #54466d;
+  --text-muted: #6b5e82;
+  --text-on-accent: #ffffff;
+
+  --accent: #7341c8;
+  --accent-light: #ede7f9;
+  --accent-strong: #5f2fb1;
+  --accent-gradient-end: #a788dd;
+  --focus-ring: rgba(115, 65, 200, 0.15);
+
+  --skeleton-1: #eeebf4;
+  --skeleton-2: #e4deed;
+}

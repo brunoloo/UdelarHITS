@@ -57,9 +57,18 @@
     <script>
       (function () {
         var saved = localStorage.getItem('theme');
-        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var dark = saved === 'dark' || ((saved === 'system' || !saved) && prefersDark);
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        // 'system' o sin valor → resolver por el SO (claro/oscuro), igual que antes.
+        // Cualquier otro valor ('light', 'dark' o una paleta como 'rosa') pasa
+        // directo: dataset.theme es setAttribute, no parsea HTML, así que un valor
+        // basura no inyecta nada — a lo sumo no matchea ningún bloque de tokens.css
+        // y el CSS cae a :root (tema claro). Por eso el script NO necesita conocer
+        // la lista de paletas: sumar un color no toca este bloque ni el hash CSP.
+        if (!saved || saved === 'system') {
+          document.documentElement.dataset.theme =
+            window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        } else {
+          document.documentElement.dataset.theme = saved;
+        }
 
         var f = document.createElement('link');
         f.rel = 'stylesheet';

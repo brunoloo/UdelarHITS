@@ -1,14 +1,23 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { isValidTheme } from '../config/themes'
 
 const ThemeContext = createContext(null)
 
 export function ThemeProvider({ children }) {
-  const [theme, setThemeState] = useState(
-    () => localStorage.getItem('theme') || 'system'
-  )
+  const [theme, setThemeState] = useState(() => {
+    // Un valor inválido en localStorage (basura o un tema que ya no existe) se
+    // normaliza a 'system'. El script inline ya deja el sitio legible (cae al
+    // tema claro vía CSS); esto además hace que el selector muestre un estado
+    // coherente en vez de una opción rota.
+    const stored = localStorage.getItem('theme')
+    return isValidTheme(stored) ? stored : 'system'
+  })
 
   useEffect(() => {
     function apply() {
+      // 'system' se resuelve por el SO; cualquier otro tema válido (claro,
+      // oscuro o una paleta) se escribe literal. Como el listener de abajo solo
+      // se engancha en 'system', una paleta elegida nunca la pisa el modo del SO.
       const resolved =
         theme === 'system'
           ? window.matchMedia('(prefers-color-scheme: dark)').matches

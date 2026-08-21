@@ -210,6 +210,90 @@
   outline-offset: 2px;
 }
 
+/* ── OPCIÓN "PERSONALIZADA" (ícono + texto en el segmented control) ── */
+
+.settings-custom-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── GRILLA DE PALETAS ── */
+
+.settings-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* Cada swatch es un radio real: el <input> se oculta pero sigue en el flujo de
+   foco y navegación por teclado; el nombre accesible lo da el texto visible. */
+.settings-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 6px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.settings-swatch:hover {
+  background: var(--surface-2);
+}
+
+.settings-swatch input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* La muestra previsualiza el tema: fondo pastel + anillo de acento. */
+.settings-swatch-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--swatch-bg);
+  border: 2px solid var(--swatch-accent);
+  color: var(--swatch-accent);
+  box-shadow: var(--shadow-1);
+  transition: transform 0.12s;
+}
+
+.settings-swatch:hover .settings-swatch-chip {
+  transform: scale(1.05);
+}
+
+/* Estado seleccionado: NO depende del color. Lo marcan el check (dibujado en el
+   acento del propio tema, ≥3:1 sobre su fondo) y un anillo de acento grueso. */
+.settings-swatch.selected .settings-swatch-chip {
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
+.settings-swatch-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.settings-swatch.selected .settings-swatch-name {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Foco de teclado visible sobre el swatch enfocado. */
+.settings-swatch:focus-within .settings-swatch-chip {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 /* ── BUTTONS ── */
 
 .settings-btn-secondary {
