@@ -8,9 +8,9 @@
 // esta lista (deja pasar cualquier id y el CSS degrada al tema claro si no hay
 // bloque), así que no hay que tocar el hash CSP para sumar un color.
 //
-// `swatch` es el color de acento (la identidad visual del tema) y `bg` el fondo
-// pastel; la grilla de muestras usa ambos. NO se guardan colores en ningún
-// lado: en localStorage solo vive el `id`.
+// `bg` es el fondo oscuro teñido de la paleta (el color de la muestra) y
+// `swatch` su acento (el anillo/check de la muestra). La grilla usa ambos. NO
+// se guardan colores en ningún lado: en localStorage solo vive el `id`.
 
 // Temas base, mutuamente excluyentes con las paletas (mismo selector, mismo
 // localStorage). No llevan swatch: se muestran como opciones aparte.
@@ -18,12 +18,12 @@ export const BASE_THEMES = ['light', 'dark', 'system']
 
 // Paletas de color personalizadas. El orden acá es el orden de la grilla.
 export const PALETTES = [
-  { id: 'rosa',    label: 'Rosa',    bg: '#FDF2F5', swatch: '#ba2c5b' },
-  { id: 'coral',   label: 'Coral',   bg: '#FDF1ED', swatch: '#c54526' },
-  { id: 'arena',   label: 'Arena',   bg: '#FDF6EA', swatch: '#8f6419' },
-  { id: 'verde',   label: 'Verde',   bg: '#F1F8F1', swatch: '#257e34' },
-  { id: 'celeste', label: 'Celeste', bg: '#EEF4FB', swatch: '#226bc3' },
-  { id: 'lavanda', label: 'Lavanda', bg: '#F4F1FA', swatch: '#7341c8' },
+  { id: 'rosa',    label: 'Rosa',    bg: '#391320', swatch: '#e47d9f' },
+  { id: 'coral',   label: 'Coral',   bg: '#391c13', swatch: '#e18b70' },
+  { id: 'arena',   label: 'Arena',   bg: '#392e13', swatch: '#d6a73b' },
+  { id: 'verde',   label: 'Verde',   bg: '#13391f', swatch: '#2bcc5b' },
+  { id: 'celeste', label: 'Celeste', bg: '#132539', swatch: '#70a5e1' },
+  { id: 'lavanda', label: 'Lavanda', bg: '#241339', swatch: '#af86e5' },
 ]
 
 export const PALETTE_IDS = PALETTES.map(p => p.id)

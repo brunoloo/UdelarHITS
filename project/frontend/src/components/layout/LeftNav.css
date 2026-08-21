@@ -351,8 +351,8 @@ button.nav-item {
 }
 
 .notif-type-dot--reaccion_like {
-  background: #fde7ee;
-  color: #e0245e;
+  background: var(--reaction-like-bg);
+  color: var(--reaction-like-text);
 }
 
 .notif-preview {

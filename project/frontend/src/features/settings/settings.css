@@ -221,9 +221,10 @@
 /* ── GRILLA DE PALETAS ── */
 
 .settings-palette-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 8px;
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid var(--border);
@@ -236,6 +237,7 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  width: 88px;
   padding: 10px 6px;
   border-radius: var(--radius);
   cursor: pointer;

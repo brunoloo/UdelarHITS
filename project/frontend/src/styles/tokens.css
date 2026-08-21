@@ -47,6 +47,11 @@
   --status-info-border: #bfdbfe;
   --status-info-text: #1d4ed8;
 
+  /* Color de reacción "me gusta" — semántico fijo (rosa/rojo), no del tema.
+     Definido junto a los semánticos porque la familia oscura lo redefine. */
+  --reaction-like-bg: #fde7ee;
+  --reaction-like-text: #e0245e;
+
   /* ── Sombras ─────────────────────────────────────── */
   --shadow-1: 0 1px 2px rgba(20, 22, 30, 0.04);
   --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.10);
@@ -69,7 +74,60 @@
   --header-h: 56px;
 }
 
-/* Dark mode */
+/* ── FAMILIA OSCURA — TOKENS COMPARTIDOS ───────────────────────────
+   El tema oscuro y las seis paletas comparten los tokens que NO dependen
+   del matiz: los 13 semánticos (el rojo de error tiene que seguir siendo
+   rojo), las 3 sombras (calculadas para fondo oscuro) y --modal-overlay.
+   Viven una sola vez acá — cero duplicación. Sumar una paleta = una línea
+   más en este selector.
+
+   Este bloque va ANTES de los bloques por tema; los 18 tokens propios de
+   cada tema (más abajo) lo pisan donde corresponde. En la práctica no hay
+   conflicto: estos 17 tokens y los 18 de superficie/borde/texto/acento/
+   skeleton son sets disjuntos. El orden lo garantiza igual (misma
+   especificidad → gana el que va después → el bloque por tema). */
+:root[data-theme="dark"],
+:root[data-theme="rosa"],
+:root[data-theme="coral"],
+:root[data-theme="arena"],
+:root[data-theme="verde"],
+:root[data-theme="celeste"],
+:root[data-theme="lavanda"] {
+  /* ── Estados semánticos (el rojo sigue rojo) ─────── */
+  --danger: #ff6b6b;
+
+  --status-error-bg: #2d1515;
+  --status-error-border: #5c2222;
+  --status-error-text: #ff8080;
+
+  --status-success-bg: #0d2318;
+  --status-success-border: #1a4731;
+  --status-success-text: #4ade80;
+
+  --status-warning-bg: #2a1f0a;
+  --status-warning-border: #4a3510;
+  --status-warning-text: #fbbf24;
+
+  --status-info-bg: #0c1929;
+  --status-info-border: #1e3a5f;
+  --status-info-text: #60a5fa;
+
+  /* Reacción "me gusta" — versión oscura (pill integrado, ícono #f17e9b
+     sobre #4a1c28 ≈ 5.5:1). En claro (:root) queda rosa claro. */
+  --reaction-like-bg: #4a1c28;
+  --reaction-like-text: #f17e9b;
+
+  /* ── Sombras (para fondo oscuro) ─────────────────── */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.40);
+  --shadow-3: 0 24px 60px rgba(0, 0, 0, 0.50);
+
+  /* ── Overlay de modales ──────────────────────────── */
+  --modal-overlay: rgba(0, 0, 0, 0.75);
+  /* --overlay-dark-* no se redefine: siempre oscuro sobre imágenes */
+}
+
+/* Dark mode — sus 18 tokens propios (los compartidos salen del bloque de arriba) */
 :root[data-theme="dark"] {
   /* ── Superficies ─────────────────────────────────── */
   --bg: #0f1419;
@@ -97,34 +155,6 @@
   --accent-gradient-end: #7ab0ff;
   --focus-ring: rgba(77, 143, 255, 0.20);
 
-  /* ── Estados semánticos ──────────────────────────── */
-  --danger: #ff6b6b;
-
-  --status-error-bg: #2d1515;
-  --status-error-border: #5c2222;
-  --status-error-text: #ff8080;
-
-  --status-success-bg: #0d2318;
-  --status-success-border: #1a4731;
-  --status-success-text: #4ade80;
-
-  --status-warning-bg: #2a1f0a;
-  --status-warning-border: #4a3510;
-  --status-warning-text: #fbbf24;
-
-  --status-info-bg: #0c1929;
-  --status-info-border: #1e3a5f;
-  --status-info-text: #60a5fa;
-
-  /* ── Sombras ─────────────────────────────────────── */
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30);
-  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.40);
-  --shadow-3: 0 24px 60px rgba(0, 0, 0, 0.50);
-
-  /* ── Overlays ────────────────────────────────────── */
-  --modal-overlay: rgba(0, 0, 0, 0.75);
-  /* --overlay-dark-* no se redefine: siempre oscuro sobre imágenes */
-
   /* ── Skeleton ────────────────────────────────────── */
   --skeleton-1: #1e2d3d;
   --skeleton-2: #243547;
@@ -132,172 +162,167 @@
 
 /* ── PALETAS DE COLOR PERSONALIZADAS ─────────────────────────────
    Hermanas de claro/oscuro (mismo selector data-theme, no se combinan).
-   Todas son de familia clara: fondo pastel apagado + texto oscuro del
-   mismo matiz. La lista de ids vive en src/config/themes.js.
+   Familia OSCURA teñida: fondo oscuro con color + texto claro del mismo
+   matiz. La lista de ids vive en src/config/themes.js.
 
-   CADA PALETA REDEFINE 18 tokens: superficies (4), bordes (3),
-   texto (4), acento (5), skeletons (2).
+   Derivadas de (matiz, L=15%, S=50%) en HSL. Cada paleta redefine 18
+   tokens propios: superficies (4), bordes (3), texto (4), acento (5),
+   skeletons (2). Los 17 restantes del set (13 semánticos + 3 sombras +
+   --modal-overlay) + reacción "me gusta" salen del bloque compartido de
+   arriba: son familia oscura, NO se heredan del claro (:root) — heredar
+   del claro dejaría rojos y sombras calculados para fondo blanco.
 
-   OMISIÓN DELIBERADA — cada paleta HEREDA de :root (tema claro), no los
-   redefine: los 13 tokens semánticos (--danger + --status-*), las 3
-   sombras (--shadow-*) y --modal-overlay. Los semánticos NO se tiñen a
-   propósito: el rojo de error tiene que seguir comunicando error, y como
-   :root ES el tema claro, heredarlos evita que diverjan en silencio si
-   mañana se ajusta uno. Los overlays sobre imágenes (--overlay-dark-*)
-   ya son excepción global (siempre oscuros) y tampoco se tocan.
-
-   Bordes decorativos a ~1.2-1.5:1 contra el fondo, igual que claro/oscuro:
-   la separación de superficies la da la elevación (superficie blanca +
-   sombra), no el borde. El texto (≥4.5:1) y el acento (≥3:1 contra fondo,
-   ≥4.5:1 texto-sobre-acento) sí cumplen contraste: son color con
-   significado, no decoración. */
+   Contraste verificado (S=50): texto ≥4.5:1, acento/fondo ≈6:1 (L buscada
+   por matiz para emparejar, no fija), texto-sobre-acento ≥4.5:1,
+   focus-ring ≥3:1 sobre superficies, surface/bg ≥1.19:1. Bordes exentos
+   (decorativos, la elevación + sombra separan las tarjetas). */
 
 :root[data-theme="rosa"] {
-  --bg: #FDF2F5;
-  --surface: #ffffff;
-  --surface-2: #faf4f6;
-  --surface-translucent: rgba(255, 255, 255, 0.92);
+  --bg: #391320;
+  --surface: #521e2f;
+  --surface-2: #64263b;
+  --surface-translucent: rgba(82, 30, 47, 0.92);
 
-  --border: #ebdbe0;
-  --border-strong: #dabec7;
-  --thread-line: #e1ccd3;
+  --border: #6b2e42;
+  --border-strong: #8a425a;
+  --thread-line: #6a2f43;
 
-  --text-primary: #481e2c;
-  --text-secondary: #67424e;
-  --text-muted: #7c5a65;
-  --text-on-accent: #ffffff;
+  --text-primary: #f4f0f2;
+  --text-secondary: #c4b0b7;
+  --text-muted: #bda8af;
+  --text-on-accent: #290f18;
 
-  --accent: #ba2c5b;
-  --accent-light: #f9e7ed;
-  --accent-strong: #9c214a;
-  --accent-gradient-end: #db668d;
-  --focus-ring: rgba(186, 44, 91, 0.15);
+  --accent: #e47d9f;
+  --accent-light: #56152b;
+  --accent-strong: #df5986;
+  --accent-gradient-end: #f1bcce;
+  --focus-ring: rgba(228, 125, 159, 0.75);
 
-  --skeleton-1: #f4ebee;
-  --skeleton-2: #eddee3;
+  --skeleton-1: #572335;
+  --skeleton-2: #66293d;
 }
 
 :root[data-theme="coral"] {
-  --bg: #FDF1ED;
-  --surface: #ffffff;
-  --surface-2: #faf6f4;
-  --surface-translucent: rgba(255, 255, 255, 0.92);
+  --bg: #391c13;
+  --surface: #522a1e;
+  --surface-2: #643426;
+  --surface-translucent: rgba(82, 42, 30, 0.92);
 
-  --border: #ebdedb;
-  --border-strong: #dac3be;
-  --thread-line: #e1d0cc;
+  --border: #6b3c2e;
+  --border-strong: #8a5342;
+  --thread-line: #6a3d2f;
 
-  --text-primary: #48261e;
-  --text-secondary: #644740;
-  --text-muted: #795f58;
-  --text-on-accent: #ffffff;
+  --text-primary: #f4f1f0;
+  --text-secondary: #c4b5b0;
+  --text-muted: #bdada8;
+  --text-on-accent: #29150f;
 
-  --accent: #c54526;
-  --accent-light: #f9eae7;
-  --accent-strong: #a6381c;
-  --accent-gradient-end: #e27e65;
-  --focus-ring: rgba(197, 69, 38, 0.15);
+  --accent: #e18b70;
+  --accent-light: #562415;
+  --accent-strong: #dd6d4b;
+  --accent-gradient-end: #eebeaf;
+  --focus-ring: rgba(225, 139, 112, 0.75);
 
-  --skeleton-1: #f4edeb;
-  --skeleton-2: #ede1de;
+  --skeleton-1: #572f23;
+  --skeleton-2: #663729;
 }
 
 :root[data-theme="arena"] {
-  --bg: #FDF6EA;
-  --surface: #ffffff;
-  --surface-2: #faf8f4;
-  --surface-translucent: rgba(255, 255, 255, 0.92);
+  --bg: #392e13;
+  --surface: #52421e;
+  --surface-2: #645126;
+  --surface-translucent: rgba(82, 66, 30, 0.92);
 
-  --border: #ebe5db;
-  --border-strong: #dad0be;
-  --thread-line: #e1d9cc;
+  --border: #6b592e;
+  --border-strong: #8a7442;
+  --thread-line: #6a582f;
 
-  --text-primary: #41331b;
-  --text-secondary: #5d513c;
-  --text-muted: #706551;
-  --text-on-accent: #ffffff;
+  --text-primary: #f4f3f0;
+  --text-secondary: #c4beb0;
+  --text-muted: #bdb7a8;
+  --text-on-accent: #29210f;
 
-  --accent: #8f6419;
-  --accent-light: #f9f2e7;
-  --accent-strong: #6e4c11;
-  --accent-gradient-end: #da992b;
-  --focus-ring: rgba(143, 100, 25, 0.15);
+  --accent: #d6a73b;
+  --accent-light: #564215;
+  --accent-strong: #c39425;
+  --accent-gradient-end: #e3c47a;
+  --focus-ring: rgba(214, 167, 59, 0.75);
 
-  --skeleton-1: #f4f1eb;
-  --skeleton-2: #ede7de;
+  --skeleton-1: #574823;
+  --skeleton-2: #665429;
 }
 
 :root[data-theme="verde"] {
-  --bg: #F1F8F1;
-  --surface: #ffffff;
-  --surface-2: #f4faf5;
-  --surface-translucent: rgba(255, 255, 255, 0.92);
+  --bg: #13391f;
+  --surface: #1e522e;
+  --surface-2: #266438;
+  --surface-translucent: rgba(30, 82, 46, 0.92);
 
-  --border: #dbebdd;
-  --border-strong: #bedac2;
-  --thread-line: #cce1cf;
+  --border: #2e6b40;
+  --border-strong: #428a58;
+  --thread-line: #2f6a41;
 
-  --text-primary: #183a1d;
-  --text-secondary: #345139;
-  --text-muted: #49654d;
-  --text-on-accent: #ffffff;
+  --text-primary: #f0f4f1;
+  --text-secondary: #b0c4b6;
+  --text-muted: #a8bdae;
+  --text-on-accent: #0f2917;
 
-  --accent: #257e34;
-  --accent-light: #e7f9ea;
-  --accent-strong: #1a6126;
-  --accent-gradient-end: #39c651;
-  --focus-ring: rgba(37, 126, 52, 0.15);
+  --accent: #2bcc5b;
+  --accent-light: #155629;
+  --accent-strong: #21ad4b;
+  --accent-gradient-end: #65de89;
+  --focus-ring: rgba(43, 204, 91, 0.75);
 
-  --skeleton-1: #ebf4ed;
-  --skeleton-2: #deede1;
+  --skeleton-1: #235733;
+  --skeleton-2: #29663b;
 }
 
 :root[data-theme="celeste"] {
-  --bg: #EEF4FB;
-  --surface: #ffffff;
-  --surface-2: #f4f7fa;
-  --surface-translucent: rgba(255, 255, 255, 0.92);
+  --bg: #132539;
+  --surface: #1e3652;
+  --surface-2: #264364;
+  --surface-translucent: rgba(30, 54, 82, 0.92);
 
-  --border: #dbe2eb;
-  --border-strong: #becbda;
-  --thread-line: #ccd5e1;
+  --border: #2e4a6b;
+  --border-strong: #42648a;
+  --thread-line: #2f4b6a;
 
-  --text-primary: #1e3148;
-  --text-secondary: #425267;
-  --text-muted: #5a697c;
-  --text-on-accent: #ffffff;
+  --text-primary: #f0f2f4;
+  --text-secondary: #b0b9c4;
+  --text-muted: #a8b2bd;
+  --text-on-accent: #0f1b29;
 
-  --accent: #226bc3;
-  --accent-light: #e7eff9;
-  --accent-strong: #1957a3;
-  --accent-gradient-end: #5f9ae3;
-  --focus-ring: rgba(34, 107, 195, 0.15);
+  --accent: #70a5e1;
+  --accent-light: #153356;
+  --accent-strong: #4b8fdd;
+  --accent-gradient-end: #afccee;
+  --focus-ring: rgba(112, 165, 225, 0.75);
 
-  --skeleton-1: #ebeff4;
-  --skeleton-2: #dee5ed;
+  --skeleton-1: #233b57;
+  --skeleton-2: #294566;
 }
 
 :root[data-theme="lavanda"] {
-  --bg: #F4F1FA;
-  --surface: #ffffff;
-  --surface-2: #f7f4fa;
-  --surface-translucent: rgba(255, 255, 255, 0.92);
+  --bg: #241339;
+  --surface: #351e52;
+  --surface-2: #412664;
+  --surface-translucent: rgba(53, 30, 82, 0.92);
 
-  --border: #e1dbeb;
-  --border-strong: #c8beda;
-  --thread-line: #d3cce1;
+  --border: #482e6b;
+  --border-strong: #61428a;
+  --thread-line: #492f6a;
 
-  --text-primary: #322150;
-  --text-secondary: #54466d;
-  --text-muted: #6b5e82;
-  --text-on-accent: #ffffff;
+  --text-primary: #f2f0f4;
+  --text-secondary: #b9b0c4;
+  --text-muted: #b1a8bd;
+  --text-on-accent: #1a0f29;
 
-  --accent: #7341c8;
-  --accent-light: #ede7f9;
-  --accent-strong: #5f2fb1;
-  --accent-gradient-end: #a788dd;
-  --focus-ring: rgba(115, 65, 200, 0.15);
+  --accent: #af86e5;
+  --accent-light: #311556;
+  --accent-strong: #9861e1;
+  --accent-gradient-end: #d9c5f3;
+  --focus-ring: rgba(175, 134, 229, 0.75);
 
-  --skeleton-1: #eeebf4;
-  --skeleton-2: #e4deed;
+  --skeleton-1: #3a2357;
+  --skeleton-2: #432966;
 }
