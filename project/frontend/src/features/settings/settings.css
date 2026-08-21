@@ -218,16 +218,30 @@
   gap: 6px;
 }
 
-/* ── GRILLA DE PALETAS ── */
+/* ── GRILLA DE PALETAS (dos grupos: Claros / Oscuros) ── */
 
-.settings-palette-grid {
+.settings-palette-groups {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px 8px;
+  flex-direction: column;
+  gap: 20px;
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid var(--border);
+}
+
+.settings-palette-heading {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.settings-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  justify-items: center;
+  gap: 12px 8px;
 }
 
 /* Cada swatch es un radio real: el <input> se oculta pero sigue en el flujo de
@@ -237,7 +251,8 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  width: 88px;
+  width: 100%;
+  max-width: 88px;
   padding: 10px 6px;
   border-radius: var(--radius);
   cursor: pointer;

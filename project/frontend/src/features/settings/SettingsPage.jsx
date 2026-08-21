@@ -4,7 +4,7 @@ import { Palette, Check } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
-import { PALETTES, isPalette } from '../../config/themes'
+import { PALETTE_GROUPS, isPalette } from '../../config/themes'
 import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
 import { UserAvatar } from '../../components/shared/UserAvatar'
@@ -194,35 +194,42 @@ export function SettingsPage() {
 
                 {customActive && (
                   <div
-                    className="settings-palette-grid"
+                    className="settings-palette-groups"
                     role="radiogroup"
                     aria-label="Paleta de color personalizada"
                   >
-                    {PALETTES.map(p => {
-                      const selected = theme === p.id
-                      return (
-                        <label
-                          key={p.id}
-                          className={`settings-swatch${selected ? ' selected' : ''}`}
-                        >
-                          <input
-                            type="radio"
-                            name="palette"
-                            value={p.id}
-                            checked={selected}
-                            onChange={() => setTheme(p.id)}
-                          />
-                          <span
-                            className="settings-swatch-chip"
-                            style={{ '--swatch-bg': p.bg, '--swatch-accent': p.swatch }}
-                            aria-hidden="true"
-                          >
-                            {selected && <Check size={16} strokeWidth={3} />}
-                          </span>
-                          <span className="settings-swatch-name">{p.label}</span>
-                        </label>
-                      )
-                    })}
+                    {PALETTE_GROUPS.map(group => (
+                      <div key={group.family} className="settings-palette-group">
+                        <h4 className="settings-palette-heading">{group.label}</h4>
+                        <div className="settings-palette-grid">
+                          {group.items.map(p => {
+                            const selected = theme === p.id
+                            return (
+                              <label
+                                key={p.id}
+                                className={`settings-swatch${selected ? ' selected' : ''}`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="palette"
+                                  value={p.id}
+                                  checked={selected}
+                                  onChange={() => setTheme(p.id)}
+                                />
+                                <span
+                                  className="settings-swatch-chip"
+                                  style={{ '--swatch-bg': p.bg, '--swatch-accent': p.swatch }}
+                                  aria-hidden="true"
+                                >
+                                  {selected && <Check size={16} strokeWidth={3} />}
+                                </span>
+                                <span className="settings-swatch-name">{p.label}</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </article>

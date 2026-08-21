@@ -3,7 +3,7 @@ header {
   position: fixed;
   top: 0; left: 0; right: 0;
   height: var(--header-h);
-  background: var(--surface);
+  background: var(--chrome-bg);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;

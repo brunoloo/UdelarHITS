@@ -9,7 +9,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 16px 8px;
-  background: var(--surface);
+  background: var(--chrome-bg);
   border-right: 1px solid var(--border);
   overflow-y: auto;
 }
