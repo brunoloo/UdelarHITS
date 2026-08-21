@@ -7,7 +7,7 @@ import { trackCreateComment } from '../../utils/analytics'
 import { CommentCard } from './CommentCard'
 import './CommentCard.css'
 
-export function CommentThread({ comments, invalidateKey, invalidateKeys = null, initialCommentId, initialStack = null, onExit = null, onInitialDrillDone, canPin = false, onTogglePin }) {
+export function CommentThread({ comments, invalidateKey, invalidateKeys = null, initialCommentId, initialStack = null, initialHighlightId = null, onExit = null, onInitialDrillDone, canPin = false, onTogglePin }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
   const lastDrilledId = useRef(null)
@@ -16,7 +16,14 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
   // /comment/:id, que arranca mostrando el comentario con sus respuestas). En
   // CategoryPage/TopicPage no se pasa → arranca vacío, como siempre.
   const [stack, setStack] = useState(() => initialStack || [])
-  const [highlightedId, setHighlightedId] = useState(null)
+  // initialHighlightId: resalta el comentario enfocado al abrir el permalink
+  // (el comentario pedido es el ancestro más profundo del initialStack), con el
+  // mismo flash que usan CategoryPage/TopicPage vía initialCommentId. Así una
+  // notificación de like a un comentario de Home no solo lleva al comentario,
+  // sino que lo marca igual que las de tema/categoría.
+  const [highlightedId, setHighlightedId] = useState(() =>
+    initialHighlightId != null ? String(initialHighlightId) : null
+  )
 
   useEffect(() => {
     if (!initialCommentId) {
@@ -123,6 +130,7 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
                 comment={anc}
                 role="ancestor"
                 showThreadLine={showThreadLine}
+                highlighted={String(anc.id || anc.contenido_id) === highlightedId}
                 onReply={handleReply}
                 invalidateKey={invalidateKey}
                 invalidateKeys={invalidateKeys}

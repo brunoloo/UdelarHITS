@@ -47,6 +47,7 @@ export function CommentPage() {
         key={id}
         comments={[]}
         initialStack={chain}
+        initialHighlightId={id}
         onExit={() => navigate(-1)}
         invalidateKey={['comment', id]}
         // Al responder o eliminar en el permalink: refrescar el hilo (['replies']
