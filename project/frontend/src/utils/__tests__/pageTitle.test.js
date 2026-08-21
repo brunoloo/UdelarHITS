@@ -73,9 +73,10 @@ describe('profileTitle', () => {
   test('cuenta activa privada expone solo el nickname (igual que la página/preview)', () => {
     expect(profileTitle({ nickname: 'ada', estado: 'activo', privado: true })).toBe(`ada · ${SITE_NAME}`)
   })
-  test('cuenta inactiva/baneada → "Perfil en UdelarHITS"', () => {
-    expect(profileTitle({ nickname: 'ada', estado: 'inactivo' })).toBe(`Perfil en ${SITE_NAME}`)
-    expect(profileTitle({ nickname: 'ada', estado: 'baneado' })).toBe(`Perfil en ${SITE_NAME}`)
+  test('cuenta desactivada o baneada NO expone el nickname → "Perfil en UdelarHITS"', () => {
+    // estado_usr = ('activo','inactivo','ban')
+    expect(profileTitle({ nickname: 'ada', estado: 'inactivo', privado: false })).toBe(`Perfil en ${SITE_NAME}`)
+    expect(profileTitle({ nickname: 'ada', estado: 'ban', privado: true })).toBe(`Perfil en ${SITE_NAME}`)
   })
   test('inexistente → "Perfil en UdelarHITS"', () => {
     expect(profileTitle(null)).toBe(`Perfil en ${SITE_NAME}`)

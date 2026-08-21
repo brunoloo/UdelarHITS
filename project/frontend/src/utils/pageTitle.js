@@ -42,11 +42,15 @@ export function commentTitle(comment) {
   return BASE_TITLE
 }
 
-// Espeja resolveProfileSeo(): cuenta activa (pública O privada) →
-// "<nickname> · UdelarHITS"; inactiva, baneada o inexistente →
-// "Perfil en UdelarHITS". Mismo criterio de privacidad que la preview social:
-// el único dato expuesto es el nickname, que la propia página de perfil muestra
-// para toda cuenta activa, así que el título no filtra nada de un perfil privado.
+// Espeja resolveProfileSeo(). El estado del usuario es el enum
+// estado_usr('activo','inactivo','ban') y la privacidad es un campo `privado`
+// aparte, así que:
+//   · cuenta activa, PÚBLICA O PRIVADA → "<nickname> · UdelarHITS". El nickname
+//     es lo único que se expone y la propia página de perfil lo muestra para
+//     toda cuenta activa (mismo criterio de privacidad que la preview social),
+//     así que el título no filtra nada de un perfil privado.
+//   · cuenta desactivada ('inactivo'), baneada ('ban') o inexistente →
+//     "Perfil en UdelarHITS", sin exponer el nickname.
 export function profileTitle(profile) {
   if (profile && profile.estado === 'activo' && profile.nickname) return `${profile.nickname} · ${SITE_NAME}`
   return `Perfil en ${SITE_NAME}`
