@@ -153,3 +153,57 @@ describe('Notificación: comentario en un tema de una categoría', () => {
     expect(afterTema).toBe(beforeTema);
   });
 });
+
+// ─── Like a un comentario: la notificación enlaza al comentario ───
+describe('Notificación: like a un comentario (reaccion_like) con link al comentario', () => {
+  const like = (cookie, contenidoId) =>
+    request(app).post(`/api/reactions/${contenidoId}`).set('Cookie', cookie).send({ tipo: 'meGusta' });
+
+  test('like a un comentario de un tema → link /topic/:id?commentId=', async () => {
+    const dueño = await registerAndLogin();
+    const otro = await registerAndLogin();
+    const cat = await createCategory(dueño.cookie);
+    const topic = await createTopic(dueño.cookie, { categoria_id: cat.id });
+    const temaId = topic.contenido_id ?? topic.id;
+    const comment = await createReply(dueño.cookie, { tema_id: temaId });
+
+    await like(otro.cookie, comment.contenido_id);
+
+    const notif = (await getNotifs(dueño.cookie)).find(n => n.tipo === 'reaccion_like');
+    expect(notif).toBeDefined();
+    expect(notif.url).toBe(`/topic/${temaId}?commentId=${comment.contenido_id}`);
+  });
+
+  test('like a un comentario de una categoría → link /category/:id?tab=comentarios&commentId=', async () => {
+    const dueño = await registerAndLogin();
+    const otro = await registerAndLogin();
+    const cat = await createCategory(dueño.cookie);
+    const comment = await createReply(dueño.cookie, { categoria_id: cat.id });
+
+    await like(otro.cookie, comment.contenido_id);
+
+    const notif = (await getNotifs(dueño.cookie)).find(n => n.tipo === 'reaccion_like');
+    expect(notif).toBeDefined();
+    expect(notif.url).toBe(`/category/${cat.id}?tab=comentarios&commentId=${comment.contenido_id}`);
+  });
+
+  // Regresión: los likes a comentarios directos de Home quedaban con url=null y
+  // la notificación no era clickeable. Deben enlazar al permalink /comment/:id.
+  test('like a un comentario directo de Home → link /comment/:id (antes quedaba null)', async () => {
+    const dueño = await registerAndLogin();
+    const otro = await registerAndLogin();
+
+    const res = await request(app)
+      .post('/api/replies/create')
+      .set('Cookie', dueño.cookie)
+      .send({ cuerpo: 'Comentario en el Home', es_home: true });
+    expect(res.status).toBeLessThan(400);
+    const homeComment = res.body.data;
+
+    await like(otro.cookie, homeComment.contenido_id);
+
+    const notif = (await getNotifs(dueño.cookie)).find(n => n.tipo === 'reaccion_like');
+    expect(notif).toBeDefined();
+    expect(notif.url).toBe(`/comment/${homeComment.contenido_id}`);
+  });
+});
