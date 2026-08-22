@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { apiGet, apiPost, apiDelete } from '../../api/client'
 import { buildReplyFormData } from '../../utils/attachments'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import { profileTitle } from '../../utils/pageTitle'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { FollowButton } from '../../components/shared/FollowButton'
@@ -171,6 +173,12 @@ export function ProfilePage() {
   }
 
   const canViewContent = canView()
+
+  // Título con el formato del servidor: cuenta activa (pública o privada) →
+  // "<nickname> · UdelarHITS"; inactiva/inexistente → "Perfil en UdelarHITS".
+  // Solo expone el nickname (mismo criterio que la preview social), que la
+  // página muestra igual. Se reporta cuando auth y la query ya resolvieron.
+  useDocumentTitle(profileTitle(profile), !authLoading && !isLoading)
 
   // While auth resolves, show a skeleton (never block header/leftnav, which
   // live outside the outlet). Guests fall through to the same skeleton while

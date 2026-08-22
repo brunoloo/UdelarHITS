@@ -5,6 +5,7 @@ import { useToast } from '../../hooks/useToast'
 import { trackLogin } from '../../utils/analytics'
 import { GoogleAuthButton } from './GoogleAuthButton'
 import './auth.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 function EyeIcon() {
   return (
@@ -25,6 +26,7 @@ function EyeOffIcon() {
 }
 
 export function LoginPage() {
+  useDocumentTitle()
   const { login, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()

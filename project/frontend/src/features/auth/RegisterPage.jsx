@@ -5,6 +5,7 @@ import { useToast } from '../../hooks/useToast'
 import { trackSignUp } from '../../utils/analytics'
 import { GoogleAuthButton } from './GoogleAuthButton'
 import './auth.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 // Clave en localStorage para retomar el paso de verificación si el usuario sale
 // de la pantalla del código. Guardamos SOLO el email (no la contraseña ni el
@@ -54,6 +55,7 @@ function EyeOffIcon() {
 }
 
 export function RegisterPage() {
+  useDocumentTitle()
   const { register, verifyEmail, resendCode } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()

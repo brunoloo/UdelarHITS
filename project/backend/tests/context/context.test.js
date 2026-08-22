@@ -97,4 +97,30 @@ describe('GET /api/replies/:id/context', () => {
     expect(res.body.data[0].id).toBe(root.contenido_id);
     expect(res.body.data[1].id).toBe(child.contenido_id);
   });
+
+  // El cliente usa el título del ámbito para fijar el document.title del
+  // permalink con el mismo formato que inyecta el servidor en la carga inicial.
+  it('expone el título del ámbito: categoria_titulo para comentarios de categoría', async () => {
+    const root = await createReply(userA.cookie, { categoria_id: cat.id });
+
+    const res = await request(app)
+      .get(`/api/replies/${root.contenido_id}/context`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data[0].categoria_titulo).toBe(cat.titulo);
+    expect(res.body.data[0].tema_titulo).toBeNull();
+  });
+
+  it('expone el título del ámbito: tema_titulo (y su categoría) para comentarios de tema', async () => {
+    const topic = await createTopic(userA.cookie, { categoria_id: cat.id });
+    const topicId = topic.id ?? topic.contenido_id;
+    const root = await createReply(userA.cookie, { tema_id: topicId });
+
+    const res = await request(app)
+      .get(`/api/replies/${root.contenido_id}/context`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data[0].tema_titulo).toBe(topic.titulo);
+    expect(res.body.data[0].categoria_titulo).toBe(cat.titulo);
+  });
 });

@@ -12,6 +12,7 @@ import { Modal } from '../../components/ui/Modal'
 import { ChangePasswordModal } from './ChangePasswordModal'
 import '../profile/FollowersModal.css'
 import './settings.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 const TABS = [
   {
@@ -67,6 +68,7 @@ const BASE_THEME_OPTIONS = [
 ]
 
 export function SettingsPage() {
+  useDocumentTitle()
   const [activeTab, setActiveTab] = useState('apariencia')
   const [changePasswordOpen, setChangePasswordOpen] = useState(false)
   const [blockedListOpen, setBlockedListOpen] = useState(false)

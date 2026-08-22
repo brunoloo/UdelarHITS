@@ -9,6 +9,8 @@ import { UserAvatar } from '../../components/shared/UserAvatar'
 import { ReadMore } from '../../components/ui/ReadMore'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
 import { useSaved } from '../../hooks/useSaved'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import { topicTitle } from '../../utils/pageTitle'
 import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
 import { Modal } from '../../components/ui/Modal'
 import { CommentThread } from '../../components/shared/CommentThread'
@@ -112,6 +114,10 @@ export function TopicPage() {
     setHistoryIndex(0)
     setHistoryModalOpen(true)
   }
+
+  // Título con el formato del servidor (tema activo en categoría activa →
+  // "<titulo> · <categoria> · UdelarHITS"; inexistente → genérico).
+  useDocumentTitle(topicTitle(topic), !isLoading)
 
   if (isLoading) return <div className="feed-empty">Cargando...</div>
   if (isError || !topic) return <div className="feed-empty">Tema no encontrado.</div>

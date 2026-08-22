@@ -62,14 +62,21 @@ const toggleReaction = async (userId, contenidoId, tipo) => {
         );
         if (!dup) {
           const { rows: locRows } = await client.query(
-            'SELECT tema_id, categoria_id FROM comentario WHERE contenido_id = $1', [contenidoId]
+            'SELECT tema_id, categoria_id, es_home FROM comentario WHERE contenido_id = $1', [contenidoId]
           );
           const loc = locRows[0] || {};
+          // Mismo criterio que las notificaciones de respuesta/mención: un
+          // comentario de Home no tiene tema ni categoría de la que derivar la
+          // URL, así que se enlaza a su permalink /comment/:id (la página existe
+          // justamente para eso). Sin este caso, el like a un comentario directo
+          // de Home quedaba con url=null y la notificación no era clickeable.
           const url = loc.tema_id
             ? `/topic/${loc.tema_id}?commentId=${contenidoId}`
             : loc.categoria_id
               ? `/category/${loc.categoria_id}?tab=comentarios&commentId=${contenidoId}`
-              : null;
+              : loc.es_home
+                ? `/comment/${contenidoId}`
+                : null;
           const { rows: actorRows } = await client.query(
             'SELECT nickname FROM usuario WHERE id = $1', [userId]
           );

@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { parseId } from '../../utils/slug'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import { categoryTitle } from '../../utils/pageTitle'
 import { TopicCard } from '../../components/shared/TopicCard'
 import { CommentThread } from '../../components/shared/CommentThread'
 import { CreateCommentPanel } from '../../components/shared/CreateCommentPanel'
@@ -399,6 +401,10 @@ export function CategoryPage() {
     },
     onError: (err) => showToast(err.message || 'No se pudo desanclar la categoría', 'error'),
   })
+
+  // Título con el formato del servidor (categoría activa → "<titulo> · UdelarHITS";
+  // inexistente/inactiva → genérico). Se reporta cuando la query ya resolvió.
+  useDocumentTitle(categoryTitle(cat), !catLoading)
 
   if (catLoading) {
     return (

@@ -10,6 +10,7 @@ import { timeAgo } from '../../utils/timeAgo'
 import { useToast } from '../../hooks/useToast'
 import './feed.css'
 import './explore.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 // ── Hero ──
 function HeroCard({ category }) {
@@ -294,6 +295,7 @@ function CategorySuggestions({ allCats, myCats }) {
 
 // ── Page ──
 export function ExplorePage() {
+  useDocumentTitle()
   const { user, loading } = useAuth()
 
   // Rankings de ventana semanal: cambian lento y son caros de calcular en el

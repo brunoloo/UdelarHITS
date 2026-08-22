@@ -5,8 +5,10 @@ import { useToast } from '../../hooks/useToast'
 import { apiPost } from '../../api/client'
 import { trackSignUp } from '../../utils/analytics'
 import './auth.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 export function SetupProfilePage() {
+  useDocumentTitle()
   const { user, setUser } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
