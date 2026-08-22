@@ -428,14 +428,27 @@
     position: static;
     flex-direction: row;
     overflow-x: auto;
-    /* Deja aire al final del scroll para que la última pestaña se revele
-       completa (no pegada al borde) al llegar al final. */
-    scroll-padding-inline-end: 8px;
   }
 
-  /* Las pestañas nunca se comprimen: overflow + scroll, no texto truncado. */
+  /* En la tira horizontal cada pestaña vuelve a su ancho de contenido (el
+     width:100% base es para el sidebar vertical de desktop) y no se comprime:
+     así la tira desborda y scrollea con las pestañas a tamaño natural. */
   .settings-tab {
+    width: auto;
     flex-shrink: 0;
+  }
+
+  /* PISTA DE SCROLL: degradado sobre el borde con más contenido. Es scroll-
+     aware (aparece a la derecha en la 1ª pestaña, a la izquierda en la última,
+     nada cuando no hay overflow) y no depende de cuántas pestañas ni del largo
+     del texto — es geométrico sobre el contenedor. Sin flechas ni puntos.
+     Donde no hay soporte, no se aplica máscara y el asomo físico igual queda. */
+  @supports (animation-timeline: scroll()) {
+    .settings-sidebar {
+      --tab-fade: 22px;
+      animation: settings-tab-scroll-hint linear both;
+      animation-timeline: scroll(self inline);
+    }
   }
 
   .settings-row {
@@ -446,6 +459,20 @@
 
   .settings-row-control {
     align-self: flex-start;
+  }
+}
+
+/* Máscara de la pista de scroll (referenciada arriba). Los negros/transparente
+   son alfa de máscara, no colores del tema. */
+@keyframes settings-tab-scroll-hint {
+  from {
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--tab-fade)), transparent 100%);
+  }
+  0.5%, 99.5% {
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--tab-fade), #000 calc(100% - var(--tab-fade)), transparent 100%);
+  }
+  to {
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--tab-fade));
   }
 }
 
