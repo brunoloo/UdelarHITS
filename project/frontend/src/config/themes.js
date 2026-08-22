@@ -21,15 +21,15 @@ export const BASE_THEMES = ['light', 'dark', 'system']
 // la paleta (y la muestra del swatch); `swatch` su acento (anillo/check).
 export const PALETTES = [
   // Claras
-  { id: 'rosa-claro',    label: 'Rosa claro',    family: 'claro',  bg: '#FCCAE6', swatch: '#C62F85' },
-  { id: 'verde-claro',   label: 'Verde claro',   family: 'claro',  bg: '#D9EDCF', swatch: '#3F801E' },
-  { id: 'celeste-claro', label: 'Celeste claro', family: 'claro',  bg: '#C9D8EE', swatch: '#2F6DCA' },
-  { id: 'lavanda-claro', label: 'Lavanda claro', family: 'claro',  bg: '#CFB1F1', swatch: '#8541D2' },
+  { id: 'rosa-claro',    label: 'Rosa',    family: 'claro',  bg: '#FCCAE6', swatch: '#C62F85' },
+  { id: 'verde-claro',   label: 'Verde',   family: 'claro',  bg: '#D9EDCF', swatch: '#3F801E' },
+  { id: 'celeste-claro', label: 'Celeste', family: 'claro',  bg: '#C9D8EE', swatch: '#2F6DCA' },
+  { id: 'lavanda-claro', label: 'Lavanda', family: 'claro',  bg: '#CFB1F1', swatch: '#8541D2' },
   // Oscuras
-  { id: 'rosa-oscuro',    label: 'Rosa oscuro',    family: 'oscuro', bg: '#391320', swatch: '#e47d9f' },
-  { id: 'verde-oscuro',   label: 'Verde oscuro',   family: 'oscuro', bg: '#13391f', swatch: '#2bcc5b' },
-  { id: 'celeste-oscuro', label: 'Celeste oscuro', family: 'oscuro', bg: '#132539', swatch: '#70a5e1' },
-  { id: 'lavanda-oscuro', label: 'Lavanda oscuro', family: 'oscuro', bg: '#241339', swatch: '#af86e5' },
+  { id: 'rosa-oscuro',    label: 'Rosa',    family: 'oscuro', bg: '#391320', swatch: '#e47d9f' },
+  { id: 'verde-oscuro',   label: 'Verde',   family: 'oscuro', bg: '#13391f', swatch: '#2bcc5b' },
+  { id: 'celeste-oscuro', label: 'Celeste', family: 'oscuro', bg: '#132539', swatch: '#70a5e1' },
+  { id: 'lavanda-oscuro', label: 'Lavanda', family: 'oscuro', bg: '#241339', swatch: '#af86e5' },
 ]
 
 // Grilla agrupada por familia (el selector de la UI lee de acá).
