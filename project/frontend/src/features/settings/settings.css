@@ -428,6 +428,14 @@
     position: static;
     flex-direction: row;
     overflow-x: auto;
+    /* Deja aire al final del scroll para que la última pestaña se revele
+       completa (no pegada al borde) al llegar al final. */
+    scroll-padding-inline-end: 8px;
+  }
+
+  /* Las pestañas nunca se comprimen: overflow + scroll, no texto truncado. */
+  .settings-tab {
+    flex-shrink: 0;
   }
 
   .settings-row {
@@ -438,5 +446,37 @@
 
   .settings-row-control {
     align-self: flex-start;
+  }
+}
+
+/* En teléfonos el control segmentado de tema (cuatro opciones) no entra en el
+   ancho de la tarjeta: medido, se recorta por debajo de ~420px. Debajo de este
+   breakpoint pasa a lista vertical de ancho completo — nada se corta a 320px.
+   Desktop y tablet (>480px) mantienen el segmentado horizontal, que sí entra. */
+@media (max-width: 480px) {
+  .settings-row-control {
+    align-self: stretch;
+    width: 100%;
+  }
+
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .radio-option {
+    justify-content: flex-start;
+    padding: 11px 14px;
+  }
+
+  /* En una fila de ancho completo la esquina absoluta se montaría sobre la
+     fila de arriba: el badge pasa a inline, a la derecha del texto. */
+  .settings-new-badge {
+    position: static;
+    top: auto;
+    right: auto;
+    margin-left: 8px;
   }
 }
