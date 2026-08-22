@@ -84,6 +84,7 @@ describe('cascada de tokens de tema', () => {
     for (const id of darkIds) {
       expect(resolve_('--danger', id)).toBe(DARK_DANGER)
       expect(resolve_('--reaction-like-bg', id)).toBe('#4a1c28')
+      expect(resolve_('--badge-new-bg', id)).toBe('#7ab0ff')
       expect(resolve_('--modal-overlay', id)).toBe('rgba(0, 0, 0, 0.75)')
     }
   })
@@ -94,6 +95,7 @@ describe('cascada de tokens de tema', () => {
       // resuelven al valor de :root.
       expect(resolve_('--danger', id)).toBe(LIGHT_DANGER)
       expect(resolve_('--reaction-like-bg', id)).toBe('#fde7ee')
+      expect(resolve_('--badge-new-bg', id)).toBe('#1d4ed8')
     }
   })
 

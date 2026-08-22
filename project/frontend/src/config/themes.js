@@ -50,3 +50,13 @@ export function isValidTheme(value) {
 export function isPalette(value) {
   return PALETTE_IDS.includes(value)
 }
+
+// Badge "Nuevo" en la opción "Personalizada" del selector de tema. Es temporal:
+// se muestra solo mientras la fecha actual es anterior a esta. Pasada la fecha
+// desaparece solo y el código queda inerte hasta borrarlo. NO usa localStorage:
+// es una comparación de fecha, sin flag persistido.
+export const NEW_BADGE_UNTIL = new Date('2026-09-19T23:59:59')
+
+export function isNewBadgeActive() {
+  return Date.now() < NEW_BADGE_UNTIL.getTime()
+}

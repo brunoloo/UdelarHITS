@@ -55,6 +55,13 @@
   --reaction-like-bg: #fde7ee;
   --reaction-like-text: #e0245e;
 
+  /* Badge "Nuevo" temporal del selector de tema (ver NEW_BADGE_UNTIL en
+     themes.js). Par dedicado — no usa --accent porque en la familia oscura el
+     acento es claro y el texto encima no llega a 4.5:1. Estos valores dan
+     ≥6.7:1 y destacan sobre toda superficie de las 8 paletas + claro/oscuro. */
+  --badge-new-bg: #1d4ed8;
+  --badge-new-fg: #ffffff;
+
   /* ── Sombras ─────────────────────────────────────── */
   --shadow-1: 0 1px 2px rgba(20, 22, 30, 0.04);
   --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.10);
@@ -117,6 +124,11 @@
      sobre #4a1c28 ≈ 5.5:1). En claro (:root) queda rosa claro. */
   --reaction-like-bg: #4a1c28;
   --reaction-like-text: #f17e9b;
+
+  /* Badge "Nuevo" — versión oscura: chip claro con texto oscuro para destacar
+     sobre superficies oscuras (≥8:1 texto, ≥3:1 sobre toda superficie). */
+  --badge-new-bg: #7ab0ff;
+  --badge-new-fg: #0b1220;
 
   /* ── Sombras (para fondo oscuro) ─────────────────── */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30);

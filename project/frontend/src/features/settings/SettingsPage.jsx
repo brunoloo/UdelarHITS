@@ -4,7 +4,7 @@ import { Palette, Check } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
-import { PALETTE_GROUPS, isPalette } from '../../config/themes'
+import { PALETTE_GROUPS, isPalette, isNewBadgeActive } from '../../config/themes'
 import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
 import { UserAvatar } from '../../components/shared/UserAvatar'
@@ -75,6 +75,7 @@ export function SettingsPage() {
   // acaba de abrir la grilla (aunque todavía no haya elegido un swatch).
   const [customExpanded, setCustomExpanded] = useState(() => isPalette(theme))
   const customActive = customExpanded || isPalette(theme)
+  const showNewBadge = isNewBadgeActive()
 
   function selectBaseTheme(value) {
     setCustomExpanded(false)
@@ -182,11 +183,15 @@ export function SettingsPage() {
                           value="custom"
                           checked={customActive}
                           onChange={() => setCustomExpanded(true)}
+                          aria-label={showNewBadge ? 'Personalizada, nuevo' : undefined}
                         />
                         <span className="settings-custom-label">
                           <Palette size={15} aria-hidden="true" />
                           Personalizada
                         </span>
+                        {showNewBadge && (
+                          <span className="settings-new-badge" aria-hidden="true">Nuevo</span>
+                        )}
                       </label>
                     </div>
                   </div>

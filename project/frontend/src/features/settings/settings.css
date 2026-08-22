@@ -218,6 +218,27 @@
   gap: 6px;
 }
 
+/* Badge "Nuevo" temporal, esquina superior derecha del botón "Personalizada".
+   position:absolute → fuera de flujo: no cambia el ancho del segmentado ni
+   desplaza los otros botones. .radio-option ya es position:relative. Ningún
+   ancestro tiene overflow que lo recorte. Colores por token (legible en las
+   8 paletas + claro/oscuro). */
+.settings-new-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: var(--badge-new-bg);
+  color: var(--badge-new-fg);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
 /* ── GRILLA DE PALETAS (dos grupos: Claros / Oscuros) ── */
 
 .settings-palette-groups {
