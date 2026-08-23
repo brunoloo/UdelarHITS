@@ -1,5 +1,6 @@
 import pool from '../config/db.js';
 import { escapeLike } from '../utils/escapeLike.js';
+import { encuestaSubquery } from './encuesta.repository.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Búsqueda unificada del sitio: cuatro secciones independientes (categorías,
@@ -166,54 +167,77 @@ const searchTemas = async ({ term, etiqueta, limit, offset = 0 }) => {
 // la etiqueta de su categoría.
 // Orden: likes DESC, fecha DESC, id DESC. "Like" = reaccion.tipo 'meGusta'
 // (enum tipo_reaccion en schema.sql).
-const searchComentarios = async ({ term, etiqueta, limit, offset = 0 }) => {
+//
+// La fila trae la MISMA forma que consume CommentCard/CommentEntry en el resto
+// del foro (cuerpo, autor, likes, mi_reaccion, contador_respuestas, adjuntos,
+// encuesta, destino), para renderizar el resultado con la card compartida y no
+// una card paralela. $5 = viewerId (mi_reaccion / voto de encuesta; null =
+// anónimo). El snippet se mantiene además del cuerpo completo.
+const searchComentarios = async ({ term, etiqueta, limit, offset = 0, viewerId = null }) => {
   const q = `
     WITH comentarios_buscables AS (
-      SELECT cm.contenido_id AS id, con.cuerpo, con.fecha_creacion,
-             u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
-             CASE WHEN cm.es_home THEN 'home'
-                  WHEN cm.tema_id IS NOT NULL THEN 'tema'
+      -- Alias 'com' (no 'cm'): encuestaSubquery referencia com.contenido_id.
+      SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
+             con.cuerpo, con.fecha_creacion, con.autor_id,
+             u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
+             CASE WHEN com.es_home THEN 'home'
+                  WHEN com.tema_id IS NOT NULL THEN 'tema'
                   ELSE 'categoria' END AS tipo,
-             COALESCE(cm.tema_id, cm.categoria_id) AS destino_id,
+             com.es_home, com.comentario_padre_id,
+             COALESCE(com.tema_id, com.categoria_id) AS destino_id,
              COALESCE(t_dest.titulo, cat_dest.titulo) AS destino_titulo,
+             t_dest.estado AS tema_estado,
+             CASE WHEN com.tema_id IS NOT NULL THEN tc.estado
+                  WHEN com.categoria_id IS NOT NULL THEN cat_dest.estado
+                  ELSE NULL END AS categoria_estado,
+             (SELECT COUNT(*) FROM comentario child
+               WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
              (SELECT COUNT(*) FROM reaccion r
-               WHERE r.contenido_id = cm.contenido_id AND r.tipo = 'meGusta') AS likes
-      FROM comentario cm
-      JOIN contenido con ON con.id = cm.contenido_id
+               WHERE r.contenido_id = com.contenido_id AND r.tipo = 'meGusta') AS likes,
+             (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $5 LIMIT 1) AS mi_reaccion,
+             (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano, 'estado', a.estado) ORDER BY a.id), '[]'::json)
+                FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
+             ${encuestaSubquery('$5')} AS encuesta
+      FROM comentario com
+      JOIN contenido con ON con.id = com.contenido_id
       JOIN usuario u ON u.id = con.autor_id AND u.estado = 'activo'
-      LEFT JOIN tema t_dest ON t_dest.contenido_id = cm.tema_id
-      LEFT JOIN categoria cat_dest ON cat_dest.id = cm.categoria_id
-      WHERE cm.comentario_padre_id IS NULL
-        AND cm.estado = 'visible'
-        AND cm.motivo_inactivacion IS NULL
+      LEFT JOIN tema t_dest ON t_dest.contenido_id = com.tema_id
+      LEFT JOIN categoria tc ON tc.id = t_dest.categoria_id
+      LEFT JOIN categoria cat_dest ON cat_dest.id = com.categoria_id
+      WHERE com.comentario_padre_id IS NULL
+        AND com.estado = 'visible'
+        AND com.motivo_inactivacion IS NULL
         AND strpos(unaccent(lower(con.cuerpo)), unaccent(lower($1))) > 0
         AND (
-          cm.es_home
-          OR (cm.tema_id IS NOT NULL
+          com.es_home
+          OR (com.tema_id IS NOT NULL
               AND t_dest.estado = 'activo'
               AND EXISTS (SELECT 1 FROM categoria c2
                           WHERE c2.id = t_dest.categoria_id AND c2.estado = 'activa'))
-          OR (cm.categoria_id IS NOT NULL AND cat_dest.estado = 'activa')
+          OR (com.categoria_id IS NOT NULL AND cat_dest.estado = 'activa')
         )
         AND ($2 = '' OR (
-          NOT cm.es_home
+          NOT com.es_home
           AND EXISTS (
             SELECT 1 FROM categoria_etiqueta cef
             JOIN etiqueta ef ON ef.id = cef.etiqueta_id
-            WHERE cef.categoria_id = COALESCE(cm.categoria_id, t_dest.categoria_id)
+            WHERE cef.categoria_id = COALESCE(com.categoria_id, t_dest.categoria_id)
               AND unaccent(lower(ef.nombre)) = unaccent(lower($2))
           )
         ))
     )
-    SELECT cb.id, cb.fecha_creacion, cb.autor_nickname, cb.autor_url_imagen,
-           cb.tipo, cb.destino_id, cb.destino_titulo, cb.likes,
+    SELECT cb.id, cb.estado, cb.motivo_inactivacion, cb.cuerpo, cb.fecha_creacion, cb.autor_id,
+           cb.autor_nickname, cb.autor_url_imagen, cb.autor_estado,
+           cb.tipo, cb.es_home, cb.comentario_padre_id,
+           cb.destino_id, cb.destino_titulo, cb.tema_estado, cb.categoria_estado,
+           cb.contador_respuestas, cb.likes, cb.mi_reaccion, cb.adjuntos, cb.encuesta,
            sn.snippet_before, sn.snippet_match, sn.snippet_after
     FROM comentarios_buscables cb
     ${snippetJoins('cb.cuerpo')}
     ORDER BY cb.likes DESC, cb.fecha_creacion DESC, cb.id DESC
     LIMIT $3 OFFSET $4
   `;
-  const { rows } = await pool.query(q, [term, etiqueta, limit, offset]);
+  const { rows } = await pool.query(q, [term, etiqueta, limit, offset, viewerId]);
   return rows;
 };
 

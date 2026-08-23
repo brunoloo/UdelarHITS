@@ -8,7 +8,7 @@ import { FACULTADES, facultadBySigla } from '../../config/facultades'
 import { useFollowSticky } from '../../hooks/useFollowSticky'
 import './Sidebar.css'
 
-const SIDEBAR_PAGES = ['/', '/recent', '/popular', '/explore']
+const SIDEBAR_PAGES = ['/', '/recent', '/popular', '/explore', '/search']
 
 function JoinBanner() {
   return (
@@ -415,7 +415,7 @@ export function Sidebar() {
     <aside className="sidebar" ref={sidebarRef}>
       {!loading && !user && <JoinBanner />}
 
-      {(pathname === '/' || isComment) && (
+      {(pathname === '/' || pathname === '/search' || isComment) && (
         <>
           <CommunityCard categoryCount={categoryCount} homeCommentCount={homeCommentCount} />
           <FacultiesCard activeEtiqueta={activeEtiqueta} />

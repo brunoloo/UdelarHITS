@@ -109,37 +109,37 @@
     width: 600px;
   }
 
-  /* ── HEADER ── */
-  header {
+  /* ── HEADER ── (clase propia, no el tag; ver Header.css) */
+  .site-header {
     padding: 0 12px;
     justify-content: center;
   }
 
-  header .search-bar {
+  .site-header .search-bar {
     display: none;
   }
 
-  header .logo {
+  .site-header .logo {
     font-size: 18px;
   }
 
-  header .header-actions {
+  .site-header .header-actions {
     position: absolute;
     left: auto;
     right: 12px;
   }
 
-  header .header-actions .btn-primary {
+  .site-header .header-actions .btn-primary {
     display: none;
   }
 
-  header .header-actions .btn-ghost {
+  .site-header .header-actions .btn-ghost {
     padding: 5px 12px;
     font-size: 12px;
     border-radius: 16px;
   }
 
-  header .user-chip {
+  .site-header .user-chip {
     padding: 0;
     border: none;
     background: transparent;
@@ -147,12 +147,12 @@
     font-size: 0;
   }
 
-  header .user-chip .user-avatar {
+  .site-header .user-chip .user-avatar {
     width: 32px;
     height: 32px;
   }
 
-  header .user-menu {
+  .site-header .user-menu {
     left: auto;
     right: 0;
   }
@@ -194,7 +194,7 @@
   }
 
   /* ── HEADER stays above bottom nav ── */
-  header {
+  .site-header {
     z-index: 110;
   }
 
