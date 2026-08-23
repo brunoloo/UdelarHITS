@@ -64,7 +64,7 @@ const searchAllSections = async ({ term, etiqueta, limit, viewerId }) => {
   const [cat, tem, com, usr] = await Promise.all([
     searchCategorias({ term, etiqueta, limit: limit + 1 }),
     searchTemas({ term, etiqueta, limit: limit + 1 }),
-    searchComentarios({ term, etiqueta, limit: limit + 1 }),
+    searchComentarios({ term, etiqueta, limit: limit + 1, viewerId }),
     etiqueta === ''
       ? searchUsuarios({ term, viewerId, limit: limit + 1 })
       : Promise.resolve([]),
@@ -84,7 +84,7 @@ const searchOneSection = async ({ tipo, term, etiqueta, limit, offset, viewerId 
   switch (tipo) {
     case 'categorias': rows = await searchCategorias(args); break;
     case 'temas': rows = await searchTemas(args); break;
-    case 'comentarios': rows = await searchComentarios(args); break;
+    case 'comentarios': rows = await searchComentarios({ ...args, viewerId }); break;
     case 'usuarios':
       // Con etiqueta la sección de usuarios no aplica (no heredan etiqueta).
       rows = etiqueta === ''

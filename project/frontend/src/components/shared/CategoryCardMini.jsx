@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Tag } from '../ui/Tag'
 import { CategoryIcon } from './CategoryIcon'
+import { SearchSnippet } from './SearchSnippet'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { categoryPath } from '../../utils/slug'
 import './CategoryCardMini.css'
@@ -9,7 +10,9 @@ import './CategoryCardMini.css'
 // + cantidad de temas. Se reutiliza en cada listado de categorías en forma
 // compacta (perfil, explorar, etc.). La versión ampliada (Home) es CategoryCard.
 // `className` permite variantes de contenedor (p. ej. ancho fijo en carrusel).
-export function CategoryCardMini({ category, className = '', onNavigate }) {
+// `snippet` (opcional, { before, match, after }): en resultados de búsqueda que
+// matchearon por descripción, reemplaza la descripción por el fragmento resaltado.
+export function CategoryCardMini({ category, className = '', onNavigate, snippet = null }) {
   const { id, titulo, descripcion, etiquetas, contador_temas, contador_comentarios, icono } = category
   const allTags = parseEtiquetas(etiquetas)
   const visibleTags = allTags.slice(0, 5)
@@ -34,7 +37,9 @@ export function CategoryCardMini({ category, className = '', onNavigate }) {
         <div className="category-mini-title">{titulo}</div>
       </div>
 
-      {descripcion && <div className="category-mini-desc">{descripcion}</div>}
+      {snippet?.match
+        ? <div className="category-mini-desc"><SearchSnippet before={snippet.before} match={snippet.match} after={snippet.after} /></div>
+        : descripcion && <div className="category-mini-desc">{descripcion}</div>}
 
       <div className="category-mini-foot">
         <span className="category-mini-count">

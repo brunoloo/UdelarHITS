@@ -255,23 +255,44 @@ describe('GET /search — comentarios', () => {
     expect(Number(tem.destino_id)).toBe(Number(tema.contenido_id));
   });
 
-  test('orden por likes DESC, fecha DESC, id DESC', async () => {
+  // Orden de comentarios: likes DESC → fecha_creacion DESC → id DESC. Se prueban
+  // los TRES niveles, incluidos los desempates: distinta cantidad de likes, y a
+  // igualdad de likes, desempate por fecha; a igualdad de fecha, por id.
+  test('orden por likes DESC con desempate por fecha y por id', async () => {
     const a = await registerAndLogin();
-    const cat = await createWithTags(a.cookie, 'Cat likes ' + Date.now(), ['FING']);
-    const tema = await createTopic(a.cookie, { categoria_id: cat.id, titulo: 'Tema likes ' + Date.now(), cuerpo: 'x' });
-    const c1 = await createReply(a.cookie, { tema_id: tema.contenido_id, cuerpo: 'zebra uno' });
-    const c2 = await createReply(a.cookie, { tema_id: tema.contenido_id, cuerpo: 'zebra dos' });
-    // Dos likes a c2, cero a c1 → c2 primero. Likes de otros usuarios (UNIQUE por usuario).
-    const l1 = await registerAndLogin();
-    const l2 = await registerAndLogin();
-    await addLike(l1.user.id, c2.contenido_id);
-    await addLike(l2.user.id, c2.contenido_id);
+    // Cuatro comentarios de Home. Orden de creación → ids crecientes c1<c2<c3<c4.
+    const c1 = await createHomeReply(a.cookie, { cuerpo: 'zebra c1' });
+    const c2 = await createHomeReply(a.cookie, { cuerpo: 'zebra c2' });
+    const c3 = await createHomeReply(a.cookie, { cuerpo: 'zebra c3' });
+    const c4 = await createHomeReply(a.cookie, { cuerpo: 'zebra c4' });
 
-    const res = await search('?q=zebra');
-    const ids = res.body.data.comentarios.items.map(c => c.id);
-    expect(ids.indexOf(c2.contenido_id)).toBeLessThan(ids.indexOf(c1.contenido_id));
-    const item2 = res.body.data.comentarios.items.find(c => c.id === c2.contenido_id);
-    expect(Number(item2.likes)).toBe(2);
+    // Likes con usuarios distintos (UNIQUE usuario_id+contenido_id).
+    const likers = [];
+    for (let i = 0; i < 3; i++) likers.push(await registerAndLogin());
+    // c2: 3 likes, c3: 3 likes (empate), c4: 1 like, c1: 0 likes.
+    for (const l of likers) await addLike(l.user.id, c2.contenido_id);
+    for (const l of likers) await addLike(l.user.id, c3.contenido_id);
+    await addLike(likers[0].user.id, c4.contenido_id);
+
+    // Fechas controladas: c3 MÁS NUEVO que c2 (empate de likes → c3 antes por fecha).
+    await pool.query(`UPDATE contenido SET fecha_creacion = '2025-01-01 10:00:00+00' WHERE id = $1`, [c2.contenido_id]);
+    await pool.query(`UPDATE contenido SET fecha_creacion = '2025-01-02 10:00:00+00' WHERE id = $1`, [c3.contenido_id]);
+
+    const res = await search('?q=zebra&tipo=comentarios');
+    const ids = res.body.data.items.map(x => Number(x.id));
+    // Nivel likes: [c2,c3] (3) antes que c4 (1) antes que c1 (0).
+    // Desempate por fecha entre c2 y c3: c3 (más nuevo) primero.
+    expect(ids).toEqual([c3.contenido_id, c2.contenido_id, c4.contenido_id, c1.contenido_id].map(Number));
+    // Los COUNT llegan como string.
+    const item3 = res.body.data.items.find(x => Number(x.id) === Number(c3.contenido_id));
+    expect(Number(item3.likes)).toBe(3);
+
+    // Ahora empatamos también la fecha de c2 y c3 → desempate final por id DESC:
+    // c3 tiene id mayor que c2, así que c3 sigue primero.
+    await pool.query(`UPDATE contenido SET fecha_creacion = '2025-01-02 10:00:00+00' WHERE id = $1`, [c2.contenido_id]);
+    const res2 = await search('?q=zebra&tipo=comentarios');
+    const ids2 = res2.body.data.items.map(x => Number(x.id));
+    expect(ids2.indexOf(Number(c3.contenido_id))).toBeLessThan(ids2.indexOf(Number(c2.contenido_id)));
   });
 
   test('comentario oculto no aparece', async () => {
@@ -353,6 +374,18 @@ describe('GET /search — usuarios', () => {
     const nicks = res.body.data.items.map(u => u.nickname);
     expect(nicks).toContain('zebrator');
     expect(nicks).not.toContain('zebrando');
+  });
+
+  // Escenario "brook": el usuario aparece en las DOS superficies — la tanda del
+  // dropdown (sin tipo, que consume el header) y la sección paginada de /search.
+  test('aparece tanto en el dropdown (sin tipo) como en /search (tipo=usuarios)', async () => {
+    await registerAndLogin({ nickname: 'brook', nombre: 'Soul King' });
+
+    const dropdown = await search('?q=brook&limit=3');
+    expect(dropdown.body.data.usuarios.items.map(u => u.nickname)).toContain('brook');
+
+    const page = await search('?q=brook&tipo=usuarios');
+    expect(page.body.data.items.map(u => u.nickname)).toContain('brook');
   });
 
   test('exclusión bidireccional de bloqueados', async () => {

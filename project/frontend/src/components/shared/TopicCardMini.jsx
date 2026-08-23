@@ -1,11 +1,14 @@
 import { useNavigate } from 'react-router-dom'
+import { SearchSnippet } from './SearchSnippet'
 import { topicPath } from '../../utils/slug'
 import './TopicCardMini.css'
 
 // Versión reducida de la TopicCard: título + descripción + cantidad de
 // comentarios. Sin autor ni avatar (el contexto de quién lo publicó lo da el
 // listado, p. ej. el perfil). Al clickear lleva al tema.
-export function TopicCardMini({ topic, onNavigate }) {
+// `snippet` (opcional, { before, match, after }): en resultados de búsqueda que
+// matchearon por el cuerpo, muestra el fragmento resaltado como descripción.
+export function TopicCardMini({ topic, onNavigate, snippet = null }) {
   const navigate = useNavigate()
   const id = topic.id ?? topic.contenido_id
   const count = Number(topic.contador_comentarios) || 0
@@ -17,7 +20,9 @@ export function TopicCardMini({ topic, onNavigate }) {
     >
       <div className="topic-mini-title">{topic.titulo}</div>
 
-      {topic.cuerpo && <div className="topic-mini-desc">{topic.cuerpo}</div>}
+      {snippet?.match
+        ? <div className="topic-mini-desc"><SearchSnippet before={snippet.before} match={snippet.match} after={snippet.after} /></div>
+        : topic.cuerpo && <div className="topic-mini-desc">{topic.cuerpo}</div>}
 
       <div className="topic-mini-foot">
         <span className="topic-mini-stat">

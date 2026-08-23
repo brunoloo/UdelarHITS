@@ -84,7 +84,7 @@ export function Header() {
   }
 
   return (
-    <header>
+    <header className="site-header">
       {/* Búsqueda mobile (lupa a la izquierda + overlay). Oculta en desktop. */}
       <MobileSearch />
 
@@ -127,8 +127,14 @@ export function Header() {
                 const q = query.trim()
                 if (q || activeEtiqueta) {
                   if (q) trackSearch(q)
+                  // Cerrar el dropdown ANTES de navegar: si no, queda flotando
+                  // sobre /search sin input debajo.
+                  setResults(null)
                   goSearch({ q: q || null, etiqueta: activeEtiqueta })
                 }
+              } else if (e.key === 'Escape') {
+                setResults(null)
+                e.currentTarget.blur()
               } else if (e.key === 'Backspace' && query === '' && activeEtiqueta) {
                 // Patrón estándar de campos con tokens: backspace con el input
                 // vacío borra la píldora.
