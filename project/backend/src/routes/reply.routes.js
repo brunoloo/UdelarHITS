@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply,
     getMyReplies, getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory,
-    getReplyContext, getLikedReplies, getHomeCommentCount, getRecentReplies } from '../controllers/reply.controller.js';
+    getReplyContext, getLikedReplies, getHomeCommentCount, getRecentReplies,
+    pinHomeComment, unpinHomeComment } from '../controllers/reply.controller.js';
 import { protect, isAdmin, optionalAuth } from '../middlewares/auth.middleware.js';
 import { uploadAttachments } from '../config/multer.js';
 
@@ -35,6 +36,9 @@ router.get('/recent', optionalAuth, getRecentReplies);               // Comentar
 router.get('/:id/history', getReplyEditHistory);                     // Obtener historial de edición
 
 router.get('/:id/context', optionalAuth, getReplyContext);            // Cadena de ancestros de un comentario
+
+router.post('/:id/pin-home', protect, isAdmin, pinHomeComment);       // Fijar comentario de Home en el inicio (admin)
+router.delete('/:id/pin-home', protect, isAdmin, unpinHomeComment);   // Desanclar comentario de Home del inicio (admin)
 
 router.get('/:id', getReplyById);                                    // Listar comentarios dado un id
 

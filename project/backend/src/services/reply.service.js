@@ -5,7 +5,8 @@ import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCa
 import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId,
   updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory,
-  getReplyContext, getLikedCommentsByUserId, countHomeComments, getRecentReplies } from '../repositories/reply.repository.js';
+  getReplyContext, getLikedCommentsByUserId, countHomeComments, getRecentReplies,
+  pinHomeComment, unpinHomeComment } from '../repositories/reply.repository.js';
 import { getLikesPrivacyById } from '../repositories/user.repository.js';
 import { canViewUserContent } from './access.service.js';
 import { isBlocked } from '../repositories/block.repository.js';
@@ -590,7 +591,80 @@ const getRecentRepliesService = async (limit, viewerId = null) => {
   return await getRecentReplies(safeLimit, viewerId);
 };
 
+// ── Fijar comentario de Home en el Home (solo admin) ──
+// Sólo comentarios de Home de primer nivel. Duraciones permitidas, en días
+// (mismas que la categoría fijada: 3 días, 1 semana, 1 mes). El destacado del
+// Home es un singleton compartido con la categoría fijada (el repo se encarga
+// del cruce entre tablas).
+const PIN_HOME_DIAS_VALIDOS = [3, 7, 30];
+
+const pinHomeCommentService = async (userRol, commentId, dias) => {
+  if (userRol !== 'admin') {
+    const err = new Error('Solo un administrador puede fijar comentarios');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+
+  const id = Number(commentId);
+  if (!Number.isInteger(id) || id < 1) {
+    const err = new Error('ID inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const diasNum = Number(dias);
+  if (!PIN_HOME_DIAS_VALIDOS.includes(diasNum)) {
+    const err = new Error('Duración inválida (permitido: 3, 7 o 30 días)');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const comentario = await getReplyById(id);
+  if (!comentario) {
+    const err = new Error('Comentario no encontrado');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  // Sólo se fijan comentarios de Home de primer nivel y visibles: nunca
+  // comentarios de categoría/tema ni respuestas.
+  if (!comentario.es_home || comentario.comentario_padre_id !== null) {
+    const err = new Error('Solo se pueden fijar comentarios de inicio de primer nivel');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  if (comentario.estado !== 'visible') {
+    const err = new Error('No se puede fijar un comentario no visible');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+
+  const fijadoHasta = new Date(Date.now() + diasNum * 24 * 60 * 60 * 1000);
+  const res = await pinHomeComment(id, fijadoHasta);
+  if (!res) {
+    const err = new Error('No se pudo fijar el comentario');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  return res;
+};
+
+const unpinHomeCommentService = async (userRol, commentId) => {
+  if (userRol !== 'admin') {
+    const err = new Error('Solo un administrador puede desanclar comentarios');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+  const id = Number(commentId);
+  if (!Number.isInteger(id) || id < 1) {
+    const err = new Error('ID inválido');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  await unpinHomeComment(id);
+};
+
 export { createReplyService, getHomeCommentCountService, getRepliesByCategoryIdService, getRepliesByTopicIdService,
   deleteReplyService, getMyRepliesService, getRepliesByUserIdService, updateReplyService,
   getReplyByIdService, getRepliesByCommentIdService, getReplyEditHistoryService,
-  getReplyContextService, getLikedCommentsByUserIdService, getRecentRepliesService };
+  getReplyContextService, getLikedCommentsByUserIdService, getRecentRepliesService,
+  pinHomeCommentService, unpinHomeCommentService };

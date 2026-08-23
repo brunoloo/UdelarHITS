@@ -2,7 +2,7 @@ import { createReplyService, getRepliesByCategoryIdService,
   getRepliesByTopicIdService, deleteReplyService, getMyRepliesService,
   getRepliesByUserIdService, updateReplyService, getRepliesByCommentIdService, getReplyByIdService, getReplyEditHistoryService,
   getReplyContextService, getLikedCommentsByUserIdService, getHomeCommentCountService,
-  getRecentRepliesService } from '../services/reply.service.js';
+  getRecentRepliesService, pinHomeCommentService, unpinHomeCommentService } from '../services/reply.service.js';
 import { detectAttachmentType } from '../utils/validateAttachment.js';
 
 const createReply = async (req, res) => {
@@ -210,6 +210,33 @@ const getReplyContext = async (req, res) => {
   }
 };
 
+const pinHomeComment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { dias } = req.body;
+    const result = await pinHomeCommentService(req.user.rol, id, dias);
+    return res.status(200).json({ ok: true, message: 'Comentario fijado en el inicio', data: result });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'NOT_FOUND') return res.status(404).json({ ok: false, message: error.message });
+    if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
+const unpinHomeComment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await unpinHomeCommentService(req.user.rol, id);
+    return res.status(200).json({ ok: true, message: 'Comentario desanclado del inicio' });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    if (error.code === 'FORBIDDEN') return res.status(403).json({ ok: false, message: error.message });
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 export { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply, getMyReplies,
   getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory,
-  getReplyContext, getLikedReplies, getHomeCommentCount, getRecentReplies };
+  getReplyContext, getLikedReplies, getHomeCommentCount, getRecentReplies,
+  pinHomeComment, unpinHomeComment };
