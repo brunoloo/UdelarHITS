@@ -63,7 +63,7 @@ app.use(helmet({
       'script-src': [
         "'self'",
         'https://www.googletagmanager.com',
-        "'sha256-sKESsRZ3eM7KuvKVlrK+C06nYNTzz2FBxADpN/gvous='"
+        "'sha256-o0tVFZWJlj9dJcUwUM6kbSpq0uTUvi/G4pH5Tl2Pt5s='"
       ],
       'connect-src': [
         "'self'",

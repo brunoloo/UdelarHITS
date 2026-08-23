@@ -210,6 +210,128 @@
   outline-offset: 2px;
 }
 
+/* ── OPCIÓN "PERSONALIZADA" (ícono + texto en el segmented control) ── */
+
+.settings-custom-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Badge "Nuevo" temporal, esquina superior derecha del botón "Personalizada".
+   position:absolute → fuera de flujo: no cambia el ancho del segmentado ni
+   desplaza los otros botones. .radio-option ya es position:relative. Ningún
+   ancestro tiene overflow que lo recorte. Colores por token (legible en las
+   8 paletas + claro/oscuro). */
+.settings-new-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: var(--badge-new-bg);
+  color: var(--badge-new-fg);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+/* ── GRILLA DE PALETAS (dos grupos: Claros / Oscuros) ── */
+
+.settings-palette-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.settings-palette-heading {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.settings-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  justify-items: center;
+  gap: 12px 8px;
+}
+
+/* Cada swatch es un radio real: el <input> se oculta pero sigue en el flujo de
+   foco y navegación por teclado; el nombre accesible lo da el texto visible. */
+.settings-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 88px;
+  padding: 10px 6px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.settings-swatch:hover {
+  background: var(--surface-2);
+}
+
+.settings-swatch input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* La muestra previsualiza el tema: fondo pastel + anillo de acento. */
+.settings-swatch-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--swatch-bg);
+  border: 2px solid var(--swatch-accent);
+  color: var(--swatch-accent);
+  box-shadow: var(--shadow-1);
+  transition: transform 0.12s;
+}
+
+.settings-swatch:hover .settings-swatch-chip {
+  transform: scale(1.05);
+}
+
+/* Estado seleccionado: NO depende del color. Lo marcan el check (dibujado en el
+   acento del propio tema, ≥3:1 sobre su fondo) y un anillo de acento grueso. */
+.settings-swatch.selected .settings-swatch-chip {
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
+.settings-swatch-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.settings-swatch.selected .settings-swatch-name {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Foco de teclado visible sobre el swatch enfocado. */
+.settings-swatch:focus-within .settings-swatch-chip {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 /* ── BUTTONS ── */
 
 .settings-btn-secondary {
@@ -308,6 +430,27 @@
     overflow-x: auto;
   }
 
+  /* En la tira horizontal cada pestaña vuelve a su ancho de contenido (el
+     width:100% base es para el sidebar vertical de desktop) y no se comprime:
+     así la tira desborda y scrollea con las pestañas a tamaño natural. */
+  .settings-tab {
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  /* PISTA DE SCROLL: degradado sobre el borde con más contenido. Es scroll-
+     aware (aparece a la derecha en la 1ª pestaña, a la izquierda en la última,
+     nada cuando no hay overflow) y no depende de cuántas pestañas ni del largo
+     del texto — es geométrico sobre el contenedor. Sin flechas ni puntos.
+     Donde no hay soporte, no se aplica máscara y el asomo físico igual queda. */
+  @supports (animation-timeline: scroll()) {
+    .settings-sidebar {
+      --tab-fade: 22px;
+      animation: settings-tab-scroll-hint linear both;
+      animation-timeline: scroll(self inline);
+    }
+  }
+
   .settings-row {
     flex-direction: column;
     align-items: stretch;
@@ -316,5 +459,51 @@
 
   .settings-row-control {
     align-self: flex-start;
+  }
+}
+
+/* Máscara de la pista de scroll (referenciada arriba). Los negros/transparente
+   son alfa de máscara, no colores del tema. */
+@keyframes settings-tab-scroll-hint {
+  from {
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--tab-fade)), transparent 100%);
+  }
+  0.5%, 99.5% {
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--tab-fade), #000 calc(100% - var(--tab-fade)), transparent 100%);
+  }
+  to {
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--tab-fade));
+  }
+}
+
+/* En teléfonos el control segmentado de tema (cuatro opciones) no entra en el
+   ancho de la tarjeta: medido, se recorta por debajo de ~420px. Debajo de este
+   breakpoint pasa a lista vertical de ancho completo — nada se corta a 320px.
+   Desktop y tablet (>480px) mantienen el segmentado horizontal, que sí entra. */
+@media (max-width: 480px) {
+  .settings-row-control {
+    align-self: stretch;
+    width: 100%;
+  }
+
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .radio-option {
+    justify-content: flex-start;
+    padding: 11px 14px;
+  }
+
+  /* En una fila de ancho completo la esquina absoluta se montaría sobre la
+     fila de arriba: el badge pasa a inline, a la derecha del texto. */
+  .settings-new-badge {
+    position: static;
+    top: auto;
+    right: auto;
+    margin-left: 8px;
   }
 }

@@ -457,6 +457,13 @@ const getReplyContext = async (commentId, userId = null) => {
       con.cuerpo, con.autor_id,
       u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
       con.fecha_creacion, u.estado AS autor_estado,
+      -- Título del ámbito (tema o categoría) al que pertenece el comentario. Lo
+      -- consume el cliente para fijar el document.title en el permalink con el
+      -- MISMO formato que el servidor inyecta en la carga inicial (utils/seo.js:
+      -- resolveCommentSeo → "Comentario en <contexto> · UdelarHITS"). Los
+      -- comentarios de Home (es_home) no tienen ámbito: ambos quedan NULL.
+      t.titulo AS tema_titulo,
+      cat.titulo AS categoria_titulo,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
@@ -466,6 +473,8 @@ const getReplyContext = async (commentId, userId = null) => {
     JOIN comentario com ON com.contenido_id = a.contenido_id
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
+    LEFT JOIN tema t ON t.contenido_id = com.tema_id
+    LEFT JOIN categoria cat ON cat.id = COALESCE(com.categoria_id, t.categoria_id)
     ORDER BY a.depth DESC
   `;
   const { rows } = await pool.query(q, [commentId, userId]);

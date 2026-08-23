@@ -11,6 +11,7 @@ import { trackCreateComment } from '../../utils/analytics'
 import { useToast } from '../../hooks/useToast'
 import { facultadBySigla } from '../../config/facultades'
 import './feed.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 const PAGE_SIZE = 20
 
@@ -45,6 +46,7 @@ function CommentSkeleton() {
 }
 
 export function FeedPage() {
+  useDocumentTitle()
   const [searchParams] = useSearchParams()
   const qParam = searchParams.get('q')
   const etiquetaParam = searchParams.get('etiqueta')

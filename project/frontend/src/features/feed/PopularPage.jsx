@@ -5,6 +5,7 @@ import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { Tag } from '../../components/ui/Tag'
 import './feed.css'
 import './popular.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 function Skeleton() {
   return (
@@ -64,6 +65,7 @@ function PopularCard({ category, rank }) {
 }
 
 export function PopularPage() {
+  useDocumentTitle()
   // La key incluye los parámetros: Explorar pide este mismo endpoint con
   // limit=1 y sin distinguirlos compartirían (mal) la misma entrada de cache.
   const { data: popular = [], isLoading } = useQuery({

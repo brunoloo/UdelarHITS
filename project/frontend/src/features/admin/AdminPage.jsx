@@ -7,6 +7,7 @@ import { AppealsSection } from './AppealsSection'
 import { ReportsSection } from './ReportsSection'
 import { PendingImagesSection } from './PendingImagesSection'
 import './admin.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 const TABS = [
   { key: 'usuarios', label: 'Usuarios' },
@@ -17,6 +18,7 @@ const TABS = [
 ]
 
 export function AdminPage() {
+  useDocumentTitle()
   const [tab, setTab] = useState('usuarios')
 
   const { data: temaAppeals = [] } = useQuery({

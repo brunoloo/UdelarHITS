@@ -1,7 +1,9 @@
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import './redirect.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 export function RedirectPage() {
+  useDocumentTitle()
   const [params] = useSearchParams()
   const navigate = useNavigate()
 

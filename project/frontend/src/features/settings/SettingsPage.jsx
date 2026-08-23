@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Palette, Check } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import { PALETTE_GROUPS, isPalette, isNewBadgeActive } from '../../config/themes'
 import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
 import { UserAvatar } from '../../components/shared/UserAvatar'
@@ -10,6 +12,7 @@ import { Modal } from '../../components/ui/Modal'
 import { ChangePasswordModal } from './ChangePasswordModal'
 import '../profile/FollowersModal.css'
 import './settings.css'
+import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 const TABS = [
   {
@@ -56,17 +59,31 @@ const TABS = [
   },
 ]
 
-const THEME_OPTIONS = [
+// Temas base. La cuarta opción, "Personalizada", no vive acá: abre la grilla de
+// paletas (fuente de verdad en src/config/themes.js), no aplica un tema por sí.
+const BASE_THEME_OPTIONS = [
   { value: 'light', label: 'Claro' },
   { value: 'dark', label: 'Oscuro' },
   { value: 'system', label: 'Sistema' },
 ]
 
 export function SettingsPage() {
+  useDocumentTitle()
   const [activeTab, setActiveTab] = useState('apariencia')
   const [changePasswordOpen, setChangePasswordOpen] = useState(false)
   const [blockedListOpen, setBlockedListOpen] = useState(false)
   const { theme, setTheme } = useTheme()
+  // "Personalizada" está activa si el tema actual es una paleta, o si el usuario
+  // acaba de abrir la grilla (aunque todavía no haya elegido un swatch).
+  const [customExpanded, setCustomExpanded] = useState(() => isPalette(theme))
+  const customActive = customExpanded || isPalette(theme)
+  const showNewBadge = isNewBadgeActive()
+
+  function selectBaseTheme(value) {
+    setCustomExpanded(false)
+    setTheme(value)
+  }
+
   const { user, setUser } = useAuth()
   const { showToast } = useToast()
   const queryClient = useQueryClient()
@@ -142,28 +159,86 @@ export function SettingsPage() {
                 <div className="settings-row">
                   <div className="settings-row-info">
                     <h3>Tema</h3>
-                    <p>Elegí entre claro, oscuro o seguir la preferencia de tu sistema.</p>
+                    <p>Elegí entre claro, oscuro, seguir tu sistema o una paleta de color personalizada.</p>
                   </div>
                   <div className="settings-row-control">
                     <div className="radio-group" role="radiogroup" aria-label="Selección de tema">
-                      {THEME_OPTIONS.map(opt => (
+                      {BASE_THEME_OPTIONS.map(opt => (
                         <label
                           key={opt.value}
-                          className={`radio-option${theme === opt.value ? ' selected' : ''}`}
+                          className={`radio-option${!customActive && theme === opt.value ? ' selected' : ''}`}
                         >
                           <input
                             type="radio"
                             name="theme"
                             value={opt.value}
-                            checked={theme === opt.value}
-                            onChange={() => setTheme(opt.value)}
+                            checked={!customActive && theme === opt.value}
+                            onChange={() => selectBaseTheme(opt.value)}
                           />
                           <span>{opt.label}</span>
                         </label>
                       ))}
+                      <label className={`radio-option${customActive ? ' selected' : ''}`}>
+                        <input
+                          type="radio"
+                          name="theme"
+                          value="custom"
+                          checked={customActive}
+                          onChange={() => setCustomExpanded(true)}
+                          aria-label={showNewBadge ? 'Personalizada, nuevo' : undefined}
+                        />
+                        <span className="settings-custom-label">
+                          <Palette size={15} aria-hidden="true" />
+                          Personalizada
+                        </span>
+                        {showNewBadge && (
+                          <span className="settings-new-badge" aria-hidden="true">Nuevo</span>
+                        )}
+                      </label>
                     </div>
                   </div>
                 </div>
+
+                {customActive && (
+                  <div
+                    className="settings-palette-groups"
+                    role="radiogroup"
+                    aria-label="Paleta de color personalizada"
+                  >
+                    {PALETTE_GROUPS.map(group => (
+                      <div key={group.family} className="settings-palette-group">
+                        <h4 className="settings-palette-heading">{group.label}</h4>
+                        <div className="settings-palette-grid">
+                          {group.items.map(p => {
+                            const selected = theme === p.id
+                            return (
+                              <label
+                                key={p.id}
+                                className={`settings-swatch${selected ? ' selected' : ''}`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="palette"
+                                  value={p.id}
+                                  checked={selected}
+                                  onChange={() => setTheme(p.id)}
+                                />
+                                <span
+                                  className="settings-swatch-chip"
+                                  style={{ '--swatch-bg': p.bg, '--swatch-accent': p.swatch }}
+                                  aria-hidden="true"
+                                >
+                                  {selected && <Check size={16} strokeWidth={3} />}
+                                </span>
+                                <span className="settings-swatch-name">{p.label}</span>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </article>
             )}
 

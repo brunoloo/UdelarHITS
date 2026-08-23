@@ -70,12 +70,82 @@ function track(eventName, params) {
 // ─── Eventos ────────────────────────────────────────────────────────────────
 // Un evento nuevo = una función más acá + una llamada en el handler.
 
-// page_view manual en cada cambio de ruta (SPA). `path` = pathname + search.
-export function trackPageView(path) {
+// ─── page_view en la SPA ──────────────────────────────────────────────────
+//
+// El page_view debe llevar el `page_title` REAL de la ruta, pero en la SPA el
+// título de las vistas de detalle se fija recién cuando resuelve su fetch
+// (react-query), bastante después del cambio de ruta. Si mandáramos el hit
+// apenas cambia la URL (como antes), GA agruparía la navegación interna bajo el
+// título viejo/genérico. Por eso el envío se coordina entre dos señales:
+//
+//   · beginPageView(path)      — lo llama RootLayout en cada navegación.
+//   · reportPageView(path, t)  — lo llama useDocumentTitle cuando la vista ya
+//                                fijó su título definitivo.
+//
+// Se envía UN solo page_view por navegación, con el título ya resuelto. Un
+// fallback garantiza el hit aunque ninguna vista reporte (ruta sin
+// useDocumentTitle) o el fetch nunca resuelva.
+
+const PAGEVIEW_FALLBACK_MS = 4000
+
+let currentPath = null      // ruta de la navegación en curso
+let flushedPath = null      // última ruta ya enviada (evita duplicados)
+let lastReport = { path: null, title: null } // último título reportado por una vista
+let fallbackTimer = null
+
+function clearFallback() {
+  if (fallbackTimer != null) {
+    clearTimeout(fallbackTimer)
+    fallbackTimer = null
+  }
+}
+
+// Envía el page_view una única vez por ruta (dedupe por `flushedPath`).
+function flushPageView(path, title) {
+  if (flushedPath === path) return
+  flushedPath = path
+  clearFallback()
+  trackPageView(path, title)
+}
+
+// RootLayout: arranca el ciclo de una navegación. Si la vista ya reportó su
+// título (los efectos de los hijos corren antes que los del padre, así que el
+// reporte puede llegar primero), envía de una; si no, arma el fallback.
+export function beginPageView(path) {
+  currentPath = path
+  clearFallback()
+  if (lastReport.path === path) {
+    flushPageView(path, lastReport.title)
+    return
+  }
+  if (typeof window !== 'undefined') {
+    fallbackTimer = setTimeout(() => flushPageView(path, document.title), PAGEVIEW_FALLBACK_MS)
+  }
+}
+
+// useDocumentTitle: la vista fijó su título definitivo para `path`. Se guarda
+// siempre (por si llega antes que beginPageView) y se envía si ya es la ruta en
+// curso.
+export function reportPageView(path, title) {
+  lastReport = { path, title }
+  if (path === currentPath) flushPageView(path, title)
+}
+
+// Solo para tests: reinicia el estado de coordinación del page_view.
+export function __resetPageViewState() {
+  currentPath = null
+  flushedPath = null
+  lastReport = { path: null, title: null }
+  clearFallback()
+}
+
+// Envío del hit. `path` = pathname + search; `title` es el título ya resuelto
+// (cae a document.title si no se pasa, p. ej. desde el fallback).
+export function trackPageView(path, title) {
   track('page_view', {
     page_path: path,
     page_location: window.location.href,
-    page_title: document.title,
+    page_title: title || document.title,
   })
 }
 
