@@ -31,6 +31,7 @@
     "db:migrate:fase19": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase19_categoria_fijada_home.sql",
     "db:migrate:fase20": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase20_imagen_pendiente_unica.sql",
     "db:migrate:fase21": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase21_idx_etiqueta_filtro.sql",
+    "db:migrate:fase23": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase23_comentario_fijado_home.sql",
     "db:migrate:etiquetas": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_etiquetas_tabla.sql",
     "db:migrate:performance": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_performance_indices.sql",
     "db:test:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits_test;\"",

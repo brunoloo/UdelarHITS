@@ -704,8 +704,11 @@ async function pinCategoryHome(categoriaId, fijadaHasta) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    // Desanclar cualquier categoría previamente fijada (mantiene el singleton).
+    // Mantiene el singleton COMPARTIDO del destacado del Home (ver fase 23):
+    // desancla cualquier categoría fijada previa y también el comentario de Home
+    // fijado vigente, de modo que a lo sumo un ítem encabece el Home.
     await client.query(`UPDATE categoria SET fijada_hasta = NULL WHERE fijada_hasta IS NOT NULL`);
+    await client.query(`UPDATE comentario SET fijado_home_hasta = NULL WHERE fijado_home_hasta IS NOT NULL`);
     const { rows } = await client.query(
       `UPDATE categoria SET fijada_hasta = $2
        WHERE id = $1 AND estado = 'activa'

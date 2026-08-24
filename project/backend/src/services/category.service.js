@@ -10,7 +10,7 @@ import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   subscribeCategory, unsubscribeCategory, isSubscribedCategory } from '../repositories/category.repository.js';
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
-import { getHomeCommentsChrono, getHomeCommentsPersonalized } from '../repositories/reply.repository.js';
+import { getHomeCommentsChrono, getHomeCommentsPersonalized, getPinnedHomeComment } from '../repositories/reply.repository.js';
 import { FEED, CADENCIA_HOME } from '../config/feedConfig.js';
 import { isValidCategoryIcon } from '../config/categoryIcons.js';
 
@@ -395,19 +395,33 @@ const getCategoryFeedService = async (user, { limit, cursor } = {}) => {
     return row;
   });
 
-  // Categoría fijada por un admin: encabeza el feed y sólo en la primera página,
-  // FUERA del intercalado. Vive fuera del cursor (se excluye del stream A en el
-  // repo), así no duplica ni desajusta la paginación. Expira sola (fijada_hasta).
+  // Destacado del Home fijado por un admin: encabeza el feed y sólo en la
+  // primera página, FUERA del intercalado. Vive fuera del cursor (se excluye del
+  // stream correspondiente en el repo), así no duplica ni desajusta la
+  // paginación. Expira solo (fijada_hasta / fijado_home_hasta). Es un singleton
+  // COMPARTIDO: a lo sumo hay una categoría fijada O un comentario fijado, nunca
+  // ambos (lo garantizan las operaciones de pin), así que la categoría tiene
+  // prioridad y, si no hay, se busca el comentario.
   if (!cursor) {
-    const pinned = await getPinnedHomeCategory();
-    if (pinned) {
-      delete pinned.score;
-      delete pinned.fijada_hasta;
-      pinned.fijada = true;
-      pinned.tipo = 'categoria';
+    const pinnedCat = await getPinnedHomeCategory();
+    if (pinnedCat) {
+      delete pinnedCat.score;
+      delete pinnedCat.fijada_hasta;
+      pinnedCat.fijada = true;
+      pinnedCat.tipo = 'categoria';
       // Defensa: el stream A ya la excluye, pero evitamos duplicarla igual.
-      const rest = out.filter(it => !(it.tipo === 'categoria' && String(it.id) === String(pinned.id)));
-      return { items: [pinned, ...rest], nextCursor };
+      const rest = out.filter(it => !(it.tipo === 'categoria' && String(it.id) === String(pinnedCat.id)));
+      return { items: [pinnedCat, ...rest], nextCursor };
+    }
+
+    const pinnedCom = await getPinnedHomeComment(user?.id ?? null);
+    if (pinnedCom) {
+      delete pinnedCom.score;
+      pinnedCom.fijado_home = true;
+      pinnedCom.tipo = 'comentario';
+      // Defensa: el stream B ya lo excluye, pero evitamos duplicarlo igual.
+      const rest = out.filter(it => !(it.tipo === 'comentario' && String(it.id) === String(pinnedCom.id)));
+      return { items: [pinnedCom, ...rest], nextCursor };
     }
   }
 

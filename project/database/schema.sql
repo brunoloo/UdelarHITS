@@ -276,6 +276,9 @@ CREATE TABLE comentario (
   -- home se marca con este flag explícito, nunca con "los dos FK en NULL", para
   -- que un bug no pueda crear comentarios huérfanos.
   es_home                 BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Fase 23: comentario de Home fijado por un admin. Aparece primero en el feed
+  -- del Home; NULL = no fijado. Vigencia lógica: fijado_home_hasta > NOW().
+  fijado_home_hasta       TIMESTAMPTZ NULL,
   -- Tres ámbitos mutuamente excluyentes: exactamente uno presente.
   CONSTRAINT comentario_target_check CHECK (
     (tema_id IS NOT NULL)::int + (categoria_id IS NOT NULL)::int + (es_home)::int = 1
@@ -624,3 +627,10 @@ ALTER TABLE categoria
 CREATE UNIQUE INDEX uq_categoria_fijada_home
   ON categoria ((fijada_hasta IS NOT NULL))
   WHERE fijada_hasta IS NOT NULL;
+
+-- Fase 23: a lo sumo un comentario de Home fijado a la vez (singleton). El
+-- destacado del Home es un singleton COMPARTIDO con la categoría fijada (fase
+-- 19): fijar uno desancla el otro, cruce garantizado en la lógica del repo.
+CREATE UNIQUE INDEX uq_comentario_fijado_home
+  ON comentario ((fijado_home_hasta IS NOT NULL))
+  WHERE fijado_home_hasta IS NOT NULL;

@@ -521,6 +521,7 @@ const getHomeCommentsChrono = async ({ limit, cursorFecha = null, cursorId = nul
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
     WHERE com.es_home = TRUE AND com.comentario_padre_id IS NULL AND com.estado = 'visible'
+      AND (com.fijado_home_hasta IS NULL OR com.fijado_home_hasta <= NOW())
       AND ($2::timestamptz IS NULL
        OR (con.fecha_creacion, com.contenido_id) < ($2::timestamptz, $3::bigint))
     ORDER BY con.fecha_creacion DESC, com.contenido_id DESC
@@ -550,6 +551,7 @@ const getHomeCommentsPersonalized = async (usuarioId, { limit, cursorScore = nul
       FROM comentario com
       JOIN contenido con ON con.id = com.contenido_id
       WHERE com.es_home = TRUE AND com.comentario_padre_id IS NULL AND com.estado = 'visible'
+        AND (com.fijado_home_hasta IS NULL OR com.fijado_home_hasta <= NOW())
     )
     SELECT ${homeCommentCard('$1')}, s.score
     FROM comentario com
@@ -565,8 +567,61 @@ const getHomeCommentsPersonalized = async (usuarioId, { limit, cursorScore = nul
   return rows;
 };
 
+// ── Fijar comentario de Home en el Home (solo admin) ──
+// Singleton COMPARTIDO con la categoría fijada (fase 19): a lo sumo un ítem
+// encabeza el Home a la vez. Fijar este comentario desancla tanto cualquier
+// comentario fijado previo como la categoría fijada vigente. La vigencia es
+// lógica: el feed sólo trata como fijado el comentario con
+// fijado_home_hasta > NOW(). Sólo se fija un comentario de Home de primer nivel
+// y visible; devuelve la fila fijada o null si no calificaba.
+async function pinHomeComment(comentarioId, fijadoHasta) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    // Mantiene el singleton compartido: desancla la categoría y cualquier
+    // comentario fijados previamente.
+    await client.query(`UPDATE categoria SET fijada_hasta = NULL WHERE fijada_hasta IS NOT NULL`);
+    await client.query(`UPDATE comentario SET fijado_home_hasta = NULL WHERE fijado_home_hasta IS NOT NULL`);
+    const { rows } = await client.query(
+      `UPDATE comentario SET fijado_home_hasta = $2
+       WHERE contenido_id = $1
+         AND es_home = TRUE AND comentario_padre_id IS NULL AND estado = 'visible'
+       RETURNING contenido_id AS id, fijado_home_hasta`,
+      [comentarioId, fijadoHasta]
+    );
+    await client.query('COMMIT');
+    return rows[0] || null;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function unpinHomeComment(comentarioId) {
+  await pool.query(`UPDATE comentario SET fijado_home_hasta = NULL WHERE contenido_id = $1`, [comentarioId]);
+}
+
+// El comentario de Home fijado vigente (fijado_home_hasta > NOW()), como card
+// del Home, o null. Misma forma que los streams del feed.
+async function getPinnedHomeComment(viewerId = null) {
+  const q = `
+    SELECT ${homeCommentCard('$1')}
+    FROM comentario com
+    JOIN contenido con ON con.id = com.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
+    WHERE com.es_home = TRUE AND com.comentario_padre_id IS NULL AND com.estado = 'visible'
+      AND com.fijado_home_hasta > NOW()
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [viewerId]);
+  return rows[0] || null;
+}
+
 export { createReply, countHomeComments, getHomeCommentsChrono, getHomeCommentsPersonalized,
   getRecentReplies, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
   getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies,
   hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx, getReplyEditHistory,
-  getReplyContext, getLikedCommentsByUserId }
+  getReplyContext, getLikedCommentsByUserId,
+  pinHomeComment, unpinHomeComment, getPinnedHomeComment }

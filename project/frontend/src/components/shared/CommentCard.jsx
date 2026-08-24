@@ -33,6 +33,9 @@ export function CommentCard({
   invalidateKeys = null,
   canPin = false,
   onTogglePin,
+  canPinHome = false,
+  onPinHome,
+  onUnpinHome,
 }) {
   const { user } = useAuth()
   const { showToast } = useToast()
@@ -158,6 +161,19 @@ export function CommentCard({
     })
   }
 
+  // Fijar/desanclar en el inicio (solo admin, comentarios de Home de 1er nivel).
+  // Abre el mismo panel de duración que la categoría fijada.
+  if (canPinHome) {
+    menuItems.push({
+      label: comment.fijado_home ? 'Desanclar del inicio' : 'Fijar en el inicio',
+      icon: <PinIcon filled={!!comment.fijado_home} size={14} />,
+      onClick: () => {
+        if (comment.fijado_home) onUnpinHome?.(comment)
+        else onPinHome?.(comment)
+      },
+    })
+  }
+
   menuItems.push({
     label: 'Reportar',
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>,
@@ -225,7 +241,7 @@ export function CommentCard({
         <DropdownMenu items={menuItems} />
       </div>
       <div className="comment-body">
-        {comment.fijado && (
+        {(comment.fijado || comment.fijado_home) && (
           <div className="comment-pinned-badge">
             <PinIcon filled size={12} />
             Fijado

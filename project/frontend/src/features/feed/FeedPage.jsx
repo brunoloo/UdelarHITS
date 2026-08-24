@@ -1,13 +1,15 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost } from '../../api/client'
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiGet, apiPost, apiDelete } from '../../api/client'
 import { CategoryCard } from '../../components/shared/CategoryCard'
 import { CommentCard } from '../../components/shared/CommentCard'
+import { PinHomeModal } from '../../components/shared/PinHomeModal'
 import { CreateCategoryPanel } from '../category/CreateCategoryPanel'
 import { CreateCommentPanel } from '../../components/shared/CreateCommentPanel'
 import { buildReplyFormData } from '../../utils/attachments'
 import { trackCreateComment } from '../../utils/analytics'
+import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { parseEtiquetas, normSearch as norm } from '../../utils/parseEtiquetas'
 import { facultadBySigla } from '../../config/facultades'
@@ -55,6 +57,32 @@ export function FeedPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { showToast } = useToast()
+  const { user } = useAuth()
+  const isAdmin = user?.rol === 'admin'
+
+  // Fijar comentario de Home en el inicio (solo admin). Mismo panel de duración
+  // que la categoría fijada. El comentario elegido queda en `pinTarget` mientras
+  // el modal pide el tiempo. Al fijar/desanclar se refresca el feed del Home.
+  const [pinTarget, setPinTarget] = useState(null)
+
+  const pinHomeMutation = useMutation({
+    mutationFn: ({ id, dias }) => apiPost(`/replies/${id}/pin-home`, { dias }),
+    onSuccess: () => {
+      showToast('Comentario fijado en el inicio', 'success')
+      setPinTarget(null)
+      queryClient.invalidateQueries({ queryKey: FEED_KEY })
+    },
+    onError: (err) => showToast(err.message || 'No se pudo fijar el comentario', 'error'),
+  })
+
+  const unpinHomeMutation = useMutation({
+    mutationFn: (id) => apiDelete(`/replies/${id}/pin-home`),
+    onSuccess: () => {
+      showToast('Comentario desanclado del inicio', 'success')
+      queryClient.invalidateQueries({ queryKey: FEED_KEY })
+    },
+    onError: (err) => showToast(err.message || 'No se pudo desanclar el comentario', 'error'),
+  })
 
   // Responder a un comentario de Home desde el feed: publica la respuesta y
   // refresca el feed (el contador de respuestas de la card se recalcula). El
@@ -215,6 +243,9 @@ export function FeedPage() {
                   onReply={handleHomeReply}
                   invalidateKey={FEED_KEY}
                   invalidateKeys={[HOME_COUNT_KEY]}
+                  canPinHome={isAdmin}
+                  onPinHome={(comment) => setPinTarget(comment)}
+                  onUnpinHome={(comment) => unpinHomeMutation.mutate(comment.id)}
                 />
               ) : (
                 <CategoryCard key={`categoria-${c.id}`} category={c} priority={i === 0} />
@@ -233,6 +264,17 @@ export function FeedPage() {
           </>
         )}
       </div>
+
+      {/* Pin-home modal (solo admin): pide la duración al fijar un comentario. */}
+      {isAdmin && (
+        <PinHomeModal
+          isOpen={!!pinTarget}
+          onClose={() => setPinTarget(null)}
+          onConfirm={(dias) => pinTarget && pinHomeMutation.mutate({ id: pinTarget.id, dias })}
+          isPending={pinHomeMutation.isPending}
+          desc="El comentario aparecerá primero en el inicio para todos los usuarios durante el tiempo elegido. Al vencer, se desancla automáticamente."
+        />
+      )}
     </div>
   )
 }

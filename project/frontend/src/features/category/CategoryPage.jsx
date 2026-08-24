@@ -23,6 +23,7 @@ import { useSaved } from '../../hooks/useSaved'
 import { BookmarkIcon } from '../../components/shared/BookmarkIcon'
 import { BellIcon } from '../../components/shared/BellIcon'
 import { PinIcon } from '../../components/shared/PinIcon'
+import { PinHomeModal } from '../../components/shared/PinHomeModal'
 import { ReadMore } from '../../components/ui/ReadMore'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
@@ -236,39 +237,6 @@ function ConfirmDeleteModal({ isOpen, onClose, onConfirm, isPending }) {
 }
 
 // ── PIN HOME MODAL (solo admin) ────────────────────────────────────────────────
-// Mini modal que pregunta por cuánto tiempo fijar la categoría en el inicio.
-const PIN_HOME_OPTIONS = [
-  { dias: 3, label: '3 días' },
-  { dias: 7, label: '1 semana' },
-  { dias: 30, label: '1 mes' },
-]
-
-function PinHomeModal({ isOpen, onClose, onConfirm, isPending }) {
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Fijar en el inicio">
-      <div className="pin-home-body">
-        <p className="pin-home-desc">
-          La categoría aparecerá primera en el inicio para todos los usuarios
-          durante el tiempo elegido. Al vencer, se desancla automáticamente.
-        </p>
-        <div className="pin-home-options">
-          {PIN_HOME_OPTIONS.map(opt => (
-            <button
-              key={opt.dias}
-              className="pin-home-option"
-              type="button"
-              disabled={isPending}
-              onClick={() => onConfirm(opt.dias)}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    </Modal>
-  )
-}
-
 // ── MAIN PAGE ──────────────────────────────────────────────────────────────────
 export function CategoryPage() {
   // La URL puede traer slug (/category/5-parciales-de-logica): el lookup usa solo
@@ -700,6 +668,7 @@ export function CategoryPage() {
           onClose={() => setPinHomeOpen(false)}
           onConfirm={(dias) => pinHomeMutation.mutate(dias)}
           isPending={pinHomeMutation.isPending}
+          desc="La categoría aparecerá primera en el inicio para todos los usuarios durante el tiempo elegido. Al vencer, se desancla automáticamente."
         />
       )}
 
