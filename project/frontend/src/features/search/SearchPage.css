@@ -119,10 +119,13 @@
   white-space: nowrap;
 }
 
-/* Resaltado del término dentro del fragmento (before/match/after). */
+/* Resaltado del término dentro del fragmento (before/match/after). Bold +
+   color de acento sobre fondo tenue: el match tiene que saltar a la vista, no
+   ser un tinte apenas perceptible. Misma clase para las cuatro secciones. */
 .search-snippet-mark {
   background: var(--accent-light);
-  color: var(--text-primary);
+  color: var(--accent-strong);
+  font-weight: 700;
   border-radius: 3px;
-  padding: 0 1px;
+  padding: 0 2px;
 }
