@@ -1,5 +1,9 @@
 /* ── HEADER ── */
-header {
+/* Clase propia (.site-header), NO el tag `header`: una regla sobre `header` a
+   pelo la hereda cualquier <header> de otra página (p. ej. el encabezado de
+   /search) y lo manda a position:fixed arriba a la izquierda. Estilar la clase
+   mantiene estas reglas acopladas SOLO a este componente. */
+.site-header {
   position: fixed;
   top: 0; left: 0; right: 0;
   height: var(--header-h);
@@ -12,12 +16,12 @@ header {
   z-index: 100;
 }
 
-header a {
+.site-header a {
   text-decoration: none;
   color: inherit;
 }
 
-header .search-bar {
+.site-header .search-bar {
   margin-right: calc(200px / 2);
 }
 

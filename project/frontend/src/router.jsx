@@ -26,6 +26,7 @@ const ExplorePage = lazy(() => import('./features/feed/ExplorePage').then(m => (
 const CategoryPage = lazy(() => import('./features/category/CategoryPage').then(m => ({ default: m.CategoryPage })))
 const TopicPage = lazy(() => import('./features/topic/TopicPage').then(m => ({ default: m.TopicPage })))
 const CommentPage = lazy(() => import('./features/comment/CommentPage').then(m => ({ default: m.CommentPage })))
+const SearchPage = lazy(() => import('./features/search/SearchPage').then(m => ({ default: m.SearchPage })))
 const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const SettingsPage = lazy(() => import('./features/settings/SettingsPage').then(m => ({ default: m.SettingsPage })))
 const AboutPage = lazy(() => import('./features/about/AboutPage').then(m => ({ default: m.AboutPage })))
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
           { path: 'category/:id', element: <CategoryPage /> },
           { path: 'topic/:id', element: <TopicPage /> },
           { path: 'comment/:id', element: <CommentPage /> },
+          { path: 'search', element: <SearchPage /> },
           { path: 'user/:nickname', element: <ProfilePage /> },
           {
             path: 'settings',

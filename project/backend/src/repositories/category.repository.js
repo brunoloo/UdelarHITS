@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { escapeLike } from '../utils/escapeLike.js';
 import { encuestaSubquery } from './encuesta.repository.js';
 import { TRENDING } from '../config/trendingConfig.js';
 import { FEED } from '../config/feedConfig.js';
@@ -500,11 +501,12 @@ const searchEtiquetas = async (query, limit = 20) => {
   const q = `
     SELECT id, nombre, nombre_display, grupo
     FROM etiqueta
-    WHERE nombre ILIKE $1 || '%'
+    WHERE nombre ILIKE $1 || '%' ESCAPE '\\'
     ORDER BY grupo, orden, nombre
     LIMIT $2
   `;
-  const { rows } = await pool.query(q, [query, limit]);
+  // Escapar comodines LIKE (%/_/\) del input antes de anexar el '%' de prefijo.
+  const { rows } = await pool.query(q, [escapeLike(query), limit]);
   return rows;
 };
 

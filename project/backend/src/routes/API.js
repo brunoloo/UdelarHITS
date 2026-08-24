@@ -16,6 +16,7 @@ import SavedRoutes from './saved.routes.js';
 import PollRoutes from './encuesta.routes.js';
 import ChatRoutes from './chat.routes.js';
 import AdminRoutes from './admin.routes.js';
+import SearchRoutes from './search.routes.js';
 
 const router = Router();
 
@@ -34,6 +35,7 @@ router.use('/saved', SavedRoutes);
 router.use('/polls', PollRoutes);
 router.use('/chat', ChatRoutes);
 router.use('/admin', AdminRoutes);
+router.use('/search', SearchRoutes);
 
 
 router.get('/', (_req, res) => {

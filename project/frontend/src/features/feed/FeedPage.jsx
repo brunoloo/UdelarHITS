@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, Navigate } from 'react-router-dom'
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiDelete } from '../../api/client'
 import { CategoryCard } from '../../components/shared/CategoryCard'
@@ -11,7 +11,6 @@ import { buildReplyFormData } from '../../utils/attachments'
 import { trackCreateComment } from '../../utils/analytics'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
-import { parseEtiquetas, normSearch as norm } from '../../utils/parseEtiquetas'
 import { facultadBySigla } from '../../config/facultades'
 import './feed.css'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
@@ -53,7 +52,12 @@ export function FeedPage() {
   const [searchParams] = useSearchParams()
   const qParam = searchParams.get('q')
   const etiquetaParam = searchParams.get('etiqueta')
-  const isFiltering = !!qParam || !!etiquetaParam
+  // El texto libre ahora vive en /search (buscador unificado por título,
+  // descripción, cuerpo). Un `?q=` que llegue acá (link viejo) se redirige a
+  // /search preservando la etiqueta. El Home conserva SOLO el filtro por etiqueta
+  // sin texto (?etiqueta=): ese sigue siendo el listado filtrado de categorías.
+  const redirectToSearch = !!qParam
+  const isFiltering = !!etiquetaParam && !qParam
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { showToast } = useToast()
@@ -129,7 +133,7 @@ export function FeedPage() {
       apiGet(`/categories/feed?limit=${PAGE_SIZE}${pageParam ? `&cursor=${encodeURIComponent(pageParam)}` : ''}`),
     initialPageParam: null,
     getNextPageParam: lastPage => lastPage.nextCursor ?? undefined,
-    enabled: !isFiltering,
+    enabled: !isFiltering && !redirectToSearch,
   })
 
   // Búsqueda filtrada. El filtro EXACTO por etiqueta lo resuelve el backend
@@ -141,13 +145,6 @@ export function FeedPage() {
       apiGet(`/categories/active${etiquetaParam ? `?etiqueta=${encodeURIComponent(etiquetaParam)}` : ''}`)
         .then(r => r.data),
     enabled: isFiltering,
-    staleTime: 5 * 60 * 1000,
-  })
-
-  // Catálogo de etiquetas: viene sembrado por schema.sql, casi nunca cambia.
-  const { data: allTagsGrouped = {} } = useQuery({
-    queryKey: ['categories', 'etiquetas'],
-    queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
     staleTime: 5 * 60 * 1000,
   })
 
@@ -164,20 +161,14 @@ export function FeedPage() {
     return () => observer.disconnect()
   }, [isFiltering, hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  const allTagNames = Object.values(allTagsGrouped).flat().map(t => t.nombre)
-
   // El feed arranca en el mount, así que loadingFeed ya cubre el estado inicial
   // (antes hacía falta authLoading acá porque el query esperaba a auth).
-  // `allCategories` ya viene filtrado por etiqueta desde el backend; sobre eso
-  // aplicamos el texto libre `q` (título substring OR etiqueta exacta). Sin
-  // filtros, el feed paginado normal.
+  // Con etiqueta (sin texto), `allCategories` ya viene filtrado por el backend y
+  // se muestra tal cual — sin re-filtro client-side (el texto libre se fue a
+  // /search). Sin filtros, el feed paginado normal.
   const isLoading = isFiltering ? loadingAll : loadingFeed
   const displayCategories = isFiltering
-    ? allCategories.filter(c =>
-        !qParam ||
-        parseEtiquetas(c.etiquetas).some(e => norm(e) === norm(qParam)) ||
-        norm(c.titulo).includes(norm(qParam))
-      )
+    ? allCategories
     : (feedData?.pages ?? []).flatMap(p => p.data)
 
   // El mensaje muestra la etiqueta tal como la buscó el usuario (la sigla), no el
@@ -188,12 +179,17 @@ export function FeedPage() {
     : null
 
   function emptyMessage() {
-    if (etiquetaParam && !qParam) return `Todavía no hay categorías que incluyan la etiqueta ${etiquetaLabel}`
-    if (!qParam) return 'No se encontraron categorías.'
-    const isKnownTag = allTagNames.some(t => norm(t) === norm(qParam))
-    if (etiquetaParam) return `Todavía no hay categorías que incluyan la etiqueta ${etiquetaLabel} para "${qParam}".`
-    if (isKnownTag) return `Todavía no hay categorías con la etiqueta "${qParam}".`
-    return `No se encontraron categorías para "${qParam}".`
+    if (etiquetaParam) return `Todavía no hay categorías que incluyan la etiqueta ${etiquetaLabel}`
+    return 'No se encontraron categorías.'
+  }
+
+  // Link viejo con ?q=: la búsqueda de texto vive en /search. Redirigimos
+  // preservando la etiqueta (búsqueda combinada). replace: no ensuciar el back.
+  if (redirectToSearch) {
+    const p = new URLSearchParams()
+    p.set('q', qParam)
+    if (etiquetaParam) p.set('etiqueta', etiquetaParam)
+    return <Navigate to={`/search?${p.toString()}`} replace />
   }
 
   return (

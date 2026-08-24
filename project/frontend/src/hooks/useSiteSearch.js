@@ -1,40 +1,29 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { apiGet } from '../api/client'
-import { normSearch as norm } from '../utils/parseEtiquetas'
 
-// Lógica de la búsqueda del sitio (categorías + etiquetas en vivo, usuarios con
-// debounce de 250ms). Se extrajo del Header para reusarla tal cual tanto en la
-// barra de desktop como en el overlay de búsqueda de mobile — misma query,
-// mismos endpoints, mismo comportamiento.
+// Lógica de la búsqueda en vivo del header (dropdown de sugerencias). Se comparte
+// tal cual entre la barra de desktop (Header) y el overlay de mobile
+// (MobileSearch): misma query, mismo endpoint, mismo comportamiento.
+//
+// Todo pasa por el buscador unificado del backend: GET /api/search con limit
+// chico (top 3 por sección) y debounce. El resultado trae las cuatro secciones
+// (categorías, temas, comentarios, usuarios), cada una { items, hasMore }.
+//
+// Debounce de 350ms: alto para que tipear una palabra larga no dispare un request
+// por tecla (y no agote el rate limit del endpoint), pero imperceptible al leer.
+const DEBOUNCE_MS = 350
+const MIN_CHARS = 2
+const DROPDOWN_LIMIT = 3
+
 export function useSiteSearch() {
   const [query, setQueryState] = useState('')
   const [results, setResults] = useState(null)
 
-  // Cuando el input refleja la etiqueta activa del Home (?q=), no queremos abrir
-  // el dropdown de sugerencias: solo mostrar el nombre del filtro. Este ref
-  // marca ese modo y se apaga en cuanto el usuario vuelve a escribir.
+  // Cuando el input refleja el filtro activo del Home (?q=/?etiqueta=), no
+  // queremos abrir el dropdown de sugerencias: solo mostrar el texto/píldora del
+  // filtro. Este ref marca ese modo y se apaga en cuanto el usuario vuelve a
+  // escribir.
   const filterModeRef = useRef(false)
-
-  // Índice para sugerencias: montado en el Header (toda la app). Usa el
-  // endpoint liviano (sin previews de último tema/comentario) — el buscador
-  // solo necesita título, contadores y etiquetas.
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories', 'index'],
-    queryFn: () => apiGet('/categories/index').then(r => r.data),
-    staleTime: 5 * 60 * 1000,
-  })
-
-  const { data: allTagsGrouped = {} } = useQuery({
-    queryKey: ['categories', 'etiquetas'],
-    queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
-    staleTime: 5 * 60 * 1000,
-  })
-
-  const allTags = useMemo(
-    () => Object.values(allTagsGrouped).flat().map(t => t.nombre),
-    [allTagsGrouped]
-  )
 
   // setQuery para input del usuario: reactiva la búsqueda en vivo.
   const setQuery = useCallback(value => {
@@ -42,38 +31,25 @@ export function useSiteSearch() {
     setQueryState(value)
   }, [])
 
-  // Refleja la etiqueta activa del filtro sin disparar el dropdown.
+  // Refleja el filtro activo sin disparar el dropdown.
   const setQueryFromFilter = useCallback(value => {
     filterModeRef.current = true
     setQueryState(value)
   }, [])
 
-  // Categorías/etiquetas al instante; usuarios con debounce de 250ms.
   useEffect(() => {
     const q = query.trim()
-    if (!q || filterModeRef.current) {
+    if (!q || filterModeRef.current || q.length < MIN_CHARS) {
       setResults(null)
       return
     }
-
-    const catResults = categories
-      .filter(c => norm(c.titulo).includes(norm(q)))
-      .slice(0, 3)
-
-    const tagResults = allTags
-      .filter(t => norm(t).includes(norm(q)))
-      .slice(0, 3)
-
-    setResults({ cats: catResults, tags: tagResults, users: [] })
-
-    if (q.length < 2) return
     const timer = setTimeout(() => {
-      apiGet(`/users/search?q=${encodeURIComponent(q)}`)
-        .then(r => setResults(prev => (prev ? { ...prev, users: r.data } : prev)))
+      apiGet(`/search?q=${encodeURIComponent(q)}&limit=${DROPDOWN_LIMIT}`)
+        .then(r => setResults(r.data))
         .catch(() => {})
-    }, 250)
+    }, DEBOUNCE_MS)
     return () => clearTimeout(timer)
-  }, [query, categories, allTags])
+  }, [query])
 
   const reset = useCallback(() => {
     filterModeRef.current = false
@@ -81,5 +57,5 @@ export function useSiteSearch() {
     setResults(null)
   }, [])
 
-  return { query, setQuery, setQueryFromFilter, results, setResults, categories, reset }
+  return { query, setQuery, setQueryFromFilter, results, setResults, reset }
 }

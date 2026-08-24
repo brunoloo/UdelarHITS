@@ -1,0 +1,131 @@
+/* Página de búsqueda. Política del proyecto: todas las clases con prefijo
+   `search-`, ningún selector de elemento a pelo (heredaría estilos globales) y
+   colores solo por token de styles/tokens.css. El ancho lo da `.page > main`
+   del layout — no se fija max-width acá, para igualar a Recientes/Explorar. */
+
+.search-head {
+  margin-bottom: 4px;
+}
+
+.search-heading {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.search-scope {
+  color: var(--accent);
+}
+
+.search-hint,
+.search-empty {
+  color: var(--text-muted);
+  padding: 24px 4px;
+  text-align: center;
+}
+
+.search-section {
+  margin-top: 28px;
+}
+
+/* Título de sección: peso claramente por encima de las etiquetas de contexto
+   ("en Home", "en tema X"), para que separe visualmente los bloques. */
+.search-section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Cada resultado de tema lleva su categoría UNA sola vez, como contexto. */
+.search-topic {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-result-context {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.search-more {
+  margin-top: 12px;
+  width: 100%;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.search-more:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.search-more:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.search-loading {
+  color: var(--text-muted);
+  padding: 8px 4px;
+}
+
+/* Resultado de usuario: avatar + nick + nombre. */
+.search-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+}
+
+.search-user:hover {
+  background: var(--surface-2);
+}
+
+.search-user-info {
+  min-width: 0;
+}
+
+.search-user-nick {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.search-user-name {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Resaltado del término dentro del fragmento (before/match/after). Bold +
+   color de acento sobre fondo tenue: el match tiene que saltar a la vista, no
+   ser un tinte apenas perceptible. Misma clase para las cuatro secciones. */
+.search-snippet-mark {
+  background: var(--accent-light);
+  color: var(--accent-strong);
+  font-weight: 700;
+  border-radius: 3px;
+  padding: 0 2px;
+}

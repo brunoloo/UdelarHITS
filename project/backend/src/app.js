@@ -212,6 +212,20 @@ const searchLimiter = rateLimit({
 });
 app.use('/api/users/search', limiterIf(searchLimiter));
 
+// Rate limit del buscador unificado. Más alto que /users/search (30) porque el
+// dropdown del header lo consume en vivo mientras se tipea: con debounce de
+// 350ms, una búsqueda deliberada de varias palabras dispara unos pocos requests,
+// y "ver más" agrega alguno; 60/min da aire al tipeo interactivo sin dejar de
+// acotar el abuso. (En test los limiters son passthrough — ver limiterIf.)
+const siteSearchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: 'Demasiadas búsquedas. Intentá de nuevo en un momento.' }
+});
+app.use('/api/search', limiterIf(siteSearchLimiter));
+
 const reporteLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,

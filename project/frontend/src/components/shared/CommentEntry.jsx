@@ -1,26 +1,26 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { CommentCard } from './CommentCard'
+import { commentPermalink } from '../../utils/commentPermalink'
 import './CommentEntry.css'
 
 // Header contextual ("en tema/categoría [x]" o "en respuesta al comentario de
 // [nick]") + CommentCard completa. Reutilizado en el perfil (tabs comentarios y
 // me gusta) y en el panel de guardados, para que todos rendericen igual.
 // onNavigate: callback opcional al navegar (p. ej. cerrar el panel de guardados).
-export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate }) {
+// variant/snippet: se pasan tal cual a CommentCard (variant="search" apaga las
+// acciones y muestra el fragmento resaltado en resultados de búsqueda).
+export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate, variant = 'default', snippet = null }) {
   const navigate = useNavigate()
 
   // Comentario de Home: no tiene contenedor del que derivar la URL — su permalink
   // ES la página del comentario (/comment/:id), independiente del ámbito.
   const isHome = r.tipo === 'home'
-  // Para comentarios en categoría abrimos su tab de comentarios; si no, el
-  // drill-down (?commentId) no encuentra el comentario.
-  const base = isHome
-    ? `/comment/${encodeURIComponent(r.id)}`
-    : r.tipo === 'tema'
-      ? `/topic/${encodeURIComponent(r.destino_id)}`
-      : `/category/${encodeURIComponent(r.destino_id)}?tab=comentarios`
-  const sep = base.includes('?') ? '&' : '?'
-  const commentHref = isHome ? base : `${base}${sep}commentId=${encodeURIComponent(r.id)}`
+  // Permalink por ámbito (fuente única, compartida con la búsqueda). Para tema y
+  // categoría, `base` es también el link del título contextual del header.
+  const commentHref = commentPermalink({ tipo: r.tipo, id: r.id, destino_id: r.destino_id })
+  const base = r.tipo === 'tema'
+    ? `/topic/${encodeURIComponent(r.destino_id)}`
+    : `/category/${encodeURIComponent(r.destino_id)}?tab=comentarios`
 
   const isReply = !!r.comentario_padre_id
   let prefix, titleText, titleHref
@@ -57,6 +57,8 @@ export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate })
       <CommentCard
         comment={r}
         role="reply"
+        variant={variant}
+        snippet={snippet}
         onCardClick={() => { onNavigate?.(); navigate(commentHref) }}
         onReply={onReply}
         invalidateKey={invalidateKey}
