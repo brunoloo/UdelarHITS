@@ -7,7 +7,9 @@ import './CommentEntry.css'
 // [nick]") + CommentCard completa. Reutilizado en el perfil (tabs comentarios y
 // me gusta) y en el panel de guardados, para que todos rendericen igual.
 // onNavigate: callback opcional al navegar (p. ej. cerrar el panel de guardados).
-export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate }) {
+// variant/snippet: se pasan tal cual a CommentCard (variant="search" apaga las
+// acciones y muestra el fragmento resaltado en resultados de búsqueda).
+export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate, variant = 'default', snippet = null }) {
   const navigate = useNavigate()
 
   // Comentario de Home: no tiene contenedor del que derivar la URL — su permalink
@@ -55,6 +57,8 @@ export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate })
       <CommentCard
         comment={r}
         role="reply"
+        variant={variant}
+        snippet={snippet}
         onCardClick={() => { onNavigate?.(); navigate(commentHref) }}
         onReply={onReply}
         invalidateKey={invalidateKey}
