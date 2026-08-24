@@ -18,6 +18,7 @@ import { timeAgo } from '../../utils/timeAgo'
 import { ReactionButtons } from './ReactionButtons'
 import { BookmarkIcon } from './BookmarkIcon'
 import { PinIcon } from './PinIcon'
+import { SearchSnippet } from './SearchSnippet'
 import { useSaved } from '../../hooks/useSaved'
 import './CommentCard.css'
 
@@ -33,7 +34,14 @@ export function CommentCard({
   invalidateKeys = null,
   canPin = false,
   onTogglePin,
+  // variant="search": card de resultado de búsqueda — muestra el fragmento
+  // (snippet) en vez del cuerpo completo y APAGA todas las acciones (responder,
+  // "N respuestas", menú, guardar, reacciones). El usuario elige a dónde ir; la
+  // card entera es clickeable hacia el permalink del comentario (onCardClick).
+  variant = 'default',
+  snippet = null,
 }) {
+  const isSearch = variant === 'search'
   const { user } = useAuth()
   const { showToast } = useToast()
   const requireAuth = useRequireAuth()
@@ -220,10 +228,12 @@ export function CommentCard({
         )}
       </div>
       {/* Menú anclado a la esquina sup. derecha de la card: así el badge
-          "Fijado" no lo desplaza hacia abajo. */}
-      <div className="comment-card-menu">
-        <DropdownMenu items={menuItems} />
-      </div>
+          "Fijado" no lo desplaza hacia abajo. En variante búsqueda no va. */}
+      {!isSearch && (
+        <div className="comment-card-menu">
+          <DropdownMenu items={menuItems} />
+        </div>
+      )}
       <div className="comment-body">
         {comment.fijado && (
           <div className="comment-pinned-badge">
@@ -245,7 +255,15 @@ export function CommentCard({
           </div>
         </div>
 
-        {editing ? (
+        {isSearch ? (
+          // Resultado de búsqueda: fragmento alrededor del match (texto plano,
+          // resaltado con <mark>), sin acciones ni adjuntos/encuesta.
+          <div className="comment-text">
+            {snippet?.match
+              ? <SearchSnippet before={snippet.before} match={snippet.match} after={snippet.after} />
+              : <ReadMore text={comment.cuerpo} maxLength={280} />}
+          </div>
+        ) : editing ? (
           <div className="inline-reply-panel" onClick={e => e.stopPropagation()}>
             <div className="edit-field">
               <div className="edit-field-label">

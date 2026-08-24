@@ -26,16 +26,19 @@
 }
 
 .search-section {
-  margin-top: 24px;
+  margin-top: 28px;
 }
 
+/* Título de sección: peso claramente por encima de las etiquetas de contexto
+   ("en Home", "en tema X"), para que separe visualmente los bloques. */
 .search-section-title {
-  font-size: 0.8rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
 }
 
 .search-list {

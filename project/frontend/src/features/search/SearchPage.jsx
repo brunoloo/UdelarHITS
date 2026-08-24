@@ -1,14 +1,11 @@
-import { useSearchParams } from 'react-router-dom'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost } from '../../api/client'
+import { useSearchParams, Link } from 'react-router-dom'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import { apiGet } from '../../api/client'
 import { CategoryCardMini } from '../../components/shared/CategoryCardMini'
 import { TopicCardMini } from '../../components/shared/TopicCardMini'
 import { CommentEntry } from '../../components/shared/CommentEntry'
 import { UserAvatar } from '../../components/shared/UserAvatar'
-import { buildReplyFormData } from '../../utils/attachments'
-import { trackCreateComment } from '../../utils/analytics'
 import { facultadBySigla } from '../../config/facultades'
-import { Link } from 'react-router-dom'
 import './SearchPage.css'
 
 const LIMIT = 10
@@ -68,7 +65,6 @@ function Section({ title, section, children }) {
 
 export function SearchPage() {
   const [searchParams] = useSearchParams()
-  const queryClient = useQueryClient()
   const q = (searchParams.get('q') ?? '').trim()
   const etiqueta = (searchParams.get('etiqueta') ?? '').trim()
   const canSearch = q.length >= MIN_CHARS
@@ -80,16 +76,6 @@ export function SearchPage() {
   const temas = useSection('temas', q, etiqueta, canSearch)
   const coments = useSection('comentarios', q, etiqueta, canSearch)
   const users = useSection('usuarios', q, etiqueta, usersEnabled)
-
-  // Responder desde un resultado de comentario: publica y refresca la sección.
-  const COMMENTS_KEY = ['search', 'comentarios', q, etiqueta]
-  async function handleReply(parentId, text, files, poll) {
-    const res = await apiPost('/replies/create',
-      buildReplyFormData({ cuerpo: text, comentario_padre_id: parentId }, files, poll))
-    trackCreateComment('reply')
-    queryClient.invalidateQueries({ queryKey: COMMENTS_KEY })
-    return res
-  }
 
   const etiquetaLabel = etiqueta
     ? (facultadBySigla(etiqueta) ? etiqueta.toUpperCase() : etiqueta)
@@ -141,8 +127,8 @@ export function SearchPage() {
               <CommentEntry
                 key={`com-${c.id}`}
                 comment={c}
-                invalidateKey={COMMENTS_KEY}
-                onReply={handleReply}
+                variant="search"
+                snippet={snippetOf(c)}
               />
             )}
           </Section>
