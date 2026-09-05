@@ -1,0 +1,150 @@
+/* ── FACULTY SELECT ──
+   Dropdown propio para elegir facultad. Existe porque el menú de un <select>
+   nativo lo dibuja el sistema operativo: queda blanco con texto gris y no sigue
+   el tema oscuro de la app.
+
+   Los colores del menú salen todos de tokens.css. El único color propio es el
+   punto de cada facultad, que llega por --fac-color desde config/facultades.js
+   (mismo mecanismo que --pill-color en .search-pill). */
+
+.faculty-select {
+  position: relative;
+  width: 100%;
+}
+
+/* Calcado del alto y el borde de .form-input / .edit-field input para que en el
+   formulario lea como un campo más, no como un botón. */
+.faculty-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-size: 14px;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.faculty-select-trigger:hover { border-color: var(--border-strong); }
+
+.faculty-select-trigger:focus-visible,
+.faculty-select-trigger.is-open {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Dentro de .edit-field (los modales) el contenedor ya pone borde, fondo y su
+   propio anillo vía :focus-within, así que el trigger se vuelve transparente
+   para no dibujar una caja adentro de otra. */
+.edit-field .faculty-select-trigger {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 15px;
+}
+
+.edit-field .faculty-select-trigger:hover { border-color: transparent; }
+
+.edit-field .faculty-select-trigger:focus-visible,
+.edit-field .faculty-select-trigger.is-open {
+  background: transparent;
+  box-shadow: none;
+}
+
+.faculty-select-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.faculty-select-value > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* "Sin especificar": es un placeholder, no un valor elegido. */
+.faculty-select-placeholder { color: var(--text-muted); }
+
+.faculty-select-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+}
+
+.faculty-select-trigger.is-open .faculty-select-chevron { transform: rotate(180deg); }
+
+.faculty-select-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fac-color);
+  flex-shrink: 0;
+}
+
+/* Hueco del mismo ancho para "Sin especificar", así los textos de todas las
+   opciones quedan alineados en la misma columna. */
+.faculty-select-dot--none { background: transparent; }
+
+.faculty-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+}
+
+/* Sin espacio abajo (viewport chico): el menú abre hacia arriba. */
+.faculty-select-menu--up {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+.faculty-select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font-size: 13px;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.faculty-select-option > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* El resaltado sigue al teclado y al mouse por igual (el componente sincroniza
+   highlight con onMouseEnter), así que no hace falta una regla :hover aparte. */
+.faculty-select-option[data-highlighted='true'] { background: var(--bg); }
+
+.faculty-select-option.is-selected {
+  font-weight: 600;
+  color: var(--accent);
+}

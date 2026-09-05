@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { resolveAutor } from '../../components/shared/AuthorDisplay'
+import { FacultyBadge } from '../../components/shared/FacultyBadge'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { ReadMore } from '../../components/ui/ReadMore'
 import { DropdownMenu } from '../../components/ui/DropdownMenu'
@@ -228,6 +229,7 @@ export function TopicPage() {
                       {autor.nickname}
                     </Link>
                   )}
+                  <FacultyBadge facultad={autor.facultad} />
                   <span className="topic-header-date">{timeAgo(topic.fecha_creacion)}</span>
                 </div>
               </div>

@@ -6,6 +6,7 @@ import { useToast } from '../../hooks/useToast'
 import { useRequireAuth } from '../../hooks/useRequireAuth'
 import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import { resolveAutor } from './AuthorDisplay'
+import { FacultyBadge } from './FacultyBadge'
 import { UserAvatar } from './UserAvatar'
 import { ReadMore } from '../ui/ReadMore'
 import { DropdownMenu } from '../ui/DropdownMenu'
@@ -266,6 +267,7 @@ export function CommentCard({
                 {autor.nickname}
               </Link>
             )}
+            <FacultyBadge facultad={autor.facultad} />
             <span>·</span>
             <span>{timeAgo(comment.fecha_creacion)}</span>
           </div>

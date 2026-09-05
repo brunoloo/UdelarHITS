@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
 import { resolveAutor } from '../shared/AuthorDisplay'
+import { FacultyBadge } from '../shared/FacultyBadge'
 import { UserAvatar } from '../shared/UserAvatar'
 import { FACULTADES, facultadBySigla } from '../../config/facultades'
 import { useFollowSticky } from '../../hooks/useFollowSticky'
@@ -243,15 +244,18 @@ function CategorySidebarContent({ catId }) {
               inactive={autorDisplay.isInactive}
             />
             <div className="mod-info">
-              {autorDisplay.isInactive ? (
-                <span className="mod-name inactive-author">{autorDisplay.nickname}</span>
-              ) : (
-                <span className="mod-name">
-                  <Link to={`/user/${encodeURIComponent(autorDisplay.nickname)}`}>
-                    {autorDisplay.nickname}
-                  </Link>
-                </span>
-              )}
+              <div className="mod-name-row">
+                {autorDisplay.isInactive ? (
+                  <span className="mod-name inactive-author">{autorDisplay.nickname}</span>
+                ) : (
+                  <span className="mod-name">
+                    <Link to={`/user/${encodeURIComponent(autorDisplay.nickname)}`}>
+                      {autorDisplay.nickname}
+                    </Link>
+                  </span>
+                )}
+                <FacultyBadge facultad={autorDisplay.facultad} />
+              </div>
               <span className="mod-role">moderador</span>
             </div>
           </div>
@@ -310,15 +314,18 @@ function TopicSidebarContent({ topicId }) {
               inactive={autorDisplay.isInactive}
             />
             <div className="mod-info">
-              {autorDisplay.isInactive ? (
-                <span className="mod-name inactive-author">{autorDisplay.nickname}</span>
-              ) : (
-                <span className="mod-name">
-                  <Link to={`/user/${encodeURIComponent(autorDisplay.nickname)}`}>
-                    {autorDisplay.nickname}
-                  </Link>
-                </span>
-              )}
+              <div className="mod-name-row">
+                {autorDisplay.isInactive ? (
+                  <span className="mod-name inactive-author">{autorDisplay.nickname}</span>
+                ) : (
+                  <span className="mod-name">
+                    <Link to={`/user/${encodeURIComponent(autorDisplay.nickname)}`}>
+                      {autorDisplay.nickname}
+                    </Link>
+                  </span>
+                )}
+                <FacultyBadge facultad={autorDisplay.facultad} />
+              </div>
               <span className="mod-role">creador</span>
             </div>
           </div>

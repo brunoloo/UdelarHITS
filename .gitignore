@@ -43,3 +43,9 @@ project/backend/src/seeds
 # Patch
 *.patch
 
+# Local agent setup (private workflow, not for public repo)
+CLAUDE.local.md
+.claude-skill/
+.githooks/
+.claude/settings.json
+

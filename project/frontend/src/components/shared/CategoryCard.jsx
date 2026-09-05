@@ -5,6 +5,7 @@ import { UserAvatar } from './UserAvatar'
 import { CategoryIcon } from './CategoryIcon'
 import { PinIcon } from './PinIcon'
 import { resolveAutor } from './AuthorDisplay'
+import { FacultyBadge } from './FacultyBadge'
 import { CommentAttachments } from './CommentAttachments'
 import { PollDisplay } from './PollDisplay'
 import { timeAgo } from '../../utils/timeAgo'
@@ -38,6 +39,7 @@ function CommentPreview({ comment, priority = false }) {
             ) : (
               <span className="cat-preview-author">{autor.nickname}</span>
             )}
+            <FacultyBadge facultad={autor.facultad} />
             <span>·</span>
             <span>{timeAgo(comment.fecha_creacion)}</span>
           </div>

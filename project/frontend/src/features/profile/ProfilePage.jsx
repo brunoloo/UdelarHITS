@@ -360,6 +360,14 @@ export function ProfilePage() {
             <p className="profile-handle">@{profile.nickname}</p>
             {teSigue && <span className="follow-badge">Te sigue</span>}
           </div>
+          {profile.facultad_nombre && (
+            <p className="profile-facultad">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: -2 }} aria-hidden="true">
+                <path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/>
+              </svg>
+              {' '}{profile.facultad_nombre}
+            </p>
+          )}
           {profile.biografia && (
             <p className="profile-bio">
               <BioText text={profile.biografia} />

@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { apiPatch, apiDelete, apiGet } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
+import { useFacultades } from '../../hooks/useFacultades'
+import { FacultySelect } from '../../components/shared/FacultySelect'
 import { Modal } from '../../components/ui/Modal'
 import { PreviewTextField } from '../../components/shared/PreviewTextField'
 import { BioText } from '../../utils/renderBioWithLinks'
@@ -16,6 +18,10 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
 
   const [nombre, setNombre] = useState('')
   const [bio, setBio] = useState('')
+  // Abreviatura de la facultad ('' = sin especificar). Campo opcional.
+  const [facultad, setFacultad] = useState('')
+
+  const facultades = useFacultades({ enabled: isOpen })
 
   const [avatarPreview, setAvatarPreview] = useState('')
   const [pendingAvatar, setPendingAvatar] = useState(null)
@@ -40,6 +46,7 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
     if (isOpen && profile) {
       setNombre(profile.nombre || '')
       setBio(profile.biografia || '')
+      setFacultad(profile.facultad || '')
       setAvatarPreview(profile.url_imagen || '')
       setPendingAvatar(null)
       setRemoveAvatar(false)
@@ -97,7 +104,7 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
         await apiDelete('/users/me/banner')
       }
 
-      const body = { biografia: bio.trim() }
+      const body = { biografia: bio.trim(), facultad: facultad || null }
       if (nombre.trim()) body.nombre = nombre.trim()
       await apiPatch('/users/me', body)
       return { enRevision }
@@ -286,6 +293,18 @@ export function EditProfileModal({ isOpen, onClose, profile, onSaved }) {
               maxLength={50}
               value={nombre}
               onChange={e => setNombre(e.target.value)}
+            />
+          </div>
+          <div className="edit-field">
+            <div className="edit-field-label">
+              <span>Facultad</span>
+              <span className="edit-field-counter">Opcional</span>
+            </div>
+            <FacultySelect
+              id="edit-facultad"
+              value={facultad}
+              onChange={setFacultad}
+              facultades={facultades}
             />
           </div>
           <PreviewTextField

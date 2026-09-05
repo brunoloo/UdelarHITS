@@ -1,21 +1,25 @@
 import { Link } from 'react-router-dom'
 import { UserAvatar } from './UserAvatar'
+import { FacultyBadge } from './FacultyBadge'
 import './AuthorDisplay.css'
 
 // Port of getAutorDisplay() from vanilla header.js.
 // Accepts an autor object whose fields may be prefixed (autor_nickname) or not (nickname).
 function resolveAutor(autor) {
-  if (!autor) return { nickname: 'Usuario desconocido', url_imagen: null, isInactive: true }
+  if (!autor) return { nickname: 'Usuario desconocido', url_imagen: null, facultad: null, isInactive: true }
 
   const estado = autor.autor_estado || autor.estado
   const nickname = autor.autor_nickname || autor.nickname || ''
   const url_imagen = autor.autor_url_imagen || autor.url_imagen || null
+  // Abreviatura de la facultad (opcional). Cae junto con el nickname cuando el
+  // autor está inactivo: no queda un badge huérfano al lado de "Usuario inactivo".
+  const facultad = autor.autor_facultad || autor.facultad || null
 
   if (estado === 'inactivo') {
-    return { nickname: 'Usuario inactivo', url_imagen: null, isInactive: true }
+    return { nickname: 'Usuario inactivo', url_imagen: null, facultad: null, isInactive: true }
   }
 
-  return { nickname, url_imagen, isInactive: false }
+  return { nickname, url_imagen, facultad, isInactive: false }
 }
 
 // Renders the author avatar + name row.
@@ -24,7 +28,7 @@ function resolveAutor(autor) {
 //   size    — avatar size: 'sm' | 'md' | 'lg'
 //   showAvatar — boolean (default true)
 export function AuthorDisplay({ autor, size = 'sm', showAvatar = true }) {
-  const { nickname, url_imagen, isInactive } = resolveAutor(autor)
+  const { nickname, url_imagen, facultad, isInactive } = resolveAutor(autor)
 
   const avatarEl = showAvatar && (
     <UserAvatar url_imagen={url_imagen} nickname={nickname} size={size} inactive={isInactive} />
@@ -45,6 +49,7 @@ export function AuthorDisplay({ autor, size = 'sm', showAvatar = true }) {
       <Link className="author-display-link" to={`/user/${encodeURIComponent(nickname)}`}>
         {nickname}
       </Link>
+      <FacultyBadge facultad={facultad} />
     </span>
   )
 }

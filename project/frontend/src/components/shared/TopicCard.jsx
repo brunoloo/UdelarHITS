@@ -1,5 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom'
 import { resolveAutor } from './AuthorDisplay'
+import { FacultyBadge } from './FacultyBadge'
 import { UserAvatar } from './UserAvatar'
 import { DropdownMenu } from '../ui/DropdownMenu'
 import { PinIcon } from './PinIcon'
@@ -67,6 +68,7 @@ export function TopicCard({ topic, canPin = false, onTogglePin }) {
               {autor.nickname}
             </Link>
           )}
+          <FacultyBadge facultad={autor.facultad} />
           <span>·</span>
           <span>{timeAgo(fecha_creacion)}</span>
         </div>

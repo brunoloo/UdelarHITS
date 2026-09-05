@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
+import { useFacultades } from '../../hooks/useFacultades'
+import { FacultySelect } from '../../components/shared/FacultySelect'
 import { trackSignUp } from '../../utils/analytics'
 import { GoogleAuthButton } from './GoogleAuthButton'
 import './auth.css'
@@ -67,7 +69,12 @@ export function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    // Abreviatura de la facultad ('' = sin especificar). Campo opcional: no se
+    // valida en el submit, el backend acepta vacío.
+    facultad: '',
   })
+
+  const facultades = useFacultades()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [acceptTerms, setAcceptTerms] = useState(false)
@@ -140,6 +147,7 @@ export function RegisterPage() {
         nickname: form.nickname,
         email: form.email,
         password: form.password,
+        facultad: form.facultad || null,
       })
       savePending(form.email)
       setStep('verify')
@@ -236,6 +244,18 @@ export function RegisterPage() {
               value={form.nickname}
               onChange={handleChange}
               required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="facultad">
+              Facultad <span className="form-label-optional">(opcional)</span>
+            </label>
+            <FacultySelect
+              id="facultad"
+              value={form.facultad}
+              onChange={v => setForm(prev => ({ ...prev, facultad: v }))}
+              facultades={facultades}
             />
           </div>
 

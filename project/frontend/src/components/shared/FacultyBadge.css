@@ -1,0 +1,17 @@
+/* ── FACULTY BADGE ── */
+/* Mismos tokens que .tag (ui/Tag.css) para que lea como parte del sistema, pero
+   sin font-family propia: hereda la del contexto donde se inserta. */
+.faculty-badge {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 1px 6px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--accent-light);
+  color: var(--accent);
+  white-space: nowrap;
+}

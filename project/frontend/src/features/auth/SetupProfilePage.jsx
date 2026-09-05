@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
+import { useFacultades } from '../../hooks/useFacultades'
+import { FacultySelect } from '../../components/shared/FacultySelect'
 import { apiPost } from '../../api/client'
 import { trackSignUp } from '../../utils/analytics'
 import './auth.css'
@@ -14,7 +16,13 @@ export function SetupProfilePage() {
   const { showToast } = useToast()
 
   const [nickname, setNickname] = useState(user?.nickname || '')
+  // Abreviatura de la facultad ('' = sin especificar). Opcional, igual que en el
+  // registro por email: este es el único formulario de alta que ve el usuario
+  // que entra con Google.
+  const [facultad, setFacultad] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const facultades = useFacultades()
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -35,7 +43,7 @@ export function SetupProfilePage() {
 
     setLoading(true)
     try {
-      const res = await apiPost('/auth/setup-nickname', { nickname: trimmed })
+      const res = await apiPost('/auth/setup-nickname', { nickname: trimmed, facultad: facultad || null })
       // Confirmar el nickname es el último paso del alta con Google: recién acá
       // se completa el registro del usuario nuevo.
       trackSignUp('google')
@@ -74,6 +82,18 @@ export function SetupProfilePage() {
               onChange={e => setNickname(e.target.value)}
               autoFocus
               required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="setup-facultad">
+              Facultad <span className="form-label-optional">(opcional)</span>
+            </label>
+            <FacultySelect
+              id="setup-facultad"
+              value={facultad}
+              onChange={setFacultad}
+              facultades={facultades}
             />
           </div>
 

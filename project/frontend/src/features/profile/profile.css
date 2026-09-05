@@ -140,6 +140,14 @@
   font-weight: 500;
 }
 
+/* Facultad de la Udelar (nombre completo, lo arma el backend). Mismo
+   tratamiento visual que .profile-fecha: metadato del perfil, no la bio. */
+.profile-facultad {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 6px;
+}
+
 .profile-bio {
   font-size: 14px;
   color: var(--text-primary);

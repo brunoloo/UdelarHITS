@@ -315,6 +315,15 @@
   min-width: 0;
 }
 
+/* Fila nombre + etiqueta de facultad: el nombre conserva su ellipsis y el badge
+   no se comprime. */
+.mod-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
 .mod-name {
   font-size: 13px;
   font-weight: 600;
