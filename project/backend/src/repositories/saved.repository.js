@@ -92,7 +92,7 @@ const getSavedComentarios = async (usuarioId) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
       con.cuerpo, con.fecha_creacion, con.autor_id,
-      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado, u.facultad AS autor_facultad,
       CASE
         WHEN com.tema_id IS NOT NULL THEN 'tema'
         WHEN com.categoria_id IS NOT NULL THEN 'categoria'

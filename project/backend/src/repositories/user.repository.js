@@ -74,13 +74,13 @@ const confirmNickname = async (userId, nickname) => {
   return rows[0] || null;
 };
 
-const createUser = async ({ nickname, nombre, email, passwordHash, rol = 'user' }) => {
+const createUser = async ({ nickname, nombre, email, passwordHash, rol = 'user', facultad = null }) => {
   const q = `
-    INSERT INTO usuario (nickname, nombre, email, password_hash, rol)
-    VALUES ($1, $2, $3, $4, $5)
-    RETURNING id, nickname, nombre, email, rol
+    INSERT INTO usuario (nickname, nombre, email, password_hash, rol, facultad)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING id, nickname, nombre, email, rol, facultad
   `;
-  const { rows } = await pool.query(q, [nickname, nombre, email, passwordHash, rol]);
+  const { rows } = await pool.query(q, [nickname, nombre, email, passwordHash, rol, facultad]);
   return rows[0];
 };
 
@@ -96,10 +96,15 @@ const getUsers = async () => {
 
 const getUserByNickname = async (nickname) => {
   const q = `
-    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado, me_gusta_privado, nickname_confirmado,
-           auth_provider, (password_hash IS NOT NULL) AS tiene_password
-    FROM usuario
-    WHERE LOWER(nickname) = LOWER($1)
+    SELECT u.id, u.rol, u.nickname, u.nombre, u.email, u.biografia, u.facultad, u.url_imagen, u.url_banner,
+           u.fecha_creacion, u.estado, u.privado, u.me_gusta_privado, u.nickname_confirmado,
+           u.auth_provider, (u.password_hash IS NOT NULL) AS tiene_password,
+           ef.nombre_display AS facultad_display
+    FROM usuario u
+    -- La facultad se guarda como abreviatura sin FK (ver schema.sql); este JOIN
+    -- sólo resuelve el nombre completo para mostrarlo en el perfil.
+    LEFT JOIN etiqueta ef ON ef.grupo = 'Facultades' AND LOWER(ef.nombre) = LOWER(u.facultad)
+    WHERE LOWER(u.nickname) = LOWER($1)
     LIMIT 1
   `;
   const { rows } = await pool.query(q, [nickname]);
@@ -111,10 +116,13 @@ const getUserByNickname = async (nickname) => {
 // por nickname.
 const getUserById = async (id) => {
   const q = `
-    SELECT id, rol, nickname, nombre, email, biografia, url_imagen, url_banner, fecha_creacion, estado, privado, me_gusta_privado, nickname_confirmado,
-           auth_provider, (password_hash IS NOT NULL) AS tiene_password
-    FROM usuario
-    WHERE id = $1
+    SELECT u.id, u.rol, u.nickname, u.nombre, u.email, u.biografia, u.facultad, u.url_imagen, u.url_banner,
+           u.fecha_creacion, u.estado, u.privado, u.me_gusta_privado, u.nickname_confirmado,
+           u.auth_provider, (u.password_hash IS NOT NULL) AS tiene_password,
+           ef.nombre_display AS facultad_display
+    FROM usuario u
+    LEFT JOIN etiqueta ef ON ef.grupo = 'Facultades' AND LOWER(ef.nombre) = LOWER(u.facultad)
+    WHERE u.id = $1
     LIMIT 1
   `;
   const { rows } = await pool.query(q, [id]);
@@ -172,7 +180,7 @@ const getFollowingByUserId = async (userId) => {
   return rows;
 };
 
-const updateUserById = async (id, { nombre, biografia }) => {
+const updateUserById = async (id, { nombre, biografia, facultad }) => {
   const fields = [];
   const values = [];
   let idx = 1;
@@ -185,6 +193,12 @@ const updateUserById = async (id, { nombre, biografia }) => {
     fields.push(`biografia = $${idx++}`);
     values.push(biografia);
   }
+  // Abreviatura ya validada/normalizada contra el catálogo en el service; null
+  // limpia el campo.
+  if (facultad !== undefined) {
+    fields.push(`facultad = $${idx++}`);
+    values.push(facultad);
+  }
 
   if (fields.length === 0) return null;
 
@@ -193,9 +207,23 @@ const updateUserById = async (id, { nombre, biografia }) => {
     UPDATE usuario
     SET ${fields.join(', ')}
     WHERE id = $${idx}
-    RETURNING id, nickname, nombre, email, biografia, url_imagen
+    RETURNING id, nickname, nombre, email, biografia, facultad, url_imagen
   `;
   const { rows } = await pool.query(q, values);
+  return rows[0] || null;
+};
+
+// Busca una facultad del catálogo `etiqueta` por abreviatura, sin distinguir
+// mayúsculas: devuelve el `nombre` canónico (las abreviaturas son mixed-case:
+// 'FPsico', 'Fartes', 'FOdont') y su nombre_display para armar el nombre completo.
+const findFacultadByNombre = async (nombre) => {
+  const q = `
+    SELECT nombre, nombre_display
+    FROM etiqueta
+    WHERE grupo = 'Facultades' AND LOWER(nombre) = LOWER($1)
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [nombre]);
   return rows[0] || null;
 };
 
@@ -646,7 +674,7 @@ const getLikesPrivacyById = async (id) => {
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers,
   findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser, confirmNickname,
   getUserByNickname, getUserById, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId,
-  getFollowingByUserId, updateUserById, getUserAvatarUrlById, updateUserEstado, updateUserEstadoById,
+  getFollowingByUserId, updateUserById, findFacultadByNombre, getUserAvatarUrlById, updateUserEstado, updateUserEstadoById,
   deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,
   acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById,
   searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers,

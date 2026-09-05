@@ -69,7 +69,7 @@ const getCategoryById = async (id) => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.autor_id, c.estado, c.fecha_creacion, c.icono,
       COALESCE(c.fijada_hasta > NOW(), false) AS fijada, c.fijada_hasta,
-      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado, u.facultad AS autor_facultad,
       (SELECT COUNT(*) FROM tema t WHERE t.categoria_id = c.id AND t.estado = 'activo') AS contador_temas,
       ARRAY_AGG(e.nombre) AS etiquetas
     FROM categoria c
@@ -77,7 +77,7 @@ const getCategoryById = async (id) => {
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
     LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.id = $1
-    GROUP BY c.id, u.nickname, u.url_imagen, u.estado
+    GROUP BY c.id, u.nickname, u.url_imagen, u.estado, u.facultad
     LIMIT 1
   `;
   const { rows } = await pool.query(q, [id]);
@@ -103,7 +103,7 @@ const getCategoriesByAuthorId = async (autorId) => {
 const getTopicsByCategoryId = async (categoryId) => {
   const q = `
     SELECT t.contenido_id, t.titulo, t.estado, c.fecha_creacion, c.autor_id, c.cuerpo,
-      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado, u.facultad AS autor_facultad,
       (SELECT COUNT(*) FROM comentario com
           WHERE com.tema_id = t.contenido_id
             AND com.estado = 'visible'
@@ -241,7 +241,7 @@ const assignParticipantRole = async (userId, categoriaId) => {
 // paginado de Home, que le agregan su propio ORDER BY / cursor por fuera.
 const CATEGORY_CARD_QUERY = `
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
-      c.fecha_creacion, c.icono, c.fijada_hasta, u.nickname AS autor_nickname, u.estado AS autor_estado,
+      c.fecha_creacion, c.icono, c.fijada_hasta, u.nickname AS autor_nickname, u.estado AS autor_estado, u.facultad AS autor_facultad,
       -- Comentarios directos (top-level) de la categoría: mismo criterio que el
       -- tab "Comentarios" de la página (getRepliesByCategory), para que el número
       -- de la card coincida con el de la página.
@@ -270,6 +270,7 @@ const CATEGORY_CARD_QUERY = `
           'autor_nickname', u3.nickname,
           'autor_url_imagen', u3.url_imagen,
           'autor_estado', u3.estado,
+          'autor_facultad', u3.facultad,
           'fecha_creacion', con2.fecha_creacion,
           'likes', (SELECT COUNT(*) FROM reaccion r WHERE r.contenido_id = com.contenido_id AND r.tipo = 'meGusta'),
           'contador_respuestas', (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible'),
@@ -294,7 +295,7 @@ const CATEGORY_CARD_QUERY = `
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
     LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.estado = 'activa'
-    GROUP BY c.id, u.nickname, u.estado
+    GROUP BY c.id, u.nickname, u.estado, u.facultad
 `;
 
 // Listado de cards de categorías activas, con dos filtros opcionales y
@@ -355,7 +356,7 @@ const getActiveCategories = async ({ q = null, etiqueta = null } = {}) => {
 const getCategoryIndex = async () => {
   const q = `
     SELECT c.id, c.titulo, c.descripcion, c.icono, c.contador_temas,
-      c.fecha_creacion, u.nickname AS autor_nickname, u.estado AS autor_estado,
+      c.fecha_creacion, u.nickname AS autor_nickname, u.estado AS autor_estado, u.facultad AS autor_facultad,
       -- Mismo criterio que la card y que el tab "Comentarios": directos (top-level).
       (SELECT COUNT(*) FROM comentario cc
          WHERE cc.categoria_id = c.id AND cc.comentario_padre_id IS NULL) AS contador_comentarios,
@@ -365,7 +366,7 @@ const getCategoryIndex = async () => {
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
     LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.estado = 'activa'
-    GROUP BY c.id, u.nickname, u.estado
+    GROUP BY c.id, u.nickname, u.estado, u.facultad
     ORDER BY c.fecha_creacion DESC
   `;
   const { rows } = await pool.query(q);
@@ -563,7 +564,7 @@ const getPopularCategories = async (days = 7, limit = 20) => {
       GROUP BY COALESCE(com.categoria_id, tt.categoria_id)
     )
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
-      c.fecha_creacion, u.nickname AS autor_nickname,
+      c.fecha_creacion, u.nickname AS autor_nickname, u.facultad AS autor_facultad,
       -- Total general de comentarios directos (top-level) de la categoría, para
       -- exponerlo junto a contador_temas en la card (aparte de los "recientes").
       (SELECT COUNT(*) FROM comentario cc
@@ -582,7 +583,7 @@ const getPopularCategories = async (days = 7, limit = 20) => {
     LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
     WHERE c.estado = 'activa'
       AND (COALESCE(ta.temas_recientes, 0) + COALESCE(ca.comentarios_recientes, 0)) > 0
-    GROUP BY c.id, u.nickname, ta.temas_recientes, ta.score, ca.comentarios_recientes, ca.comentarios_directos_recientes, ca.score
+    GROUP BY c.id, u.nickname, u.facultad, ta.temas_recientes, ta.score, ca.comentarios_recientes, ca.comentarios_directos_recientes, ca.score
     ORDER BY actividad_score DESC, c.fecha_creacion DESC
     LIMIT $2
   `;

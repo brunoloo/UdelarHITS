@@ -138,7 +138,7 @@ INSERT INTO etiqueta (nombre, nombre_display, grupo, orden) VALUES
 -- -----------------------------
 -- USUARIO
 -- -----------------------------
-CREATE TABLE usuario ( -- Revisado y completo. No modificar
+CREATE TABLE usuario ( -- Revisado y completo. Última modificación: fase 24 (facultad)
   id                BIGSERIAL PRIMARY KEY,
   rol               VARCHAR(20) NOT NULL DEFAULT 'user',
   nickname          VARCHAR(50)  NOT NULL UNIQUE,
@@ -147,6 +147,13 @@ CREATE TABLE usuario ( -- Revisado y completo. No modificar
   password_hash     TEXT,
   auth_provider     VARCHAR(10)  NOT NULL DEFAULT 'local',
   biografia         TEXT,
+  -- Facultad de la Udelar a la que pertenece el usuario. Opcional (NULL = sin
+  -- especificar). Guarda la ABREVIATURA del catálogo `etiqueta` con
+  -- grupo = 'Facultades' (p. ej. 'FING'); el nombre completo se compone en el
+  -- backend a partir de etiqueta.nombre_display. Deliberadamente SIN FK: la
+  -- abreviatura viaja junto al autor en ~30 queries de contenido y una FK
+  -- obligaría a un JOIN en todas ellas. La validación vive en el service.
+  facultad          VARCHAR(20),
   url_imagen        TEXT,
   url_banner        TEXT,
   estado            estado_usr   NOT NULL DEFAULT 'activo',
@@ -405,6 +412,9 @@ CREATE TABLE verificacion_registro (
   nickname VARCHAR(50) NOT NULL,
   nombre VARCHAR(120) NOT NULL,
   password_hash TEXT NOT NULL,
+  -- Facultad elegida en el formulario (opcional). Viaja acá porque la cuenta
+  -- recién se crea al confirmar el código: ver usuario.facultad.
+  facultad VARCHAR(20),
   intentos INT NOT NULL DEFAULT 0,
   usado BOOLEAN NOT NULL DEFAULT FALSE,
   expira_en TIMESTAMPTZ NOT NULL,

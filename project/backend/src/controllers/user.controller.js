@@ -566,8 +566,8 @@ const googleAuthCallback = async (req, res) => {
 
 const setupNickname = async (req, res) => {
   try {
-    const { nickname } = req.body;
-    const updated = await confirmNicknameService(req.user.id, nickname);
+    const { nickname, facultad } = req.body;
+    const updated = await confirmNicknameService(req.user.id, nickname, facultad);
     return res.status(200).json({ ok: true, data: updated });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });

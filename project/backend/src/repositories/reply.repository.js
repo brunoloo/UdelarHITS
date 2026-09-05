@@ -34,7 +34,7 @@ const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario
 const getRepliesByCategoryId = async (categoriaId, userId = null) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion,
-      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
+      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado, u.facultad AS autor_facultad,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
@@ -55,7 +55,7 @@ const getRepliesByCategoryId = async (categoriaId, userId = null) => {
 const getRepliesByTopicId = async (topicId, userId = null) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion,
-      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
+      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado, u.facultad AS autor_facultad,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
@@ -139,7 +139,7 @@ const getRepliesByUserId = async (userId, viewerId = null) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
       con.cuerpo, con.fecha_creacion, con.autor_id,
-      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado, u.facultad AS autor_facultad,
       CASE
         WHEN com.tema_id IS NOT NULL THEN 'tema'
         WHEN com.categoria_id IS NOT NULL THEN 'categoria'
@@ -194,7 +194,7 @@ const getRecentReplies = async (limit = 30, viewerId = null) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
       con.cuerpo, con.fecha_creacion, con.autor_id,
-      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado, u.facultad AS autor_facultad,
       CASE
         WHEN com.tema_id IS NOT NULL THEN 'tema'
         WHEN com.categoria_id IS NOT NULL THEN 'categoria'
@@ -252,7 +252,7 @@ const getLikedCommentsByUserId = async (userId, viewerId = null) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
       con.cuerpo, con.fecha_creacion, con.autor_id,
-      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado, u.facultad AS autor_facultad,
       CASE
         WHEN com.tema_id IS NOT NULL THEN 'tema'
         WHEN com.categoria_id IS NOT NULL THEN 'categoria'
@@ -301,7 +301,7 @@ const getLikedCommentsByUserId = async (userId, viewerId = null) => {
 const getRepliesByCommentId = async (commentId, userId = null) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
-      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado,
+      con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, con.fecha_creacion, u.estado AS autor_estado, u.facultad AS autor_facultad,
       (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
@@ -456,7 +456,7 @@ const getReplyContext = async (commentId, userId = null) => {
       com.contenido_id AS id, com.estado, com.motivo_inactivacion,
       con.cuerpo, con.autor_id,
       u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
-      con.fecha_creacion, u.estado AS autor_estado,
+      con.fecha_creacion, u.estado AS autor_estado, u.facultad AS autor_facultad,
       -- Título del ámbito (tema o categoría) al que pertenece el comentario. Lo
       -- consume el cliente para fijar el document.title en el permalink con el
       -- MISMO formato que el servidor inyecta en la carga inicial (utils/seo.js:
@@ -505,7 +505,7 @@ const countHomeComments = async () => {
 const homeCommentCard = (viewer) => `
   com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion,
   con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
-  con.fecha_creacion, u.estado AS autor_estado,
+  con.fecha_creacion, u.estado AS autor_estado, u.facultad AS autor_facultad,
   (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible') AS contador_respuestas,
   (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
   (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = ${viewer} LIMIT 1) AS mi_reaccion,

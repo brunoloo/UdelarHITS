@@ -28,7 +28,7 @@ export const _resetForgotAccountLimiter = () => forgotAccountLimiter.reset();
 import {
   findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers, getUserIdByNickname, getUserByNickname, getUserById,
   findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser, confirmNickname,
-  getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById,
+  getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, findFacultadByNombre,
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
   isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, updateBannerById,
   deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getAccountAuthById,
@@ -93,7 +93,25 @@ const sendVerificationCodeEmail = async (to, codigo) => {
   });
 };
 
-const requestRegistrationService = async ({ nickname, nombre, email, password }) => {
+// Facultad: campo opcional, tanto en el registro como en el perfil. '' / null /
+// solo espacios lo dejan vacío (NULL); si viene un valor, tiene que existir en
+// el catálogo `etiqueta` (grupo 'Facultades'), si no es BAD_REQUEST. Devuelve el
+// `nombre` canónico de la DB, nunca lo que mandó el cliente: el lookup es
+// case-insensitive y las abreviaturas son mixed-case ('FPsico', 'Fartes').
+const normalizeFacultad = async (facultad) => {
+  const raw = typeof facultad === 'string' ? facultad.trim() : facultad;
+  if (raw === null || raw === '' || raw === undefined) return null;
+
+  const found = typeof raw === 'string' ? await findFacultadByNombre(raw) : null;
+  if (!found) {
+    const err = new Error('Facultad no válida');
+    err.code = 'BAD_REQUEST';
+    throw err;
+  }
+  return found.nombre;
+};
+
+const requestRegistrationService = async ({ nickname, nombre, email, password, facultad }) => {
   const normalizedNickname = nickname?.trim().toLowerCase();
   const normalizedEmail = email?.trim().toLowerCase();
   const normalizedNombre = nombre?.trim().toLowerCase();
@@ -144,6 +162,10 @@ const requestRegistrationService = async ({ nickname, nombre, email, password })
     throw err;
   }
 
+  // Facultad (opcional): se valida antes de cualquier efecto — mandar una
+  // inválida no debe consumir el rate limit de envío de códigos.
+  const facultadNormalizada = await normalizeFacultad(facultad);
+
   // Chequeo de existencia
   await assertNicknameEmailFree(normalizedNickname, normalizedEmail);
 
@@ -168,6 +190,7 @@ const requestRegistrationService = async ({ nickname, nombre, email, password })
     nickname: normalizedNickname,
     nombre: normalizedNombre,
     passwordHash,
+    facultad: facultadNormalizada,
     expiraEn,
   });
 
@@ -217,6 +240,7 @@ const verifyRegistrationService = async ({ email, codigo }) => {
     nombre: pending.nombre,
     email: normalizedEmail,
     passwordHash: pending.password_hash,
+    facultad: pending.facultad ?? null,
   });
 
   await markVerificationUsed(pending.id);
@@ -251,6 +275,7 @@ const resendRegistrationCodeService = async ({ email }) => {
     nickname: pending.nickname,
     nombre: pending.nombre,
     passwordHash: pending.password_hash,
+    facultad: pending.facultad ?? null,
     expiraEn,
   });
 
@@ -365,6 +390,11 @@ const getUsersService = async () => {
 // NUNCA incluye campos sensibles (email, rol, nickname_confirmado): esos solo
 // viajan por /users/me (el propio perfil). El control de acceso es del backend;
 // el canView() del frontend es solo cosmético y no debe considerarse una barrera.
+// La columna `usuario.facultad` guarda la abreviatura ('FING'); el perfil muestra
+// el nombre completo. Lo compone el backend a partir del nombre_display del
+// catálogo para que el frontend no tenga que conocer el prefijo.
+const facultadNombreCompleto = (display) => (display ? `Facultad de ${display}` : null);
+
 const toPublicUser = (user) => ({
   id: user.id,
   nickname: user.nickname,
@@ -372,6 +402,8 @@ const toPublicUser = (user) => ({
   url_imagen: user.url_imagen,
   url_banner: user.url_banner,
   biografia: user.biografia,
+  facultad: user.facultad ?? null,
+  facultad_nombre: facultadNombreCompleto(user.facultad_display),
   fecha_creacion: user.fecha_creacion,
   estado: user.estado,
   privado: user.privado,
@@ -409,6 +441,8 @@ const getUserProfileService = async (nickname, viewerId = null, viewerRol = null
           url_imagen: null,
           url_banner: null,
           biografia: null,
+          facultad: null,
+          facultad_nombre: null,
           fecha_creacion: user.fecha_creacion,
           estado: user.estado,
           privado: false,
@@ -505,6 +539,8 @@ const showMeService = async (userId) => {
     nombre: user.nombre,
     email: user.email,
     biografia: user.biografia,
+    facultad: user.facultad ?? null,
+    facultad_nombre: facultadNombreCompleto(user.facultad_display),
     url_imagen: user.url_imagen,
     url_banner: user.url_banner,
     fecha_creacion: user.fecha_creacion,
@@ -534,8 +570,8 @@ const showMeFullService = async (userId) => {
   return { user, categories, followers, following };
 };
 
-const updateMeService = async (userId, { nombre, biografia }) => {
-  if (nombre === undefined && biografia === undefined) {
+const updateMeService = async (userId, { nombre, biografia, facultad }) => {
+  if (nombre === undefined && biografia === undefined && facultad === undefined) {
     const err = new Error('No hay campos para actualizar');
     err.code = 'BAD_REQUEST';
     throw err;
@@ -553,9 +589,17 @@ const updateMeService = async (userId, { nombre, biografia }) => {
     throw err;
   }
 
+  // Facultad: `undefined` significa "no la toques"; cualquier otro valor pasa
+  // por el mismo normalizador que usa el registro (ver normalizeFacultad).
+  let facultadNormalizada;
+  if (facultad !== undefined) {
+    facultadNormalizada = await normalizeFacultad(facultad);
+  }
+
   const updated = await updateUserById(userId, {
     nombre,
-    biografia
+    biografia,
+    facultad: facultadNormalizada
   });
 
   if (!updated) {
@@ -570,6 +614,7 @@ const updateMeService = async (userId, { nombre, biografia }) => {
       nombre: updated.nombre,
       email: updated.email,
       biografia: updated.biografia,
+      facultad: updated.facultad ?? null,
       url_imagen: updated.url_imagen
     }
   };
@@ -1226,7 +1271,10 @@ const handleGoogleAuthService = async (profile) => {
   return await createGoogleUser({ nickname, nombre, email });
 };
 
-const confirmNicknameService = async (userId, newNickname) => {
+// Último paso del alta con Google. Además del nickname (obligatorio) acepta la
+// facultad, opcional, para que el alta por Google pueda elegirla igual que el
+// registro por email — es el único formulario de alta que ve ese usuario.
+const confirmNicknameService = async (userId, newNickname, facultad) => {
   const normalized = newNickname?.trim().toLowerCase();
 
   if (!normalized) {
@@ -1254,7 +1302,17 @@ const confirmNicknameService = async (userId, newNickname) => {
     throw err;
   }
 
-  return await confirmNickname(userId, newNickname.trim());
+  // Se valida antes de confirmar el nickname: si la facultad es inválida, el
+  // alta falla entera y el usuario reintenta con el formulario intacto.
+  const facultadNormalizada = facultad !== undefined ? await normalizeFacultad(facultad) : undefined;
+
+  const confirmed = await confirmNickname(userId, newNickname.trim());
+
+  if (facultadNormalizada !== undefined) {
+    await updateUserById(userId, { facultad: facultadNormalizada });
+  }
+
+  return confirmed;
 };
 
 export { showMeService, showMeFullService, requestRegistrationService, verifyRegistrationService, resendRegistrationCodeService, loginUserService, handleGoogleAuthService, confirmNicknameService, getUsersService, getUserProfileService,
