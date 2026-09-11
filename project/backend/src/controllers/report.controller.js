@@ -2,7 +2,7 @@ import { crearReporteService } from '../services/report.service.js';
 
 const crearReporte = async (req, res) => {
   try {
-    const result = await crearReporteService(req.user.id, req.body);
+    const result = await crearReporteService(req.user.id, req.body, req.user.rol);
  
     return res.status(201).json({ ok: true, message: 'Contenido reportado', data: result });
   } catch (error) {

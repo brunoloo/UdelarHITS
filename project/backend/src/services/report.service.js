@@ -20,8 +20,12 @@ const MOTIVOS_VALIDOS = ['spam', 'incitacionOdio', 'acoso', 'contenidoInapropiad
 //   * no se reporta contenido ya inactivo/oculto
 //   * un usuario no reporta dos veces (lo garantiza el UNIQUE; traducimos
 //     el 23505 a un error de dominio)
+//
+// El rol del reportante (`rolUsuario`) viene resuelto por el middleware `protect`
+// desde la BD. Si es admin, el reporte no espera al umbral comunitario: oculta el
+// contenido en el acto (ver `esAdmin` más abajo).
 // ---------------------------------------------------------
-const crearReporteService = async (usuarioId, { contenido_id, categoria_id, motivo }) => {
+const crearReporteService = async (usuarioId, { contenido_id, categoria_id, motivo }, rolUsuario) => {
   // Validar que venga exactamente uno de los dos
   const tieneContenido = contenido_id != null;
   const tieneCategoria = categoria_id != null;
@@ -37,15 +41,19 @@ const crearReporteService = async (usuarioId, { contenido_id, categoria_id, moti
     throw err;
   }
  
+  // Comparación explícita contra el valor del enum: cualquier otro rol (o un rol
+  // ausente) cae en el flujo normal por umbral.
+  const esAdmin = rolUsuario === 'admin';
+
   // Despachar según tipo
   if (tieneCategoria) {
-    return await reportarCategoria(usuarioId, Number(categoria_id), motivo);
+    return await reportarCategoria(usuarioId, Number(categoria_id), motivo, esAdmin);
   }
-  return await reportarContenido(usuarioId, Number(contenido_id), motivo);
+  return await reportarContenido(usuarioId, Number(contenido_id), motivo, esAdmin);
 };
  
 // Reportar tema o comentario (lógica existente, extraída a función)
-async function reportarContenido(usuarioId, contenidoId, motivo) {
+async function reportarContenido(usuarioId, contenidoId, motivo, esAdmin = false) {
   const id = contenidoId;
   if (!Number.isInteger(id) || id < 1) {
     const err = new Error('ID de contenido inválido');
@@ -94,8 +102,15 @@ async function reportarContenido(usuarioId, contenidoId, motivo) {
   // pondera reportes de participantes vs visitantes de la categoría del
   // contenido. El desglose (n/p/v) NO se expone en la respuesta para no filtrar
   // tamaño de participación ni internals de moderación.
+  // Excepción por rol: un reporte de admin oculta el contenido en el acto, el
+  // umbral comunitario no aplica (no se consulta el desglose: es un bypass, no un
+  // reporte con peso infinito). El contenido queda igual que siempre, con
+  // motivo_inactivacion = 'moderacion_reporte' e inactivado_directo = TRUE, a
+  // propósito: así la apelación del autor sigue funcionando sin cambios.
   let inactivar;
-  if (contenido.tipo === 'comentario' && contenido.es_home) {
+  if (esAdmin) {
+    inactivar = true;
+  } else if (contenido.tipo === 'comentario' && contenido.es_home) {
     inactivar = debeInactivarHome(total);
   } else {
     const { n, p, v } = await getReportBreakdownByContenido(id);
@@ -120,7 +135,7 @@ async function reportarContenido(usuarioId, contenidoId, motivo) {
 }
  
 // Reportar categoría (lógica nueva)
-async function reportarCategoria(usuarioId, categoriaId, motivo) {
+async function reportarCategoria(usuarioId, categoriaId, motivo, esAdmin = false) {
   if (!Number.isInteger(categoriaId) || categoriaId < 1) {
     const err = new Error('ID de categoría inválido');
     err.code = 'BAD_REQUEST';
@@ -165,9 +180,16 @@ async function reportarCategoria(usuarioId, categoriaId, motivo) {
   }
  
   const total = await countReportesByCategoria(categoriaId);
-  // Umbral dinámico dual sobre los participantes de la propia categoría.
-  const { n, p, v } = await getReportBreakdownByCategoria(categoriaId);
-  const inactivar = debeInactivar({ n, p, v });
+  // Umbral dinámico dual sobre los participantes de la propia categoría, salvo
+  // que reporte un admin: en ese caso se inactiva en el acto, sin consultar el
+  // desglose (misma excepción por rol que en reportarContenido).
+  let inactivar;
+  if (esAdmin) {
+    inactivar = true;
+  } else {
+    const { n, p, v } = await getReportBreakdownByCategoria(categoriaId);
+    inactivar = debeInactivar({ n, p, v });
+  }
 
   let moderacion = null;
   if (inactivar) {
