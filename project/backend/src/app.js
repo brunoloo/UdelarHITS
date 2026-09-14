@@ -10,7 +10,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import passport from './config/passport.js';
 import pool from './config/db.js';
-import maintenanceMiddleware from './middleware/maintenance.js';
+import maintenanceMiddleware from './middlewares/maintenance.middleware.js';
 
 // Import routes
 import API from './routes/API.js';
