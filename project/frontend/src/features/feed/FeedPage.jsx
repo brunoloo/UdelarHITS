@@ -242,6 +242,7 @@ export function FeedPage() {
                   canPinHome={isAdmin}
                   onPinHome={(comment) => setPinTarget(comment)}
                   onUnpinHome={(comment) => unpinHomeMutation.mutate(comment.id)}
+                  embedVideos
                 />
               ) : (
                 <CategoryCard key={`categoria-${c.id}`} category={c} priority={i === 0} />

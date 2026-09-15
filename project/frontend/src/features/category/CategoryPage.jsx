@@ -629,6 +629,7 @@ export function CategoryPage() {
               comments={replies}
               invalidateKey={['replies', 'category', id]}
               initialCommentId={commentIdParam}
+              embedVideos
               canPin={isOwner}
               onTogglePin={(c) => pinCommentMutation.mutate(c)}
               onInitialDrillDone={() => {

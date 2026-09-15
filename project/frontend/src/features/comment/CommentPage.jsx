@@ -54,6 +54,7 @@ export function CommentPage() {
         // cubre la lista de hijos en cualquier nivel), el contexto que carga esta
         // página, y el contador de respuestas del feed del Home.
         invalidateKeys={[['replies'], ['comment', id], ['categories', 'feed']]}
+        embedVideos
       />
     </div>
   )

@@ -307,7 +307,7 @@ export function ProfilePage() {
   // Render compartido de una fila de comentario (tabs "comentarios" y "me gusta").
   // invalidateKey decide qué query refrescar al reaccionar/responder en la card.
   const renderCommentRow = (r, invalidateKey) => (
-    <CommentEntry key={r.id} comment={r} invalidateKey={invalidateKey} onReply={handleReply} />
+    <CommentEntry key={r.id} comment={r} invalidateKey={invalidateKey} onReply={handleReply} embedVideos />
   )
 
   return (

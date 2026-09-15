@@ -282,6 +282,7 @@ export function TopicPage() {
           comments={replies}
           invalidateKey={['replies', 'topic', id]}
           initialCommentId={commentIdParam}
+          embedVideos
           canPin={isAuthor || isAdmin}
           onTogglePin={(c) => pinCommentMutation.mutate(c)}
           onInitialDrillDone={() => {

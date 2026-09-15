@@ -161,6 +161,7 @@ export function RecentPage() {
               comment={item.data}
               invalidateKey={['replies', 'recent']}
               onReply={handleReply}
+              embedVideos
             />
           )
         })

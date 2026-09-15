@@ -7,6 +7,7 @@ import { PinIcon } from './PinIcon'
 import { resolveAutor } from './AuthorDisplay'
 import { FacultyBadge } from './FacultyBadge'
 import { CommentAttachments } from './CommentAttachments'
+import { YouTubeEmbeds } from './YouTubeEmbeds'
 import { PollDisplay } from './PollDisplay'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
@@ -50,6 +51,10 @@ function CommentPreview({ comment, priority = false }) {
             <ReadMore text={comment.cuerpo} maxLength={280} />
           </div>
         )}
+
+        {/* El preview es siempre un comentario de nivel 1 (la query filtra
+            comentario_padre_id IS NULL), así que los videos van sin condición. */}
+        <YouTubeEmbeds text={comment.cuerpo} />
 
         {/* En el feed el preview nunca se muestra a más de ~500px → 600 alcanza.
             priority marca el primer adjunto del primer card como candidato LCP. */}

@@ -9,7 +9,7 @@ import './CommentEntry.css'
 // onNavigate: callback opcional al navegar (p. ej. cerrar el panel de guardados).
 // variant/snippet: se pasan tal cual a CommentCard (variant="search" apaga las
 // acciones y muestra el fragmento resaltado en resultados de búsqueda).
-export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate, variant = 'default', snippet = null }) {
+export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate, variant = 'default', snippet = null, embedVideos = false }) {
   const navigate = useNavigate()
 
   // Comentario de Home: no tiene contenedor del que derivar la URL — su permalink
@@ -62,6 +62,8 @@ export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate, v
         onCardClick={() => { onNavigate?.(); navigate(commentHref) }}
         onReply={onReply}
         invalidateKey={invalidateKey}
+        // Videos embebidos solo en comentarios de nivel 1, nunca en respuestas.
+        embedVideos={embedVideos && !isReply}
       />
     </div>
   )

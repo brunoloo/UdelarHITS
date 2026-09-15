@@ -12,6 +12,7 @@ import { ReadMore } from '../ui/ReadMore'
 import { DropdownMenu } from '../ui/DropdownMenu'
 import { CommentForm } from './CommentForm'
 import { CommentAttachments } from './CommentAttachments'
+import { YouTubeEmbeds } from './YouTubeEmbeds'
 import { PollDisplay } from './PollDisplay'
 import { ReportModal } from './ReportModal'
 import { Modal } from '../ui/Modal'
@@ -44,6 +45,9 @@ export function CommentCard({
   // card entera es clickeable hacia el permalink del comentario (onCardClick).
   variant = 'default',
   snippet = null,
+  // embedVideos: muestra los links de YouTube del cuerpo como reproductores.
+  // Solo lo activan los contenedores de comentarios de nivel 1.
+  embedVideos = false,
 }) {
   const isSearch = variant === 'search'
   const { user } = useAuth()
@@ -316,6 +320,7 @@ export function CommentCard({
                 <ReadMore text={comment.cuerpo} maxLength={500} />
               </div>
             )}
+            {embedVideos && <YouTubeEmbeds text={comment.cuerpo} />}
             <CommentAttachments adjuntos={comment.adjuntos} />
             {comment.encuesta && <PollDisplay encuesta={comment.encuesta} invalidateKey={invalidateKey} />}
             <div className="comment-actions">

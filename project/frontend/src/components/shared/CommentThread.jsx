@@ -7,7 +7,7 @@ import { trackCreateComment } from '../../utils/analytics'
 import { CommentCard } from './CommentCard'
 import './CommentCard.css'
 
-export function CommentThread({ comments, invalidateKey, invalidateKeys = null, initialCommentId, initialStack = null, initialHighlightId = null, onExit = null, onInitialDrillDone, canPin = false, onTogglePin }) {
+export function CommentThread({ comments, invalidateKey, invalidateKeys = null, initialCommentId, initialStack = null, initialHighlightId = null, onExit = null, onInitialDrillDone, canPin = false, onTogglePin, embedVideos = false }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
   const lastDrilledId = useRef(null)
@@ -134,6 +134,8 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
                 onReply={handleReply}
                 invalidateKey={invalidateKey}
                 invalidateKeys={invalidateKeys}
+                // Videos solo en el comentario raíz del hilo (nivel 1).
+                embedVideos={embedVideos && i === 0 && !anc.comentario_padre_id}
               />
             )
           })}
@@ -162,6 +164,7 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
               invalidateKeys={invalidateKeys}
               canPin={canPin && !currentParent}
               onTogglePin={onTogglePin}
+              embedVideos={embedVideos && !currentParent}
             />
           ))
         )}

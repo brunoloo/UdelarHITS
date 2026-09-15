@@ -81,6 +81,12 @@ app.use(helmet({
         'https://*.google-analytics.com',
         'https://www.googletagmanager.com'
       ],
+      // Embeds de YouTube en comentarios (dominio nocookie, sin cookies de
+      // seguimiento hasta que el usuario interactúa).
+      'frame-src': [
+        "'self'",
+        'https://www.youtube-nocookie.com'
+      ],
       'script-src-attr': ["'none'"]
     }
   }
