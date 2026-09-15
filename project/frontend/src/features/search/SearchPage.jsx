@@ -129,6 +129,7 @@ export function SearchPage() {
                 comment={c}
                 variant="search"
                 snippet={snippetOf(c)}
+                embedVideos
               />
             )}
           </Section>

@@ -62,8 +62,7 @@ export function CommentEntry({ comment: r, invalidateKey, onReply, onNavigate, v
         onCardClick={() => { onNavigate?.(); navigate(commentHref) }}
         onReply={onReply}
         invalidateKey={invalidateKey}
-        // Videos embebidos solo en comentarios de nivel 1, nunca en respuestas.
-        embedVideos={embedVideos && !isReply}
+        embedVideos={embedVideos}
       />
     </div>
   )

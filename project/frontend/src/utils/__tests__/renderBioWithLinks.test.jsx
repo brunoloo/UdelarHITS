@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { renderBioWithLinks } from '../renderBioWithLinks'
 import {
-  renderBioWithLinks,
   getYouTubeVideoId,
   extractYouTubeVideoIds,
   YOUTUBE_ID_REGEX,
-} from '../renderBioWithLinks'
+} from '../youtube'
 
 function Wrapper({ text }) {
   return <MemoryRouter>{renderBioWithLinks(text)}</MemoryRouter>
@@ -118,6 +118,13 @@ describe('getYouTubeVideoId', () => {
 })
 
 describe('extractYouTubeVideoIds', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'location', {
+      value: { hostname: 'udelarhits.com' },
+      writable: true,
+    })
+  })
+
   it('devuelve los IDs en orden y saltea los links que no son video', () => {
     const text = [
       'Primero https://youtu.be/dQw4w9WgXcQ',
@@ -141,15 +148,22 @@ describe('extractYouTubeVideoIds', () => {
   })
 
   it('no rompe renderBioWithLinks: el link de YouTube sigue yendo por /redirect', () => {
-    Object.defineProperty(window, 'location', {
-      value: { hostname: 'udelarhits.com' },
-      writable: true,
-    })
     const url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
     extractYouTubeVideoIds(`Mirá ${url}`)
     render(<Wrapper text={`Mirá ${url}`} />)
     const link = screen.getByText(url)
     expect(link.tagName).toBe('A')
     expect(link.getAttribute('href')).toContain('/redirect?to=')
+  })
+
+  // (c) un ID inválido no rompe el render y cae a link normal
+  it('con un ID inválido no hay video y el texto se renderiza como link normal', () => {
+    const url = 'https://youtu.be/dQw4w9WgXc'
+    const text = `Antes ${url} después`
+    expect(extractYouTubeVideoIds(text)).toEqual([])
+    render(<Wrapper text={text} />)
+    const link = screen.getByText(url)
+    expect(link.tagName).toBe('A')
+    expect(link.getAttribute('href')).toBe(`/redirect?to=${encodeURIComponent(url)}`)
   })
 })

@@ -134,8 +134,7 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
                 onReply={handleReply}
                 invalidateKey={invalidateKey}
                 invalidateKeys={invalidateKeys}
-                // Videos solo en el comentario raíz del hilo (nivel 1).
-                embedVideos={embedVideos && i === 0 && !anc.comentario_padre_id}
+                embedVideos={embedVideos}
               />
             )
           })}
@@ -164,7 +163,7 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
               invalidateKeys={invalidateKeys}
               canPin={canPin && !currentParent}
               onTogglePin={onTogglePin}
-              embedVideos={embedVideos && !currentParent}
+              embedVideos={embedVideos}
             />
           ))
         )}

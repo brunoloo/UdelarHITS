@@ -1,58 +1,12 @@
 import { Link } from 'react-router-dom'
 import { isInternalUrl, toRelativePath } from './isInternalUrl'
+// URL_REGEX vive en youtube.js (compartida con la detección de videos). Los
+// helpers de YouTube no se exportan desde acá: este archivo exporta un
+// componente (BioText) y react-refresh pide no mezclarlo con otros exports.
+import { URL_REGEX } from './youtube'
 
-const URL_REGEX = /(https?:\/\/[^\s]+)/g
 const MENTION_REGEX = /@(\w[\w.-]{0,29})/g
 const COMBINED_REGEX = /(https?:\/\/[^\s]+|@\w[\w.-]{0,29})/g
-
-// ID de video de YouTube: 11 caracteres del alfabeto base64url.
-export const YOUTUBE_ID_REGEX = /^[A-Za-z0-9_-]{11}$/
-
-const YOUTUBE_HOSTS = ['youtube.com', 'www.youtube.com', 'm.youtube.com']
-
-// Devuelve el ID si la URL es un video de YouTube (watch, shorts, embed o
-// youtu.be); cualquier otra cosa (canales, playlists, búsquedas, dominios
-// parecidos) devuelve null. El hostname se compara exacto, nunca por sufijo.
-export function getYouTubeVideoId(url) {
-  let parsed
-  try {
-    parsed = new URL(url)
-  } catch {
-    return null
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
-
-  const host = parsed.hostname
-  const path = parsed.pathname.replace(/\/$/, '')
-  let id = null
-
-  if (YOUTUBE_HOSTS.includes(host)) {
-    if (path === '/watch') {
-      id = parsed.searchParams.get('v')
-    } else {
-      const match = path.match(/^\/(?:shorts|embed)\/([^/]+)$/)
-      if (match) id = match[1]
-    }
-  } else if (host === 'youtu.be') {
-    const match = path.match(/^\/([^/]+)$/)
-    if (match) id = match[1]
-  }
-
-  return id && YOUTUBE_ID_REGEX.test(id) ? id : null
-}
-
-// IDs de todos los links de video del texto, en orden y sin deduplicar.
-// matchAll trabaja sobre una copia del regex, así que no ensucia el lastIndex
-// de URL_REGEX que usa renderBioWithLinks con .test().
-export function extractYouTubeVideoIds(text) {
-  if (!text) return []
-  const ids = []
-  for (const match of text.matchAll(URL_REGEX)) {
-    const id = getYouTubeVideoId(match[0])
-    if (id) ids.push(id)
-  }
-  return ids
-}
 
 export function renderBioWithLinks(text) {
   if (!text) return null

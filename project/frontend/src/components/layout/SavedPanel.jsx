@@ -81,6 +81,7 @@ export function SavedPanel({ open, panelRef, onClose }) {
                   invalidateKey={SAVED_KEY}
                   onReply={handleReply}
                   onNavigate={onClose}
+                  embedVideos
                 />
               )
             })}

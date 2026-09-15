@@ -45,8 +45,8 @@ export function CommentCard({
   // card entera es clickeable hacia el permalink del comentario (onCardClick).
   variant = 'default',
   snippet = null,
-  // embedVideos: muestra los links de YouTube del cuerpo como reproductores.
-  // Solo lo activan los contenedores de comentarios de nivel 1.
+  // embedVideos: muestra los links de YouTube del cuerpo como reproductores
+  // (también en variante búsqueda, a partir del cuerpo completo, no del snippet).
   embedVideos = false,
 }) {
   const isSearch = variant === 'search'
@@ -279,12 +279,16 @@ export function CommentCard({
 
         {isSearch ? (
           // Resultado de búsqueda: fragmento alrededor del match (texto plano,
-          // resaltado con <mark>), sin acciones ni adjuntos/encuesta.
-          <div className="comment-text">
-            {snippet?.match
-              ? <SearchSnippet before={snippet.before} match={snippet.match} after={snippet.after} />
-              : <ReadMore text={comment.cuerpo} maxLength={280} />}
-          </div>
+          // resaltado con <mark>), sin acciones ni adjuntos/encuesta. Los videos
+          // salen del cuerpo completo: el link puede no caer dentro del snippet.
+          <>
+            <div className="comment-text">
+              {snippet?.match
+                ? <SearchSnippet before={snippet.before} match={snippet.match} after={snippet.after} />
+                : <ReadMore text={comment.cuerpo} maxLength={280} />}
+            </div>
+            {embedVideos && <YouTubeEmbeds text={comment.cuerpo} />}
+          </>
         ) : editing ? (
           <div className="inline-reply-panel" onClick={e => e.stopPropagation()}>
             <div className="edit-field">

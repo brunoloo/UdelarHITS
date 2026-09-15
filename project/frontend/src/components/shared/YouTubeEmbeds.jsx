@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { extractYouTubeVideoIds } from '../../utils/renderBioWithLinks'
+import { extractYouTubeVideoIds } from '../../utils/youtube'
 import './YouTubeEmbeds.css'
 
 // Reproductores de YouTube para los links de video del cuerpo de un comentario.
