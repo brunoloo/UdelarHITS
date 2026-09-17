@@ -170,6 +170,10 @@ function Carousel({ children, className = '' }) {
 function UserMiniCard({ user, onFollowed }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  // El carrusel también se muestra a invitados: para ellos el POST de seguir
+  // devolvía 401 y un toast de error. Ahora el click los manda a registrarse.
+  const { user: sessionUser } = useAuth()
   const [leaving, setLeaving] = useState(false)
   const mutation = useMutation({
     mutationFn: () => apiPost(`/users/${encodeURIComponent(user.nickname)}/follow`, {}),
@@ -202,7 +206,7 @@ function UserMiniCard({ user, onFollowed }) {
         className="btn-follow-sm"
         type="button"
         disabled={mutation.isPending}
-        onClick={() => mutation.mutate()}
+        onClick={() => (sessionUser ? mutation.mutate() : navigate('/register'))}
       >
         {mutation.isPending ? 'Siguiendo...' : 'Seguir'}
       </button>
@@ -212,6 +216,8 @@ function UserMiniCard({ user, onFollowed }) {
 
 // ── Suggested users ──
 function SuggestedUsers({ users }) {
+  // Sin sesión las sugerencias son random, no afinidad: el título lo refleja.
+  const { user } = useAuth()
   const [dismissed, setDismissed] = useState(new Set())
   const visible = users.filter(u => !dismissed.has(u.nickname))
   if (visible.length === 0) return null
@@ -225,7 +231,9 @@ function SuggestedUsers({ users }) {
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
           <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
-        <span className="explore-section-title">Usuarios que podrías seguir</span>
+        <span className="explore-section-title">
+          {user ? 'Usuarios que podrías seguir' : 'Usuarios de la comunidad'}
+        </span>
       </div>
       <Carousel>
         {visible.map(u => (
@@ -322,8 +330,10 @@ export function ExplorePage() {
 
   const { data: suggestedUsers = [] } = useQuery({
     queryKey: ['users', 'suggested'],
+    // Sin `enabled`: el endpoint es público (invitados reciben usuarios random).
+    // La queryKey se deja igual — AuthContext la invalida en login/logout y
+    // FollowButton/UserMiniCard dependen de esta key exacta.
     queryFn: () => apiGet('/users/suggested?limit=12').then(r => r.data),
-    enabled: !!user,
   })
 
   const { data: myCats = [] } = useQuery({
@@ -343,7 +353,7 @@ export function ExplorePage() {
 
       {trending && <TrendingSection topic={trending} />}
 
-      {user && suggestedUsers.length > 0 && <SuggestedUsers users={suggestedUsers} />}
+      {suggestedUsers.length > 0 && <SuggestedUsers users={suggestedUsers} />}
 
       {user ? (
         <CategorySuggestions allCats={allCats} myCats={myCats} />

@@ -31,7 +31,7 @@ import {
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, findFacultadByNombre,
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
   isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, updateBannerById,
-  deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getAccountAuthById,
+  deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getRandomActiveUsers, getAccountAuthById,
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy,
   getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
@@ -927,6 +927,9 @@ const deleteAvatarService = async (userId) => {
 
 const getSuggestedUsersService = async (userId, limit) => {
   const safeLimit = Math.min(Math.max(parseInt(limit) || 10, 1), 20);
+  // Invitado (optionalAuth sin cookie): no hay a quién medirle afinidad, así que
+  // mostramos usuarios activos al azar. Con sesión, el algoritmo de siempre.
+  if (!userId) return await getRandomActiveUsers(safeLimit);
   return await getSuggestedUsers(userId, safeLimit);
 };
 

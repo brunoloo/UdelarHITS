@@ -25,7 +25,10 @@ router.post('/me/deactivate', protect, deactivateAccount);       // Desactivar c
 router.put('/change-password', protect, changeUserPassword);     // Actualizar contraseña
 
 
-router.get('/suggested', protect, getSuggestedUsersList);        // Lista sugerida de usuarios
+// Pública con optionalAuth: con sesión devuelve sugerencias por afinidad; sin
+// sesión, usuarios random de la comunidad (el carrusel de /explore también se
+// muestra a invitados).
+router.get('/suggested', optionalAuth, getSuggestedUsersList); // Lista sugerida de usuarios
 
 router.get('/most-active', getMostActiveUsersList);              // Lista de usuarios más activos
 

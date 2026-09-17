@@ -434,7 +434,8 @@ const deleteAvatar = async (req, res) => {
 
 const getSuggestedUsersList = async (req, res, next) => {
   try {
-    const users = await getSuggestedUsersService(req.user.id, req.query.limit);
+    // optionalAuth: sin cookie válida no hay req.user (invitado → random).
+    const users = await getSuggestedUsersService(req.user?.id ?? null, req.query.limit);
     return res.status(200).json({ ok: true, data: users });
   } catch (error) {
     next(error);

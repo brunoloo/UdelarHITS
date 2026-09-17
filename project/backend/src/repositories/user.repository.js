@@ -584,6 +584,40 @@ const getMostActiveUsers = async (limit = 5) => {
   return rows;
 };
 
+// Variante para INVITADOS (sin sesión): no hay señales de afinidad posibles, así
+// que devolvemos usuarios activos al azar. Filtro de calidad: al menos un aporte
+// visible (tema activo O comentario visible) para no mostrar cuentas vacías.
+// Usamos EXISTS y no los COUNT(*) de getMostActiveUsers porque solo hace falta
+// saber "hay al menos 1", y EXISTS corta en la primera fila.
+// Sin filtro por `privado`: es deliberado, consistente con la variante logueada
+// (un perfil privado igual es descubrible; lo que protege es su contenido).
+// Trade-off: ORDER BY RANDOM() es full scan + sort de `usuario` y es el primer
+// uso de RANDOM() en el repo. Aceptable al tamaño actual de la tabla; si crece
+// mucho habrá que cambiarlo (muestreo por offset aleatorio o TABLESAMPLE).
+const getRandomActiveUsers = async (limit = 10) => {
+  const q = `
+    SELECT u.id, u.nickname, u.nombre, u.url_imagen
+    FROM usuario u
+    WHERE u.estado = 'activo'
+      AND (
+        EXISTS (
+          SELECT 1 FROM tema t
+          JOIN contenido c ON c.id = t.contenido_id
+          WHERE c.autor_id = u.id AND t.estado = 'activo'
+        )
+        OR EXISTS (
+          SELECT 1 FROM comentario com
+          JOIN contenido c ON c.id = com.contenido_id
+          WHERE c.autor_id = u.id AND com.estado = 'visible'
+        )
+      )
+    ORDER BY RANDOM()
+    LIMIT $1
+  `;
+  const { rows } = await pool.query(q, [limit]);
+  return rows;
+};
+
 const getPasswordHashById = async (id) => {
   const q = `
     SELECT password_hash
@@ -678,5 +712,5 @@ export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUs
   deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,
   acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById,
   searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers,
-  getMostActiveUsers, getPasswordHashById, getAccountAuthById, updatePasswordHashById, deactivateUser, clearFollows, updatePrivacy, getPrivacyById,
+  getMostActiveUsers, getRandomActiveUsers, getPasswordHashById, getAccountAuthById, updatePasswordHashById, deactivateUser, clearFollows, updatePrivacy, getPrivacyById,
   updateLikesPrivacy, getLikesPrivacyById };
