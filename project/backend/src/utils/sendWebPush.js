@@ -26,8 +26,8 @@ const FIRST_ATTEMPT_DELAY_MS = 1500;
 // intento la fila sigue sin existir, se asume rollback y se abandona.
 const RETRY_DELAY_MS = 4500;
 
-// Límite de payload de Safari/APNs: ~4 KB. Truncamos el cuerpo bien por debajo.
-const MAX_BODY_CHARS = 120;
+// Límite de payload de Safari/APNs: ~4 KB. Truncamos el título bien por debajo.
+const MAX_TITLE_CHARS = 120;
 // Un día: si el dispositivo estuvo apagado más que esto, la notificación ya no
 // aporta nada (el usuario la ve igual in-app al abrir la app).
 const PUSH_TTL_SECONDS = 86400;
@@ -126,8 +126,10 @@ export const sendPushToUser = async (notifId, attempt = 1) => {
     ensureVapid();
 
     const payload = JSON.stringify({
-      title: 'UdelarHITS',
-      body: String(notif.mensaje || '').slice(0, MAX_BODY_CHARS),
+      // El mensaje va como TÍTULO y sin body. El sistema operativo ya muestra el
+      // nombre de la app arriba de la notificación: un título fijo 'UdelarHITS'
+      // lo repetía y se veía doble.
+      title: String(notif.mensaje || '').slice(0, MAX_TITLE_CHARS),
       // Sin url no hay destino concreto: el panel de notificaciones vive en la
       // home (no hay ruta /notifications propia en el router del SPA).
       url: notif.url || '/',

@@ -92,11 +92,15 @@ describe('sendPushToUser: detección de ROLLBACK', () => {
     expect(suscripcion.endpoint).toBe(ENDPOINT);
     // El payload tiene que entrar en el límite de Safari (~2 KB).
     expect(Buffer.byteLength(payload)).toBeLessThan(2048);
-    expect(JSON.parse(payload)).toMatchObject({
+    const cuerpo = JSON.parse(payload);
+    expect(cuerpo).toMatchObject({
       notifId,
       url: '/comment/1',
       tag: 'notif-reaccion_like',
+      // El mensaje es el título: 'UdelarHITS' ya lo pone el sistema operativo.
+      title: 'alguien le dio me gusta a tu comentario',
     });
+    expect(cuerpo.body).toBeUndefined();
   });
 
   test('respeta el apagado global del destinatario', async () => {

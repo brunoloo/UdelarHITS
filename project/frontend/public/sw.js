@@ -35,9 +35,11 @@ self.addEventListener('push', (event) => {
     data = {};
   }
 
-  const title = data.title || 'UdelarHITS';
+  // Nunca 'UdelarHITS' como título: el sistema ya muestra el nombre de la app
+  // arriba y se vería repetido. El backend manda todo el texto en el título.
+  const title = data.title || 'Tenés una notificación nueva';
   const options = {
-    body: data.body || 'Tenés una notificación nueva',
+    body: data.body,
     icon: ICON,
     badge: ICON,
     // El tag deduplica en el SO: un push nuevo del mismo tipo reemplaza al
