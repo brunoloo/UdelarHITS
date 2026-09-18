@@ -24,7 +24,8 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-  let data = {};
+  // Sin inicializar: las dos ramas del try/catch le asignan siempre un valor.
+  let data;
   try {
     // El payload siempre lo arma el backend como JSON, pero un push mal formado
     // (o una prueba manual desde DevTools) no puede romper el handler: sin
