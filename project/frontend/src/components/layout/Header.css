@@ -294,6 +294,24 @@
   margin: 4px 0;
 }
 
+/* Pie del dropdown: "Ver todos los resultados para …". El término puede ser
+   largo, así que se corta con ellipsis en una línea en vez de desbordar. */
+.search-see-all {
+  display: block;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s;
+}
+
+.search-see-all:hover { background: var(--bg); }
+
 /* ── MOBILE SEARCH (lupa + overlay) ── */
 .mobile-search-btn { display: none; }
 
@@ -362,6 +380,12 @@
   box-shadow: none;
   max-height: none;
   display: block;
+}
+
+/* En el overlay el pie es un blanco táctil: más alto y con texto más grande. */
+.mobile-search-panel .search-see-all {
+  padding: 14px 16px;
+  font-size: 14px;
 }
 
 @media (max-width: 1024px) {

@@ -279,8 +279,9 @@ export function CommentCard({
 
         {isSearch ? (
           // Resultado de búsqueda: fragmento alrededor del match (texto plano,
-          // resaltado con <mark>), sin acciones ni adjuntos/encuesta. Los videos
+          // resaltado con <mark>) y adjuntos, sin acciones ni encuesta. Los videos
           // salen del cuerpo completo: el link puede no caer dentro del snippet.
+          // Adjuntos a 600px: la card de resultado tiene el ancho del feed.
           <>
             <div className="comment-text">
               {snippet?.match
@@ -288,6 +289,7 @@ export function CommentCard({
                 : <ReadMore text={comment.cuerpo} maxLength={280} />}
             </div>
             {embedVideos && <YouTubeEmbeds text={comment.cuerpo} />}
+            <CommentAttachments adjuntos={comment.adjuntos} maxWidth={600} />
           </>
         ) : editing ? (
           <div className="inline-reply-panel" onClick={e => e.stopPropagation()}>
