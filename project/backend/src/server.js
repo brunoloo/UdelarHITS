@@ -5,6 +5,7 @@ import pool from './config/db.js';
 import { initSocket } from './socket.js';
 import { startCleanupJobs } from './jobs/cleanup.job.js';
 import { isVisionConfigured } from './utils/checkImageSafety.js';
+import { isPushConfigured } from './utils/sendWebPush.js';
 
 const PORT = Number(process.env.PORT || 5001);
 
@@ -13,6 +14,13 @@ const PORT = Number(process.env.PORT || 5001);
 // desapercibido en producción — en desarrollo es esperable.
 if (!isVisionConfigured()) {
   console.warn('[vision] GOOGLE_VISION_API_KEY no configurada: la moderación automática de imágenes está DESACTIVADA (todas las imágenes se publican sin análisis).');
+}
+
+// Web Push: sin las claves VAPID el envío queda desactivado (las notificaciones
+// se siguen guardando y mostrando in-app). Mismo criterio que Vision: avisamos
+// pero el server arranca igual, para que un deploy no se caiga por esto.
+if (!isPushConfigured()) {
+  console.warn('[push] VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / VAPID_SUBJECT no configuradas: las notificaciones push están DESACTIVADAS (las notificaciones in-app no se ven afectadas).');
 }
 
 const server = http.createServer(app);

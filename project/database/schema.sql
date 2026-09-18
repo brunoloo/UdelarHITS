@@ -138,7 +138,7 @@ INSERT INTO etiqueta (nombre, nombre_display, grupo, orden) VALUES
 -- -----------------------------
 -- USUARIO
 -- -----------------------------
-CREATE TABLE usuario ( -- Revisado y completo. Última modificación: fase 24 (facultad)
+CREATE TABLE usuario ( -- Revisado y completo. Última modificación: fase 25 (push_activado)
   id                BIGSERIAL PRIMARY KEY,
   rol               VARCHAR(20) NOT NULL DEFAULT 'user',
   nickname          VARCHAR(50)  NOT NULL UNIQUE,
@@ -160,6 +160,13 @@ CREATE TABLE usuario ( -- Revisado y completo. Última modificación: fase 24 (f
   nickname_confirmado BOOLEAN NOT NULL DEFAULT TRUE,
   privado BOOLEAN NOT NULL DEFAULT FALSE,
   me_gusta_privado BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Apagado explícito de las notificaciones push del lado del servidor.
+  -- DEFAULT TRUE a propósito: sin fila en `push_suscripcion` no sale ningún
+  -- push, y sin permiso del navegador no hay suscripción — la barrera real es
+  -- el permiso del SO, no esta columna. Con TRUE, aceptar el permiso alcanza
+  -- (un solo gesto); con FALSE haría falta un segundo click invisible para el
+  -- usuario, peor UX y sin ninguna ganancia de privacidad.
+  push_activado BOOLEAN NOT NULL DEFAULT TRUE,
   fecha_creacion    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
@@ -389,6 +396,30 @@ CREATE TABLE notificacion (
   leida             BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- -----------------------------
+-- Suscripciones Web Push (una fila por dispositivo/navegador).
+-- `endpoint` es la clave natural: lo emite el push service (FCM/APNs/Mozilla) y
+-- ya identifica de forma única a la instalación, por eso el upsert va por ahí y
+-- no por (usuario_id, endpoint). Reinstalar la PWA o limpiar los datos del sitio
+-- genera un endpoint NUEVO, así que las filas se acumularían sin el UNIQUE.
+-- Las filas se borran solas cuando el push service responde 404/410
+-- (suscripción caducada); un 429/500/503 es transitorio y NO borra nada.
+CREATE TABLE push_suscripcion (
+  id                BIGSERIAL PRIMARY KEY,
+  usuario_id        BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+  endpoint          VARCHAR(500) NOT NULL UNIQUE,
+  -- Claves de cifrado del navegador; sin ellas el payload no se puede firmar.
+  p256dh            TEXT NOT NULL,
+  auth              TEXT NOT NULL,
+  -- Solo diagnóstico (qué navegador quedó suscripto); nunca se filtra por acá.
+  user_agent        VARCHAR(255) NULL,
+  fecha_creacion    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- El UNIQUE de endpoint ya crea su propio índice; este cubre el lookup real del
+-- envío: todas las suscripciones de un usuario.
+CREATE INDEX idx_push_suscripcion_usuario ON push_suscripcion(usuario_id);
 
 -- -----------------------------
 -- RESEND

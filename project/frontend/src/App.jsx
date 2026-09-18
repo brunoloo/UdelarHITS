@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './context/ToastContext'
 import { SocketProvider } from './context/SocketContext'
+import { PushProvider } from './context/PushContext'
 import { router } from './router'
 import './components/ui/Toast.css'
 
@@ -28,11 +29,15 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SocketProvider>
-          <ThemeProvider>
-            <ToastProvider>
-              <RouterProvider router={router} />
-            </ToastProvider>
-          </ThemeProvider>
+          {/* PushProvider necesita el usuario (y su push_activado), por eso va
+              dentro de AuthProvider, al lado de SocketProvider. */}
+          <PushProvider>
+            <ThemeProvider>
+              <ToastProvider>
+                <RouterProvider router={router} />
+              </ToastProvider>
+            </ThemeProvider>
+          </PushProvider>
         </SocketProvider>
       </AuthProvider>
     </QueryClientProvider>

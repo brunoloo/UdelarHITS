@@ -87,6 +87,11 @@ app.use(helmet({
         "'self'",
         'https://www.youtube-nocookie.com'
       ],
+      // El service worker de push (/sw.js) hoy caería en 'script-src', que ya
+      // tiene 'self'; se declara explícito para que quede dicho de dónde puede
+      // venir un worker. connect-src NO cambia: el envío sale del backend hacia
+      // FCM/APNs, el browser no conecta a ningún dominio nuevo.
+      'worker-src': ["'self'"],
       'script-src-attr': ["'none'"]
     }
   }
@@ -114,6 +119,11 @@ app.use(express.static(FRONTEND_DIST, {
     if (/[/\\]assets[/\\]/.test(filePath)) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     } else if (filePath.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    } else if (filePath.endsWith('sw.js')) {
+      // El service worker no lleva hash en el nombre (Vite copia public/ tal
+      // cual): si se cachea, queda imposible de actualizar y los navegadores se
+      // quedan con la versión vieja para siempre.
       res.setHeader('Cache-Control', 'no-cache');
     }
   },
