@@ -39,6 +39,16 @@ const TABS = [
     ),
   },
   {
+    id: 'notificaciones',
+    label: 'Notificaciones',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+    ),
+  },
+  {
     id: 'privacidad',
     label: 'Privacidad',
     icon: (
@@ -301,10 +311,29 @@ export function SettingsPage() {
 
                 <div className="settings-row">
                   <div className="settings-row-info">
+                    <h3>Eliminar cuenta</h3>
+                    <p>Desactivá tu perfil. Tu contenido publicado se mantiene visible.</p>
+                  </div>
+                  <div className="settings-row-control">
+                    <a href="/central/cuenta/delete-account.html" target="_blank" rel="noreferrer" className="settings-btn-danger">
+                      Eliminar cuenta
+                    </a>
+                  </div>
+                </div>
+              </article>
+            )}
+
+            {activeTab === 'notificaciones' && (
+              <article className="settings-section">
+                <h2>Notificaciones</h2>
+                <p className="settings-section-desc">Elegí si querés recibir avisos fuera de la app.</p>
+
+                <div className="settings-row">
+                  <div className="settings-row-info">
                     <h3>Notificaciones push</h3>
                     <p>
                       {!pushSupported
-                        ? 'Tu navegador no admite notificaciones push. En iPhone, agregá UdelarHITS a la pantalla de inicio.'
+                        ? 'Tu navegador no admite notificaciones push. En iPhone, agregá UdelarHITS a la pantalla de inicio y volvé a entrar desde ese ícono.'
                         : pushConfigured === false
                           ? 'Las notificaciones push no están disponibles en este momento.'
                           : 'Recibí en tu celular o escritorio un aviso cuando alguien reacciona, responde o te sigue.'}
@@ -325,12 +354,31 @@ export function SettingsPage() {
 
                 <div className="settings-row">
                   <div className="settings-row-info">
-                    <h3>Eliminar cuenta</h3>
-                    <p>Desactivá tu perfil. Tu contenido publicado se mantiene visible.</p>
+                    <h3>Avisos dentro de la app</h3>
+                    <p>
+                      Aunque apagues las push, seguís viendo todas tus notificaciones
+                      en la campana mientras tenés UdelarHITS abierto. Apagar acá solo
+                      evita el aviso en el dispositivo.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="settings-row">
+                  <div className="settings-row-info">
+                    <h3>Instalar UdelarHITS en tu celular</h3>
+                    <p>
+                      Podés agregar UdelarHITS a la pantalla de inicio y usarla como una
+                      app. En iPhone además es obligatorio para que las push funcionen.
+                    </p>
                   </div>
                   <div className="settings-row-control">
-                    <a href="/central/cuenta/delete-account.html" target="_blank" rel="noreferrer" className="settings-btn-danger">
-                      Eliminar cuenta
+                    <a
+                      href="/central/ayuda/faq.html#notificaciones"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="settings-btn-secondary"
+                    >
+                      Cómo instalarla
                     </a>
                   </div>
                 </div>
