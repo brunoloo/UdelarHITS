@@ -4,6 +4,7 @@ import { Palette, Check } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import { usePush } from '../../context/PushContext'
 import { PALETTE_GROUPS, isPalette, isNewBadgeActive } from '../../config/themes'
 import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
@@ -126,6 +127,41 @@ export function SettingsPage() {
       showToast('Error al cambiar la privacidad', 'error')
     },
   })
+
+  const {
+    supported: pushSupported, configured: pushConfigured,
+    enabled: pushEnabled, busy: pushBusy, enablePush, disablePush,
+  } = usePush()
+
+  // No es un PATCH puro como los toggles de privacidad: prender implica pedirle
+  // el permiso al navegador, y eso tiene que pasar DENTRO del gesto del click.
+  // Cualquier `await` antes de requestPermission() rompe la cadena del gesto y
+  // iOS descarta el prompt en silencio — de ahí el .then() en vez de async.
+  const handlePushToggle = (e) => {
+    if (!e.target.checked) {
+      disablePush().then(ok => {
+        showToast(ok ? 'Notificaciones push desactivadas' : 'No se pudieron desactivar', ok ? 'success' : 'error')
+      })
+      return
+    }
+
+    const afterPermission = (permission) => {
+      if (permission !== 'granted') {
+        // El toggle vuelve solo a OFF: está controlado por el estado del
+        // contexto, no por el DOM.
+        showToast('Permiso denegado. Habilitá las notificaciones para UdelarHITS en tu navegador.', 'error')
+        return
+      }
+      enablePush().then(ok => {
+        showToast(ok ? 'Notificaciones push activadas' : 'No se pudieron activar las notificaciones push', ok ? 'success' : 'error')
+      })
+    }
+
+    // Safari viejo devuelve undefined y solo acepta callback; el resto devuelve
+    // una promesa.
+    const result = Notification.requestPermission(afterPermission)
+    if (result && typeof result.then === 'function') result.then(afterPermission)
+  }
 
   return (
     <>
@@ -260,6 +296,30 @@ export function SettingsPage() {
                     >
                       Cambiar contraseña
                     </button>
+                  </div>
+                </div>
+
+                <div className="settings-row">
+                  <div className="settings-row-info">
+                    <h3>Notificaciones push</h3>
+                    <p>
+                      {!pushSupported
+                        ? 'Tu navegador no admite notificaciones push. En iPhone, agregá UdelarHITS a la pantalla de inicio.'
+                        : pushConfigured === false
+                          ? 'Las notificaciones push no están disponibles en este momento.'
+                          : 'Recibí en tu celular o escritorio un aviso cuando alguien reacciona, responde o te sigue.'}
+                    </p>
+                  </div>
+                  <div className="settings-row-control">
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={pushEnabled}
+                        disabled={!pushSupported || pushConfigured === false || pushBusy}
+                        onChange={handlePushToggle}
+                      />
+                      <span className="toggle-slider" />
+                    </label>
                   </div>
                 </div>
 

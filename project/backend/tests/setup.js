@@ -9,6 +9,7 @@ const TABLES = [
   'participacion_categoria', 'categoria_etiqueta', 'categoria',
   'usuario_seguidor', 'usuario', 'notificacion', 'historial_edicion_tema',
   'token_reset_password', 'reporte_usuario', 'imagen_pendiente',
+  'push_suscripcion',
 ];
 
 beforeEach(async () => {

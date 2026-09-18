@@ -1,6 +1,7 @@
 import pool from '../config/db.js';
 import { getIO } from '../socket.js';
 import { isRealtimeEnabled } from '../utils/realtimeMode.js';
+import { schedulePushForNotification } from '../utils/sendWebPush.js';
 
 // =========================================================
 // Notification repository
@@ -43,6 +44,13 @@ const createNotification = async (
       actor_url_imagen,
     });
   }
+
+  // Push al celular/escritorio. SIN await a propósito: un timeout de FCM no
+  // puede frenar la creación de un comentario. Es síncrona, nunca lanza, y no
+  // toca `client`: agenda un envío diferido que re-consulta la fila con el pool,
+  // así una transacción que haga ROLLBACK no manda ningún push. La notificación
+  // queda persistida igual aunque el push falle.
+  if (notif) schedulePushForNotification(notif.id);
 
   return notif;
 };

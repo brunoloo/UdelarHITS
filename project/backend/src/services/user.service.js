@@ -546,6 +546,7 @@ const showMeService = async (userId) => {
     fecha_creacion: user.fecha_creacion,
     privado: user.privado,
     me_gusta_privado: user.me_gusta_privado,
+    push_activado: user.push_activado,
     nickname_confirmado: user.nickname_confirmado,
     auth_provider: user.auth_provider,
     // Si la cuenta no tiene contraseña (típicamente Google sin password), la

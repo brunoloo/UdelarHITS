@@ -117,7 +117,7 @@ const getUserByNickname = async (nickname) => {
 const getUserById = async (id) => {
   const q = `
     SELECT u.id, u.rol, u.nickname, u.nombre, u.email, u.biografia, u.facultad, u.url_imagen, u.url_banner,
-           u.fecha_creacion, u.estado, u.privado, u.me_gusta_privado, u.nickname_confirmado,
+           u.fecha_creacion, u.estado, u.privado, u.me_gusta_privado, u.push_activado, u.nickname_confirmado,
            u.auth_provider, (u.password_hash IS NOT NULL) AS tiene_password,
            ef.nombre_display AS facultad_display
     FROM usuario u

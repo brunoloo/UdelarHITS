@@ -33,6 +33,7 @@
     "db:migrate:fase21": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase21_idx_etiqueta_filtro.sql",
     "db:migrate:fase23": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase23_comentario_fijado_home.sql",
     "db:migrate:fase24": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase24_usuario_facultad.sql",
+    "db:migrate:fase25": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_fase25_push_suscripcion.sql",
     "db:migrate:etiquetas": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_etiquetas_tabla.sql",
     "db:migrate:performance": "psql -h localhost -p 5432 -U brunoloo -d udelarhits -f ../database/migrations/migration_performance_indices.sql",
     "db:test:drop": "psql -h localhost -p 5432 -U brunoloo -d postgres -c \"DROP DATABASE IF EXISTS udelarhits_test;\"",
@@ -68,7 +69,8 @@
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.20.0",
     "resend": "^6.12.4",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
