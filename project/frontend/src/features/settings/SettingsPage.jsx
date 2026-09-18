@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { usePush } from '../../context/PushContext'
+import { requestPushPermission } from '../../utils/push'
 import { PALETTE_GROUPS, isPalette, isNewBadgeActive } from '../../config/themes'
 import { apiGet, apiPatch, apiDelete } from '../../api/client'
 import { useToast } from '../../hooks/useToast'
@@ -155,22 +156,25 @@ export function SettingsPage() {
       return
     }
 
-    const afterPermission = (permission) => {
+    // requestPushPermission resuelve una sola vez aunque el navegador llame al
+    // callback y además resuelva la promesa (ver utils/push.js).
+    requestPushPermission().then(permission => {
+      // El toggle vuelve solo a OFF: está controlado por el estado del
+      // contexto, no por el DOM.
+      if (permission === 'denied') {
+        showToast('Las notificaciones están bloqueadas para UdelarHITS. Habilitalas desde el candado de la barra de direcciones.', 'error')
+        return
+      }
       if (permission !== 'granted') {
-        // El toggle vuelve solo a OFF: está controlado por el estado del
-        // contexto, no por el DOM.
-        showToast('Permiso denegado. Habilitá las notificaciones para UdelarHITS en tu navegador.', 'error')
+        // 'default': cerraron el cartel sin elegir, o Chrome lo escondió como
+        // una campanita tachada en la barra de direcciones (su "modo silencioso").
+        showToast('No se concedió el permiso. Si no viste el cartel, buscá una campana tachada en la barra de direcciones.', 'error')
         return
       }
       enablePush().then(ok => {
         showToast(ok ? 'Notificaciones push activadas' : 'No se pudieron activar las notificaciones push', ok ? 'success' : 'error')
       })
-    }
-
-    // Safari viejo devuelve undefined y solo acepta callback; el resto devuelve
-    // una promesa.
-    const result = Notification.requestPermission(afterPermission)
-    if (result && typeof result.then === 'function') result.then(afterPermission)
+    })
   }
 
   return (

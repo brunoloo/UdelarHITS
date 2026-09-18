@@ -24,6 +24,21 @@ export function isPushSupported() {
   )
 }
 
+// Pide el permiso de notificaciones y resuelve UNA sola vez con el resultado.
+// Chrome, Edge y Firefox llaman al callback Y ADEMÁS resuelven la promesa; el
+// Safari viejo solo acepta callback y devuelve undefined. Pasar por una Promise
+// cubre los dos casos: resolve() ignora las llamadas después de la primera. Antes
+// el handler corría dos veces, lanzaba dos suscripciones en paralelo y la segunda
+// podía fallar con un toast de error aunque la primera hubiera funcionado.
+// Tiene que llamarse DENTRO del click: el ejecutor de la Promise corre sincrónico,
+// así que el gesto del usuario sigue vivo cuando se pide el permiso.
+export function requestPushPermission() {
+  return new Promise(resolve => {
+    const result = Notification.requestPermission(resolve)
+    if (result && typeof result.then === 'function') result.then(resolve)
+  })
+}
+
 // La clave pública VAPID viaja como base64url y PushManager la quiere como
 // Uint8Array cruda.
 export function urlBase64ToUint8Array(base64String) {
@@ -43,7 +58,8 @@ export async function ensureRegistration() {
     const existing = await navigator.serviceWorker.getRegistration(SW_URL)
     if (!existing) await navigator.serviceWorker.register(SW_URL)
     return await navigator.serviceWorker.ready
-  } catch {
+  } catch (err) {
+    console.error('[push] No se pudo registrar el service worker:', err)
     return null
   }
 }
@@ -90,7 +106,11 @@ export async function syncSubscription() {
     })
     await saveSubscription(subscription)
     return true
-  } catch {
+  } catch (err) {
+    // Sin este log la falla era muda: el toast solo decía "no se pudieron
+    // activar". Brave, por ejemplo, rechaza acá con "push service error"
+    // mientras no se habilite el push en su configuración.
+    console.error('[push] No se pudo crear la suscripción:', err)
     return false
   }
 }
