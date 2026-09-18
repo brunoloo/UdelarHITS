@@ -35,11 +35,11 @@ self.addEventListener('push', (event) => {
     data = {};
   }
 
-  // Nunca 'UdelarHITS' como título: el sistema ya muestra el nombre de la app
-  // arriba y se vería repetido. El backend manda todo el texto en el título.
-  const title = data.title || 'Tenés una notificación nueva';
+  // Título y cuerpo son lo único que controla el sitio. La línea con el origen
+  // ("from UdelarHITS" o el dominio) la pone el sistema y no se puede quitar.
+  const title = data.title || 'UdelarHITS';
   const options = {
-    body: data.body,
+    body: data.body || 'Tenés una notificación nueva',
     icon: ICON,
     badge: ICON,
     // El tag deduplica en el SO: un push nuevo del mismo tipo reemplaza al

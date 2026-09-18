@@ -97,10 +97,9 @@ describe('sendPushToUser: detección de ROLLBACK', () => {
       notifId,
       url: '/comment/1',
       tag: 'notif-reaccion_like',
-      // El mensaje es el título: 'UdelarHITS' ya lo pone el sistema operativo.
-      title: 'alguien le dio me gusta a tu comentario',
+      title: 'UdelarHITS',
+      body: 'alguien le dio me gusta a tu comentario',
     });
-    expect(cuerpo.body).toBeUndefined();
   });
 
   test('respeta el apagado global del destinatario', async () => {
