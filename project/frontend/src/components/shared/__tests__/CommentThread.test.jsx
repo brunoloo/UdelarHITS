@@ -33,6 +33,7 @@ vi.mock('../../../api/client', () => ({
 const A = { id: 1, cuerpo: 'A' }
 const B = { id: 2, cuerpo: 'B' }
 const C = { id: 3, cuerpo: 'C' }
+const D = { id: 4, cuerpo: 'D' }
 
 function renderThread(props = {}) {
   const queryClient = new QueryClient({
@@ -88,5 +89,60 @@ describe('CommentThread — ancestros clickeables', () => {
 
     expect(onExit).toHaveBeenCalledTimes(1)
     expect(ancestorIds()).toEqual(['card-ancestor-1'])
+  })
+})
+
+// onPositionChange es lo que le permite al permalink mantener la URL sincronizada
+// con el lugar del hilo donde está parado el usuario (ver CommentPage). Acá se
+// testea el contrato: cuándo se dispara, con qué, y —sobre todo— cuándo NO.
+describe('CommentThread — onPositionChange', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  it('no se dispara al montar (la posición inicial ya es la de la URL)', () => {
+    const onPositionChange = vi.fn()
+    renderThread({ initialStack: [A, B, C], onPositionChange })
+
+    expect(onPositionChange).not.toHaveBeenCalled()
+  })
+
+  it('truncar por un ancestro avisa con el ancestro clickeado', () => {
+    const onPositionChange = vi.fn()
+    renderThread({ initialStack: [A, B, C], onPositionChange })
+
+    fireEvent.click(screen.getByRole('button', { name: 'ir a 2' }))
+
+    expect(onPositionChange).toHaveBeenCalledTimes(1)
+    expect(onPositionChange).toHaveBeenCalledWith(B)
+  })
+
+  it('bajar a una respuesta avisa con la respuesta', () => {
+    const onPositionChange = vi.fn()
+    renderThread({ comments: [D], onPositionChange })
+
+    fireEvent.click(screen.getByRole('button', { name: 'ir a 4' }))
+
+    expect(onPositionChange).toHaveBeenCalledTimes(1)
+    expect(onPositionChange).toHaveBeenCalledWith(D)
+  })
+
+  it('"Volver" con drill avisa con el nivel de arriba', () => {
+    const onPositionChange = vi.fn()
+    renderThread({ initialStack: [A, B, C], onExit: vi.fn(), onPositionChange })
+
+    fireEvent.click(screen.getByRole('button', { name: 'ir a 2' }))
+    fireEvent.click(screen.getByRole('button', { name: /Volver/ }))
+
+    expect(onPositionChange).toHaveBeenLastCalledWith(A)
+  })
+
+  it('"Volver" en el piso sale de la página y no avisa posición', () => {
+    const onExit = vi.fn()
+    const onPositionChange = vi.fn()
+    renderThread({ initialStack: [A], onExit, onPositionChange })
+
+    fireEvent.click(screen.getByRole('button', { name: /Volver/ }))
+
+    expect(onExit).toHaveBeenCalledTimes(1)
+    expect(onPositionChange).not.toHaveBeenCalled()
   })
 })

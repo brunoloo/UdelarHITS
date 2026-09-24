@@ -1,19 +1,14 @@
-import { useEffect, Suspense } from 'react'
-import { Outlet, useLocation, Navigate } from 'react-router-dom'
+import { Suspense } from 'react'
+import { Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { Header } from './Header'
 import { LeftNav } from './LeftNav'
 import { BottomNav } from './BottomNav'
 import { MobileDrawer } from './MobileDrawer'
 import { Sidebar } from './Sidebar'
+import { ScrollToTop } from './ScrollToTop'
 import { Skeleton } from '../ui/Skeleton'
 import './AppLayout.css'
-
-function ScrollToTop() {
-  const { pathname } = useLocation()
-  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
-  return null
-}
 
 export function AppLayout() {
   const { user, loading } = useAuth()

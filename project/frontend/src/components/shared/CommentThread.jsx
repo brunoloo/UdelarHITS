@@ -7,7 +7,14 @@ import { trackCreateComment } from '../../utils/analytics'
 import { CommentCard } from './CommentCard'
 import './CommentCard.css'
 
-export function CommentThread({ comments, invalidateKey, invalidateKeys = null, initialCommentId, initialStack = null, initialHighlightId = null, onExit = null, onInitialDrillDone, canPin = false, onTogglePin, embedVideos = false }) {
+// onPositionChange: opt-in para que el contenedor sepa en qué comentario quedó
+// parado el usuario después de moverse por el hilo. Se invoca con el comentario
+// que pasó a ser currentParent (el objeto completo, no el id), o con null si el
+// stack quedó vacío (solo posible sin initialStack). NO se dispara al montar: la
+// posición inicial ya es la que el contenedor conoce. CategoryPage/TopicPage no
+// la pasan y se comportan exactamente igual que antes; solo el permalink la usa,
+// para reescribir la URL.
+export function CommentThread({ comments, invalidateKey, invalidateKeys = null, initialCommentId, initialStack = null, initialHighlightId = null, onExit = null, onPositionChange = null, onInitialDrillDone, canPin = false, onTogglePin, embedVideos = false }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
   const lastDrilledId = useRef(null)
@@ -86,6 +93,9 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
 
   function drillDown(comment) {
     setStack(prev => [...prev, comment])
+    // Fuera del updater a propósito: un updater puede correr dos veces (StrictMode)
+    // y esto es un side effect. La posición nueva se sabe sin leer el stack previo.
+    onPositionChange?.(comment)
   }
 
   // Clickear un ancestro de la cadena de arriba: en vez de apilar, TRUNCA el
@@ -101,6 +111,9 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
     // nivel y recién sale al llegar al primer ancestro. Sin initialStack
     // (categoría/tema) el piso es 0: abajo del stack está la lista real.
     setFloor(f => Math.min(f, initialStack ? 1 : 0))
+    // La nueva posición es el ancestro clickeado, que se calcula del stack de
+    // este render (no del updater, ver drillDown).
+    onPositionChange?.(stack[index])
   }
 
   function goBack() {
@@ -111,10 +124,13 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
     // antes: sube un nivel y desaparece al volver a la lista. El piso solo baja
     // al truncar (drillUpTo); "Volver" nunca lo mueve.
     if (stack.length <= floor) {
+      // Salir de la página NO es un cambio de posición dentro del hilo: avisarlo
+      // reescribiría la URL justo antes de irse y ensuciaría el navigate(-1).
       onExit?.()
       return
     }
     setStack(prev => prev.slice(0, -1))
+    onPositionChange?.(stack[stack.length - 2] ?? null)
   }
 
   function handleReply(parentId, text, files, poll) {
