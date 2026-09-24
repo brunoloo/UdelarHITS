@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '../../api/client'
+import { HOME_FEED_KEY } from '../../api/queryKeys'
 import { CommentThread } from '../../components/shared/CommentThread'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { commentTitle } from '../../utils/pageTitle'
@@ -53,7 +54,7 @@ export function CommentPage() {
         // Al responder o eliminar en el permalink: refrescar el hilo (['replies']
         // cubre la lista de hijos en cualquier nivel), el contexto que carga esta
         // página, y el contador de respuestas del feed del Home.
-        invalidateKeys={[['replies'], ['comment', id], ['categories', 'feed']]}
+        invalidateKeys={[['replies'], ['comment', id], HOME_FEED_KEY]}
         embedVideos
       />
     </div>

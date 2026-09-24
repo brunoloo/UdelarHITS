@@ -106,12 +106,12 @@ export function CommentCard({
     const cardClasses = ['comment-card', 'comment-card--hidden']
     if (role === 'ancestor') cardClasses.push('comment-card--ancestor')
     if (role === 'ancestor' && showThreadLine) cardClasses.push('comment-card--has-line')
-    if (onCardClick || (role === 'reply' && replyCount > 0)) cardClasses.push('comment-card--clickable')
+    if (onCardClick || (role === 'reply' && replyCount > 0) || (role === 'ancestor' && onDrillDown)) cardClasses.push('comment-card--clickable')
     if (highlighted) cardClasses.push('comment-card--highlighted')
 
     const hiddenOnClick = onCardClick
       ? () => onCardClick(comment)
-      : (role === 'reply' && replyCount > 0 && onDrillDown ? () => onDrillDown(comment) : undefined)
+      : ((role === 'ancestor' || (role === 'reply' && replyCount > 0)) && onDrillDown ? () => onDrillDown(comment) : undefined)
 
     return (
       <div
@@ -150,7 +150,9 @@ export function CommentCard({
   const cardClasses = ['comment-card']
   if (role === 'ancestor') cardClasses.push('comment-card--ancestor')
   if (role === 'ancestor' && showThreadLine) cardClasses.push('comment-card--has-line')
-  if (role === 'reply') cardClasses.push('comment-card--clickable')
+  // Los ancestros son clickeables solo cuando el hilo pasa onDrillDown (el padre
+  // decide cuáles: el último ancestro es donde ya estás parado, no se pasa).
+  if (role === 'reply' || (role === 'ancestor' && onDrillDown)) cardClasses.push('comment-card--clickable')
   if (highlighted) cardClasses.push('comment-card--highlighted')
 
   function handleCardClick(e) {
@@ -158,7 +160,10 @@ export function CommentCard({
     // Navegación directa al comentario (p. ej. desde el perfil) tiene prioridad
     // sobre el drill-down inline de los hilos.
     if (onCardClick) { onCardClick(comment); return }
-    if (role !== 'reply' || !onDrillDown) return
+    // Sin rol: quién puede recibir el drill-down lo decide el padre al pasar (o
+    // no) onDrillDown — así el hilo hace clickeables a los ancestros de arriba
+    // sin tocar esta guarda.
+    if (!onDrillDown) return
     onDrillDown(comment)
   }
 

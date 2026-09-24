@@ -31,6 +31,7 @@ import { useToast } from '../../hooks/useToast'
 import { CreateTopicPanel } from '../topic/CreateTopicPanel'
 import { ReportModal } from '../../components/shared/ReportModal'
 import { trackSubscribeCategory } from '../../utils/analytics'
+import { useGoHome } from '../../hooks/useGoHome'
 import './category.css'
 
 // ── SKELETONS ──────────────────────────────────────────────────────────────────
@@ -249,6 +250,7 @@ export function CategoryPage() {
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const { isSaved, toggleSaved } = useSaved()
+  const goHome = useGoHome()
 
   const tabParam = searchParams.get('tab')
   const commentIdParam = searchParams.get('commentId')
@@ -465,7 +467,7 @@ export function CategoryPage() {
     <>
       {/* Breadcrumb */}
       <nav className="breadcrumb" aria-label="Navegación">
-        <Link to="/">Inicio</Link>
+        <Link to="/" onClick={goHome}>Inicio</Link>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M9 18l6-6-6-6"/>
         </svg>

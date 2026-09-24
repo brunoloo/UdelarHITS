@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useGoHome } from '../../hooks/useGoHome'
 import './MobileDrawer.css'
 
 // Drawer lateral para mobile (≤1024px). Se abre con swipe right desde el borde
@@ -10,6 +11,7 @@ import './MobileDrawer.css'
 export function MobileDrawer() {
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
+  const goHome = useGoHome()
 
   // Gestos táctiles nativos (touchstart/touchend), sin librerías.
   useEffect(() => {
@@ -106,11 +108,11 @@ export function MobileDrawer() {
       <nav className={`mobile-drawer${open ? ' open' : ''}`} inert={!open}>
         {/* Logo institucional al tope (solo mobile) para no dejar un gap vacío
             donde el drawer tapa al header. */}
-        <Link to="/" className="mobile-drawer-logo" onClick={() => setOpen(false)}>
+        <Link to="/" className="mobile-drawer-logo" onClick={(e) => { setOpen(false); goHome(e) }}>
           Udelar<span>HITS</span>
         </Link>
 
-        <Link to="/" className={navClass('/')} onClick={() => setOpen(false)}>
+        <Link to="/" className={navClass('/')} onClick={(e) => { setOpen(false); goHome(e) }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m3 11 9-8 9 8" />
             <path d="M5 10v10h14V10" />

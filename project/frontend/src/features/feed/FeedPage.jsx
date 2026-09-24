@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, useNavigate, Navigate } from 'react-router-dom'
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiDelete } from '../../api/client'
+import { HOME_FEED_KEY, HOME_COUNT_KEY } from '../../api/queryKeys'
 import { CategoryCard } from '../../components/shared/CategoryCard'
 import { CommentCard } from '../../components/shared/CommentCard'
 import { PinHomeModal } from '../../components/shared/PinHomeModal'
@@ -16,11 +17,6 @@ import './feed.css'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
 const PAGE_SIZE = 20
-
-const FEED_KEY = ['categories', 'feed']
-// Contador de comentarios de Home del sidebar de Comunidad: se refresca al
-// publicar/eliminar un comentario de Home de primer nivel.
-const HOME_COUNT_KEY = ['replies', 'home', 'count']
 
 function CategorySkeleton() {
   return (
@@ -74,7 +70,7 @@ export function FeedPage() {
     onSuccess: () => {
       showToast('Comentario fijado en el inicio', 'success')
       setPinTarget(null)
-      queryClient.invalidateQueries({ queryKey: FEED_KEY })
+      queryClient.invalidateQueries({ queryKey: HOME_FEED_KEY })
     },
     onError: (err) => showToast(err.message || 'No se pudo fijar el comentario', 'error'),
   })
@@ -83,7 +79,7 @@ export function FeedPage() {
     mutationFn: (id) => apiDelete(`/replies/${id}/pin-home`),
     onSuccess: () => {
       showToast('Comentario desanclado del inicio', 'success')
-      queryClient.invalidateQueries({ queryKey: FEED_KEY })
+      queryClient.invalidateQueries({ queryKey: HOME_FEED_KEY })
     },
     onError: (err) => showToast(err.message || 'No se pudo desanclar el comentario', 'error'),
   })
@@ -97,7 +93,7 @@ export function FeedPage() {
     trackCreateComment('reply')
     if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
     else showToast('Respuesta publicada', 'success')
-    queryClient.invalidateQueries({ queryKey: FEED_KEY })
+    queryClient.invalidateQueries({ queryKey: HOME_FEED_KEY })
     return res
   }
 
@@ -128,7 +124,7 @@ export function FeedPage() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: FEED_KEY,
+    queryKey: HOME_FEED_KEY,
     queryFn: ({ pageParam }) =>
       apiGet(`/categories/feed?limit=${PAGE_SIZE}${pageParam ? `&cursor=${encodeURIComponent(pageParam)}` : ''}`),
     initialPageParam: null,
@@ -197,7 +193,7 @@ export function FeedPage() {
       <CreateCategoryPanel />
       {/* Publicar un comentario de Home (foro global). Mismo compositor que
           CategoryPage; el comentario se mezcla en el feed de abajo. */}
-      <CreateCommentPanel scopeFields={{ es_home: true }} invalidateKey={FEED_KEY} invalidateKeys={[HOME_COUNT_KEY]} />
+      <CreateCommentPanel scopeFields={{ es_home: true }} invalidateKey={HOME_FEED_KEY} invalidateKeys={[HOME_COUNT_KEY]} />
 
       <div className="categories-feed">
         {isLoading ? (
@@ -237,7 +233,7 @@ export function FeedPage() {
                   role="reply"
                   onCardClick={() => navigate(`/comment/${c.id}`)}
                   onReply={handleHomeReply}
-                  invalidateKey={FEED_KEY}
+                  invalidateKey={HOME_FEED_KEY}
                   invalidateKeys={[HOME_COUNT_KEY]}
                   canPinHome={isAdmin}
                   onPinHome={(comment) => setPinTarget(comment)}

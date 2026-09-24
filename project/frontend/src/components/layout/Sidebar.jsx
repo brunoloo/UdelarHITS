@@ -2,6 +2,7 @@ import { useLocation, Link, useMatch } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { apiGet } from '../../api/client'
+import { HOME_COUNT_KEY } from '../../api/queryKeys'
 import { resolveAutor } from '../shared/AuthorDisplay'
 import { FacultyBadge } from '../shared/FacultyBadge'
 import { UserAvatar } from '../shared/UserAvatar'
@@ -393,7 +394,7 @@ export function Sidebar() {
 
   // Cantidad de comentarios de Home de primer nivel (los directos al Home).
   const { data: homeCommentCount } = useQuery({
-    queryKey: ['replies', 'home', 'count'],
+    queryKey: HOME_COUNT_KEY,
     queryFn: () => apiGet('/replies/home/count').then(r => r.data?.total ?? 0),
     staleTime: 30 * 1000,
   })

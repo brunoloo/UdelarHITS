@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { UserAvatar } from '../shared/UserAvatar'
 import { useSiteSearch } from '../../hooks/useSiteSearch'
+import { useGoHome } from '../../hooks/useGoHome'
 import { trackSearch } from '../../utils/analytics'
 import { SearchDropdown } from './SearchDropdown'
 import { SearchPill } from './SearchPill'
@@ -13,6 +14,7 @@ export function Header() {
   const { user, loading, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const goHome = useGoHome()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
@@ -88,7 +90,7 @@ export function Header() {
       {/* Búsqueda mobile (lupa a la izquierda + overlay). Oculta en desktop. */}
       <MobileSearch />
 
-      <Link to="/" className="logo">
+      <Link to="/" className="logo" onClick={goHome}>
         Udelar<span>HITS</span>
       </Link>
 

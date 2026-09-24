@@ -16,6 +16,11 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
   // /comment/:id, que arranca mostrando el comentario con sus respuestas). En
   // CategoryPage/TopicPage no se pasa → arranca vacío, como siempre.
   const [stack, setStack] = useState(() => initialStack || [])
+  // Piso del stack: nivel por debajo del cual "Volver" sale de la página en vez
+  // de seguir subiendo. Arranca en el largo del initialStack (el permalink no
+  // debería dejarte por debajo del comentario abierto) pero es estado, no
+  // constante, porque clickear un ancestro trunca el stack y baja el piso.
+  const [floor, setFloor] = useState(() => initialStack?.length ?? 0)
   // initialHighlightId: resalta el comentario enfocado al abrir el permalink
   // (el comentario pedido es el ancestro más profundo del initialStack), con el
   // mismo flash que usan CategoryPage/TopicPage vía initialCommentId. Así una
@@ -83,13 +88,28 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
     setStack(prev => [...prev, comment])
   }
 
+  // Clickear un ancestro de la cadena de arriba: en vez de apilar, TRUNCA el
+  // stack hasta ese ancestro, que pasa a ser el comentario abierto (y sus hijos,
+  // la lista de abajo). No refetchea nada —los hijos ya están en cache por el
+  // camino de ida— ni toca la URL.
+  function drillUpTo(index) {
+    setStack(prev => prev.slice(0, index + 1))
+    // Una vez que el usuario navega la cadena a mano, el piso del permalink
+    // (initialStack.length) queda por encima del stack real: sin bajarlo, el
+    // primer "Volver" lo sacaría de la página en vez de subir un nivel. Pasa a
+    // ser la raíz de la cadena (1), así "Volver" camina hacia arriba de a un
+    // nivel y recién sale al llegar al primer ancestro. Sin initialStack
+    // (categoría/tema) el piso es 0: abajo del stack está la lista real.
+    setFloor(f => Math.min(f, initialStack ? 1 : 0))
+  }
+
   function goBack() {
     // "Volver" sube un nivel en el hilo. En un permalink el hilo arranca sobre un
     // piso (initialStack): al llegar a ese piso, "Volver" sale de la página
     // (onExit) en vez de dejar el stack por debajo del comentario abierto. Sin
     // initialStack/onExit (categoría/tema) el piso es 0 y se comporta igual que
-    // antes: sube un nivel y desaparece al volver a la lista.
-    const floor = initialStack ? initialStack.length : 0
+    // antes: sube un nivel y desaparece al volver a la lista. El piso solo baja
+    // al truncar (drillUpTo); "Volver" nunca lo mueve.
     if (stack.length <= floor) {
       onExit?.()
       return
@@ -131,6 +151,9 @@ export function CommentThread({ comments, invalidateKey, invalidateKeys = null, 
                 role="ancestor"
                 showThreadLine={showThreadLine}
                 highlighted={String(anc.id || anc.contenido_id) === highlightedId}
+                // Clickear un ancestro de arriba te para en él. El último es
+                // donde ya estás: sin handler, tampoco se ve clickeable.
+                onDrillDown={isLastAncestor ? undefined : () => drillUpTo(i)}
                 onReply={handleReply}
                 invalidateKey={invalidateKey}
                 invalidateKeys={invalidateKeys}

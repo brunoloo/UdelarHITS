@@ -6,6 +6,7 @@ import { useToast } from '../../hooks/useToast'
 import { UserAvatar } from '../shared/UserAvatar'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { useSocket } from '../../context/SocketContext'
+import { useGoHome } from '../../hooks/useGoHome'
 import './LeftNav.css'
 
 // SavedPanel es un panel deslizable que NO se ve en el primer paint. Importarlo
@@ -84,6 +85,7 @@ export function LeftNav() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const socket = useSocket()
+  const goHome = useGoHome()
   const isAdmin = user?.rol === 'admin'
 
   const [chatUnread, setChatUnread] = useState(0)
@@ -289,7 +291,7 @@ export function LeftNav() {
   return (
     <>
       <nav className="left-nav">
-        <Link to="/" className={navClass('/')} id="nav-inicio">
+        <Link to="/" className={navClass('/')} id="nav-inicio" onClick={goHome}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="m3 11 9-8 9 8"/>
             <path d="M5 10v10h14V10"/>
