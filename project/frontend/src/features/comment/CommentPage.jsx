@@ -35,33 +35,50 @@ export function CommentPage() {
   // El ancla arranca en el id de la URL y solo cambia cuando la navegación es de
   // verdad (una notificación a otro comentario), no cuando la escribimos nosotros.
   const [anchorId, setAnchorId] = useState(id)
-  // Último id que pusimos nosotros en la URL al movernos dentro del hilo. Se setea
-  // al navegar y se limpia al re-sembrar.
-  const selfNavRef = useRef(null)
+  // Token de re-siembra. Existe porque re-sembrar EN EL PROPIO ANCLA es un caso
+  // real (ver abajo) y ahí `anchorId` no cambia: sin el nonce la `key` no se
+  // movería y CommentThread no remontaría.
+  const [seedNonce, setSeedNonce] = useState(0)
+  // DÓNDE ESTÁ PARADA LA VISTA (el comentario que CommentThread muestra abierto).
+  // Arranca en el ancla —el hilo se siembra ahí— y se actualiza en CADA movimiento
+  // reportado por CommentThread. Es contra esto, y no contra el ancla, que se
+  // decide si un id nuevo en la URL es una navegación externa: el ancla es "con
+  // qué se entró" y la posición es "dónde estás", que es justo lo que la feature
+  // separa. Comparar contra el ancla daba falsos negativos (ancla 5, vista 7, llega
+  // una notificación a 5 → parecía que ya estábamos ahí y no se re-sembraba).
+  const positionRef = useRef(id)
 
   const { data: chain, isLoading, isError } = useQuery({
     queryKey: ['comment', anchorId],
     queryFn: () => apiGet(`/replies/${anchorId}/context`).then(r => r.data),
   })
 
-  // Re-siembra: la URL cambió a un comentario que no es el ancla NI uno que hayamos
-  // escrito nosotros → es una navegación externa (notificación, link, Adelante del
-  // navegador) y corresponde remontar el hilo en el comentario nuevo, con su
-  // "Cargando..." legítimo.
+  // Re-siembra: la URL apunta a un comentario que NO es donde está parada la vista
+  // → alguien movió la URL sin pasar por el hilo (notificación, link interno,
+  // Atrás/Adelante del navegador) y corresponde remontar el hilo ahí, con su
+  // "Cargando..." legítimo. Cuando el movimiento lo escribimos nosotros desde
+  // handlePositionChange, la posición ya se actualizó antes de navegar, así que
+  // este efecto ve `id === positionRef.current` y no hace nada: moverse por el
+  // hilo sigue siendo puro cambio de URL, sin refetch ni remount.
   //
   // Por qué un ref y no `location.state.threadMove`: el state viaja pegado a la
   // entrada del historial, así que sobrevive a cosas que deberían invalidarlo.
   // Parado en B (URL /comment/B, ancla A) el usuario abre una notificación a
-  // /comment/D (push) → re-sembramos en D y limpiamos el ref; si aprieta Atrás
-  // vuelve a /comment/B, cuya entrada TODAVÍA trae threadMove: con el state
-  // quedaría mostrando D con la URL diciendo B. Con el ref ya en null, re-siembra
-  // en B y vista y URL quedan sincronizadas.
+  // /comment/D (push) → re-sembramos en D; si aprieta Atrás vuelve a /comment/B,
+  // cuya entrada TODAVÍA trae threadMove: con el state quedaría mostrando D con la
+  // URL diciendo B. Con la posición en un ref (que ya quedó en D) re-siembra en B
+  // y vista y URL quedan sincronizadas.
+  //
+  // El id nuevo puede ser el ancla misma (ancla 5, vista 7, llega una notificación
+  // al comentario 5): ahí `setAnchorId` hace bailout por valor igual, y el que
+  // fuerza el remount es el nonce. La query ['comment', anchorId] ya está cacheada,
+  // así que ese caso remonta sin flash de "Cargando...", que es lo deseable.
   useEffect(() => {
-    if (id === anchorId) return
-    if (selfNavRef.current === id) return
-    selfNavRef.current = null
+    if (id === positionRef.current) return
+    positionRef.current = id
     setAnchorId(id)
-  }, [id, anchorId])
+    setSeedNonce(n => n + 1)
+  }, [id])
 
   // Cada vez que CommentThread cambia de posición, la URL lo sigue. `replace` y no
   // `push`: así todo el paseo por el hilo ocupa UNA sola entrada de historial que se
@@ -71,8 +88,12 @@ export function CommentPage() {
   const handlePositionChange = useCallback((comment) => {
     if (!comment?.id) return
     const pid = String(comment.id)
+    // Antes del early return, SIEMPRE: la posición cambió aunque la URL ya diga eso
+    // (pasa al volver al comentario que la URL venía mostrando). Si se actualizara
+    // solo cuando navegamos, el ref quedaría stale y bloquearía la próxima
+    // re-siembra legítima a ese id.
+    positionRef.current = pid
     if (pid === id) return
-    selfNavRef.current = pid
     // threadMove marca la transición para que ScrollToTop no la trate como una
     // navegación de verdad y no mande la página al tope (ver ScrollToTop.jsx).
     navigate(`/comment/${pid}`, { replace: true, state: { threadMove: true } })
@@ -111,7 +132,9 @@ export function CommentPage() {
         // y las invalidate keys porque ['comment', anchorId] es la única query
         // realmente cacheada (contra el id de la URL se invalidaría una entrada
         // inexistente y responder/eliminar dejaría la cadena de ancestros stale).
-        key={anchorId}
+        // El nonce acompaña al ancla en la key para que una re-siembra EN EL PROPIO
+        // ancla (ancla 5, vista 7, notificación al 5) también remonte el hilo.
+        key={`${anchorId}:${seedNonce}`}
         comments={[]}
         initialStack={chain}
         initialHighlightId={anchorId}
