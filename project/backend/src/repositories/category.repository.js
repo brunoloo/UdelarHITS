@@ -236,10 +236,25 @@ const assignParticipantRole = async (userId, categoriaId) => {
   await pool.query(q, [userId, categoriaId]);
 };
 
+// Filtro de bloqueos en AMBOS sentidos entre el viewer (placeholder `viewerPh`,
+// p. ej. '$1') y el autor de una fila (`autorCol`). Solo interpola NOMBRES de
+// placeholder/columna fijos del código, nunca valores.
+const notBlockedSql = (viewerPh, autorCol) => `
+          AND NOT EXISTS (
+            SELECT 1 FROM bloqueo b
+            WHERE (b.bloqueador_id = ${viewerPh}::bigint AND b.bloqueado_id = ${autorCol})
+               OR (b.bloqueado_id = ${viewerPh}::bigint AND b.bloqueador_id = ${autorCol})
+          )`;
+
 // Fragmento compartido: la "card" completa de una categoría activa (columnas
 // que consumen Home y Recientes). Lo usan getActiveCategories y el feed
 // paginado de Home, que le agregan su propio ORDER BY / cursor por fuera.
-const CATEGORY_CARD_QUERY = `
+//   viewerPh:  placeholder del viewer. Si viene, ultimo_tema / ultimo_comentario
+//              saltean autores bloqueados (ambos sentidos). La categoría en sí
+//              se muestra igual aunque la haya creado un bloqueado.
+//   idsFilter: SQL fijo (subselect) que restringe c.id, p. ej. 'SELECT id FROM picked'.
+// Sin argumentos el SQL es idéntico al histórico CATEGORY_CARD_QUERY.
+const categoryCardQuery = ({ viewerPh = null, idsFilter = null } = {}) => `
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
       c.fecha_creacion, c.icono, c.fijada_hasta, u.nickname AS autor_nickname, u.estado AS autor_estado, u.facultad AS autor_facultad,
       -- Comentarios directos (top-level) de la categoría: mismo criterio que el
@@ -257,7 +272,7 @@ const CATEGORY_CARD_QUERY = `
         FROM tema t
         JOIN contenido con ON con.id = t.contenido_id
         JOIN usuario u2 ON u2.id = con.autor_id
-        WHERE t.categoria_id = c.id AND t.estado = 'activo'
+        WHERE t.categoria_id = c.id AND t.estado = 'activo'${viewerPh ? notBlockedSql(viewerPh, 'con.autor_id') : ''}
         ORDER BY con.fecha_creacion DESC
         LIMIT 1
       ) AS ultimo_tema,
@@ -285,7 +300,7 @@ const CATEGORY_CARD_QUERY = `
         JOIN usuario u3 ON u3.id = con2.autor_id
         WHERE com.categoria_id = c.id
           AND com.comentario_padre_id IS NULL
-          AND com.estado = 'visible'
+          AND com.estado = 'visible'${viewerPh ? notBlockedSql(viewerPh, 'con2.autor_id') : ''}
         ORDER BY COALESCE(com.contenido_id = c.comentario_fijado_id, false) DESC,
                  con2.fecha_creacion DESC
         LIMIT 1
@@ -294,9 +309,11 @@ const CATEGORY_CARD_QUERY = `
     JOIN usuario u ON u.id = c.autor_id
     LEFT JOIN categoria_etiqueta ce ON ce.categoria_id = c.id
     LEFT JOIN etiqueta e ON e.id = ce.etiqueta_id
-    WHERE c.estado = 'activa'
+    WHERE c.estado = 'activa'${idsFilter ? `
+      AND c.id IN (${idsFilter})` : ''}
     GROUP BY c.id, u.nickname, u.estado, u.facultad
 `;
+const CATEGORY_CARD_QUERY = categoryCardQuery();
 
 // Listado de cards de categorías activas, con dos filtros opcionales y
 // combinables (AND):
@@ -390,88 +407,132 @@ const getChronoFeed = async ({ limit, cursorFecha = null, cursorId = null }) => 
   return rows;
 };
 
-// Modo personalizado: puntaje por usuario según config/feedConfig.js.
-// El puntaje es entero y estable dentro del día, así el cursor (score, id)
-// pagina sin repetir ni saltar aunque haya empates.
-const getPersonalizedFeed = async (usuarioId, { limit, cursorScore = null, cursorId = null }) => {
+// Modo rankeado (logueados): fórmula y perfiles en config/feedConfig.js.
+// UNA query devuelve los dos sub-streams (afín / exploración) con UNION ALL
+// sobre el mismo CTE `scored`; el servicio los intercala por cupo.
+//   t0:    epoch en segundos (instante de la visita, congelado en el cursor).
+//   seed:  semilla de la visita (jitter determinístico → rotación).
+//   p:     { G, K, J, W_POP, VENTANA_H } ya interpolados por intensidad.
+//   afin / explora: null (sub-stream agotado, se saltea) | {} (desde el inicio)
+//          | { s, id } (cursor del último consumido).
+// Todo valor va parametrizado; solo se interpolan placeholders y fragmentos fijos.
+const getRankedCategoryFeed = async (viewerId, { limit, t0, seed, p, afin = {}, explora = {} }) => {
+  const params = [
+    viewerId,                                   // $1
+    t0,                                         // $2
+    seed,                                       // $3
+    p.G, p.K, p.J, p.W_POP,                     // $4 $5 $6 $7
+    FEED.A_MAX, FEED.W_PART, FEED.W_SUSC, FEED.W_TAG, // $8 $9 $10 $11
+    FEED.AFINIDAD_CAP_ETIQUETA,                 // $12
+    FEED.AFINIDAD_VENTANA_DIAS,                 // $13
+    FEED.VIDA_MEDIA_PART_DIAS,                  // $14
+    FEED.ACTIVIDAD_DIAS,                        // $15
+    limit,                                      // $16
+    afin !== null, afin?.s ?? null, afin?.id ?? null,          // $17 $18 $19
+    explora !== null, explora?.s ?? null, explora?.id ?? null, // $20 $21 $22
+    p.VENTANA_H,                                // $23
+  ];
   const q = `
-    WITH afinidad AS (
-      -- Frecuencia de etiquetas en el historial de likes del usuario: cada
-      -- 'meGusta' se mapea a la categoría de su contenido (tema directo,
-      -- comentario de categoría, o comentario colgado de un tema) y de ahí
-      -- a sus etiquetas.
-      SELECT ce.etiqueta_id, COUNT(*)::int AS cnt
+    WITH prm AS (SELECT to_timestamp($2::float8) AS t0),
+    act AS (
+      -- Una sola pasada sobre temas activos y comentarios visibles (no-Home) de
+      -- cada categoría (directos o colgados de un tema).
+      SELECT x.cat_id,
+        MAX(x.fecha) AS ultima,
+        COUNT(*) FILTER (WHERE x.es_tema AND x.fecha > prm.t0 - MAKE_INTERVAL(days => $15::int)) AS temas_7d,
+        COUNT(*) FILTER (WHERE NOT x.es_tema AND x.fecha > prm.t0 - MAKE_INTERVAL(days => $15::int)) AS coms_7d,
+        MAX(x.fecha) FILTER (WHERE x.autor_id = $1::bigint) AS mi_ultima
+      FROM (
+        SELECT t.categoria_id AS cat_id, con.fecha_creacion AS fecha, con.autor_id, TRUE AS es_tema
+        FROM tema t
+        JOIN contenido con ON con.id = t.contenido_id
+        WHERE t.estado = 'activo'
+        UNION ALL
+        SELECT COALESCE(com.categoria_id, tc.categoria_id), con.fecha_creacion, con.autor_id, FALSE
+        FROM comentario com
+        JOIN contenido con ON con.id = com.contenido_id
+        LEFT JOIN tema tc ON tc.contenido_id = com.tema_id
+        WHERE com.estado = 'visible' AND com.es_home = FALSE
+      ) x
+      CROSS JOIN prm
+      GROUP BY x.cat_id
+    ),
+    afin_etq AS (
+      -- Likes del viewer en la ventana, mapeados a las etiquetas de la categoría
+      -- del contenido likeado (tema, comentario de categoría o de tema).
+      SELECT ce.etiqueta_id, LEAST(COUNT(*), $12::int)::float8 AS cnt
       FROM reaccion r
+      CROSS JOIN prm
       LEFT JOIN tema t ON t.contenido_id = r.contenido_id
       LEFT JOIN comentario com ON com.contenido_id = r.contenido_id
       LEFT JOIN tema tcom ON tcom.contenido_id = com.tema_id
       JOIN categoria_etiqueta ce
         ON ce.categoria_id = COALESCE(t.categoria_id, com.categoria_id, tcom.categoria_id)
-      WHERE r.usuario_id = $1 AND r.tipo = 'meGusta'
+      WHERE r.usuario_id = $1::bigint AND r.tipo = 'meGusta'
+        AND r.fecha_creacion > prm.t0 - MAKE_INTERVAL(days => $13::int)
       GROUP BY ce.etiqueta_id
     ),
+    afin_cat AS (
+      SELECT ce.categoria_id, LEAST(1::float8, SUM(a.cnt) / $12::float8) AS tag
+      FROM categoria_etiqueta ce
+      JOIN afin_etq a ON a.etiqueta_id = ce.etiqueta_id
+      GROUP BY ce.categoria_id
+    ),
+    base AS (
+      SELECT c.id,
+        (pc.usuario_id IS NULL AND sc.usuario_id IS NULL) AS explora,
+        CASE WHEN pc.usuario_id IS NULL THEN 0::float8
+             ELSE power(2::float8, -GREATEST(0::float8,
+                    EXTRACT(EPOCH FROM (prm.t0 - GREATEST(pc.fecha_asignacion, a.mi_ultima)))::float8 / 86400
+                  ) / $14::float8)
+        END AS part,
+        CASE WHEN sc.usuario_id IS NULL THEN 0::float8 ELSE 1::float8 END AS susc,
+        COALESCE(ac.tag, 0)::float8 AS tag,
+        COALESCE(a.temas_7d, 0)::float8 AS temas_7d,
+        COALESCE(a.coms_7d, 0)::float8 AS coms_7d,
+        GREATEST(0::float8,
+          EXTRACT(EPOCH FROM (prm.t0 - GREATEST(c.fecha_creacion, a.ultima)))::float8 / 3600
+        ) AS edad_h,
+        ((hashtextextended(c.id::text, $3::bigint) & 1048575)::float8 / 1048576) AS h
+      FROM categoria c
+      CROSS JOIN prm
+      LEFT JOIN act a ON a.cat_id = c.id
+      LEFT JOIN participacion_categoria pc ON pc.categoria_id = c.id AND pc.usuario_id = $1::bigint
+      LEFT JOIN suscripcion_categoria sc ON sc.categoria_id = c.id AND sc.usuario_id = $1::bigint
+      LEFT JOIN afin_cat ac ON ac.categoria_id = c.id
+      WHERE c.estado = 'activa'
+        AND (c.fijada_hasta IS NULL OR c.fijada_hasta <= NOW())
+    ),
     scored AS (
-      SELECT c2.id AS cat_id,
-        (
-          CASE WHEN EXISTS (
-            SELECT 1 FROM participacion_categoria pc
-            WHERE pc.categoria_id = c2.id AND pc.usuario_id = $1
-          ) THEN ${FEED.W_PARTICIPACION} ELSE 0 END
-        + CASE WHEN EXISTS (
-            SELECT 1 FROM suscripcion_categoria sc
-            WHERE sc.categoria_id = c2.id AND sc.usuario_id = $1
-          ) THEN ${FEED.W_SUSCRIPCION} ELSE 0 END
-        + ${FEED.W_ETIQUETA} * COALESCE((
-            SELECT SUM(LEAST(a.cnt, ${FEED.AFINIDAD_CAP_ETIQUETA}))
-            FROM categoria_etiqueta ce2
-            JOIN afinidad a ON a.etiqueta_id = ce2.etiqueta_id
-            WHERE ce2.categoria_id = c2.id
-          ), 0)
-        + ${FEED.W_ACT_TEMA} * (
-            SELECT COUNT(*) FROM tema t2
-            JOIN contenido con ON con.id = t2.contenido_id
-            WHERE t2.categoria_id = c2.id AND t2.estado = 'activo'
-              AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => ${FEED.ACTIVIDAD_DIAS})
-          )
-        + ${FEED.W_ACT_COMENTARIO} * (
-            SELECT COUNT(*) FROM comentario com2
-            JOIN contenido con2 ON con2.id = com2.contenido_id
-            LEFT JOIN tema t3 ON t3.contenido_id = com2.tema_id
-            WHERE COALESCE(com2.categoria_id, t3.categoria_id) = c2.id
-              AND com2.estado = 'visible'
-              AND con2.fecha_creacion > NOW() - MAKE_INTERVAL(days => ${FEED.ACTIVIDAD_DIAS})
-          )
-        + ${FEED.W_NOVEDAD_DIA} * GREATEST(0,
-            ${FEED.NOVEDAD_DIAS} - FLOOR(EXTRACT(EPOCH FROM (NOW() - c2.fecha_creacion)) / 86400)
-          )
-        )::bigint AS score
-      FROM categoria c2
-      WHERE c2.estado = 'activa'
+      SELECT id, explora,
+        ROUND(1e6 * (
+            ln(1 + $5::float8 * LEAST($8::float8, $9::float8 * part + $10::float8 * susc + $11::float8 * tag))
+          + $7::float8 * ln(1 + 3 * temas_7d + coms_7d)
+          - $4::float8 * ln(LEAST(edad_h, $23::float8) + 2)
+          + ln(1 + $6::float8 * (2 * h - 1))
+        ))::bigint AS score
+      FROM base
+    ),
+    picked AS (
+      (SELECT id, score, explora FROM scored
+        WHERE $17::boolean AND NOT explora
+          AND ($18::bigint IS NULL OR (score, id) < ($18::bigint, $19::bigint))
+        ORDER BY score DESC, id DESC
+        LIMIT $16)
+      UNION ALL
+      (SELECT id, score, explora FROM scored
+        WHERE $20::boolean AND explora
+          AND ($21::bigint IS NULL OR (score, id) < ($21::bigint, $22::bigint))
+        ORDER BY score DESC, id DESC
+        LIMIT $16)
     )
-    SELECT card.*, s.score
-    FROM (${CATEGORY_CARD_QUERY}) card
-    JOIN scored s ON s.cat_id = card.id
-    WHERE (card.fijada_hasta IS NULL OR card.fijada_hasta <= NOW())
-      AND ($3::bigint IS NULL
-       OR (s.score, card.id) < ($3::bigint, $4::bigint))
-    ORDER BY s.score DESC, card.id DESC
-    LIMIT $2
+    SELECT card.*, pk.score, pk.explora
+    FROM (${categoryCardQuery({ viewerPh: '$1', idsFilter: 'SELECT id FROM picked' })}) card
+    JOIN picked pk ON pk.id = card.id
+    ORDER BY pk.explora, pk.score DESC, card.id DESC
   `;
-  const { rows } = await pool.query(q, [usuarioId, limit, cursorScore, cursorId]);
+  const { rows } = await pool.query(q, params);
   return rows;
-};
-
-// ¿El usuario tiene alguna señal personalizable? Si no (cuenta nueva),
-// Home cae al modo cronológico en vez de rankear con todo en cero.
-const hasFeedSignals = async (usuarioId) => {
-  const q = `
-    SELECT EXISTS (SELECT 1 FROM participacion_categoria WHERE usuario_id = $1)
-        OR EXISTS (SELECT 1 FROM suscripcion_categoria WHERE usuario_id = $1)
-        OR EXISTS (SELECT 1 FROM reaccion WHERE usuario_id = $1 AND tipo = 'meGusta')
-        AS tiene
-  `;
-  const { rows } = await pool.query(q, [usuarioId]);
-  return rows[0].tiene === true;
 };
 
 const getParticipantsByCategoryId = async (categoriaId) => {
@@ -619,7 +680,7 @@ const getTrendingTags = async (days = 7, limit = 8) => {
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId,
   updateCategoryById, assignParticipantRole, getActiveCategories, getCategoryIndex, getParticipantsByCategoryId,
-  getChronoFeed, getPersonalizedFeed, hasFeedSignals,
+  getChronoFeed, getRankedCategoryFeed,
   getEtiquetas, getEtiquetasByIds, searchEtiquetas,
   categoryHasContent, hardDeleteCategoryById, getPopularCategories, getTrendingTags,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment, pinCategoryTopic, unpinCategoryTopic,
@@ -733,12 +794,14 @@ async function unpinCategoryHome(categoriaId) {
 }
 
 // La categoría fijada vigente (fijada_hasta > NOW()), como card del Home, o null.
-async function getPinnedHomeCategory() {
+// Con viewer, su ultimo_tema / ultimo_comentario saltean autores bloqueados.
+async function getPinnedHomeCategory(viewerId = null) {
+  const withViewer = viewerId != null;
   const q = `
-    SELECT card.* FROM (${CATEGORY_CARD_QUERY}) card
+    SELECT card.* FROM (${withViewer ? categoryCardQuery({ viewerPh: '$1' }) : CATEGORY_CARD_QUERY}) card
     WHERE card.fijada_hasta > NOW()
     LIMIT 1
   `;
-  const { rows } = await pool.query(q);
+  const { rows } = await pool.query(q, withViewer ? [viewerId] : []);
   return rows[0] || null;
 }

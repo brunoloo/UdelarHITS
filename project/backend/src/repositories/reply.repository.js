@@ -1,6 +1,5 @@
 import pool from '../config/db.js';
 import { encuestaSubquery } from './encuesta.repository.js';
-import { FEED_COMENTARIO_HOME as CH } from '../config/feedConfig.js';
 
 const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario_padre_id, es_home = false }) => {
   const client = await pool.connect();
@@ -501,7 +500,7 @@ const countHomeComments = async () => {
 // stream de categorías por cadencia (no compiten en un mismo ranking).
 
 // Fragmento de columnas de la card. `viewer` es el placeholder del usuario para
-// mi_reaccion / voto de encuesta ('$4' en chrono, '$1' en personalizado).
+// mi_reaccion / voto de encuesta ('$4' en chrono, '$1' en rankeado).
 const homeCommentCard = (viewer) => `
   com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion,
   con.cuerpo, con.autor_id, u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen,
@@ -531,39 +530,84 @@ const getHomeCommentsChrono = async ({ limit, cursorFecha = null, cursorId = nul
   return rows;
 };
 
-// Modo personalizado: score propio (novedad + popularidad + sigue-al-autor),
-// entero y estable dentro del día → el cursor (score, id) pagina sin repetir.
-const getHomeCommentsPersonalized = async (usuarioId, { limit, cursorScore = null, cursorId = null }) => {
+// Modo rankeado (logueados): misma fórmula logarítmica que el stream de
+// categorías (ver config/feedConfig.js), con S = sigo al autor. Excluye
+// comentarios de autores bloqueados (ambos sentidos). UNA query devuelve los dos
+// sub-streams: afín (sigo al autor o es mío) y exploración (el resto).
+//   Mismas opciones que getRankedCategoryFeed: { limit, t0, seed, p, afin, explora }.
+const getRankedHomeComments = async (viewerId, { limit, t0, seed, p, afin = {}, explora = {} }) => {
+  const params = [
+    viewerId,                // $1
+    t0,                      // $2
+    seed,                    // $3
+    p.G, p.K, p.J, p.W_POP,  // $4 $5 $6 $7
+    limit,                   // $8
+    afin !== null, afin?.s ?? null, afin?.id ?? null,          // $9 $10 $11
+    explora !== null, explora?.s ?? null, explora?.id ?? null, // $12 $13 $14
+    p.VENTANA_H,             // $15
+  ];
   const q = `
-    WITH scored AS (
+    WITH prm AS (SELECT to_timestamp($2::float8) AS t0),
+    base AS (
       SELECT com.contenido_id AS id,
-        ( ${CH.W_NOVEDAD_DIA} * GREATEST(0,
-            ${CH.NOVEDAD_DIAS} - FLOOR(EXTRACT(EPOCH FROM (NOW() - con.fecha_creacion)) / 86400))
-        + ${CH.W_POPULARIDAD} * (
-            (SELECT COUNT(*) FROM reaccion r WHERE r.contenido_id = com.contenido_id AND r.tipo = 'meGusta')
-          + (SELECT COUNT(*) FROM comentario child WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible')
-          )
-        + CASE WHEN EXISTS (
-            SELECT 1 FROM usuario_seguidor us
-            WHERE us.seguidor_id = $1 AND us.seguido_id = con.autor_id AND us.estado = 'aceptado'
-          ) THEN ${CH.W_SIGUE_AUTOR} ELSE 0 END
-        )::bigint AS score
+        (us.seguidor_id IS NULL AND con.autor_id <> $1::bigint) AS explora,
+        CASE WHEN us.seguidor_id IS NULL THEN 0::float8 ELSE 1::float8 END AS sigo,
+        (SELECT COUNT(*) FROM reaccion r WHERE r.contenido_id = com.contenido_id AND r.tipo = 'meGusta')::float8 AS likes,
+        resp.n::float8 AS resp,
+        GREATEST(0::float8,
+          EXTRACT(EPOCH FROM (prm.t0 - GREATEST(con.fecha_creacion, resp.ultima)))::float8 / 3600
+        ) AS edad_h,
+        ((hashtextextended(com.contenido_id::text, $3::bigint) & 1048575)::float8 / 1048576) AS h
       FROM comentario com
+      CROSS JOIN prm
       JOIN contenido con ON con.id = com.contenido_id
+      LEFT JOIN usuario_seguidor us
+        ON us.seguidor_id = $1::bigint AND us.seguido_id = con.autor_id AND us.estado = 'aceptado'
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*) AS n, MAX(ccon.fecha_creacion) AS ultima
+        FROM comentario child
+        JOIN contenido ccon ON ccon.id = child.contenido_id
+        WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible'
+      ) resp ON TRUE
       WHERE com.es_home = TRUE AND com.comentario_padre_id IS NULL AND com.estado = 'visible'
         AND (com.fijado_home_hasta IS NULL OR com.fijado_home_hasta <= NOW())
+        AND NOT EXISTS (
+          SELECT 1 FROM bloqueo b
+          WHERE (b.bloqueador_id = $1::bigint AND b.bloqueado_id = con.autor_id)
+             OR (b.bloqueado_id = $1::bigint AND b.bloqueador_id = con.autor_id)
+        )
+    ),
+    scored AS (
+      SELECT id, explora,
+        ROUND(1e6 * (
+            ln(1 + $5::float8 * sigo)
+          + $7::float8 * ln(1 + likes + resp)
+          - $4::float8 * ln(LEAST(edad_h, $15::float8) + 2)
+          + ln(1 + $6::float8 * (2 * h - 1))
+        ))::bigint AS score
+      FROM base
+    ),
+    picked AS (
+      (SELECT id, score, explora FROM scored
+        WHERE $9::boolean AND NOT explora
+          AND ($10::bigint IS NULL OR (score, id) < ($10::bigint, $11::bigint))
+        ORDER BY score DESC, id DESC
+        LIMIT $8)
+      UNION ALL
+      (SELECT id, score, explora FROM scored
+        WHERE $12::boolean AND explora
+          AND ($13::bigint IS NULL OR (score, id) < ($13::bigint, $14::bigint))
+        ORDER BY score DESC, id DESC
+        LIMIT $8)
     )
-    SELECT ${homeCommentCard('$1')}, s.score
-    FROM comentario com
+    SELECT ${homeCommentCard('$1')}, pk.score, pk.explora
+    FROM picked pk
+    JOIN comentario com ON com.contenido_id = pk.id
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
-    JOIN scored s ON s.id = com.contenido_id
-    WHERE ($3::bigint IS NULL
-       OR (s.score, com.contenido_id) < ($3::bigint, $4::bigint))
-    ORDER BY s.score DESC, com.contenido_id DESC
-    LIMIT $2
+    ORDER BY pk.explora, pk.score DESC, com.contenido_id DESC
   `;
-  const { rows } = await pool.query(q, [usuarioId, limit, cursorScore, cursorId]);
+  const { rows } = await pool.query(q, params);
   return rows;
 };
 
@@ -613,13 +657,20 @@ async function getPinnedHomeComment(viewerId = null) {
     JOIN usuario u ON u.id = con.autor_id
     WHERE com.es_home = TRUE AND com.comentario_padre_id IS NULL AND com.estado = 'visible'
       AND com.fijado_home_hasta > NOW()
+      -- Con viewer: un comentario fijado de un autor bloqueado (ambos sentidos)
+      -- no encabeza su Home.
+      AND ($1::bigint IS NULL OR NOT EXISTS (
+        SELECT 1 FROM bloqueo b
+        WHERE (b.bloqueador_id = $1::bigint AND b.bloqueado_id = con.autor_id)
+           OR (b.bloqueado_id = $1::bigint AND b.bloqueador_id = con.autor_id)
+      ))
     LIMIT 1
   `;
   const { rows } = await pool.query(q, [viewerId]);
   return rows[0] || null;
 }
 
-export { createReply, countHomeComments, getHomeCommentsChrono, getHomeCommentsPersonalized,
+export { createReply, countHomeComments, getHomeCommentsChrono, getRankedHomeComments,
   getRecentReplies, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
   getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies,
   hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx, getReplyEditHistory,

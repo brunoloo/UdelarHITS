@@ -122,11 +122,12 @@ const getCategoryIndexList = async (req, res) => {
 
 const getCategoryFeed = async (req, res) => {
   try {
-    const { items, nextCursor } = await getCategoryFeedService(req.user ?? null, {
+    const { items, nextCursor, visita } = await getCategoryFeedService(req.user ?? null, {
       limit: req.query.limit,
       cursor: req.query.cursor,
+      visita: req.query.visita,
     });
-    return res.status(200).json({ ok: true, data: items, nextCursor });
+    return res.status(200).json({ ok: true, data: items, nextCursor, visita });
   } catch (error) {
     if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
     return res.status(500).json({ ok: false, message: 'Internal server error' });

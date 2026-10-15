@@ -1,50 +1,94 @@
 // =========================================================
-// Configuración del feed personalizado del Home
+// Configuración del feed rankeado del Home (usuarios logueados)
 // =========================================================
-// Home responde "¿qué hay de nuevo en lo que me importa?": cada categoría
-// activa recibe un puntaje por usuario y el feed se ordena por ese puntaje.
-// Centraliza señales y pesos para poder ajustarlos sin tocar las queries.
+// Home responde "¿qué hay de nuevo/vivo en lo que me importa?" sin estancarse
+// cuando hay poca actividad. Invitados: cronológico puro (como Recientes).
+// Logueados: UN ranking en escala logarítmica por stream (categorías /
+// comentarios de Home), con rotación por visita y cupo de exploración.
 //
-//   score = participación + suscripción + afinidad_etiquetas
-//         + actividad_reciente + novedad
+// Categorías:
+//   L = ln(1 + K·A) + W_POP·ln(1 + 3·temas_7d + coms_7d)
+//     − G·ln(edad_h + 2) + ln(1 + J·(2h − 1))
+//   * edad_h: horas desde la ÚLTIMA ACTIVIDAD (creación, último tema activo o
+//     último comentario visible de la categoría o de sus temas), medida contra
+//     t0 (instante de la visita, congelado en el cursor), piso 0.
+//   * A = min(A_MAX, W_PART·part + W_SUSC·susc + W_TAG·tag)
+//       part = 2^(−días_desde_mi_última_actividad / VIDA_MEDIA_PART_DIAS) si
+//              participo (decay: la afinidad vieja se apaga), 0 si no.
+//       susc = 1 si tengo la campanita, 0 si no.
+//       tag  = min(1, Σ_etiquetas min(likes_e, CAP) / CAP), likes de los
+//              últimos AFINIDAD_VENTANA_DIAS días.
+//   * h = hash(seed, id) ∈ [0,1): jitter determinístico por visita → rotación.
+// Comentarios de Home:
+//   L = ln(1 + K·S) + W_POP·ln(1 + likes + respuestas)
+//     − G·ln(edad_h + 2) + ln(1 + J·(2h − 1))
+//   S = 1 si sigo al autor; edad desde la última respuesta visible directa.
 //
-// Jerarquía buscada (de más a menos señal):
-//   1. Señal explícita: participo o estoy suscripto        (~400-500)
-//   2. Afinidad por etiquetas según mis likes               (30 por like,
-//      cap por etiqueta para que una sola no domine)        (típico 30-300)
-//   3. Actividad real de la última semana                   (15/tema, 5/com)
-//   4. Novedad: boost lineal que decae por día              (max 112)
+// En ambos, edad_h se topea en VENTANA_H (por perfil): lo que lleva más de esa
+// ventana sin actividad compite parejo en frescura y lo decide la rotación. Sin
+// el tope, en un foro chico la única categoría con algo de actividad reciente
+// encabezaba siempre (el jitter no alcanza a compensar la brecha de frescura).
 //
-// Todos los componentes son ENTEROS y estables dentro del día (la novedad
-// usa días enteros de edad): así el cursor de paginación (score, id) no
-// cambia entre página y página de una misma sesión de scroll.
+// score = ROUND(L·1e6)::bigint (puede ser negativo); cursor (score, id).
 //
-// Sin usuario (o usuario sin señales — cold start), Home cae a orden
-// cronológico puro (fecha_creacion DESC), igual que Recientes.
+// Intensidad w ∈ [0,1]: interpola linealmente PERFIL_CHICO (w=0, foro con poca
+// gente: más frescura, más jitter, más exploración) y PERFIL_GRANDE (w=1).
+//   w = clamp((N − (UMBRAL − ANCHO)) / (2·ANCHO), 0, 1), N = cuentas activas.
+// w se congela en el cursor (no cambia a mitad de scroll).
+//
+// Exploración: cada stream se parte en "afín" (categoría: participo o estoy
+// suscripto; comentario: sigo al autor o es mío) y "exploración" (el resto).
+// La posición k del stream sale de exploración si k % EXPLORA_CADA ==
+// EXPLORA_CADA − 1 (si un sub-stream está vacío, sale del otro).
+
+// Helpers de env (mismo patrón que reportConfig.js). Lectura PEREZOSA (funciones)
+// para que los tests puedan cambiar process.env sin reimportar el módulo.
+const envInt = (name, def) => {
+  const v = parseInt(process.env[name], 10);
+  return Number.isInteger(v) && v > 0 ? v : def;
+};
+const envNum = (name, def) => {
+  const v = Number(process.env[name]);
+  return Number.isFinite(v) && v > 0 ? v : def;
+};
+
+export const feedUmbralCuentas = () => envInt('FEED_UMBRAL_CUENTAS', 300);
+export const feedUmbralAncho = () => envInt('FEED_UMBRAL_ANCHO', 50);
+export const feedUmbralTtlSeg = () => envNum('FEED_UMBRAL_TTL_SEG', 600);
+export const feedVisitaTtlHoras = () => envNum('FEED_VISITA_TTL_HORAS', 6);
+// Intensidad forzada (0..1). Vacío / inválido = automática (por conteo). Parser
+// propio porque envNum rechaza 0, que acá es un valor válido.
+export const feedIntensidadForzada = () => {
+  const raw = process.env.FEED_INTENSIDAD_FORZADA;
+  if (raw == null || String(raw).trim() === '') return null;
+  const v = Number(raw);
+  return Number.isFinite(v) && v >= 0 && v <= 1 ? v : null;
+};
 
 export const FEED = {
   // Paginación
   PAGE_SIZE_DEFAULT: 20,
   PAGE_SIZE_MAX: 50,
 
-  // 1. Señales explícitas
-  W_PARTICIPACION: 500, // participo (comenté / soy moderador) en la categoría
-  W_SUSCRIPCION: 400,   // tengo la campanita activada
+  // Afinidad acotada
+  A_MAX: 2,
+  W_PART: 1,
+  W_SUSC: 0.8,
+  W_TAG: 0.6,
+  AFINIDAD_CAP_ETIQUETA: 10,  // máx. de likes que cuenta una misma etiqueta
+  AFINIDAD_VENTANA_DIAS: 90,  // likes más viejos no cuentan
+  VIDA_MEDIA_PART_DIAS: 21,   // decay de la participación
 
-  // 2. Afinidad por etiquetas (likes previos del usuario en contenido de
-  //    categorías con esa etiqueta)
-  W_ETIQUETA: 30,           // puntos por cada like "heredado" vía etiqueta
-  AFINIDAD_CAP_ETIQUETA: 10, // máx. de likes que cuenta una misma etiqueta
-
-  // 3. Actividad reciente (misma ventana que Populares)
+  // Ventana de actividad reciente (misma que Populares)
   ACTIVIDAD_DIAS: 7,
-  W_ACT_TEMA: 15,       // cada tema activo creado en la ventana
-  W_ACT_COMENTARIO: 5,  // cada comentario visible creado en la ventana
-
-  // 4. Novedad: W_NOVEDAD_DIA * (NOVEDAD_DIAS - edad_en_días), piso 0.
-  NOVEDAD_DIAS: 14,
-  W_NOVEDAD_DIA: 8,     // máx. 8*14 = 112 el día de creación
 };
+
+// Perfiles por intensidad (w=0 chico, w=1 grande). Se interpolan linealmente,
+// salvo VENTANA_H (geométrica: 7 días → ~10 años, o sea sin tope en la práctica).
+// Chico: K bajo y J alto a propósito — con poca actividad la última categoría
+// donde participaste ganaba el primer lugar en ~todas las visitas.
+export const PERFIL_CHICO = { G: 1.6, K: 0.3, J: 0.7, EXPLORA_CADA: 3, W_POP: 0.3, VENTANA_H: 7 * 24 };
+export const PERFIL_GRANDE = { G: 1.2, K: 2.0, J: 0.2, EXPLORA_CADA: 5, W_POP: 0.3, VENTANA_H: 3650 * 24 };
 
 // =========================================================
 // Feed del Home: dos streams intercalados por cadencia
@@ -61,23 +105,3 @@ export const FEED = {
 // restantes sin dejar huecos (foro solo con comentarios → feed de comentarios,
 // y viceversa).
 export const CADENCIA_HOME = { categorias: 2, comentarios: 3 };
-
-// Score del stream B (comentarios de Home). Como no compite con las categorías,
-// sus pesos NO necesitan ser comparables con FEED.* — solo ordenar comentarios
-// entre sí. Igual que el score de categorías, es ENTERO y estable dentro del día
-// (novedad por días enteros) para que el cursor (score, id) pagine sin repetir.
-//
-//   score = novedad + popularidad + sigue_al_autor
-//
-// Sin usuario (o cold start) el stream B cae a orden cronológico, igual que el A.
-export const FEED_COMENTARIO_HOME = {
-  // Novedad: boost lineal que decae por día, piso 0.
-  NOVEDAD_DIAS: 14,
-  W_NOVEDAD_DIA: 8,      // máx. 8*14 = 112 el día de creación
-
-  // Popularidad: interacción acumulada (likes + respuestas directas visibles).
-  W_POPULARIDAD: 5,      // puntos por cada like o respuesta
-
-  // Interés/participación: el viewer sigue (aceptado) al autor del comentario.
-  W_SIGUE_AUTOR: 500,
-};

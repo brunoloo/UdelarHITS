@@ -1,7 +1,7 @@
 import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId,
   updateCategoryById, getActiveCategories, getCategoryIndex, getParticipantsByCategoryId, getEtiquetas,
-  getChronoFeed, getPersonalizedFeed, hasFeedSignals,
+  getChronoFeed, getRankedCategoryFeed,
   getEtiquetasByIds, searchEtiquetas,
   hardDeleteCategoryById, categoryHasContent, getPopularCategories, getTrendingTags,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment,
@@ -10,8 +10,9 @@ import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   subscribeCategory, unsubscribeCategory, isSubscribedCategory } from '../repositories/category.repository.js';
 
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
-import { getHomeCommentsChrono, getHomeCommentsPersonalized, getPinnedHomeComment } from '../repositories/reply.repository.js';
-import { FEED, CADENCIA_HOME } from '../config/feedConfig.js';
+import { getHomeCommentsChrono, getRankedHomeComments, getPinnedHomeComment } from '../repositories/reply.repository.js';
+import { FEED, CADENCIA_HOME, feedVisitaTtlHoras } from '../config/feedConfig.js';
+import { getFeedIntensity, perfilDesdeIntensidad, newFeedSeed } from './feedRanking.service.js';
 import { isValidCategoryIcon } from '../config/categoryIcons.js';
 
 const createCategoryService = async (autorId, { titulo, descripcion, etiquetas }) => {
@@ -241,48 +242,109 @@ const getCategoryIndexService = async () => {
 // cadencia fija (CADENCIA_HOME): no compiten en un único ranking, así que no hay
 // que calibrar magnitudes entre tipos. El balance se ajusta con la cadencia.
 //
-// El cursor (base64url, versionado v:2) lleva el estado de AMBOS streams más la
-// posición dentro del patrón de cadencia, para que el corte de página no
-// reinicie el intercalado:
-//   { v:2, m:'p'|'c', cat:{s,id}|{f,id}|null, com:{s,id}|{f,id}|null, slot:n }
-// null = ese stream se agotó. `m` distingue personalizado/cronológico para
-// rechazar un cursor de otro modo (login/logout a mitad de scroll). v:2 hace que
-// un cursor viejo (formato Fase <22) devuelva 400 en vez de reinterpretarse mal.
+// Dos modos:
+//   * Invitado → cronológico. Cursor v2 (base64url):
+//       { v:2, m:'c', cat:{f,id}|{}|null, com:{f,id}|{}|null, slot:n }
+//   * Logueado → rankeado (config/feedConfig.js). Cursor v3:
+//       { v:3, m:'r', t0, seed, w, slot,
+//         cat: null | { k, a: null|{}|{s,id}, e: null|{}|{s,id} }, com: ídem }
+//     t0/seed/w congelan la visita (edades, jitter de rotación e intensidad no
+//     cambian a mitad de scroll). Cada stream tiene dos sub-streams (a = afín,
+//     e = exploración) y `k` es la posición dentro del stream, que decide el
+//     cupo de exploración.
+// null = agotado. Un cursor de otro modo (login/logout a mitad de scroll, o un
+// v2 'p' de antes del deploy) responde 400.
 const CADENCE_PATTERN = [
   ...Array(CADENCIA_HOME.categorias).fill('categoria'),
   ...Array(CADENCIA_HOME.comentarios).fill('comentario'),
 ];
 const CADENCE_LEN = CADENCE_PATTERN.length;
+const SEED_MAX = 2 ** 31;
 
 const encodeFeedCursor = (payload) =>
   Buffer.from(JSON.stringify(payload)).toString('base64url');
 
-// Valida la parte de un stream del cursor. Tres formas posibles:
-//   null → stream agotado (no se vuelve a pedir)
-//   {}   → activo pero sin avanzar (se pide desde el inicio). Ocurre cuando una
-//          página no consumió nada de ese stream (p. ej. páginas muy chicas).
-//   {id, s|f} → posición del último ítem consumido, según el modo.
-const validStreamCursor = (c, mode) => {
-  if (c === null) return true;
-  if (typeof c !== 'object') return false;
-  if (Object.keys(c).length === 0) return true;
-  if (!/^\d+$/.test(String(c.id))) return false;
-  return mode === 'p' ? /^\d+$/.test(String(c.s)) : !isNaN(Date.parse(c.f));
+const badCursor = () => {
+  const err = new Error('Cursor de paginación inválido');
+  err.code = 'BAD_REQUEST';
+  return err;
 };
+
+// Entero en el rango de bigint de Postgres (si no, el cast $n::bigint falla → 500).
+const BIGINT_MAX = 9223372036854775807n;
+const isBigintStr = (v, { signed = false } = {}) => {
+  const str = String(v);
+  if (!(signed ? /^-?\d{1,19}$/ : /^\d{1,19}$/).test(str)) return false;
+  const n = BigInt(str);
+  return n <= BIGINT_MAX && n >= -BIGINT_MAX - 1n;
+};
+
+// Parte de un stream en modo cronológico:
+//   null → agotado · {} → activo sin avanzar · {f,id} → último consumido.
+const validChronoCursor = (c) => {
+  if (c === null) return true;
+  if (typeof c !== 'object' || Array.isArray(c)) return false;
+  if (Object.keys(c).length === 0) return true;
+  return isBigintStr(c.id) && !isNaN(Date.parse(c.f));
+};
+
+// Sub-stream rankeado: null | {} | {s,id} (s puede ser negativo).
+const validRankedSub = (c) => {
+  if (c === null) return true;
+  if (typeof c !== 'object' || Array.isArray(c)) return false;
+  if (Object.keys(c).length === 0) return true;
+  return isBigintStr(c.s, { signed: true }) && isBigintStr(c.id);
+};
+const validRankedStream = (c) => {
+  if (c === null) return true;
+  if (typeof c !== 'object' || Array.isArray(c)) return false;
+  return Number.isInteger(c.k) && c.k >= 0
+    && validRankedSub(c.a ?? null) && validRankedSub(c.e ?? null);
+};
+const normRankedStream = (c) => (c === null ? null : { k: c.k, a: c.a ?? null, e: c.e ?? null });
+
+const validVisitParams = (p, nowSec) =>
+  Number.isInteger(p.t0) && p.t0 > 0 && p.t0 <= nowSec + 60
+  && Number.isInteger(p.seed) && p.seed >= 0 && p.seed < SEED_MAX
+  && typeof p.w === 'number' && p.w >= 0 && p.w <= 1;
 
 const decodeFeedCursor = (cursor) => {
   try {
     const p = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
-    if (p?.v === 2 && (p.m === 'p' || p.m === 'c')
+    if (p?.v === 2 && p.m === 'c'
         && Number.isInteger(p.slot) && p.slot >= 0
-        && validStreamCursor(p.cat ?? null, p.m)
-        && validStreamCursor(p.com ?? null, p.m)) {
-      return { v: 2, m: p.m, cat: p.cat ?? null, com: p.com ?? null, slot: p.slot };
+        && validChronoCursor(p.cat ?? null)
+        && validChronoCursor(p.com ?? null)) {
+      return { v: 2, m: 'c', cat: p.cat ?? null, com: p.com ?? null, slot: p.slot };
+    }
+    if (p?.v === 3 && p.m === 'r'
+        && Number.isInteger(p.slot) && p.slot >= 0
+        && validVisitParams(p, Math.floor(Date.now() / 1000))
+        && validRankedStream(p.cat ?? null)
+        && validRankedStream(p.com ?? null)) {
+      return {
+        v: 3, m: 'r', t0: p.t0, seed: p.seed, w: p.w, slot: p.slot,
+        cat: normRankedStream(p.cat ?? null), com: normRankedStream(p.com ?? null),
+      };
     }
   } catch { /* cae al throw de abajo */ }
-  const err = new Error('Cursor de paginación inválido');
-  err.code = 'BAD_REQUEST';
-  throw err;
+  throw badCursor();
+};
+
+// `visita` (base64url {v:3,t0,seed,w}): permite que un refetch de la página 1
+// (invalidación tras like/comentario/pin) reproduzca el mismo orden. Inválida
+// o vencida (FEED_VISITA_TTL_HORAS) → se ignora (visita nueva), nunca 400.
+const decodeVisita = (visita) => {
+  if (!visita || typeof visita !== 'string') return null;
+  try {
+    const p = JSON.parse(Buffer.from(visita, 'base64url').toString('utf8'));
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (p?.v === 3 && validVisitParams(p, nowSec)
+        && nowSec - p.t0 <= feedVisitaTtlHoras() * 3600) {
+      return { t0: p.t0, seed: p.seed, w: p.w };
+    }
+  } catch { /* ignorada */ }
+  return null;
 };
 
 // Intercalado determinístico de los dos streams (ya ordenados) según la cadencia,
@@ -310,29 +372,82 @@ function interleaveStreams(cats, coms, startSlot, pageSize) {
   return { items, usedCat: ci, usedCom: mi, endSlot: slot };
 }
 
-const getCategoryFeedService = async (user, { limit, cursor } = {}) => {
+// Cupo de exploración: mezcla los sub-streams afín / exploración (cada uno ya
+// ordenado) en un único stream. La posición global k0+i sale de exploración si
+// (k0+i) % N == N−1; si no, de afín. Si el preferido está vacío, el otro. Como
+// cada sub trae fetchN filas salvo que esté realmente agotado, el resultado es
+// el mismo pagine como pagine. Devuelve [{ row, sub: 'a'|'e' }].
+function mergeSubStreams(afinRows, explRows, k0, N, fetchN) {
+  const out = [];
+  let ai = 0, ei = 0;
+  while (out.length < fetchN && (ai < afinRows.length || ei < explRows.length)) {
+    const k = k0 + out.length;
+    const wantExpl = k % N === N - 1;
+    if (wantExpl ? ei < explRows.length : ai >= afinRows.length) {
+      out.push({ row: explRows[ei++], sub: 'e' });
+    } else {
+      out.push({ row: afinRows[ai++], sub: 'a' });
+    }
+  }
+  return out;
+}
+
+const parsePageSize = (limit) => {
   const parsed = parseInt(limit, 10);
-  const pageSize = Math.min(
+  return Math.min(
     Math.max(Number.isNaN(parsed) ? FEED.PAGE_SIZE_DEFAULT : parsed, 1),
     FEED.PAGE_SIZE_MAX
   );
+};
 
-  // Personalizado solo si hay usuario con alguna señal (participación,
-  // suscripción o likes). Cold start / invitado → cronológico, como Recientes.
-  // El modo aplica a AMBOS streams.
-  const personalized = user ? await hasFeedSignals(user.id) : false;
-  const mode = personalized ? 'p' : 'c';
+// Destacado del Home fijado por un admin: encabeza el feed y sólo en la
+// primera página, FUERA del intercalado. Vive fuera del cursor (se excluye del
+// stream correspondiente en el repo), así no duplica ni desajusta la
+// paginación. Expira solo (fijada_hasta / fijado_home_hasta). Es un singleton
+// COMPARTIDO: a lo sumo hay una categoría fijada O un comentario fijado, nunca
+// ambos (lo garantizan las operaciones de pin), así que la categoría tiene
+// prioridad y, si no hay, va el comentario. Se piden en paralelo con los streams.
+const fetchPinned = (viewerId) => Promise.all([
+  getPinnedHomeCategory(viewerId),
+  getPinnedHomeComment(viewerId),
+]);
 
-  let cur = null;
-  if (cursor) {
-    cur = decodeFeedCursor(cursor);
-    if (cur.m !== mode) {
-      const err = new Error('Cursor de paginación inválido');
-      err.code = 'BAD_REQUEST';
-      throw err;
-    }
+const prependPinned = (out, [pinnedCat, pinnedCom]) => {
+  if (pinnedCat) {
+    delete pinnedCat.score;
+    delete pinnedCat.fijada_hasta;
+    pinnedCat.fijada = true;
+    pinnedCat.tipo = 'categoria';
+    // Defensa: el stream A ya la excluye, pero evitamos duplicarla igual.
+    const rest = out.filter(it => !(it.tipo === 'categoria' && String(it.id) === String(pinnedCat.id)));
+    return [pinnedCat, ...rest];
   }
+  if (pinnedCom) {
+    delete pinnedCom.score;
+    pinnedCom.fijado_home = true;
+    pinnedCom.tipo = 'comentario';
+    // Defensa: el stream B ya lo excluye, pero evitamos duplicarlo igual.
+    const rest = out.filter(it => !(it.tipo === 'comentario' && String(it.id) === String(pinnedCom.id)));
+    return [pinnedCom, ...rest];
+  }
+  return out;
+};
 
+// Normaliza a la forma de card + discriminador `tipo`. score/explora/fijada_hasta
+// son internos del ranking, no parte del contrato de la card.
+const toCards = (items) => items.map(({ kind, row }) => {
+  delete row.score; delete row.explora;
+  if (kind === 'categoria') {
+    delete row.fijada_hasta; row.fijada = false;
+    row.tipo = 'categoria';
+  } else {
+    row.tipo = 'comentario';
+  }
+  return row;
+});
+
+// Invitado: cronológico (como Recientes), cursor v2 'c'.
+const getChronoHomeFeed = async (pageSize, cur, isFirstPage) => {
   // Se pide una fila extra por stream para saber si quedan más; y como una página
   // podría llenarse toda de un tipo (si el otro se agotó), pageSize+1 alcanza para
   // llenarla desde cualquiera de los dos.
@@ -345,17 +460,14 @@ const getCategoryFeedService = async (user, { limit, cursor } = {}) => {
   const comCur = cur ? cur.com : {};
   const startSlot = cur ? cur.slot : 0;
 
-  const [cats, coms] = await Promise.all([
+  const [cats, coms, pinned] = await Promise.all([
     catActive
-      ? (personalized
-          ? getPersonalizedFeed(user.id, { limit: fetchN, cursorScore: catCur?.s ?? null, cursorId: catCur?.id ?? null })
-          : getChronoFeed({ limit: fetchN, cursorFecha: catCur?.f ?? null, cursorId: catCur?.id ?? null }))
+      ? getChronoFeed({ limit: fetchN, cursorFecha: catCur?.f ?? null, cursorId: catCur?.id ?? null })
       : Promise.resolve([]),
     comActive
-      ? (personalized
-          ? getHomeCommentsPersonalized(user.id, { limit: fetchN, cursorScore: comCur?.s ?? null, cursorId: comCur?.id ?? null })
-          : getHomeCommentsChrono({ limit: fetchN, cursorFecha: comCur?.f ?? null, cursorId: comCur?.id ?? null, viewerId: user?.id ?? null }))
+      ? getHomeCommentsChrono({ limit: fetchN, cursorFecha: comCur?.f ?? null, cursorId: comCur?.id ?? null, viewerId: null })
       : Promise.resolve([]),
+    isFirstPage ? fetchPinned(null) : Promise.resolve(null),
   ]);
 
   const { items, usedCat, usedCom, endSlot } = interleaveStreams(cats, coms, startSlot, pageSize);
@@ -370,62 +482,108 @@ const getCategoryFeedService = async (user, { limit, cursor } = {}) => {
     if (exhausted) return null;
     if (used === 0) return incoming;
     const last = rows[used - 1];
-    return personalized
-      ? { s: String(last.score), id: String(last.id) }
-      : { f: new Date(last.fecha_creacion).toISOString(), id: String(last.id) };
+    return { f: new Date(last.fecha_creacion).toISOString(), id: String(last.id) };
   };
 
   const nextCat = nextStreamCursor(catActive, catCur, cats, usedCat);
   const nextCom = nextStreamCursor(comActive, comCur, coms, usedCom);
-  const hasMore = nextCat !== null || nextCom !== null;
-  const nextCursor = hasMore
-    ? encodeFeedCursor({ v: 2, m: mode, cat: nextCat, com: nextCom, slot: endSlot })
+  const nextCursor = (nextCat !== null || nextCom !== null)
+    ? encodeFeedCursor({ v: 2, m: 'c', cat: nextCat, com: nextCom, slot: endSlot })
     : null;
 
-  // Normalizar a la forma de card + discriminador `tipo`. score/fijada_hasta son
-  // internos del ranking, no parte del contrato de la card.
-  const out = items.map(({ kind, row }) => {
-    if (kind === 'categoria') {
-      delete row.score; delete row.fijada_hasta; row.fijada = false;
-      row.tipo = 'categoria';
+  const out = toCards(items);
+  return { items: pinned ? prependPinned(out, pinned) : out, nextCursor };
+};
+
+// Logueado: rankeado, cursor v3 'r'.
+const getRankedHomeFeed = async (user, pageSize, cur, visita) => {
+  let t0, seed, w;
+  if (cur) {
+    ({ t0, seed, w } = cur);
+  } else {
+    const v = decodeVisita(visita);
+    if (v) {
+      ({ t0, seed, w } = v);
     } else {
-      delete row.score;
-      row.tipo = 'comentario';
-    }
-    return row;
-  });
-
-  // Destacado del Home fijado por un admin: encabeza el feed y sólo en la
-  // primera página, FUERA del intercalado. Vive fuera del cursor (se excluye del
-  // stream correspondiente en el repo), así no duplica ni desajusta la
-  // paginación. Expira solo (fijada_hasta / fijado_home_hasta). Es un singleton
-  // COMPARTIDO: a lo sumo hay una categoría fijada O un comentario fijado, nunca
-  // ambos (lo garantizan las operaciones de pin), así que la categoría tiene
-  // prioridad y, si no hay, se busca el comentario.
-  if (!cursor) {
-    const pinnedCat = await getPinnedHomeCategory();
-    if (pinnedCat) {
-      delete pinnedCat.score;
-      delete pinnedCat.fijada_hasta;
-      pinnedCat.fijada = true;
-      pinnedCat.tipo = 'categoria';
-      // Defensa: el stream A ya la excluye, pero evitamos duplicarla igual.
-      const rest = out.filter(it => !(it.tipo === 'categoria' && String(it.id) === String(pinnedCat.id)));
-      return { items: [pinnedCat, ...rest], nextCursor };
-    }
-
-    const pinnedCom = await getPinnedHomeComment(user?.id ?? null);
-    if (pinnedCom) {
-      delete pinnedCom.score;
-      pinnedCom.fijado_home = true;
-      pinnedCom.tipo = 'comentario';
-      // Defensa: el stream B ya lo excluye, pero evitamos duplicarlo igual.
-      const rest = out.filter(it => !(it.tipo === 'comentario' && String(it.id) === String(pinnedCom.id)));
-      return { items: [pinnedCom, ...rest], nextCursor };
+      t0 = Math.floor(Date.now() / 1000);
+      seed = newFeedSeed();
+      w = await getFeedIntensity();
     }
   }
+  const perfil = perfilDesdeIntensidad(w);
+  const N = perfil.EXPLORA_CADA;
+  const p = { G: perfil.G, K: perfil.K, J: perfil.J, W_POP: perfil.W_POP, VENTANA_H: perfil.VENTANA_H };
 
-  return { items: out, nextCursor };
+  const fetchN = pageSize + 1;
+  const fresh = { k: 0, a: {}, e: {} };
+  const catCur = cur ? cur.cat : fresh; // null = stream agotado
+  const comCur = cur ? cur.com : fresh;
+  const startSlot = cur ? cur.slot : 0;
+  const opts = (c) => ({ limit: fetchN, t0, seed, p, afin: c.a, explora: c.e });
+
+  const [catRows, comRows, pinned] = await Promise.all([
+    catCur ? getRankedCategoryFeed(user.id, opts(catCur)) : Promise.resolve([]),
+    comCur ? getRankedHomeComments(user.id, opts(comCur)) : Promise.resolve([]),
+    cur ? Promise.resolve(null) : fetchPinned(user.id),
+  ]);
+
+  const split = (rows) => ({
+    afin: rows.filter(r => !r.explora),
+    expl: rows.filter(r => r.explora),
+  });
+  const catSplit = split(catRows);
+  const comSplit = split(comRows);
+  const catMerged = catCur ? mergeSubStreams(catSplit.afin, catSplit.expl, catCur.k, N, fetchN) : [];
+  const comMerged = comCur ? mergeSubStreams(comSplit.afin, comSplit.expl, comCur.k, N, fetchN) : [];
+
+  const { items, usedCat, usedCom, endSlot } = interleaveStreams(
+    catMerged.map(x => x.row), comMerged.map(x => x.row), startSlot, pageSize);
+
+  // Por sub-stream: null si estaba inactivo o se agotó; el entrante si esta
+  // página no consumió nada de él; si no, la key del último consumido.
+  const nextSub = (incoming, rows, consumed) => {
+    if (incoming === null) return null;
+    if (consumed.length === rows.length && rows.length < fetchN) return null;
+    if (consumed.length === 0) return incoming;
+    const last = consumed[consumed.length - 1];
+    return { s: String(last.score), id: String(last.id) };
+  };
+  const nextStream = (incoming, sp, merged, used) => {
+    if (incoming === null) return null;
+    const consumed = merged.slice(0, used);
+    const a = nextSub(incoming.a, sp.afin, consumed.filter(x => x.sub === 'a').map(x => x.row));
+    const e = nextSub(incoming.e, sp.expl, consumed.filter(x => x.sub === 'e').map(x => x.row));
+    if (a === null && e === null) return null;
+    return { k: incoming.k + used, a, e };
+  };
+
+  const nextCat = nextStream(catCur, catSplit, catMerged, usedCat);
+  const nextCom = nextStream(comCur, comSplit, comMerged, usedCom);
+  const nextCursor = (nextCat !== null || nextCom !== null)
+    ? encodeFeedCursor({ v: 3, m: 'r', t0, seed, w, slot: endSlot, cat: nextCat, com: nextCom })
+    : null;
+
+  const out = toCards(items);
+  return {
+    items: pinned ? prependPinned(out, pinned) : out,
+    nextCursor,
+    visita: encodeFeedCursor({ v: 3, t0, seed, w }),
+  };
+};
+
+const getCategoryFeedService = async (user, { limit, cursor, visita } = {}) => {
+  const pageSize = parsePageSize(limit);
+  const mode = user ? 'r' : 'c';
+
+  let cur = null;
+  if (cursor) {
+    cur = decodeFeedCursor(cursor);
+    if (cur.m !== mode) throw badCursor();
+  }
+
+  return user
+    ? getRankedHomeFeed(user, pageSize, cur, visita)
+    : getChronoHomeFeed(pageSize, cur, !cursor);
 };
 
 const getParticipantsByCategoryIdService = async (userId, categoriaId) => {
@@ -631,4 +789,5 @@ export { createCategoryService, getCategoriesService, getCategoryByIdService, de
   getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,
   pinCategoryHomeService, unpinCategoryHomeService,
-  subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService };
+  subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService,
+  mergeSubStreams };
