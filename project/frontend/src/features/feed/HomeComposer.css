@@ -1,0 +1,108 @@
+/* Compositor unificado del Home (HomeComposer). Solo tokens de tokens.css.
+   Reusa .create-topic-trigger/.ct-* (CreatePanel.css) para la barra cerrada y
+   .create-cat-panel* (feed.css) para el marco abierto. */
+
+/* ── ABIERTA: avatar + selector Comentario | Categoría ── */
+.hc-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px 0;
+}
+
+.hc-head-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Segmented control tipo pill: se diferencia a propósito de las .section-tabs
+   subrayadas (Editar | Vista previa) que aparecen dentro del formulario. */
+.hc-switch {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.hc-switch-opt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.hc-switch-opt:hover {
+  color: var(--text-primary);
+}
+
+.hc-switch-opt[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.hc-switch-opt:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* El formulario embebido (sin avatar propio) se alinea con el selector. */
+.home-composer .hc-pane .create-cat-panel-body {
+  padding-left: calc(14px + 36px + 12px);
+}
+
+@media (max-width: 1024px) {
+  .hc-head {
+    padding: 10px 12px 0;
+    gap: 10px;
+  }
+
+  .hc-avatar {
+    width: 28px;
+    height: 28px;
+    /* Centrado vertical contra el selector (más alto que el avatar). */
+    margin-top: 4px;
+  }
+
+  .hc-switch {
+    display: flex;
+    align-self: stretch;
+  }
+
+  .hc-switch-opt {
+    flex: 1;
+  }
+
+  .home-composer .hc-pane .create-cat-panel-body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  /* Footer alineado con el borde izquierdo del formulario. Selectores más
+     específicos a propósito: feed.css (padding 16px) y AttachmentPicker.css
+     (sangría de 46px) cargan después de responsive.css y le ganaban a sus
+     reglas mobile. */
+  .home-composer .hc-pane .create-cat-panel-footer {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .home-composer .hc-pane .attach-btn--indent {
+    margin-left: 0;
+  }
+}

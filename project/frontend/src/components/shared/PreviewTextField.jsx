@@ -34,7 +34,9 @@ export function PreviewTextField({
     const ta = textareaRef.current
     if (!ta) return
     ta.style.height = 'auto'
-    ta.style.height = `${ta.scrollHeight}px`
+    // Oculto (p. ej. pestaña inactiva del compositor del Home, con `hidden`):
+    // scrollHeight da 0; dejamos 'auto' en vez de fijar 0px y que quede colapsado.
+    if (ta.scrollHeight) ta.style.height = `${ta.scrollHeight}px`
   }, [value, tab])
 
   return (

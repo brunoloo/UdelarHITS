@@ -6,10 +6,10 @@ import { HOME_FEED_KEY, HOME_COUNT_KEY } from '../../api/queryKeys'
 import { CategoryCard } from '../../components/shared/CategoryCard'
 import { CommentCard } from '../../components/shared/CommentCard'
 import { PinHomeModal } from '../../components/shared/PinHomeModal'
-import { CreateCategoryPanel } from '../category/CreateCategoryPanel'
-import { CreateCommentPanel } from '../../components/shared/CreateCommentPanel'
+import { HomeComposer } from './HomeComposer'
 import { buildReplyFormData } from '../../utils/attachments'
 import { trackCreateComment } from '../../utils/analytics'
+import { homeFeedPath } from '../../utils/homeFeedPath'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../hooks/useToast'
 import { facultadBySigla } from '../../config/facultades'
@@ -125,8 +125,9 @@ export function FeedPage() {
     isFetchingNextPage,
   } = useInfiniteQuery({
     queryKey: HOME_FEED_KEY,
+    // Página 1 con datos en cache → reenvía la `visita` (ver utils/homeFeedPath).
     queryFn: ({ pageParam }) =>
-      apiGet(`/categories/feed?limit=${PAGE_SIZE}${pageParam ? `&cursor=${encodeURIComponent(pageParam)}` : ''}`),
+      apiGet(homeFeedPath(PAGE_SIZE, pageParam, queryClient.getQueryData(HOME_FEED_KEY))),
     initialPageParam: null,
     getNextPageParam: lastPage => lastPage.nextCursor ?? undefined,
     enabled: !isFiltering && !redirectToSearch,
@@ -190,10 +191,9 @@ export function FeedPage() {
 
   return (
     <div className="feed-page">
-      <CreateCategoryPanel />
-      {/* Publicar un comentario de Home (foro global). Mismo compositor que
-          CategoryPage; el comentario se mezcla en el feed de abajo. */}
-      <CreateCommentPanel scopeFields={{ es_home: true }} invalidateKey={HOME_FEED_KEY} invalidateKeys={[HOME_COUNT_KEY]} />
+      {/* Compositor unificado: comentario de Home (foro global, se mezcla en el
+          feed de abajo) o nueva categoría, en una sola caja con selector. */}
+      <HomeComposer />
 
       <div className="categories-feed">
         {isLoading ? (

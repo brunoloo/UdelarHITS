@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
@@ -13,7 +13,12 @@ import { AccordionField } from '../../components/shared/AccordionField'
 import { PreviewHint } from '../../components/shared/PreviewHint'
 import { descriptionSummary, tagsSummary } from './categoryFieldSummary'
 
-export function CreateCategoryPanel() {
+// Modo `embedded` (compositor unificado del Home, HomeComposer): sin trigger ni
+// <section>/borde/avatar propios — siempre abierto; el contenedor pone el marco y
+// escucha él mismo 'open-create-category'. No se resetea al montar (el contenedor
+// lo remonta con otra key para descartar lo escrito). `active` = pestaña visible
+// (foco al título); `onClose` avisa al cancelar o crear.
+export function CreateCategoryPanel({ embedded = false, active = true, onClose } = {}) {
   const { user } = useAuth()
   const { showToast } = useToast()
   const requireAuth = useRequireAuth()
@@ -28,6 +33,11 @@ export function CreateCategoryPanel() {
   // Acordeón: 'desc' | 'tags' | null. Solo uno abierto a la vez.
   const [openField, setOpenField] = useState(null)
   const togglePanel = p => setOpenField(cur => (cur === p ? null : p))
+  const tituloRef = useRef(null)
+
+  useEffect(() => {
+    if (embedded && active) tituloRef.current?.focus()
+  }, [embedded, active])
 
   const { data: availableTags = {} } = useQuery({
     queryKey: ['categories', 'etiquetas'],
@@ -51,6 +61,7 @@ export function CreateCategoryPanel() {
       // Mismo comportamiento que "crear tema": navegar directo a la categoría
       // recién creada (id que devuelve el backend).
       const newId = res?.data?.id
+      onClose?.()
       if (newId) navigate(`/category/${encodeURIComponent(newId)}`)
     },
     onError: err => {
@@ -70,15 +81,18 @@ export function CreateCategoryPanel() {
   function closePanel() {
     setPanelOpen(false)
     mutation.reset()
+    onClose?.()
   }
 
   // El empty state del feed filtrado ("Crear la primera") abre este panel a
   // través de un evento, ya que vive en la misma página pero en otro componente.
+  // Embebido: el listener lo maneja HomeComposer.
   useEffect(() => {
+    if (embedded) return
     function onOpen() { openPanel() }
     window.addEventListener('open-create-category', onOpen)
     return () => window.removeEventListener('open-create-category', onOpen)
-  }, [])
+  }, [embedded])
 
   function handleSubmit() {
     if (!requireAuth('Debes iniciar sesión para crear una categoría')) return
@@ -104,6 +118,92 @@ export function CreateCategoryPanel() {
     })
   }
 
+  const formContent = (
+    <div className="cc-form">
+      <div className="edit-field">
+        <div className="edit-field-label">
+          <span>Título</span>
+          <span className={`edit-field-counter${titulo.length >= 100 ? ' limit' : titulo.length >= 95 ? ' warn' : ''}`}>
+            {titulo.length} / 100
+          </span>
+        </div>
+        <input
+          type="text"
+          maxLength={100}
+          placeholder="Ej: Tips para aprobar cálculo"
+          value={titulo}
+          onChange={e => setTitulo(e.target.value)}
+          ref={tituloRef}
+          autoFocus={!embedded}
+        />
+      </div>
+      <AccordionField
+        open={openField === 'desc'}
+        onToggle={() => togglePanel('desc')}
+        title="Descripción"
+        summary={descriptionSummary(descripcion)}
+        hasContent={!!descripcion.trim()}
+      >
+        <CategoryDescriptionField
+          value={descripcion}
+          onChange={setDescripcion}
+          maxLength={1000}
+          placeholder="¿De qué va esta categoría?"
+        />
+      </AccordionField>
+      {/* Nota fuera del perímetro del panel de descripción. */}
+      {openField === 'desc' && <PreviewHint />}
+      <AccordionField
+        open={openField === 'tags'}
+        onToggle={() => togglePanel('tags')}
+        title="Etiquetas"
+        summary={tagsSummary(selectedTags)}
+        hasContent={selectedTags.length > 0}
+      >
+        <div className="edit-field">
+          <div className="edit-field-label">
+            <span />
+            <span className="edit-field-counter">{selectedTags.length} / 10</span>
+          </div>
+          <TagSelector
+            grouped={availableTags}
+            selected={selectedTags}
+            onChange={setSelectedTags}
+          />
+        </div>
+      </AccordionField>
+    </div>
+  )
+
+  const footer = (
+    <div className="create-cat-panel-footer">
+      <button
+        className="cc-cancel"
+        type="button"
+        onClick={closePanel}
+        disabled={mutation.isPending}
+      >
+        Cancelar
+      </button>
+      <button
+        className="save-btn"
+        type="button"
+        onClick={handleSubmit}
+      >
+        {mutation.isPending ? 'Creando...' : 'Crear'}
+      </button>
+    </div>
+  )
+
+  if (embedded) {
+    return (
+      <div className="hc-pane">
+        <div className="create-cat-panel-body">{formContent}</div>
+        {footer}
+      </div>
+    )
+  }
+
   return (
     <section className="create-cat" aria-label="Crear nueva categoría">
       {!panelOpen ? (
@@ -125,77 +225,9 @@ export function CreateCategoryPanel() {
             <span className="cc-avatar" aria-hidden="true">
               <UserAvatar url_imagen={user?.url_imagen} nickname={user?.nickname} size={36} />
             </span>
-            <div className="cc-form">
-              <div className="edit-field">
-                <div className="edit-field-label">
-                  <span>Título</span>
-                  <span className={`edit-field-counter${titulo.length >= 100 ? ' limit' : titulo.length >= 95 ? ' warn' : ''}`}>
-                    {titulo.length} / 100
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  maxLength={100}
-                  placeholder="Ej: Tips para aprobar cálculo"
-                  value={titulo}
-                  onChange={e => setTitulo(e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <AccordionField
-                open={openField === 'desc'}
-                onToggle={() => togglePanel('desc')}
-                title="Descripción"
-                summary={descriptionSummary(descripcion)}
-                hasContent={!!descripcion.trim()}
-              >
-                <CategoryDescriptionField
-                  value={descripcion}
-                  onChange={setDescripcion}
-                  maxLength={1000}
-                  placeholder="¿De qué va esta categoría?"
-                />
-              </AccordionField>
-              {/* Nota fuera del perímetro del panel de descripción. */}
-              {openField === 'desc' && <PreviewHint />}
-              <AccordionField
-                open={openField === 'tags'}
-                onToggle={() => togglePanel('tags')}
-                title="Etiquetas"
-                summary={tagsSummary(selectedTags)}
-                hasContent={selectedTags.length > 0}
-              >
-                <div className="edit-field">
-                  <div className="edit-field-label">
-                    <span />
-                    <span className="edit-field-counter">{selectedTags.length} / 10</span>
-                  </div>
-                  <TagSelector
-                    grouped={availableTags}
-                    selected={selectedTags}
-                    onChange={setSelectedTags}
-                  />
-                </div>
-              </AccordionField>
-            </div>
+            {formContent}
           </div>
-          <div className="create-cat-panel-footer">
-            <button
-              className="cc-cancel"
-              type="button"
-              onClick={closePanel}
-              disabled={mutation.isPending}
-            >
-              Cancelar
-            </button>
-            <button
-              className="save-btn"
-              type="button"
-              onClick={handleSubmit}
-            >
-              {mutation.isPending ? 'Creando...' : 'Crear'}
-            </button>
-          </div>
+          {footer}
         </div>
       )}
     </section>
