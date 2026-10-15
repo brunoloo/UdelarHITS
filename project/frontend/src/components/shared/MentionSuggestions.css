@@ -1,12 +1,14 @@
+/* Portal en <body> con position: fixed (ver MentionSuggestions.jsx): así no la
+   recorta ningún overflow de la card. Sin max-height ni scroll: son 5 ítems
+   como máximo y se muestran siempre completos. z-index por encima de modales
+   (200) y del drawer mobile (206). */
 .mention-suggestions {
-  position: absolute;
-  z-index: 10;
+  position: fixed;
+  z-index: 250;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: var(--shadow-2);
-  max-height: 200px;
-  overflow-y: auto;
   min-width: 220px;
   max-width: 320px;
 }

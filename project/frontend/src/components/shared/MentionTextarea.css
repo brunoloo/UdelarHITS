@@ -1,0 +1,39 @@
+/* ── Textarea con resaltado de @menciones (ver MentionTextarea.jsx) ──
+   El textarea va con texto transparente por encima; el espejo, por detrás,
+   pinta el mismo texto. Fuente, padding y bordes del espejo se copian en JS
+   con getComputedStyle (no se declara font-family acá). */
+.mention-ta {
+  position: relative;
+}
+
+.mention-ta > .mention-ta-mirror {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  pointer-events: none;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+  overflow: hidden;
+  border-color: transparent;
+  color: var(--text-primary);
+}
+
+/* Especificidad (0,2,1) por encima de `.edit-field textarea` y
+   `.inline-reply-input`: el fondo (si lo hay) lo pinta el espejo, que recibe
+   la misma className, así el texto resaltado queda visible. */
+.mention-ta > textarea.mention-ta-input {
+  position: relative;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text-primary);
+}
+
+.mention-ta > textarea.mention-ta-input::placeholder {
+  color: var(--text-muted);
+}
+
+.mention-hl {
+  color: var(--accent);
+}

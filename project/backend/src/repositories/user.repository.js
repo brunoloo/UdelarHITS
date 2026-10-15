@@ -393,6 +393,43 @@ const searchUsers = async (query, viewerId = null) => {
   return rows;
 };
 
+// Candidatos para el autocompletado de menciones (@nickname). Distinto de
+// searchUsers (que usa el chat): matchea SOLO por prefijo de nickname y, con
+// prefijo vacío, devuelve 5 usuarios al azar. Excluye al viewer y a los
+// bloqueos en ambos sentidos.
+const searchMentionCandidates = async (prefix, viewerId = null) => {
+  const params = [];
+  let prefixClause = '';
+  let order = 'ORDER BY random()';
+  if (prefix) {
+    params.push(`${escapeLike(prefix)}%`);
+    prefixClause = `AND nickname ILIKE $${params.length} ESCAPE '\\'`;
+    order = 'ORDER BY lower(nickname) ASC';
+  }
+  let viewerClause = '';
+  if (viewerId) {
+    params.push(viewerId);
+    const v = `$${params.length}`;
+    viewerClause = `AND id <> ${v}
+      AND id NOT IN (
+        SELECT bloqueado_id FROM bloqueo WHERE bloqueador_id = ${v}
+        UNION
+        SELECT bloqueador_id FROM bloqueo WHERE bloqueado_id = ${v}
+      )`;
+  }
+  const q = `
+    SELECT id, nickname, nombre, url_imagen
+    FROM usuario
+    WHERE estado = 'activo'
+      ${prefixClause}
+      ${viewerClause}
+    ${order}
+    LIMIT 5
+  `;
+  const { rows } = await pool.query(q, params);
+  return rows;
+};
+
 const updateBannerById = async (id, url_banner) => {
   const q = `
     UPDATE usuario SET url_banner = $1
@@ -705,12 +742,19 @@ const getLikesPrivacyById = async (id) => {
   return rows[0] || null;
 };
 
+// Cuentas activas (estado = 'activo'): la "N" de la rampa de intensidad del
+// feed del Home (services/feedRanking.service.js). Se cachea con TTL allá.
+const countActiveUsers = async () => {
+  const { rows } = await pool.query(`SELECT COUNT(*)::int AS n FROM usuario WHERE estado = 'activo'`);
+  return rows[0].n;
+};
+
 export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUsers,
   findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser, confirmNickname,
   getUserByNickname, getUserById, getUserIdByNickname, getCategoriesByUserId, getFollowersByUserId,
   getFollowingByUserId, updateUserById, findFacultadByNombre, getUserAvatarUrlById, updateUserEstado, updateUserEstadoById,
   deleteUserByNickname, followUser, unfollowUser, isFollowing, getFollowState,
   acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById,
-  searchUsers, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers,
+  searchUsers, searchMentionCandidates, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers,
   getMostActiveUsers, getRandomActiveUsers, getPasswordHashById, getAccountAuthById, updatePasswordHashById, deactivateUser, clearFollows, updatePrivacy, getPrivacyById,
-  updateLikesPrivacy, getLikesPrivacyById };
+  updateLikesPrivacy, getLikesPrivacyById, countActiveUsers };

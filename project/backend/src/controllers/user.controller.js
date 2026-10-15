@@ -6,7 +6,7 @@ import { requestRegistrationService, verifyRegistrationService, resendRegistrati
     banUserService, activeUserService, deleteUserService,
   followUserService, unfollowUserService, removeFollowerService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService, updateAvatarService,
-  searchUsersService, updateBannerService,
+  searchUsersService, searchMentionCandidatesService, updateBannerService,
   deleteBannerService, deleteAvatarService, getSuggestedUsersService, getMostActiveUsersService,
   changePasswordService, forgotPasswordService, verifyResetTokenService,
   resetPasswordService, deactivateAccountService, togglePrivacyService, toggleLikesPrivacyService,
@@ -381,6 +381,16 @@ const searchUsers = async (req, res) => {
   }
 };
 
+const getMentionCandidates = async (req, res) => {
+  try {
+    const { q } = req.query;
+    const users = await searchMentionCandidatesService(q, req.user?.id);
+    return res.status(200).json({ ok: true, data: users });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: 'Internal server error' });
+  }
+};
+
 const updateBanner = async (req, res) => {
   try {
     if (!req.file) {
@@ -580,5 +590,5 @@ const setupNickname = async (req, res) => {
 export { showMe, showMeFull, registerUser, verifyEmail, resendCode, loginUser, logoutUser, googleAuthCallback, setupNickname, getUsers,
   getUserProfile, updateMe, banUser,
   activeUser, deleteUser, followUser, unfollowUser, removeFollower, acceptFollowRequest, rejectFollowRequest, checkFollowing, updateAvatar,
-  searchUsers, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList,
+  searchUsers, getMentionCandidates, updateBanner, deleteBanner, deleteAvatar, getSuggestedUsersList, getMostActiveUsersList,
   changeUserPassword, forgotPassword, verifyResetToken, resetPassword, deactivateAccount, togglePrivacy, toggleLikesPrivacy }

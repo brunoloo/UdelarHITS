@@ -30,7 +30,7 @@ import {
   findByEmailForGoogleAuth, isNicknameTaken, createGoogleUser, confirmNickname,
   getCategoriesByUserId, getFollowersByUserId, getFollowingByUserId, updateUserById, findFacultadByNombre,
   getUserAvatarUrlById, updateUserEstado, deleteUserByNickname, followUser, unfollowUser,
-  isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, updateBannerById,
+  isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, searchMentionCandidates, updateBannerById,
   deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getRandomActiveUsers, getAccountAuthById,
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy,
   getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
@@ -902,6 +902,15 @@ const searchUsersService = async (query, viewerId = null) => {
   return await searchUsers(query.trim(), viewerId);
 };
 
+// Autocompletado de menciones: q vacío → 5 al azar; q con prefijo → nickname
+// que empieza con q. Input inválido (largo o caracteres fuera de los que puede
+// tener un nickname) → [] sin error, para que el dropdown simplemente se vacíe.
+const searchMentionCandidatesService = async (q, viewerId = null) => {
+  const prefix = (q ?? '').toString().trim();
+  if (prefix.length > 30 || !/^[\w.-]*$/.test(prefix)) return [];
+  return await searchMentionCandidates(prefix, viewerId);
+};
+
 const updateBannerService = async (userId, fileBuffer, mimetype) => {
   if (!fileBuffer) {
     const err = new Error('No se proporcionó ninguna imagen');
@@ -1323,7 +1332,7 @@ export { showMeService, showMeFullService, requestRegistrationService, verifyReg
   updateMeService, banUserService, activeUserService,
   deleteUserService, followUserService, unfollowUserService, removeFollowerService, isFollowingService,
   acceptFollowRequestService, rejectFollowRequestService,
-  updateAvatarService, searchUsersService, updateBannerService,
+  updateAvatarService, searchUsersService, searchMentionCandidatesService, updateBannerService,
   deleteAvatarService, deleteBannerService, getSuggestedUsersService, getMostActiveUsersService,
   changePasswordService, forgotPasswordService, verifyResetTokenService, resetPasswordService,
   deactivateAccountService, togglePrivacyService, toggleLikesPrivacyService };

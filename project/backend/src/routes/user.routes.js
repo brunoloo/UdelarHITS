@@ -4,7 +4,7 @@ import { uploadAvatar, uploadBanner } from '../config/multer.js';
 import { showMe, showMeFull, updateMe, getUsers, getUserProfile, changeUserPassword,
     banUser, activeUser, deleteUser, followUser, unfollowUser, removeFollower,
     acceptFollowRequest, rejectFollowRequest,
-    checkFollowing, updateAvatar, searchUsers, updateBanner, deleteBanner,
+    checkFollowing, updateAvatar, searchUsers, getMentionCandidates, updateBanner, deleteBanner,
     deleteAvatar, getSuggestedUsersList, getMostActiveUsersList, deactivateAccount, togglePrivacy, toggleLikesPrivacy } from '../controllers/user.controller.js';
 import { blockUser, unblockUser, getBlockedUsers } from '../controllers/block.controller.js';
 
@@ -12,6 +12,7 @@ const router = Router();
 
 router.get('/', protect, isAdmin, getUsers);                     // Obtener lista de usuarios
 router.get('/search', optionalAuth, searchUsers);                 // Búsqueda de usuarios
+router.get('/mentions', optionalAuth, getMentionCandidates);     // Autocompletado de @menciones
 router.get('/me', protect, showMe);                              // Obtener tu información de usuario (liviano: solo user)
 router.get('/me/full', protect, showMeFull);                     // Perfil propio completo (user + categorías + seguidores + seguidos)
 router.patch('/me', protect, updateMe);                          // Modificar datos personales
