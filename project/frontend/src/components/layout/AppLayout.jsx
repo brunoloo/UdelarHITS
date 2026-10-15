@@ -8,10 +8,12 @@ import { MobileDrawer } from './MobileDrawer'
 import { Sidebar } from './Sidebar'
 import { ScrollToTop } from './ScrollToTop'
 import { Skeleton } from '../ui/Skeleton'
+import { useTrackNavOrigin } from '../../hooks/useBackToHome'
 import './AppLayout.css'
 
 export function AppLayout() {
   const { user, loading } = useAuth()
+  useTrackNavOrigin()
 
   if (!loading && user && user.nickname_confirmado === false) {
     return <Navigate to="/setup-profile" replace />

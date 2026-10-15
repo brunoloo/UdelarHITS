@@ -23,7 +23,7 @@ import { TopicContentField } from './TopicContentField'
 import { PreviewHint } from '../../components/shared/PreviewHint'
 import { AccordionField } from '../../components/shared/AccordionField'
 import { descriptionSummary } from '../category/categoryFieldSummary'
-import { useGoHome } from '../../hooks/useGoHome'
+import { useBackToHome } from '../../hooks/useBackToHome'
 import '../category/category.css'
 import './topic.css'
 
@@ -39,7 +39,7 @@ export function TopicPage() {
   const { showToast } = useToast()
   const { isSaved, toggleSaved } = useSaved()
   const queryClient = useQueryClient()
-  const goHome = useGoHome()
+  const backToHome = useBackToHome()
 
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editCuerpo, setEditCuerpo] = useState('')
@@ -184,7 +184,7 @@ export function TopicPage() {
   return (
     <>
       <nav className="breadcrumb" aria-label="Navegación">
-        <Link to="/" onClick={goHome}>Inicio</Link>
+        <Link to="/" onClick={backToHome}>Inicio</Link>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M9 18l6-6-6-6"/>
         </svg>

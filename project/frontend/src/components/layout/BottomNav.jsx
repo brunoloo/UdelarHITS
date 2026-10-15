@@ -55,11 +55,12 @@ export function BottomNav() {
         <span>Alertas</span>
       </button>
 
-      <Link to="/chat" className={navClass('/chat')}>
+      <Link to="/recent" className={navClass('/recent')}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
         </svg>
-        <span>Chat</span>
+        <span>Recientes</span>
       </Link>
 
       <Link to="/popular" className={navClass('/popular')}>
