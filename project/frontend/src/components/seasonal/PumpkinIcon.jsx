@@ -12,6 +12,15 @@ const RIB_LEFT = 'M12 6.5c-1.8 2-2.5 4.8-2.5 7.5s.8 4.8 2.5 6'
 const RIB_RIGHT = 'M12 6.5c1.8 2 2.5 4.8 2.5 7.5s-.8 4.8-2.5 6'
 const STEM = 'M12 6.5V4.2c0-.9.6-1.6 1.6-1.9'
 
+// Cara de jack-o'-lantern (solo decorative). Los gajos se cortan arriba para
+// no cruzarse con los ojos y la boca.
+const RIB_LEFT_SHORT = 'M12 6.5c-1.2 1-1.9 2.2-2.2 3.4'
+const RIB_RIGHT_SHORT = 'M12 6.5c1.2 1 1.9 2.2 2.2 3.4'
+const EYE_LEFT = 'M7.2 12.9h2.9L8.65 10.3z'
+const EYE_RIGHT = 'M13.9 12.9h2.9l-1.45-2.6z'
+const NOSE = 'M11.1 14.8h1.8L12 13.4z'
+const MOUTH = 'M6.4 15.4l1.9.8.9-.8 1.2 1 1.6-.8 1.6.8 1.2-1 .9.8 1.9-.8c-.9 2.9-3 4.1-5.6 4.1s-4.7-1.2-5.6-4.1z'
+
 export function PumpkinIcon({ filled = false, decorative = false, size = 24, className }) {
   const classes = ['pumpkin-icon', decorative && 'pumpkin-icon--decorative', className]
     .filter(Boolean)
@@ -31,9 +40,13 @@ export function PumpkinIcon({ filled = false, decorative = false, size = 24, cla
         focusable="false"
       >
         <path className="pumpkin-body" d={BODY} />
-        <path className="pumpkin-rib" d={RIB_LEFT} fill="none" />
-        <path className="pumpkin-rib" d={RIB_RIGHT} fill="none" />
+        <path className="pumpkin-rib" d={RIB_LEFT_SHORT} fill="none" />
+        <path className="pumpkin-rib" d={RIB_RIGHT_SHORT} fill="none" />
         <path className="pumpkin-stem" d={STEM} fill="none" strokeWidth="2" />
+        <path className="pumpkin-face" d={EYE_LEFT} />
+        <path className="pumpkin-face" d={EYE_RIGHT} />
+        <path className="pumpkin-face" d={NOSE} />
+        <path className="pumpkin-face" d={MOUTH} />
       </svg>
     )
   }

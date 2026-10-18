@@ -16,6 +16,11 @@
   stroke: var(--season-pumpkin-stem);
 }
 
+.pumpkin-icon--decorative .pumpkin-face {
+  fill: var(--season-pumpkin-face);
+  stroke: none;
+}
+
 /* Capa fija de decoración de fondo (telarañas). No intercepta clicks.
    z-index -1 (y no 0 + .page con z-index 1): queda sobre el fondo del canvas
    (el background del body se propaga ahí porque html no tiene uno) pero
