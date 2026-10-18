@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   categoryDocument, topicDocument, commentDocument, profileDocument,
-  noindexDocument, sitemapDocument, robotsDocument,
+  noindexDocument, sitemapDocument, robotsDocument, aiCatalogDocument,
 } from '../controllers/seo.controller.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -15,6 +15,7 @@ const router = Router();
 // Archivos de crawleo servidos desde la raíz.
 router.get('/robots.txt', robotsDocument);
 router.get('/sitemap.xml', sitemapDocument);
+router.get('/.well-known/ai-catalog.json', aiCatalogDocument);
 
 // Rutas de detalle con metadata dinámica + slug (301 al canónico si no coincide).
 router.get('/category/:id', categoryDocument);

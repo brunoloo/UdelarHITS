@@ -266,9 +266,12 @@ app.use(SEORoutes);
 // sirvió express.static es que no existen, así que se devuelve un 404 explícito
 // en vez de caer en el index.html (que produciría un MIME incorrecto) o en el
 // error handler genérico (que respondería application/json y confundiría al
-// navegador con "Refused to apply style / 500").
+// navegador con "Refused to apply style / 500"). Lo mismo con /.well-known/*:
+// son archivos de descubrimiento que bots y auditorías (Lighthouse) piden por
+// convención; los que existen los sirve SEORoutes, y para el resto un 200 con
+// HTML se leería como un archivo presente pero roto.
 app.get('/{*path}', (req, res, next) => {
-  if (req.path.startsWith('/assets/')) {
+  if (req.path.startsWith('/assets/') || req.path.startsWith('/.well-known/')) {
     return res.status(404).json({ ok: false, message: 'Recurso no encontrado' });
   }
   // Mismo criterio que el static: el index.html referencia bundles hasheados
