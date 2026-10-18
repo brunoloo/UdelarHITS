@@ -1,0 +1,64 @@
+/* ── TEMAS ESTACIONALES ── (ver config/seasons.js)
+   Colores solo vía tokens --season-* de styles/tokens.css. */
+
+/* Calabaza decorativa (logo): a color. En modo like no aplica: hereda
+   currentColor del botón. */
+.pumpkin-icon--decorative .pumpkin-body {
+  fill: var(--season-pumpkin);
+  stroke: var(--season-pumpkin-dark);
+}
+
+.pumpkin-icon--decorative .pumpkin-rib {
+  stroke: var(--season-pumpkin-dark);
+}
+
+.pumpkin-icon--decorative .pumpkin-stem {
+  stroke: var(--season-pumpkin-stem);
+}
+
+/* Capa fija de decoración de fondo (telarañas). No intercepta clicks.
+   z-index -1 (y no 0 + .page con z-index 1): queda sobre el fondo del canvas
+   (el background del body se propaga ahí porque html no tiene uno) pero
+   debajo de todo el contenido, sin convertir .page en un contexto de
+   apilamiento que dejaría modales/overlays no-portaleados debajo del header. */
+.seasonal-decor {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  color: var(--season-web);
+  opacity: var(--season-web-opacity);
+  overflow: hidden;
+}
+
+.seasonal-decor-web {
+  position: absolute;
+  width: clamp(120px, 18vw, 220px);
+  height: auto;
+}
+
+/* Arriba a la izquierda, justo debajo del header (el leftnav es fijo y
+   va por encima en desktop; la esquina se ve en su borde y en mobile). */
+.seasonal-decor-web--top {
+  top: var(--header-h);
+  left: 0;
+}
+
+/* Abajo a la derecha, invertida para que "cuelgue" de la otra esquina. */
+.seasonal-decor-web--bottom {
+  bottom: 0;
+  right: 0;
+  transform: rotate(180deg);
+}
+
+/* Mismo breakpoint mobile que styles/responsive.css. */
+@media (max-width: 1024px) {
+  .seasonal-decor-web {
+    width: 110px;
+  }
+
+  /* En mobile la esquina inferior la ocupa el bottom-nav: no hay lugar. */
+  .seasonal-decor-web--bottom {
+    display: none;
+  }
+}

@@ -8,6 +8,8 @@ import { trackSearch } from '../../utils/analytics'
 import { SearchDropdown } from './SearchDropdown'
 import { SearchPill } from './SearchPill'
 import { MobileSearch } from './MobileSearch'
+import { PumpkinIcon } from '../seasonal/PumpkinIcon'
+import { useSeason } from '../../hooks/useSeason'
 import './Header.css'
 
 export function Header() {
@@ -15,6 +17,7 @@ export function Header() {
   const navigate = useNavigate()
   const location = useLocation()
   const goHome = useGoHome()
+  const season = useSeason()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
@@ -92,6 +95,7 @@ export function Header() {
 
       <Link to="/" className="logo" onClick={goHome}>
         Udelar<span>HITS</span>
+        {season === 'halloween' && <PumpkinIcon decorative className="logo-season-badge" />}
       </Link>
 
       <div className="search-bar" ref={searchRef}>

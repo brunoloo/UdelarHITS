@@ -5,6 +5,7 @@ import { useToast } from '../../hooks/useToast'
 import { apiPost } from '../../api/client'
 import { formatCount } from '../../utils/formatCount'
 import { trackLike } from '../../utils/analytics'
+import { LikeIcon } from './LikeIcon'
 import './ReactionButtons.css'
 
 /**
@@ -95,9 +96,7 @@ export function ReactionButtons({ contenidoId, likes, mi_reaccion }) {
         aria-pressed={state.mine}
         aria-label="Me gusta"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill={state.mine ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-        </svg>
+        <LikeIcon filled={state.mine} />
         <span title={`${state.likes} me gusta`}>{formatCount(state.likes)}</span>
       </button>
     </div>

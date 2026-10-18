@@ -79,6 +79,15 @@
   --skeleton-1: #f0f0f0;
   --skeleton-2: #e8e8e8;
 
+  /* ── Temas estacionales (ver config/seasons.js) ──── */
+  /* Fijos por temporada, no por tema: la calabaza es naranja en claro y en
+     oscuro. Solo la telaraña de fondo se invierte en la familia oscura. */
+  --season-pumpkin: #e8731a;
+  --season-pumpkin-dark: #b5520c;
+  --season-pumpkin-stem: #4a7a2c;
+  --season-web: #1a1a1a;
+  --season-web-opacity: 0.07;
+
   /* ── Layout ──────────────────────────────────────── */
   --radius: 8px;
   --header-h: 56px;
@@ -129,6 +138,10 @@
      sobre superficies oscuras (≥8:1 texto, ≥3:1 sobre toda superficie). */
   --badge-new-bg: #7ab0ff;
   --badge-new-fg: #0b1220;
+
+  /* Temas estacionales — telaraña clara sobre fondo oscuro. */
+  --season-web: #ffffff;
+  --season-web-opacity: 0.06;
 
   /* ── Sombras (para fondo oscuro) ─────────────────── */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30);
