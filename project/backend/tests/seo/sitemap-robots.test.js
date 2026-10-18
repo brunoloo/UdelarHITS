@@ -92,3 +92,28 @@ describe('GET /robots.txt', () => {
     expect(isAbsoluteHttpUrl(sitemapUrl)).toBe(true);
   });
 });
+
+// ─── /.well-known/ai-catalog.json (ARD, audit "ard-schema" de Lighthouse) ───
+
+describe('GET /.well-known/ai-catalog.json', () => {
+  test('JSON válido según el schema ARD 1.0 (host + entries)', async () => {
+    const res = await request(app).get('/.well-known/ai-catalog.json');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/application\/json/);
+
+    // El schema ARD es estricto (additionalProperties: false): solo estas claves.
+    expect(Object.keys(res.body).sort()).toEqual(['entries', 'host', 'specVersion']);
+    expect(res.body.specVersion).toBe('1.0');
+    expect(Array.isArray(res.body.entries)).toBe(true);
+    expect(res.body.host.displayName).toBeTruthy();
+    expect(isAbsoluteHttpUrl(res.body.host.documentationUrl)).toBe(true);
+    expect(res.body.host.documentationUrl).toBe(`${SITE_URL}/llms.txt`);
+    expect(isAbsoluteHttpUrl(res.body.host.logoUrl)).toBe(true);
+  });
+
+  test('otro /.well-known/* inexistente es 404, no el index.html de la SPA', async () => {
+    const res = await request(app).get('/.well-known/no-existe.json');
+    expect(res.status).toBe(404);
+    expect(res.text).not.toMatch(/<!doctype html/i);
+  });
+});

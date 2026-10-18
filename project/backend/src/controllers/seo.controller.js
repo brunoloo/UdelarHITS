@@ -1,7 +1,7 @@
 import { loadBaseHtml, injectSeoMeta, SITE_URL } from '../utils/seo.js';
 import {
   resolveCategorySeo, resolveTopicSeo, resolveCommentSeo, resolveProfileSeo,
-  buildSitemapXml, buildRobotsTxt,
+  buildSitemapXml, buildRobotsTxt, buildAiCatalog,
 } from '../services/seo.service.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -93,4 +93,9 @@ export function robotsDocument(_req, res) {
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=3600');
   return res.status(200).send(buildRobotsTxt());
+}
+
+export function aiCatalogDocument(_req, res) {
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  return res.status(200).json(buildAiCatalog());
 }

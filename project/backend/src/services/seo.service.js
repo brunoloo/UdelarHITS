@@ -281,4 +281,21 @@ export function buildRobotsTxt() {
   ].join('\n');
 }
 
+// Manifiesto ARD (Agentic Resource Discovery) en /.well-known/ai-catalog.json,
+// lo valida el audit "ard-schema" de Lighthouse/PageSpeed. El sitio no publica
+// agentes ni servidores MCP, así que `entries` va vacío (el schema lo permite);
+// el resumen para LLMs vive en /llms.txt, enlazado como documentación del host.
+// Spec: https://agenticresourcediscovery.org/spec/
+export function buildAiCatalog() {
+  return {
+    specVersion: '1.0',
+    host: {
+      displayName: SITE_NAME,
+      documentationUrl: `${SITE_URL}/llms.txt`,
+      logoUrl: `${SITE_URL}/android-chrome-512x512.png`,
+    },
+    entries: [],
+  };
+}
+
 export { slugify };
