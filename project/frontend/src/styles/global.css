@@ -7,6 +7,14 @@ body {
   min-height: 100vh;
 }
 
+/* Sin zoom por doble tap (iOS/Android): `manipulation` deja pan y pinch pero
+   no el doble tap, y de paso saca la demora de ~300ms del click. touch-action
+   no se hereda, por eso va en todos los elementos. El pinch se bloquea en JS
+   (utils/preventZoom.js) y el zoom al enfocar inputs, con el viewport. */
+* {
+  touch-action: manipulation;
+}
+
 /* Disable all transitions during theme switch to avoid color lag */
 .no-transitions * {
   transition-duration: 0s !important;

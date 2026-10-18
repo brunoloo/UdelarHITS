@@ -97,6 +97,8 @@
   html, body, #root {
     overflow-x: hidden;
     max-width: 100vw;
+    /* Sin rebote elástico lateral en iOS (la página "se corre" y vuelve). */
+    overscroll-behavior-x: none;
   }
 
   /* En desktop el modal ancho sigue la columna de contenido (calc(100vw - 724px) en
@@ -294,9 +296,12 @@
   }
 
   /* ── TABS (category + recent) ── */
+  /* overscroll-behavior-x: sin rebote elástico al arrastrar las tabs
+     (aunque entren todas, iOS dejaba "moverlas" y volvían a su lugar). */
   .section-tabs {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: none;
     scrollbar-width: none;
     padding: 0;
   }
@@ -314,6 +319,7 @@
   .recent-tabs {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: none;
     scrollbar-width: none;
   }
 
