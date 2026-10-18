@@ -38,14 +38,14 @@
 .logo span { color: var(--accent); }
 
 /* Insignia estacional (calabaza en Halloween, ver config/seasons.js): pegada
-   abajo a la derecha de "HITS", tapando un poco la S. En em para que escale
+   abajo a la derecha de "HITS", apenas rozando la S. En em para que escale
    con el font-size del logo (20px desktop, 18px mobile). */
 .logo { position: relative; }
 
 .logo-season-badge {
   position: absolute;
-  right: -0.6em;
-  bottom: -0.2em;
+  right: -0.85em;
+  bottom: -0.25em;
   width: 1.15em;
   height: 1.15em;
   transform: rotate(-8deg);
