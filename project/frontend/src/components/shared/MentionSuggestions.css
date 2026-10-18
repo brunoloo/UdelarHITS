@@ -1,9 +1,11 @@
 /* Portal en <body> con position: fixed (ver MentionSuggestions.jsx): así no la
-   recorta ningún overflow de la card. Sin max-height ni scroll: son 5 ítems
-   como máximo y se muestran siempre completos. z-index por encima de modales
-   (200) y del drawer mobile (206). */
+   recorta ningún overflow de la card. Son 5 ítems como máximo: solo si no
+   entran en la franja visible (header / barra inferior / teclado) el JS les
+   pone max-height y scrollean. z-index por encima de modales (200) y del
+   drawer mobile (206); por eso el JS la oculta si el "@" queda bajo el header. */
 .mention-suggestions {
   position: fixed;
+  overflow-y: auto;
   z-index: 250;
   background: var(--surface);
   border: 1px solid var(--border);

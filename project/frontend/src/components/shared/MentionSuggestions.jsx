@@ -21,6 +21,27 @@ function useDebouncedValue(value, delay) {
 const GUTTER = 16
 const GAP = 4
 
+// Franja vertical del viewport donde la lista puede mostrarse sin tapar nada
+// fijo: debajo del header, arriba de la barra inferior mobile (si se ve) y
+// dentro del visual viewport (en mobile el teclado lo achica sin cambiar
+// window.innerHeight).
+function visibleBand() {
+  let top = 0
+  let bottom = window.innerHeight
+  const vv = window.visualViewport
+  if (vv) {
+    top = vv.offsetTop
+    bottom = vv.offsetTop + vv.height
+  }
+  const header = document.querySelector('.site-header')
+  if (header) top = Math.max(top, header.getBoundingClientRect().bottom)
+  const nav = document.querySelector('.bottom-nav')
+  // Oculta en desktop (display: none) mide 0 de alto y no cuenta.
+  const navRect = nav?.getBoundingClientRect()
+  if (navRect?.height) bottom = Math.min(bottom, navRect.top)
+  return { top, bottom }
+}
+
 export const MentionSuggestions = forwardRef(function MentionSuggestions({ query, anchorRef, getAnchorRect, onSelect, onClose }, ref) {
   const debouncedQ = useDebouncedValue(query, 150)
   const { data, isLoading } = useQuery({
@@ -40,20 +61,43 @@ export const MentionSuggestions = forwardRef(function MentionSuggestions({ query
   const listRef = useRef(null)
   const listboxId = useId()
 
+  // Dirección elegida en el último placement: se mantiene mientras siga
+  // entrando, así la lista no salta de abajo a arriba en medio de un scroll.
+  const upwardRef = useRef(false)
+
   // Posición fija relativa al viewport (portal en body): abre abajo de la
-  // línea del "@" (o del textarea si no se puede medir) o arriba si no entra,
-  // según el alto medido de la lista.
+  // línea del "@" (o del textarea si no se puede medir) o arriba si no entra.
+  // Se acota a la franja realmente visible (bajo el header, sobre la barra
+  // inferior y el teclado mobile): si el "@" sale de esa franja al scrollear,
+  // la lista se oculta en vez de pintarse encima del header (z-index 250).
   useLayoutEffect(() => {
     function place() {
       const el = listRef.current
       const anchor = anchorRef?.current
       if (!el || !anchor) return
       const rect = getAnchorRect?.() || anchor.getBoundingClientRect()
+      const { top: bandTop, bottom: bandBottom } = visibleBand()
+      if (rect.bottom < bandTop || rect.top > bandBottom) {
+        el.style.visibility = 'hidden'
+        return
+      }
+      el.style.visibility = ''
+      el.style.maxHeight = ''
       const h = el.offsetHeight
       const w = el.offsetWidth
-      const spaceBelow = window.innerHeight - rect.bottom
-      const openUpward = spaceBelow < h + GAP && rect.top > spaceBelow
-      if (openUpward) {
+      const spaceBelow = bandBottom - rect.bottom - GAP
+      const spaceAbove = rect.top - bandTop - GAP
+      let upward = upwardRef.current
+      if ((upward ? spaceAbove : spaceBelow) < h) {
+        upward = upward
+          ? !(spaceBelow >= h || spaceBelow > spaceAbove)
+          : spaceAbove >= h || spaceAbove > spaceBelow
+      }
+      upwardRef.current = upward
+      // Si no entra entera en ningún lado, scrollea dentro de lo disponible.
+      const space = upward ? spaceAbove : spaceBelow
+      if (space < h) el.style.maxHeight = `${Math.max(0, space)}px`
+      if (upward) {
         el.style.top = 'auto'
         el.style.bottom = `${window.innerHeight - rect.top + GAP}px`
       } else {
@@ -63,16 +107,22 @@ export const MentionSuggestions = forwardRef(function MentionSuggestions({ query
       el.style.left = `${Math.max(GUTTER, Math.min(rect.left, window.innerWidth - w - GUTTER))}px`
     }
     place()
+    const vv = window.visualViewport
     window.addEventListener('scroll', place, true)
     window.addEventListener('resize', place)
+    vv?.addEventListener('scroll', place)
+    vv?.addEventListener('resize', place)
     return () => {
       window.removeEventListener('scroll', place, true)
       window.removeEventListener('resize', place)
+      vv?.removeEventListener('scroll', place)
+      vv?.removeEventListener('resize', place)
     }
   }, [anchorRef, getAnchorRect, query, results, isLoading])
 
   useImperativeHandle(ref, () => function handleKeyDown(e) {
-    if (results.length === 0) return false
+    // Oculta por scroll: las teclas (Enter incluido) vuelven al textarea.
+    if (results.length === 0 || listRef.current?.style.visibility === 'hidden') return false
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setSelectedIdx(i => Math.min(i + 1, results.length - 1))
