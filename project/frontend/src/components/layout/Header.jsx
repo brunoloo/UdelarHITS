@@ -95,7 +95,7 @@ export function Header() {
 
       <Link to="/" className="logo" onClick={goHome}>
         Udelar<span>HITS</span>
-        {season === 'halloween' && <PumpkinIcon decorative className="logo-season-badge" />}
+        {season === 'halloween' && <PumpkinIcon className="logo-season-badge" />}
       </Link>
 
       <div className="search-bar" ref={searchRef}>

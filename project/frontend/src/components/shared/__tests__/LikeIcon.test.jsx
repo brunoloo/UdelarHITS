@@ -3,10 +3,6 @@ import { render } from '@testing-library/react'
 import { LikeIcon } from '../LikeIcon'
 import { SeasonContext } from '../../../context/seasonCtx'
 
-function renderWithSeason(ui, season) {
-  return render(<SeasonContext.Provider value={season}>{ui}</SeasonContext.Provider>)
-}
-
 describe('LikeIcon', () => {
   it('sin provider muestra el pulgar', () => {
     const { container } = render(<LikeIcon />)
@@ -16,37 +12,20 @@ describe('LikeIcon', () => {
     expect(container.querySelector('.pumpkin-icon')).toBeNull()
   })
 
-  it('en Halloween muestra la calabaza', () => {
-    const { container } = renderWithSeason(<LikeIcon />, 'halloween')
-    expect(container.querySelector('.pumpkin-icon')).not.toBeNull()
-    expect(container.querySelector('.pumpkin-icon--decorative')).toBeNull()
+  it('en Halloween sigue siendo el pulgar', () => {
+    const { container } = render(
+      <SeasonContext.Provider value="halloween">
+        <LikeIcon />
+      </SeasonContext.Provider>,
+    )
+    expect(container.querySelector('.pumpkin-icon')).toBeNull()
   })
 
-  it('filled cambia el relleno (pulgar y calabaza)', () => {
+  it('filled cambia el relleno', () => {
     const thumbOff = render(<LikeIcon />).container.querySelector('svg')
     const thumbOn = render(<LikeIcon filled />).container.querySelector('svg')
     expect(thumbOff.getAttribute('fill')).toBe('none')
     expect(thumbOn.getAttribute('fill')).toBe('currentColor')
-
-    const pumpOff = renderWithSeason(<LikeIcon />, 'halloween').container.querySelector('.pumpkin-body')
-    const pumpOn = renderWithSeason(<LikeIcon filled />, 'halloween').container.querySelector('.pumpkin-body')
-    expect(pumpOff.getAttribute('fill')).toBe('none')
-    expect(pumpOn.getAttribute('fill')).toBe('currentColor')
-  })
-
-  it('calabaza con like: cara recortada con máscara de id único por instancia', () => {
-    const { container } = renderWithSeason(
-      <>
-        <LikeIcon filled />
-        <LikeIcon filled />
-      </>,
-      'halloween',
-    )
-    const masks = [...container.querySelectorAll('mask')]
-    expect(masks).toHaveLength(2)
-    expect(masks[0].id).not.toBe(masks[1].id)
-    const bodies = container.querySelectorAll('.pumpkin-body')
-    bodies.forEach((body, i) => expect(body.getAttribute('mask')).toBe(`url(#${masks[i].id})`))
   })
 
   it('respeta size', () => {
