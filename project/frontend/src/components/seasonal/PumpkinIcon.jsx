@@ -1,8 +1,11 @@
+import { useId } from 'react'
 import './seasonal.css'
 
 // Calabaza 24x24 en dos modos:
 //  - like (default): monocromo con currentColor, mismo contrato que el pulgar
 //    (contorno si no hay like, relleno si `filled`). Hereda el color del botón.
+//    Rellena, la cara va recortada con una máscara (se ve el fondo a través):
+//    una silueta lisa con tallo se confundía con una manzana.
 //  - decorative: a color, con los tokens --season-pumpkin* vía clases de
 //    seasonal.css (nada de colores en el SVG). Se usa en el logo del Header.
 // Siempre aria-hidden: el significado lo da el contenedor (aria-label del
@@ -22,6 +25,8 @@ const NOSE = 'M11.1 14.8h1.8L12 13.4z'
 const MOUTH = 'M6.4 15.4l1.9.8.9-.8 1.2 1 1.6-.8 1.6.8 1.2-1 .9.8 1.9-.8c-.9 2.9-3 4.1-5.6 4.1s-4.7-1.2-5.6-4.1z'
 
 export function PumpkinIcon({ filled = false, decorative = false, size = 24, className }) {
+  // Id único por instancia para la máscara (hay muchos likes en una página).
+  const maskId = `pumpkin-face-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
   const classes = ['pumpkin-icon', decorative && 'pumpkin-icon--decorative', className]
     .filter(Boolean)
     .join(' ')
@@ -65,9 +70,29 @@ export function PumpkinIcon({ filled = false, decorative = false, size = 24, cla
       aria-hidden="true"
       focusable="false"
     >
-      <path className="pumpkin-body" d={BODY} fill={filled ? 'currentColor' : 'none'} />
-      <path d={RIB_LEFT} />
-      <path d={RIB_RIGHT} />
+      {filled ? (
+        <>
+          <defs>
+            <mask id={maskId}>
+              <rect width="24" height="24" fill="white" />
+              <path d={RIB_LEFT_SHORT} stroke="black" strokeWidth="1.6" />
+              <path d={RIB_RIGHT_SHORT} stroke="black" strokeWidth="1.6" />
+              <g fill="black" stroke="none">
+                <path d={EYE_LEFT} />
+                <path d={EYE_RIGHT} />
+                <path d={MOUTH} />
+              </g>
+            </mask>
+          </defs>
+          <path className="pumpkin-body" d={BODY} fill="currentColor" mask={`url(#${maskId})`} />
+        </>
+      ) : (
+        <>
+          <path className="pumpkin-body" d={BODY} fill="none" />
+          <path d={RIB_LEFT} />
+          <path d={RIB_RIGHT} />
+        </>
+      )}
       <path d={STEM} />
     </svg>
   )

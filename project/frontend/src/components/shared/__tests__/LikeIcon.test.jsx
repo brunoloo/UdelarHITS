@@ -34,6 +34,21 @@ describe('LikeIcon', () => {
     expect(pumpOn.getAttribute('fill')).toBe('currentColor')
   })
 
+  it('calabaza con like: cara recortada con máscara de id único por instancia', () => {
+    const { container } = renderWithSeason(
+      <>
+        <LikeIcon filled />
+        <LikeIcon filled />
+      </>,
+      'halloween',
+    )
+    const masks = [...container.querySelectorAll('mask')]
+    expect(masks).toHaveLength(2)
+    expect(masks[0].id).not.toBe(masks[1].id)
+    const bodies = container.querySelectorAll('.pumpkin-body')
+    bodies.forEach((body, i) => expect(body.getAttribute('mask')).toBe(`url(#${masks[i].id})`))
+  })
+
   it('respeta size', () => {
     const svg = render(<LikeIcon size={18} />).container.querySelector('svg')
     expect(svg.getAttribute('width')).toBe('18')
