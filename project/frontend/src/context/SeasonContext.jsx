@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { resolveSeason } from '../config/seasons'
-import { SeasonContext } from './seasonContext'
+import { SeasonContext } from './seasonCtx'
 
 // sessionStorage puede tirar solo con accederlo (storage bloqueado); en ese
 // caso seguimos sin override persistido.

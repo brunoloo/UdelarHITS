@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
 import { SeasonalDecor } from '../SeasonalDecor'
-import { SeasonContext } from '../../../context/seasonContext'
+import { SeasonContext } from '../../../context/seasonCtx'
 
 describe('SeasonalDecor', () => {
   it('sin temporada no renderiza nada', () => {

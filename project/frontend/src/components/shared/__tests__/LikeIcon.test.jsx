@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
 import { LikeIcon } from '../LikeIcon'
-import { SeasonContext } from '../../../context/seasonContext'
+import { SeasonContext } from '../../../context/seasonCtx'
 
 function renderWithSeason(ui, season) {
   return render(<SeasonContext.Provider value={season}>{ui}</SeasonContext.Provider>)
