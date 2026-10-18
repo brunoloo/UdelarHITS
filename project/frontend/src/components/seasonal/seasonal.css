@@ -37,11 +37,11 @@
   height: auto;
 }
 
-/* Arriba a la izquierda, justo debajo del header (el leftnav es fijo y
-   va por encima en desktop; la esquina se ve en su borde y en mobile). */
+/* Arriba a la izquierda, justo debajo del header y al lado del leftnav
+   (fijo, 200px, fondo opaco: si arrancara en left 0 lo taparía entero). */
 .seasonal-decor-web--top {
   top: var(--header-h);
-  left: 0;
+  left: 200px;
 }
 
 /* Abajo a la derecha, invertida para que "cuelgue" de la otra esquina. */
@@ -55,6 +55,11 @@
 @media (max-width: 1024px) {
   .seasonal-decor-web {
     width: 110px;
+  }
+
+  /* Sin leftnav en mobile: la telaraña vuelve a la esquina. */
+  .seasonal-decor-web--top {
+    left: 0;
   }
 
   /* En mobile la esquina inferior la ocupa el bottom-nav: no hay lugar. */
