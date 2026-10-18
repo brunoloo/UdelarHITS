@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { SeasonProvider } from './context/SeasonContext'
 import { ToastProvider } from './context/ToastContext'
 import { SocketProvider } from './context/SocketContext'
 import { PushProvider } from './context/PushContext'
@@ -33,9 +34,11 @@ function App() {
               dentro de AuthProvider, al lado de SocketProvider. */}
           <PushProvider>
             <ThemeProvider>
-              <ToastProvider>
-                <RouterProvider router={router} />
-              </ToastProvider>
+              <SeasonProvider>
+                <ToastProvider>
+                  <RouterProvider router={router} />
+                </ToastProvider>
+              </SeasonProvider>
             </ThemeProvider>
           </PushProvider>
         </SocketProvider>

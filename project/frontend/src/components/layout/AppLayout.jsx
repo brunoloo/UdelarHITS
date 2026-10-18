@@ -7,6 +7,7 @@ import { BottomNav } from './BottomNav'
 import { MobileDrawer } from './MobileDrawer'
 import { Sidebar } from './Sidebar'
 import { ScrollToTop } from './ScrollToTop'
+import { SeasonalDecor } from '../seasonal/SeasonalDecor'
 import { Skeleton } from '../ui/Skeleton'
 import { useTrackNavOrigin } from '../../hooks/useBackToHome'
 import './AppLayout.css'
@@ -21,6 +22,7 @@ export function AppLayout() {
 
   return (
     <>
+      <SeasonalDecor />
       <ScrollToTop />
       <Header />
       <LeftNav />
