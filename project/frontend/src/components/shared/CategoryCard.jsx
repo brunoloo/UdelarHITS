@@ -13,6 +13,7 @@ import { LikeIcon } from './LikeIcon'
 import { timeAgo } from '../../utils/timeAgo'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { formatCount } from '../../utils/formatCount'
+import { categoryStats } from '../../utils/categoryStats'
 import './CategoryCard.css'
 import './CommentCard.css' // Reutiliza los estilos de .comment-card
 
@@ -93,10 +94,12 @@ export function CategoryCard({ category, priority = false }) {
   const allTags = parseEtiquetas(etiquetas)
   const visibleTags = allTags.slice(0, 5)
   const extraCount = allTags.length - 5
-  const count = Number(contador_temas) || 0
-  const commentCount = Number(contador_comentarios) || 0
+  const stats = categoryStats(contador_temas, contador_comentarios)
   const catUrl = `/category/${encodeURIComponent(id)}`
   const navigate = useNavigate()
+  // Sin temas, el preview del comentario ya cuenta la última actividad.
+  const showEmptyHint = !ultimo_tema && !ultimo_comentario
+  const hasFoot = visibleTags.length > 0 || !!ultimo_tema || showEmptyHint
 
   // <div> con onClick en vez de <Link>, para no anidar <a> dentro de <a>: la descripción y el preview ya linkean URLs.
   const goTo = (url) => (e) => {
@@ -118,11 +121,7 @@ export function CategoryCard({ category, priority = false }) {
             <CategoryIcon name={icono} size={20} />
           </div>
           <div className="category-title">{titulo}</div>
-          <div className="category-stats">
-            {count} {count === 1 ? 'tema' : 'temas'}
-            {' · '}
-            {commentCount} {commentCount === 1 ? 'comentario' : 'comentarios'}
-          </div>
+          {stats && <div className="category-stats">{stats}</div>}
         </div>
         {descripcion && (
           <div className="category-description">
@@ -137,7 +136,7 @@ export function CategoryCard({ category, priority = false }) {
         </div>
       )}
 
-      <div className="category-foot-link" onClick={goTo(catUrl)}>
+      {hasFoot && <div className="category-foot-link" onClick={goTo(catUrl)}>
         {visibleTags.length > 0 && (
           <div className="category-footer">
             {visibleTags.map(tag => <Tag key={tag} label={tag} />)}
@@ -152,12 +151,12 @@ export function CategoryCard({ category, priority = false }) {
               por {ultimo_tema.autor} · {timeAgo(ultimo_tema.fecha)}
             </span>
           </div>
-        ) : (
+        ) : showEmptyHint && (
           <div className="last-activity no-activity">
-            Todavía no hay temas publicados
+            Todavía sin publicaciones. ¡Sé el primero en comentar!
           </div>
         )}
-      </div>
+      </div>}
     </div>
   )
 }

@@ -9,6 +9,7 @@ import { buildReplyFormData } from '../../utils/attachments'
 import { useToast } from '../../hooks/useToast'
 import { Tag } from '../../components/ui/Tag'
 import { timeAgo } from '../../utils/timeAgo'
+import { categoryStats } from '../../utils/categoryStats'
 import './feed.css'
 import './recent.css'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
@@ -30,8 +31,7 @@ function RecentCategoryCard({ category }) {
   const allEtiquetas = parseEtiquetas(category.etiquetas)
   const etiquetas = allEtiquetas.slice(0, 5)
   const extraCount = allEtiquetas.length - 5
-  const count = Number(category.contador_temas) || 0
-  const commentCount = Number(category.contador_comentarios) || 0
+  const stats = categoryStats(category.contador_temas, category.contador_comentarios)
   // Cuenta inactiva: se anonimiza; las baneadas siguen públicas.
   const author = category.autor_estado === 'inactivo'
     ? 'Usuario inactivo'
@@ -43,9 +43,7 @@ function RecentCategoryCard({ category }) {
         <span className="recent-cat-meta">
           {timeAgo(category.fecha_creacion)}{author ? ` · por ${author}` : ''}
         </span>
-        <span className="recent-cat-count">
-          {count} {count === 1 ? 'tema' : 'temas'} · {commentCount} {commentCount === 1 ? 'comentario' : 'comentarios'}
-        </span>
+        {stats && <span className="recent-cat-count">{stats}</span>}
       </div>
       <div className="recent-cat-title">{category.titulo}</div>
       {category.descripcion && <div className="recent-cat-desc">{category.descripcion}</div>}

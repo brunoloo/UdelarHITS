@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { apiGet } from '../../api/client'
 import { HOME_COUNT_KEY } from '../../api/queryKeys'
 import { resolveAutor } from '../../utils/resolveAutor'
+import { categoryStats } from '../../utils/categoryStats'
 import { FacultyBadge } from '../shared/FacultyBadge'
 import { UserAvatar } from '../shared/UserAvatar'
 import { FACULTADES, facultadBySigla } from '../../config/facultades'
@@ -131,7 +132,7 @@ function NewCatsCard({ categories }) {
             >
               <span className="sidebar-cat-title">{c.titulo}</span>
               <span className="sidebar-cat-count">
-                {Number(c.contador_temas) || 0} temas · {Number(c.contador_comentarios) || 0} comentarios
+                {categoryStats(c.contador_temas, c.contador_comentarios)}
               </span>
             </Link>
           ))
