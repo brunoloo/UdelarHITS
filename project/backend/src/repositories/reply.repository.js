@@ -493,18 +493,28 @@ const homeCommentCard = (viewer) => `
   (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano, 'estado', a.estado) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
   ${encuestaSubquery(viewer)} AS encuesta`;
 
-// Cursor compuesto (fecha, id) para no repetir ni saltar filas en empates de fecha.
+// Ordenado por última actividad (el comentario o su respuesta directa más reciente):
+// un hilo con respuestas nuevas vuelve arriba. Cursor compuesto (fecha, id) para no
+// repetir ni saltar filas en empates de fecha.
 const getHomeCommentsChrono = async ({ limit, cursorFecha = null, cursorId = null, viewerId = null }) => {
   const q = `
-    SELECT ${homeCommentCard('$4')}
-    FROM comentario com
-    JOIN contenido con ON con.id = com.contenido_id
-    JOIN usuario u ON u.id = con.autor_id
-    WHERE com.es_home = TRUE AND com.comentario_padre_id IS NULL AND com.estado = 'visible'
-      AND (com.fijado_home_hasta IS NULL OR com.fijado_home_hasta <= NOW())
-      AND ($2::timestamptz IS NULL
-       OR (con.fecha_creacion, com.contenido_id) < ($2::timestamptz, $3::bigint))
-    ORDER BY con.fecha_creacion DESC, com.contenido_id DESC
+    SELECT card.* FROM (
+      SELECT ${homeCommentCard('$4')},
+        GREATEST(con.fecha_creacion, (
+          SELECT MAX(ccon.fecha_creacion)
+          FROM comentario child
+          JOIN contenido ccon ON ccon.id = child.contenido_id
+          WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible'
+        )) AS ultima_actividad
+      FROM comentario com
+      JOIN contenido con ON con.id = com.contenido_id
+      JOIN usuario u ON u.id = con.autor_id
+      WHERE com.es_home = TRUE AND com.comentario_padre_id IS NULL AND com.estado = 'visible'
+        AND (com.fijado_home_hasta IS NULL OR com.fijado_home_hasta <= NOW())
+    ) card
+    WHERE ($2::timestamptz IS NULL
+       OR (card.ultima_actividad, card.id) < ($2::timestamptz, $3::bigint))
+    ORDER BY card.ultima_actividad DESC, card.id DESC
     LIMIT $1
   `;
   const { rows } = await pool.query(q, [limit, cursorFecha, cursorId, viewerId]);

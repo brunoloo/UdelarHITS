@@ -238,7 +238,7 @@ const getCategoryIndexService = async () => {
 };
 
 // Categorías y comentarios de Home se rankean por separado y se intercalan por cadencia.
-// Invitado: cronológico, cursor v2 { v:2, m:'c', cat, com, slot }.
+// Invitado: por última actividad, cursor v2 { v:2, m:'c', cat, com, slot }.
 // Logueado: rankeado, cursor v3 { v:3, m:'r', t0, seed, w, slot, cat, com }; t0, seed y w fijan la visita.
 // null = stream agotado. Un cursor de otro modo responde 400.
 const CADENCE_PATTERN = [
@@ -406,9 +406,9 @@ const prependPinned = (out, [pinnedCat, pinnedCom]) => {
   return out;
 };
 
-// score, explora y fijada_hasta son internos del ranking, no parte de la card.
+// score, explora, ultima_actividad y fijada_hasta son internos del orden, no parte de la card.
 const toCards = (items) => items.map(({ kind, row }) => {
-  delete row.score; delete row.explora;
+  delete row.score; delete row.explora; delete row.ultima_actividad;
   if (kind === 'categoria') {
     delete row.fijada_hasta; row.fijada = false;
     row.tipo = 'categoria';
@@ -447,7 +447,7 @@ const getChronoHomeFeed = async (pageSize, cur, isFirstPage) => {
     if (exhausted) return null;
     if (used === 0) return incoming;
     const last = rows[used - 1];
-    return { f: new Date(last.fecha_creacion).toISOString(), id: String(last.id) };
+    return { f: new Date(last.ultima_actividad).toISOString(), id: String(last.id) };
   };
 
   const nextCat = nextStreamCursor(catActive, catCur, cats, usedCat);

@@ -243,11 +243,28 @@ const notBlockedSql = (viewerPh, autorCol) => `
                OR (b.bloqueado_id = ${viewerPh}::bigint AND b.bloqueador_id = ${autorCol})
           )`;
 
+// Fecha del último tema activo o comentario visible de la categoría (directo o de un
+// tema); sin contenido, su fecha de creación.
+const ULTIMA_ACTIVIDAD_SQL = `
+      GREATEST(
+        c.fecha_creacion,
+        (SELECT MAX(con.fecha_creacion) FROM tema t
+           JOIN contenido con ON con.id = t.contenido_id
+          WHERE t.categoria_id = c.id AND t.estado = 'activo'),
+        (SELECT MAX(con.fecha_creacion) FROM comentario com
+           JOIN contenido con ON con.id = com.contenido_id
+          WHERE com.categoria_id = c.id AND com.estado = 'visible'),
+        (SELECT MAX(con.fecha_creacion) FROM comentario com
+           JOIN contenido con ON con.id = com.contenido_id
+           JOIN tema t ON t.contenido_id = com.tema_id
+          WHERE t.categoria_id = c.id AND t.estado = 'activo' AND com.estado = 'visible')
+      ) AS ultima_actividad,`;
+
 // Card de una categoría activa, compartida por el listado y el feed. Con viewerPh,
 // el último tema y el último comentario omiten autores bloqueados.
-const categoryCardQuery = ({ viewerPh = null, idsFilter = null } = {}) => `
+const categoryCardQuery = ({ viewerPh = null, idsFilter = null, conActividad = false } = {}) => `
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
-      c.fecha_creacion, c.icono, c.fijada_hasta, u.nickname AS autor_nickname, u.estado AS autor_estado, u.facultad AS autor_facultad,
+      c.fecha_creacion, c.icono, c.fijada_hasta, u.nickname AS autor_nickname, u.estado AS autor_estado, u.facultad AS autor_facultad,${conActividad ? ULTIMA_ACTIVIDAD_SQL : ''}
       -- Comentarios directos (top-level) de la categoría: mismo criterio que el
       -- tab "Comentarios" de la página (getRepliesByCategory), para que el número
       -- de la card coincida con el de la página.
@@ -369,14 +386,16 @@ const getCategoryIndex = async () => {
   return rows;
 };
 
-// Cursor compuesto (fecha, id) para no repetir ni saltar filas en empates de fecha.
+// Ordenado por última actividad: una categoría con conversación reciente va antes que
+// una vacía creada después. Cursor compuesto (fecha, id) para no repetir ni saltar
+// filas en empates de fecha.
 const getChronoFeed = async ({ limit, cursorFecha = null, cursorId = null }) => {
   const q = `
-    SELECT card.* FROM (${CATEGORY_CARD_QUERY}) card
+    SELECT card.* FROM (${categoryCardQuery({ conActividad: true })}) card
     WHERE (card.fijada_hasta IS NULL OR card.fijada_hasta <= NOW())
       AND ($2::timestamptz IS NULL
-       OR (card.fecha_creacion, card.id) < ($2::timestamptz, $3::bigint))
-    ORDER BY card.fecha_creacion DESC, card.id DESC
+       OR (card.ultima_actividad, card.id) < ($2::timestamptz, $3::bigint))
+    ORDER BY card.ultima_actividad DESC, card.id DESC
     LIMIT $1
   `;
   const { rows } = await pool.query(q, [limit, cursorFecha, cursorId]);
