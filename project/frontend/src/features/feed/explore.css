@@ -48,6 +48,23 @@
   border-radius: var(--radius);
 }
 
+.explore-guest-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.explore-cta-btn {
+  padding: 8px 20px;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 /* Hero */
 .hero-card {
   display: block;

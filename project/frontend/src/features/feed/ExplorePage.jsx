@@ -239,7 +239,7 @@ function SuggestedUsers({ users }) {
   )
 }
 
-function CategorySuggestions({ allCats, myCats }) {
+function CategorySuggestions({ allCats, myCats, title }) {
   const myIds = new Set((myCats || []).map(c => c.id))
   const myTags = new Set()
   ;(myCats || []).forEach(c => parseEtiquetas(c.etiquetas).forEach(t => myTags.add(t)))
@@ -275,7 +275,7 @@ function CategorySuggestions({ allCats, myCats }) {
           <rect x="3" y="14" width="7" height="7" rx="1.5"/>
           <rect x="14" y="14" width="7" height="7" rx="1.5"/>
         </svg>
-        <span className="explore-section-title">Categorías para vos</span>
+        <span className="explore-section-title">{title}</span>
       </div>
       {sortedTags.map(([tag, cats]) => (
         <div key={tag} style={{ marginBottom: 16 }}>
@@ -341,40 +341,19 @@ export function ExplorePage() {
 
       {suggestedUsers.length > 0 && <SuggestedUsers users={suggestedUsers} />}
 
-      {user ? (
-        <CategorySuggestions allCats={allCats} myCats={myCats} />
-      ) : loading ? null : (
-        <div className="explore-section">
-          <div className="explore-section-header">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-              <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-            </svg>
-            <span className="explore-section-title">Categorías para vos</span>
-          </div>
-          <div className="explore-empty">
-            Inicia sesión para que podamos recomendarte categorías basadas en tus intereses.
-            <div style={{ marginTop: 12, textAlign: 'center' }}>
-              <Link
-                to="/login"
-                style={{
-                  display: 'inline-block',
-                  marginTop: 12,
-                  padding: '8px 20px',
-                  background: 'var(--accent)',
-                  color: 'var(--text-on-accent)',
-                  borderRadius: 999,
-                  textDecoration: 'none',
-                  fontSize: 13,
-                  fontWeight: 600,
-                }}
-              >
-                Iniciar sesión
-              </Link>
-            </div>
-          </div>
+      {/* El listado es público: sin sesión se agrupa igual, solo que sin priorizar etiquetas propias. */}
+      {!loading && (
+        <CategorySuggestions
+          allCats={allCats}
+          myCats={user ? myCats : []}
+          title={user ? 'Categorías para vos' : 'Categorías por etiqueta'}
+        />
+      )}
+
+      {!loading && !user && (
+        <div className="explore-empty explore-guest-cta">
+          Creá tu cuenta para seguir categorías y recibir recomendaciones según tus intereses.
+          <Link to="/register" className="explore-cta-btn">Crear cuenta</Link>
         </div>
       )}
     </div>
