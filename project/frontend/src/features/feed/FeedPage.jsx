@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, useNavigate, Navigate } from 'react-router-dom'
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiDelete } from '../../api/client'
-import { HOME_FEED_KEY, HOME_COUNT_KEY } from '../../api/queryKeys'
+import { HOME_FEED_KEY, COMMUNITY_STATS_KEY } from '../../api/queryKeys'
 import { CategoryCard } from '../../components/shared/CategoryCard'
 import { CommentCard } from '../../components/shared/CommentCard'
 import { PinHomeModal } from '../../components/shared/PinHomeModal'
 import { HomeComposer } from './HomeComposer'
+import { CommunityStrip } from '../../components/shared/CommunityStrip'
 import { buildReplyFormData } from '../../utils/attachments'
 import { trackCreateComment } from '../../utils/analytics'
 import { homeFeedPath } from '../../utils/homeFeedPath'
@@ -158,6 +159,7 @@ export function FeedPage() {
   return (
     <div className="feed-page">
       <HomeComposer />
+      <CommunityStrip />
 
       <div className="categories-feed">
         {isLoading ? (
@@ -194,7 +196,7 @@ export function FeedPage() {
                   onCardClick={() => navigate(`/comment/${c.id}`)}
                   onReply={handleHomeReply}
                   invalidateKey={HOME_FEED_KEY}
-                  invalidateKeys={[HOME_COUNT_KEY]}
+                  invalidateKeys={[COMMUNITY_STATS_KEY]}
                   canPinHome={isAdmin}
                   onPinHome={(comment) => setPinTarget(comment)}
                   onUnpinHome={(comment) => unpinHomeMutation.mutate(comment.id)}

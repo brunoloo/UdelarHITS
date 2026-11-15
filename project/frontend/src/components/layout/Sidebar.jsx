@@ -2,9 +2,10 @@ import { useLocation, Link, useMatch } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../hooks/useAuth'
 import { apiGet } from '../../api/client'
-import { HOME_COUNT_KEY } from '../../api/queryKeys'
 import { resolveAutor } from '../../utils/resolveAutor'
 import { categoryStats } from '../../utils/categoryStats'
+import { formatCount } from '../../utils/formatCount'
+import { COMMUNITY_ROWS, useCommunityStats } from '../../hooks/useCommunityStats'
 import { FacultyBadge } from '../shared/FacultyBadge'
 import { UserAvatar } from '../shared/UserAvatar'
 import { FACULTADES, facultadBySigla } from '../../config/facultades'
@@ -24,26 +25,20 @@ function JoinBanner() {
   )
 }
 
-function CommunityCard({ categoryCount, homeCommentCount, topicCount }) {
+// Una fila en cero no aporta: se omite. Mientras carga se muestra un guion.
+function CommunityCard({ stats }) {
   return (
     <div className="sidebar-card">
       <div className="sidebar-card-header">Comunidad</div>
       <div className="sidebar-card-body">
-        <div className="stat-row">
-          <span className="stat-row-label">Categorías activas</span>
-          <span className="stat-row-value">{categoryCount ?? '—'}</span>
-        </div>
-        {/* Solo comentarios de Home de primer nivel. */}
-        <div className="stat-row">
-          <span className="stat-row-label">Comentarios</span>
-          <span className="stat-row-value">{homeCommentCount ?? '—'}</span>
-        </div>
-        {topicCount != null && (
-          <div className="stat-row">
-            <span className="stat-row-label">Temas recientes</span>
-            <span className="stat-row-value">{topicCount}</span>
-          </div>
-        )}
+        {COMMUNITY_ROWS.map(({ key, label }) => (
+          (!stats || stats[key] > 0) && (
+            <div className="stat-row" key={key}>
+              <span className="stat-row-label">{label}</span>
+              <span className="stat-row-value">{stats ? formatCount(stats[key]) : '—'}</span>
+            </div>
+          )
+        ))}
       </div>
     </div>
   )
@@ -372,23 +367,13 @@ export function Sidebar() {
   const isComment = !!useMatch('/comment/:id')
 
   // Índice liviano: la sidebar no necesita la card completa.
-  const { data: categories = [], isLoading: catsLoading } = useQuery({
+  const { data: categories = [] } = useQuery({
     queryKey: ['categories', 'index'],
     queryFn: () => apiGet('/categories/index').then(r => r.data),
     staleTime: 5 * 60 * 1000,
   })
 
-  const { data: recentTopics = [] } = useQuery({
-    queryKey: ['topics', 'recent'],
-    queryFn: () => apiGet('/topics/recent?limit=30').then(r => r.data),
-    enabled: pathname === '/recent',
-  })
-
-  const { data: homeCommentCount } = useQuery({
-    queryKey: HOME_COUNT_KEY,
-    queryFn: () => apiGet('/replies/home/count').then(r => r.data?.total ?? 0),
-    staleTime: 30 * 1000,
-  })
+  const { data: stats } = useCommunityStats()
 
   if (!SIDEBAR_PAGES.includes(pathname) && !catId && !topicId && !isComment) return null
 
@@ -408,15 +393,13 @@ export function Sidebar() {
     )
   }
 
-  const categoryCount = catsLoading ? null : categories.length
-
   return (
     <aside className="sidebar" ref={sidebarRef}>
       {!loading && !user && <JoinBanner />}
 
       {(pathname === '/' || pathname === '/search' || isComment) && (
         <>
-          <CommunityCard categoryCount={categoryCount} homeCommentCount={homeCommentCount} />
+          <CommunityCard stats={stats} />
           <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
@@ -424,7 +407,7 @@ export function Sidebar() {
       {pathname === '/recent' && (
         <>
           <PopularTagsCard categories={categories} />
-          <CommunityCard categoryCount={categoryCount} homeCommentCount={homeCommentCount} topicCount={recentTopics.length} />
+          <CommunityCard stats={stats} />
           <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
@@ -432,7 +415,7 @@ export function Sidebar() {
       {pathname === '/popular' && (
         <>
           <NewCatsCard categories={categories} />
-          <CommunityCard categoryCount={categoryCount} homeCommentCount={homeCommentCount} />
+          <CommunityCard stats={stats} />
           <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}
@@ -440,7 +423,7 @@ export function Sidebar() {
       {pathname === '/explore' && (
         <>
           <ActiveUsersCard />
-          <CommunityCard categoryCount={categoryCount} homeCommentCount={homeCommentCount} />
+          <CommunityCard stats={stats} />
           <FacultiesCard activeEtiqueta={activeEtiqueta} />
         </>
       )}

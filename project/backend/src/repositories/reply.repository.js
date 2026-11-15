@@ -471,17 +471,6 @@ const getReplyContext = async (commentId, userId = null) => {
   return rows;
 };
 
-// Solo primer nivel y visibles.
-const countHomeComments = async () => {
-  const q = `
-    SELECT COUNT(*)::int AS total
-    FROM comentario
-    WHERE es_home = TRUE AND comentario_padre_id IS NULL AND estado = 'visible'
-  `;
-  const { rows } = await pool.query(q);
-  return rows[0].total;
-};
-
 // `viewer` es el placeholder del usuario para mi_reaccion y el voto de la encuesta.
 const homeCommentCard = (viewer) => `
   com.contenido_id AS id, com.estado AS estado, com.motivo_inactivacion,
@@ -720,7 +709,7 @@ async function getTrendingThread(days = 7, viewerId = null) {
   return rows[0] || null;
 }
 
-export { createReply, countHomeComments, getHomeCommentsChrono, getRankedHomeComments,
+export { createReply, getHomeCommentsChrono, getRankedHomeComments,
   getRecentReplies, getTrendingThread, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
   getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies,
   hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx, getReplyEditHistory,

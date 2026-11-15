@@ -1,7 +1,7 @@
 import { createReplyService, getRepliesByCategoryIdService,
   getRepliesByTopicIdService, deleteReplyService, getMyRepliesService,
   getRepliesByUserIdService, updateReplyService, getRepliesByCommentIdService, getReplyByIdService, getReplyEditHistoryService,
-  getReplyContextService, getLikedCommentsByUserIdService, getHomeCommentCountService,
+  getReplyContextService, getLikedCommentsByUserIdService,
   getRecentRepliesService, getTrendingThreadService, pinHomeCommentService, unpinHomeCommentService } from '../services/reply.service.js';
 import { detectAttachmentType } from '../utils/validateAttachment.js';
 
@@ -143,15 +143,6 @@ const getReplyById = async (req, res) => {
   }
 };
 
-const getHomeCommentCount = async (req, res) => {
-  try {
-    const total = await getHomeCommentCountService();
-    return res.status(200).json({ ok: true, data: { total } });
-  } catch {
-    return res.status(500).json({ ok: false, message: 'Internal server error' });
-  }
-};
-
 const getRecentReplies = async (req, res) => {
   try {
     const viewerId = req.user?.id || null;
@@ -247,5 +238,5 @@ const unpinHomeComment = async (req, res) => {
 
 export { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply, getMyReplies,
   getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory,
-  getReplyContext, getLikedReplies, getHomeCommentCount, getRecentReplies, getTrendingThread,
+  getReplyContext, getLikedReplies, getRecentReplies, getTrendingThread,
   pinHomeComment, unpinHomeComment };

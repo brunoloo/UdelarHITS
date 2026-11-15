@@ -149,7 +149,7 @@ describe('HomeComposer', () => {
     expect(fd.get('cuerpo')).toBe('hola foro')
     await waitFor(() => expect(screen.queryByRole('tablist')).toBeNull())
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['categories', 'feed'] })
-    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['replies', 'home', 'count'] })
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['stats', 'community'] })
   })
 
   it('crear una categoría válida navega a la categoría creada', async () => {

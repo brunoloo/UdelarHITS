@@ -5,7 +5,7 @@ import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCa
 import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId,
   updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory,
-  getReplyContext, getLikedCommentsByUserId, countHomeComments, getRecentReplies, getTrendingThread,
+  getReplyContext, getLikedCommentsByUserId, getRecentReplies, getTrendingThread,
   pinHomeComment, unpinHomeComment } from '../repositories/reply.repository.js';
 import { getLikesPrivacyById } from '../repositories/user.repository.js';
 import { canViewUserContent } from './access.service.js';
@@ -558,10 +558,6 @@ const getReplyContextService = async (commentId, userId = null) => {
   return redactComments(chain);
 };
 
-const getHomeCommentCountService = async () => {
-  return await countHomeComments();
-};
-
 // La ventana se amplía hasta encontrar un hilo con respuestas.
 const getTrendingThreadService = async (viewerId = null) => {
   for (const ventana of VENTANAS_DIAS) {
@@ -643,7 +639,7 @@ const unpinHomeCommentService = async (userRol, commentId) => {
   await unpinHomeComment(id);
 };
 
-export { createReplyService, getHomeCommentCountService, getRepliesByCategoryIdService, getRepliesByTopicIdService,
+export { createReplyService, getRepliesByCategoryIdService, getRepliesByTopicIdService,
   deleteReplyService, getMyRepliesService, getRepliesByUserIdService, updateReplyService,
   getReplyByIdService, getRepliesByCommentIdService, getReplyEditHistoryService,
   getReplyContextService, getLikedCommentsByUserIdService, getRecentRepliesService, getTrendingThreadService,

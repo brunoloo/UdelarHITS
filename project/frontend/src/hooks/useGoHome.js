@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { HOME_FEED_KEY, HOME_COUNT_KEY } from '../api/queryKeys'
+import { HOME_FEED_KEY, COMMUNITY_STATS_KEY } from '../api/queryKeys'
 
 // Estando en el inicio, el <Link to="/"> no hace nada: este hook vuelve a la página 1, sin
 // filtro y arriba. resetQueries y no invalidate: invalidate refetchearía todas las páginas acumuladas.
@@ -21,7 +21,7 @@ export function useGoHome() {
     }
 
     queryClient.resetQueries({ queryKey: HOME_FEED_KEY })
-    queryClient.invalidateQueries({ queryKey: HOME_COUNT_KEY })
+    queryClient.invalidateQueries({ queryKey: COMMUNITY_STATS_KEY })
 
     // En "/" sin querystring navegar solo duplicaría la entrada del historial.
     if (location.pathname !== '/' || location.search) navigate('/')

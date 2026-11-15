@@ -1,0 +1,25 @@
+/* Solo donde el sidebar está oculto (ver styles/responsive.css). */
+.community-strip {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .community-strip {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 14px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .community-strip-item strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+}

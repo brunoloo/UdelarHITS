@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
-import { HOME_FEED_KEY, HOME_COUNT_KEY } from '../../api/queryKeys'
+import { HOME_FEED_KEY, COMMUNITY_STATS_KEY } from '../../api/queryKeys'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { CreateCommentPanel } from '../../components/shared/CreateCommentPanel'
 import { CreateCategoryPanel } from '../category/CreateCategoryPanel'
@@ -120,7 +120,7 @@ export function HomeComposer() {
             onClose={close}
             scopeFields={{ es_home: true }}
             invalidateKey={HOME_FEED_KEY}
-            invalidateKeys={[HOME_COUNT_KEY]}
+            invalidateKeys={[COMMUNITY_STATS_KEY]}
           />
         </div>
         <div
