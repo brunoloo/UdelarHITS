@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '../../api/client'
@@ -6,6 +6,7 @@ import { TopicCard } from '../../components/shared/TopicCard'
 import { CommentEntry } from '../../components/shared/CommentEntry'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { useQuickReply } from '../../hooks/useQuickReply'
+import { useLastVisit } from '../../hooks/useLastVisit'
 import { Tag } from '../../components/ui/Tag'
 import { timeAgo } from '../../utils/timeAgo'
 import { categoryStats } from '../../utils/categoryStats'
@@ -67,6 +68,11 @@ const TABS = [
   { key: 'sin_respuesta', label: 'Sin respuesta' },
 ]
 
+const itemKey = (item, i) => {
+  const prefix = item.type === 'tema' ? 't' : item.type === 'categoria' ? 'c' : 'm'
+  return `${prefix}-${item.data.id || item.data.contenido_id || i}`
+}
+
 const EMPTY = {
   todos: { message: 'Todavía no hay publicaciones.', to: '/explore', label: 'Explorar categorías' },
   temas: { message: 'Todavía no hay temas. Se crean dentro de una categoría.', to: '/explore', label: 'Elegir una categoría' },
@@ -84,6 +90,7 @@ export function RecentPage() {
   const sinRespuesta = tab === 'sin_respuesta'
 
   const handleReply = useQuickReply(['replies', 'recent'])
+  const lastVisit = useLastVisit('recent')
 
   const { data: topics = [], isLoading: loadingTopics } = useQuery({
     queryKey: ['topics', 'recent'],
@@ -129,6 +136,9 @@ export function RecentPage() {
     return list.sort((a, b) => b.date - a.date)
   })()
 
+  // Sin visita previa en este navegador no hay nada que marcar.
+  const newCount = lastVisit == null ? 0 : items.filter(item => item.date.getTime() > lastVisit).length
+
   return (
     <div className="recent-page">
       <h1 className="recent-title">Recientes</h1>
@@ -147,28 +157,37 @@ export function RecentPage() {
         ))}
       </div>
 
+      {!isLoading && newCount > 0 && (
+        <p className="recent-new-note">
+          {newCount} {newCount === 1 ? 'publicación nueva' : 'publicaciones nuevas'} desde tu última visita
+        </p>
+      )}
+
       {isLoading ? (
         Array.from({ length: 5 }, (_, i) => <Skeleton key={i} />)
       ) : items.length === 0 ? (
         <EmptyState className="feed-empty" {...EMPTY[tab]} />
       ) : (
-        items.map((item, i) => {
-          if (item.type === 'tema') {
-            return <TopicCard key={`t-${item.data.id || item.data.contenido_id || i}`} topic={item.data} />
-          }
-          if (item.type === 'categoria') {
-            return <RecentCategoryCard key={`c-${item.data.id || i}`} category={item.data} />
-          }
-          return (
-            <CommentEntry
-              key={`m-${item.data.id || i}`}
-              comment={item.data}
-              invalidateKey={['replies', 'recent']}
-              onReply={handleReply}
-              embedVideos
-            />
-          )
-        })
+        items.map((item, i) => (
+          <Fragment key={itemKey(item, i)}>
+            {/* La lista va de lo más nuevo a lo más viejo: el corte marca dónde empieza lo ya visto. */}
+            {i === newCount && newCount > 0 && (
+              <div className="recent-seen-divider" role="separator">Ya lo viste</div>
+            )}
+            {item.type === 'tema' ? (
+              <TopicCard topic={item.data} />
+            ) : item.type === 'categoria' ? (
+              <RecentCategoryCard category={item.data} />
+            ) : (
+              <CommentEntry
+                comment={item.data}
+                invalidateKey={['replies', 'recent']}
+                onReply={handleReply}
+                embedVideos
+              />
+            )}
+          </Fragment>
+        ))
       )}
     </div>
   )

@@ -24,6 +24,31 @@
   margin-bottom: 20px;
 }
 
+/* Novedades desde la última visita */
+.recent-new-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.recent-seen-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: var(--recent-item-gap);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.recent-seen-divider::before,
+.recent-seen-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
 /* Tabs */
 .recent-tabs {
   display: flex;

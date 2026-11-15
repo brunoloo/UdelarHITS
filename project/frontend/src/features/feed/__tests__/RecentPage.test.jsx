@@ -54,7 +54,38 @@ function renderPage(categorias = [], { ruta = '/recent', sinRespuesta = [] } = {
 }
 
 describe('RecentPage', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+  })
+
+  it('marca lo publicado desde la última visita y dónde empieza lo ya visto', async () => {
+    const hace = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString()
+    localStorage.setItem('last-visit:recent', String(Date.now() - 24 * 3600 * 1000))
+    const { container } = renderPage([
+      { ...categoria, id: 1, titulo: 'Nueva', fecha_creacion: hace(2) },
+      { ...categoria, id: 2, titulo: 'Vista', fecha_creacion: hace(48) },
+    ])
+
+    expect(await screen.findByText('1 publicación nueva desde tu última visita')).toBeTruthy()
+    const orden = [...container.querySelectorAll('.recent-cat-title, .recent-seen-divider')].map(n => n.textContent)
+    expect(orden).toEqual(['Nueva', 'Ya lo viste', 'Vista'])
+  })
+
+  it('en la primera visita no marca nada', async () => {
+    const { container } = renderPage([categoria])
+    expect(await screen.findByText('Cálculo 1')).toBeTruthy()
+    expect(screen.queryByText(/desde tu última visita/)).toBeNull()
+    expect(container.querySelector('.recent-seen-divider')).toBeNull()
+  })
+
+  it('sin novedades no agrega avisos', async () => {
+    localStorage.setItem('last-visit:recent', String(Date.now() + 1000))
+    const { container } = renderPage([categoria])
+    expect(await screen.findByText('Cálculo 1')).toBeTruthy()
+    expect(screen.queryByText(/desde tu última visita/)).toBeNull()
+    expect(container.querySelector('.recent-seen-divider')).toBeNull()
+  })
 
   it('sin contenido ofrece explorar categorías', async () => {
     renderPage()
