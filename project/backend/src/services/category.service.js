@@ -12,6 +12,7 @@ import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
 import { cleanupInactiveTopics } from '../repositories/topic.repository.js';
 import { getHomeCommentsChrono, getRankedHomeComments, getPinnedHomeComment } from '../repositories/reply.repository.js';
 import { FEED, CADENCIA_HOME, feedVisitaTtlHoras } from '../config/feedConfig.js';
+import { VENTANAS_DIAS, MIN_POPULARES } from '../config/trendingConfig.js';
 import { getFeedIntensity, perfilDesdeIntensidad, newFeedSeed } from './feedRanking.service.js';
 import { isValidCategoryIcon } from '../config/categoryIcons.js';
 
@@ -580,10 +581,26 @@ const searchEtiquetasService = async (query) => {
   return await searchEtiquetas(query.trim());
 };
 
+// Con `days` la ventana es estricta. Sin él se amplía hasta juntar el mínimo, y
+// la respuesta informa cuál se usó para que la interfaz no prometa "esta semana".
 const getPopularCategoriesService = async (days, limit) => {
-  const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 30);
   const safeLimit = Math.min(Math.max(parseInt(limit) || 20, 1), 50);
-  return await getPopularCategories(safeDays, safeLimit);
+
+  const explicitDays = parseInt(days);
+  if (Number.isInteger(explicitDays)) {
+    const ventanaDias = Math.min(Math.max(explicitDays, 1), 30);
+    return { categories: await getPopularCategories(ventanaDias, safeLimit), ventanaDias };
+  }
+
+  const minimo = Math.min(MIN_POPULARES, safeLimit);
+  let categories = [];
+  let ventanaDias = null;
+  for (const ventana of VENTANAS_DIAS) {
+    categories = await getPopularCategories(ventana, safeLimit);
+    ventanaDias = ventana;
+    if (categories.length >= minimo) break;
+  }
+  return { categories, ventanaDias };
 };
 
 const getTrendingTagsService = async (days, limit) => {

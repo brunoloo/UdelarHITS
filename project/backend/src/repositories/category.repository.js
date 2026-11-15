@@ -1,10 +1,10 @@
 import pool from '../config/db.js';
 import { escapeLike } from '../utils/escapeLike.js';
 import { encuestaSubquery } from './encuesta.repository.js';
-import { TRENDING } from '../config/trendingConfig.js';
+import { TRENDING, halfLifeHours } from '../config/trendingConfig.js';
 import { FEED } from '../config/feedConfig.js';
 
-const { HALF_LIFE_HOURS, W_TEMA, W_COMENTARIO } = TRENDING;
+const { W_TEMA, W_COMENTARIO } = TRENDING;
 
 const createCategory = async ({ titulo, descripcion, autor_id, etiquetas }) => {
   const client = await pool.connect();
@@ -560,6 +560,7 @@ const hardDeleteCategoryById = async (id) => {
 
 // La presencia depende del conteo en la ventana; el orden, del score ponderado por recencia.
 // Temas y comentarios se cuentan en CTEs separadas para evitar el producto cartesiano.
+// days = null cuenta todo el historial.
 const getPopularCategories = async (days = 7, limit = 20) => {
   const q = `
     WITH tema_act AS (
@@ -569,7 +570,7 @@ const getPopularCategories = async (days = 7, limit = 20) => {
       FROM tema t
       JOIN contenido con ON con.id = t.contenido_id
       WHERE t.estado = 'activo'
-        AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+        AND ($1::int IS NULL OR con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1::int))
       GROUP BY t.categoria_id
     ),
     com_act AS (
@@ -586,7 +587,7 @@ const getPopularCategories = async (days = 7, limit = 20) => {
       JOIN contenido con ON con.id = com.contenido_id
       LEFT JOIN tema tt ON tt.contenido_id = com.tema_id
       WHERE com.estado = 'visible'
-        AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+        AND ($1::int IS NULL OR con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1::int))
       GROUP BY COALESCE(com.categoria_id, tt.categoria_id)
     )
     SELECT c.id, c.titulo, c.descripcion, c.contador_temas,
@@ -613,7 +614,7 @@ const getPopularCategories = async (days = 7, limit = 20) => {
     ORDER BY actividad_score DESC, c.fecha_creacion DESC
     LIMIT $2
   `;
-  const { rows } = await pool.query(q, [days, limit, HALF_LIFE_HOURS, W_TEMA, W_COMENTARIO]);
+  const { rows } = await pool.query(q, [days, limit, halfLifeHours(days), W_TEMA, W_COMENTARIO]);
   return rows;
 };
 

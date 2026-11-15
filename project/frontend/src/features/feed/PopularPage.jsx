@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { apiGet } from '../../api/client'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { Tag } from '../../components/ui/Tag'
+import { categoryStats } from '../../utils/categoryStats'
+import { ventanaTexto, ventanaSubtitulo } from '../../utils/ventana'
 import './feed.css'
 import './popular.css'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
@@ -20,15 +22,16 @@ function Skeleton() {
   )
 }
 
-function PopularCard({ category, rank }) {
+function PopularCard({ category, rank, ventanaDias }) {
   const allEtiquetas = parseEtiquetas(category.etiquetas)
   const etiquetas = allEtiquetas.slice(0, 5)
   const extraCount = allEtiquetas.length - 5
-  const count = Number(category.contador_temas) || 0
-  const commentCount = Number(category.contador_comentarios) || 0
-  const temasRecientes = Number(category.temas_recientes) || 0
-  // Solo comentarios de primer nivel directos a la categoría.
-  const comentariosRecientes = Number(category.comentarios_directos_recientes) || 0
+  const stats = categoryStats(category.contador_temas, category.contador_comentarios)
+  // Solo comentarios de primer nivel directos a la categoría. En el histórico
+  // repetiría los totales de arriba.
+  const recientes = ventanaDias == null
+    ? ''
+    : categoryStats(category.temas_recientes, category.comentarios_directos_recientes)
 
   return (
     <Link className="popular-card" to={`/category/${encodeURIComponent(category.id)}`}>
@@ -36,21 +39,21 @@ function PopularCard({ category, rank }) {
       <div className="popular-body">
         <div className="popular-header-row">
           <div className="popular-card-title">{category.titulo}</div>
-          <div className="popular-card-stats">
-            {count} {count === 1 ? 'tema' : 'temas'} · {commentCount} {commentCount === 1 ? 'comentario' : 'comentarios'}
-          </div>
+          {stats && <div className="popular-card-stats">{stats}</div>}
         </div>
         {category.descripcion && <div className="popular-desc">{category.descripcion}</div>}
         <div className="popular-footer">
-          <div className="popular-activity">
-            <span className="popular-activity-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-                <polyline points="17 6 23 6 23 12"/>
-              </svg>
-              {temasRecientes} {temasRecientes === 1 ? 'tema' : 'temas'} · {comentariosRecientes} {comentariosRecientes === 1 ? 'comentario' : 'comentarios'} esta semana
-            </span>
-          </div>
+          {recientes && (
+            <div className="popular-activity">
+              <span className="popular-activity-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                  <polyline points="17 6 23 6 23 12"/>
+                </svg>
+                {recientes} {ventanaTexto(ventanaDias)}
+              </span>
+            </div>
+          )}
           {etiquetas.length > 0 && (
             <div className="popular-tags">
               {etiquetas.map(e => <Tag key={e} label={e} />)}
@@ -66,23 +69,30 @@ function PopularCard({ category, rank }) {
 export function PopularPage() {
   useDocumentTitle()
   // La key incluye los parámetros: Explorar usa el mismo endpoint con otro límite.
-  const { data: popular = [], isLoading } = useQuery({
-    queryKey: ['categories', 'popular', { days: 7, limit: 20 }],
-    queryFn: () => apiGet('/categories/popular?days=7&limit=20').then(r => r.data),
+  // Sin `days`: el backend amplía la ventana si la semana no alcanza y dice cuál usó.
+  const { data, isLoading } = useQuery({
+    queryKey: ['categories', 'popular', { limit: 20 }],
+    queryFn: () => apiGet('/categories/popular?limit=20')
+      .then(r => ({ items: r.data, ventanaDias: r.ventana_dias ?? null })),
     staleTime: 2 * 60 * 1000,
   })
+  const popular = data?.items ?? []
+  const ventanaDias = data?.ventanaDias ?? null
 
   return (
     <div className="popular-page">
       <h1 className="popular-title">Populares</h1>
-      <p className="popular-subtitle">Las categorías con más actividad en los últimos 7 días</p>
+      <p className="popular-subtitle">{ventanaSubtitulo(isLoading ? 7 : ventanaDias)}</p>
 
       {isLoading ? (
         Array.from({ length: 5 }, (_, i) => <Skeleton key={i} />)
       ) : popular.length === 0 ? (
-        <div className="feed-empty">No hubo actividad esta semana. ¡Sé el primero en participar!</div>
+        <div className="feed-empty">
+          <p className="feed-empty-msg">Todavía no hay actividad en las categorías.</p>
+          <Link className="feed-empty-cta" to="/explore">Explorar categorías</Link>
+        </div>
       ) : (
-        popular.map((c, i) => <PopularCard key={c.id} category={c} rank={i + 1} />)
+        popular.map((c, i) => <PopularCard key={c.id} category={c} rank={i + 1} ventanaDias={ventanaDias} />)
       )}
     </div>
   )

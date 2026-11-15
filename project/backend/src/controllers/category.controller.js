@@ -165,8 +165,8 @@ const searchEtiquetas = async (req, res) => {
 
 const getPopularCategoriesList = async (req, res, next) => {
   try {
-    const categories = await getPopularCategoriesService(req.query.days, req.query.limit);
-    return res.status(200).json({ ok: true, data: categories });
+    const { categories, ventanaDias } = await getPopularCategoriesService(req.query.days, req.query.limit);
+    return res.status(200).json({ ok: true, data: categories, ventana_dias: ventanaDias });
   } catch (error) {
     next(error);
   }

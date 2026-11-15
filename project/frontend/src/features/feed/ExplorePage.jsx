@@ -7,29 +7,33 @@ import { UserAvatar } from '../../components/shared/UserAvatar'
 import { CategoryCardMini } from '../../components/shared/CategoryCardMini'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { timeAgo } from '../../utils/timeAgo'
+import { categoryStats } from '../../utils/categoryStats'
+import { ventanaTexto, heroLabel } from '../../utils/ventana'
 import { useToast } from '../../hooks/useToast'
 import './feed.css'
 import './explore.css'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 
-function HeroCard({ category }) {
+function HeroCard({ category, ventanaDias }) {
   const navigate = useNavigate()
   const allEtiquetas = parseEtiquetas(category.etiquetas)
   const etiquetas = allEtiquetas.slice(0, 5)
   const extraCount = allEtiquetas.length - 5
-  const temas = Number(category.temas_recientes) || 0
-  // Solo comentarios de primer nivel directos a la categoría.
-  const comentarios = Number(category.comentarios_directos_recientes) || 0
+  // Solo comentarios de primer nivel directos a la categoría. En el histórico se
+  // muestran los totales.
+  const stats = ventanaDias == null
+    ? categoryStats(category.contador_temas, category.contador_comentarios)
+    : categoryStats(category.temas_recientes, category.comentarios_directos_recientes)
   return (
     <Link className="hero-card" to={`/category/${encodeURIComponent(category.id)}`}>
-      <div className="hero-label">Categoría de la semana</div>
+      <div className="hero-label">{heroLabel(ventanaDias)}</div>
       <div className="hero-title">{category.titulo}</div>
       {category.descripcion && <div className="hero-desc">{category.descripcion}</div>}
-      <div className="hero-stats">
-        <span>{temas} {temas === 1 ? 'tema' : 'temas'} esta semana</span>
-        <span>·</span>
-        <span>{comentarios} {comentarios === 1 ? 'comentario' : 'comentarios'} esta semana</span>
-      </div>
+      {stats && (
+        <div className="hero-stats">
+          <span>{stats}{ventanaDias == null ? '' : ` ${ventanaTexto(ventanaDias)}`}</span>
+        </div>
+      )}
       {etiquetas.length > 0 && (
         <div className="hero-tags">
           {etiquetas.map(e => (
@@ -291,10 +295,11 @@ export function ExplorePage() {
   useDocumentTitle()
   const { user, loading } = useAuth()
 
-  // Rankings de ventana semanal: cambian lento y son caros de calcular.
-  const { data: popularCats = [] } = useQuery({
-    queryKey: ['categories', 'popular', { days: 7, limit: 1 }],
-    queryFn: () => apiGet('/categories/popular?days=7&limit=1').then(r => r.data),
+  // Rankings por ventana: cambian lento y son caros de calcular.
+  const { data: popularData } = useQuery({
+    queryKey: ['categories', 'popular', { limit: 1 }],
+    queryFn: () => apiGet('/categories/popular?limit=1')
+      .then(r => ({ items: r.data, ventanaDias: r.ventana_dias ?? null })),
     staleTime: 2 * 60 * 1000,
   })
 
@@ -323,14 +328,14 @@ export function ExplorePage() {
     enabled: !!user,
   })
 
-  const heroCat = popularCats[0] ?? null
+  const heroCat = popularData?.items?.[0] ?? null
 
   return (
     <div className="explore-page">
       <h1 className="explore-title">Explorar</h1>
       <p className="explore-subtitle">Descubrí lo mejor de la comunidad universitaria</p>
 
-      {heroCat && <HeroCard category={heroCat} />}
+      {heroCat && <HeroCard category={heroCat} ventanaDias={popularData.ventanaDias} />}
 
       {trending && <TrendingSection topic={trending} />}
 
