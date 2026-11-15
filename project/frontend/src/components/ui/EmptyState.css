@@ -1,0 +1,24 @@
+.empty-state {
+  text-align: center;
+}
+
+.empty-state-msg {
+  margin: 0;
+}
+
+.empty-state-cta {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.empty-state-cta:hover {
+  opacity: 0.88;
+}

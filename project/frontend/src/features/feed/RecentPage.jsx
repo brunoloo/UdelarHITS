@@ -10,6 +10,7 @@ import { useToast } from '../../hooks/useToast'
 import { Tag } from '../../components/ui/Tag'
 import { timeAgo } from '../../utils/timeAgo'
 import { categoryStats } from '../../utils/categoryStats'
+import { EmptyState } from '../../components/ui/EmptyState'
 import './feed.css'
 import './recent.css'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
@@ -65,6 +66,13 @@ const TABS = [
   { key: 'categorias', label: 'Categorías' },
   { key: 'comentarios', label: 'Comentarios' },
 ]
+
+const EMPTY = {
+  todos: { message: 'Todavía no hay publicaciones.', to: '/explore', label: 'Explorar categorías' },
+  temas: { message: 'Todavía no hay temas. Se crean dentro de una categoría.', to: '/explore', label: 'Elegir una categoría' },
+  categorias: { message: 'Todavía no hay categorías.', to: '/', label: 'Ir al inicio' },
+  comentarios: { message: 'Todavía no hay comentarios.', to: '/', label: 'Escribir el primero' },
+}
 
 export function RecentPage() {
   useDocumentTitle()
@@ -122,7 +130,7 @@ export function RecentPage() {
   return (
     <div className="recent-page">
       <h1 className="recent-title">Recientes</h1>
-      <p className="recent-subtitle">Los últimos temas y categorías publicadas en la comunidad</p>
+      <p className="recent-subtitle">Lo último que se publicó en la comunidad</p>
 
       <div className="recent-tabs">
         {TABS.map(t => (
@@ -140,7 +148,7 @@ export function RecentPage() {
       {isLoading ? (
         Array.from({ length: 5 }, (_, i) => <Skeleton key={i} />)
       ) : items.length === 0 ? (
-        <div className="feed-empty">No hay contenido reciente todavía.</div>
+        <EmptyState className="feed-empty" {...EMPTY[tab]} />
       ) : (
         items.map((item, i) => {
           if (item.type === 'tema') {

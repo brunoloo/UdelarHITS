@@ -7,6 +7,7 @@ import { UserAvatar } from '../shared/UserAvatar'
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { useSocket } from '../../hooks/useSocket'
 import { useGoHome } from '../../hooks/useGoHome'
+import { EmptyState } from '../ui/EmptyState'
 import './LeftNav.css'
 
 // Carga diferida: el panel no se ve en el primer paint y arrastraba su cadena de componentes al chunk inicial.
@@ -401,7 +402,13 @@ export function LeftNav() {
           ) : notifLoading ? (
             <div className="notif-loading">Cargando...</div>
           ) : !notifications || notifications.length === 0 ? (
-            <div className="notif-empty">No tenés notificaciones</div>
+            <EmptyState
+              className="notif-empty"
+              message="Todavía no tenés notificaciones. Seguí categorías y personas para enterarte de lo nuevo."
+              to="/explore"
+              label="Explorar"
+              onNavigate={() => setActivePanel(null)}
+            />
           ) : (
             notifications.map(n => {
               const isMod = n.tipo === 'moderacion_contenido'

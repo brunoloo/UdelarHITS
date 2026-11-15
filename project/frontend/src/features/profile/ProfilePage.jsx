@@ -16,6 +16,7 @@ import { TopicCardMini } from '../../components/shared/TopicCardMini'
 import { CommentEntry } from '../../components/shared/CommentEntry'
 import { BioText } from '../../components/shared/BioText'
 import { Modal } from '../../components/ui/Modal'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { EditProfileModal } from './EditProfileModal'
 import { FollowersModal } from './FollowersModal'
 import { ReportUserModal } from './ReportUserModal'
@@ -285,6 +286,13 @@ export function ProfilePage() {
     </div>
   )
 
+  // En el perfil propio el vacío invita a publicar; en uno ajeno solo informa.
+  const emptyTab = (ajeno, propio, to, label) => (
+    isOwnProfile
+      ? <EmptyState className="empty-panel" message={propio} to={to} label={label} />
+      : <div className="empty-panel">{ajeno}</div>
+  )
+
   // invalidateKey decide qué query se refresca al reaccionar o responder.
   const renderCommentRow = (r, invalidateKey) => (
     <CommentEntry key={r.id} comment={r} invalidateKey={invalidateKey} onReply={handleReply} embedVideos />
@@ -442,7 +450,7 @@ export function ProfilePage() {
       {activeTab === 'categorias' && (
         <section className="section-panel active">
           {!canViewContent ? (teBloqueo ? blockedMessage : privateMessage) : categories.length === 0 ? (
-            <div className="empty-panel">Sin categorías aún</div>
+            emptyTab('Sin categorías aún', 'Todavía no creaste ninguna categoría.', '/explore', 'Ver categorías')
           ) : (
             <div className="cat-grid">
               {categories.map(c => (
@@ -456,7 +464,7 @@ export function ProfilePage() {
       {activeTab === 'temas' && (
         <section className="section-panel active">
           {!canViewContent ? (teBloqueo ? blockedMessage : privateMessage) : topics.length === 0 ? (
-            <div className="empty-panel">Sin temas aún</div>
+            emptyTab('Sin temas aún', 'Todavía no creaste temas. Se crean dentro de una categoría.', '/explore', 'Elegir una categoría')
           ) : (
             <div className="profile-feed-list">
               {topics.map(t => (
@@ -478,7 +486,7 @@ export function ProfilePage() {
       {activeTab === 'comentarios' && (
         <section className="section-panel active">
           {!canViewContent ? (teBloqueo ? blockedMessage : privateMessage) : replies.length === 0 ? (
-            <div className="empty-panel">Sin comentarios aún</div>
+            emptyTab('Sin comentarios aún', 'Todavía no comentaste nada.', '/', 'Ir al inicio')
           ) : (
             <div className="profile-feed-list">
               {replies.map(r => renderCommentRow(r, ['replies', 'user', profile.id]))}
@@ -492,7 +500,7 @@ export function ProfilePage() {
           {!canViewContent ? (teBloqueo ? blockedMessage : privateMessage)
             : likesPrivate ? likesPrivateMessage
             : likedComments.length === 0 ? (
-              <div className="empty-panel">Sin me gusta aún</div>
+              emptyTab('Sin me gusta aún', 'Todavía no le diste me gusta a nada.', '/recent', 'Ver lo más reciente')
             ) : (
               <div className="profile-feed-list">
                 {likedComments.map(r => renderCommentRow(r, ['replies', 'liked', profile.id]))}

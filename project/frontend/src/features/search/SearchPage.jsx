@@ -6,6 +6,7 @@ import { TopicCardMini } from '../../components/shared/TopicCardMini'
 import { CommentEntry } from '../../components/shared/CommentEntry'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { facultadBySigla } from '../../config/facultades'
+import { EmptyState } from '../../components/ui/EmptyState'
 import './SearchPage.css'
 
 const LIMIT = 10
@@ -102,7 +103,12 @@ export function SearchPage() {
       </header>
 
       {empty ? (
-        <p className="search-empty">No se encontraron resultados para “{q}”.</p>
+        <EmptyState
+          className="search-empty"
+          message={`No se encontraron resultados para “${q}”.`}
+          to="/explore"
+          label="Explorar categorías"
+        />
       ) : (
         <>
           <Section title="Categorías" section={cats}>
