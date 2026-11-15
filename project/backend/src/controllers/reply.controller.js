@@ -146,7 +146,9 @@ const getReplyById = async (req, res) => {
 const getRecentReplies = async (req, res) => {
   try {
     const viewerId = req.user?.id || null;
-    const replies = await getRecentRepliesService(req.query.limit, viewerId);
+    const replies = await getRecentRepliesService(req.query.limit, viewerId, {
+      sinRespuesta: req.query.sin_respuesta === '1',
+    });
     return res.status(200).json({ ok: true, data: replies });
   } catch (error) {
     return res.status(500).json({ ok: false, message: 'Internal server error' });

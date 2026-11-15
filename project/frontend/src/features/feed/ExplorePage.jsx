@@ -11,6 +11,8 @@ import { categoryStats } from '../../utils/categoryStats'
 import { ventanaTexto, heroLabel, temaLabel, conversacionLabel } from '../../utils/ventana'
 import { resolveAutor } from '../../utils/resolveAutor'
 import { commentPermalink } from '../../utils/commentPermalink'
+import { CommentEntry } from '../../components/shared/CommentEntry'
+import { useQuickReply } from '../../hooks/useQuickReply'
 import { useToast } from '../../hooks/useToast'
 import './feed.css'
 import './explore.css'
@@ -168,6 +170,32 @@ function ConversationSection({ thread, ventanaDias }) {
           <Link to={url}>Ver conversación completa →</Link>
         </div>
       </div>
+    </div>
+  )
+}
+
+// Comentarios de primer nivel que nadie respondió: la forma más directa de sumarse.
+function UnansweredSection({ comments }) {
+  const handleReply = useQuickReply(['replies', 'recent'])
+  return (
+    <div className="explore-section">
+      <div className="explore-section-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          <path d="M12 8v3M12 14h.01"/>
+        </svg>
+        <span className="explore-section-title">Esperan respuesta</span>
+        <Link className="explore-section-more" to="/recent?tab=sin_respuesta">Ver todos</Link>
+      </div>
+      {comments.map(c => (
+        <CommentEntry
+          key={c.id}
+          comment={c}
+          invalidateKey={['replies', 'recent']}
+          onReply={handleReply}
+          embedVideos
+        />
+      ))}
     </div>
   )
 }
@@ -388,6 +416,12 @@ export function ExplorePage() {
     staleTime: 2 * 60 * 1000,
   })
 
+  const { data: unanswered = [] } = useQuery({
+    queryKey: ['replies', 'recent', 'sin_respuesta', { limit: 3 }],
+    queryFn: () => apiGet('/replies/recent?sin_respuesta=1&limit=3').then(r => r.data),
+    staleTime: 60 * 1000,
+  })
+
   // Alcanza con el índice liviano.
   const { data: allCats = [] } = useQuery({
     queryKey: ['categories', 'index'],
@@ -421,6 +455,8 @@ export function ExplorePage() {
       )}
 
       {trending?.topic && <TrendingSection topic={trending.topic} ventanaDias={trending.ventanaDias} />}
+
+      {unanswered.length > 0 && <UnansweredSection comments={unanswered} />}
 
       {suggestedUsers.length > 0 && <SuggestedUsers users={suggestedUsers} />}
 

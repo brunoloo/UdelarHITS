@@ -567,9 +567,9 @@ const getTrendingThreadService = async (viewerId = null) => {
   return { thread: null, ventanaDias: null };
 };
 
-const getRecentRepliesService = async (limit, viewerId = null) => {
+const getRecentRepliesService = async (limit, viewerId = null, { sinRespuesta = false } = {}) => {
   const safeLimit = Math.min(Math.max(parseInt(limit) || 30, 1), 50);
-  return redactComments(await getRecentReplies(safeLimit, viewerId));
+  return redactComments(await getRecentReplies(safeLimit, viewerId, { sinRespuesta }));
 };
 
 // Mismas duraciones que la categoría fijada, en días.

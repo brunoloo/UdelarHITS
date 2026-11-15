@@ -94,3 +94,64 @@ describe('GET /replies/recent', () => {
     expect(res.body.data.length).toBeLessThanOrEqual(3);
   });
 });
+
+describe('GET /replies/recent?sin_respuesta=1', () => {
+  test('solo trae comentarios de primer nivel que nadie respondió', async () => {
+    const a = await registerAndLogin();
+    const b = await registerAndLogin();
+    const respondido = await createHomeReply(a.cookie, { cuerpo: 'respondido' });
+    const respuesta = await createReply(b.cookie, { comentario_padre_id: idOf(respondido) });
+    const pendiente = await createHomeReply(a.cookie, { cuerpo: 'pendiente' });
+
+    const ids = (await recent('?sin_respuesta=1')).body.data.map(idOf);
+    expect(ids).toEqual([idOf(pendiente)]);
+    expect(ids).not.toContain(idOf(respuesta));
+  });
+
+  test('incluye comentarios de categoría y de tema, no solo de Home', async () => {
+    const u = await registerAndLogin();
+    const cat = await createCategory(u.cookie);
+    const enCat = await createReply(u.cookie, { categoria_id: cat.id });
+    const enTema = await createReply(u.cookie);
+
+    const ids = (await recent('?sin_respuesta=1')).body.data.map(idOf);
+    expect(ids).toEqual(expect.arrayContaining([idOf(enCat), idOf(enTema)]));
+  });
+
+  test('con sesión no ofrece los comentarios propios', async () => {
+    const a = await registerAndLogin();
+    const b = await registerAndLogin();
+    const deA = await createHomeReply(a.cookie);
+    const deB = await createHomeReply(b.cookie);
+
+    const res = await recent('?sin_respuesta=1').set('Cookie', a.cookie);
+    expect(res.body.data.map(idOf)).toEqual([idOf(deB)]);
+
+    const invitado = await recent('?sin_respuesta=1');
+    expect(invitado.body.data.map(idOf)).toEqual([idOf(deB), idOf(deA)]);
+  });
+
+  test('una respuesta oculta no cuenta: el comentario vuelve a estar pendiente', async () => {
+    const a = await registerAndLogin();
+    const b = await registerAndLogin();
+    const c = await registerAndLogin();
+    const raiz = await createHomeReply(a.cookie);
+    const resp = await createReply(b.cookie, { comentario_padre_id: idOf(raiz) });
+    await createReply(c.cookie, { comentario_padre_id: idOf(resp) });
+    // Con respuestas propias, el borrado deja la respuesta oculta.
+    await request(app).delete(`/api/replies/delete/${idOf(resp)}`).set('Cookie', b.cookie);
+
+    const ids = (await recent('?sin_respuesta=1')).body.data.map(idOf);
+    expect(ids).toContain(idOf(raiz));
+  });
+
+  test('sin el parámetro el listado no cambia', async () => {
+    const a = await registerAndLogin();
+    const b = await registerAndLogin();
+    const raiz = await createHomeReply(a.cookie);
+    const resp = await createReply(b.cookie, { comentario_padre_id: idOf(raiz) });
+
+    const ids = (await recent()).body.data.map(idOf);
+    expect(ids).toEqual(expect.arrayContaining([idOf(raiz), idOf(resp)]));
+  });
+});

@@ -7,6 +7,10 @@ import { apiGet } from '../../../api/client'
 
 vi.mock('../../../api/client', () => ({ apiGet: vi.fn(), apiPost: vi.fn() }))
 vi.mock('../../../hooks/useToast', () => ({ useToast: () => ({ showToast: vi.fn() }) }))
+vi.mock('../../../hooks/useRequireAuth', () => ({ useRequireAuth: () => () => true }))
+vi.mock('../../../hooks/useSaved', () => ({
+  useSaved: () => ({ isSaved: () => false, toggleSaved: vi.fn() }),
+}))
 
 let session = { user: null, loading: false }
 vi.mock('../../../hooks/useAuth', () => ({ useAuth: () => session }))
@@ -79,6 +83,35 @@ describe('ExplorePage', () => {
     expect(screen.getByText('Usuario inactivo')).toBeTruthy()
     expect(screen.queryByText('beto')).toBeNull()
     expect(screen.getByRole('link', { name: 'Ver conversación completa →' }).getAttribute('href')).toBe('/comment/42')
+  })
+
+  it('ofrece los comentarios que esperan respuesta y enlaza al listado completo', async () => {
+    session = { user: null, loading: false }
+    apiGet.mockImplementation(path => Promise.resolve(
+      path === '/replies/recent?sin_respuesta=1&limit=3'
+        ? {
+            data: [{
+              id: 9, tipo: 'home', cuerpo: '¿Alguien tiene apuntes?',
+              autor_nickname: 'ana', autor_estado: 'activo',
+              fecha_creacion: new Date().toISOString(),
+              likes: 0, contador_respuestas: 0, adjuntos: [], encuesta: null,
+            }],
+          }
+        : respuestas[path] ?? { data: [] },
+    ))
+    renderPage()
+
+    expect(await screen.findByText('¿Alguien tiene apuntes?')).toBeTruthy()
+    expect(screen.getByText('Esperan respuesta')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ver todos' }).getAttribute('href')).toBe('/recent?tab=sin_respuesta')
+  })
+
+  it('sin comentarios pendientes la sección no aparece', async () => {
+    session = { user: null, loading: false }
+    renderPage()
+
+    expect(await screen.findByText('Cálculo 1')).toBeTruthy()
+    expect(screen.queryByText('Esperan respuesta')).toBeNull()
   })
 
   it('con sesión mantiene "Categorías para vos" sin el cartel de registro', async () => {

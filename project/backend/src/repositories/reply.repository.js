@@ -181,8 +181,9 @@ const getRepliesByUserId = async (userId, viewerId = null) => {
   return rows;
 };
 
-// Solo comentarios visibles cuyo contenedor está activo.
-const getRecentReplies = async (limit = 30, viewerId = null) => {
+// Solo comentarios visibles cuyo contenedor está activo. Con sinRespuesta, solo los de
+// primer nivel que nadie respondió todavía, sin los del propio usuario.
+const getRecentReplies = async (limit = 30, viewerId = null, { sinRespuesta = false } = {}) => {
   const q = `
     SELECT com.contenido_id AS id, com.estado, com.motivo_inactivacion,
       con.cuerpo, con.fecha_creacion, con.autor_id,
@@ -230,10 +231,18 @@ const getRecentReplies = async (limit = 30, viewerId = null) => {
         OR (com.tema_id IS NOT NULL AND t.estado = 'activo' AND tc.estado = 'activa')
         OR (com.tema_id IS NULL AND com.categoria_id IS NOT NULL AND cat.estado = 'activa')
       )
+      AND (NOT $3::boolean OR (
+        com.comentario_padre_id IS NULL
+        AND con.autor_id IS DISTINCT FROM $2
+        AND NOT EXISTS (
+          SELECT 1 FROM comentario child
+          WHERE child.comentario_padre_id = com.contenido_id AND child.estado = 'visible'
+        )
+      ))
     ORDER BY con.fecha_creacion DESC, com.contenido_id DESC
     LIMIT $1
   `;
-  const { rows } = await pool.query(q, [limit, viewerId]);
+  const { rows } = await pool.query(q, [limit, viewerId, sinRespuesta]);
   return rows;
 };
 

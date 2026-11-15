@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPost } from '../../api/client'
+import { Link, useSearchParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { apiGet } from '../../api/client'
 import { TopicCard } from '../../components/shared/TopicCard'
 import { CommentEntry } from '../../components/shared/CommentEntry'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
-import { buildReplyFormData } from '../../utils/attachments'
-import { useToast } from '../../hooks/useToast'
+import { useQuickReply } from '../../hooks/useQuickReply'
 import { Tag } from '../../components/ui/Tag'
 import { timeAgo } from '../../utils/timeAgo'
 import { categoryStats } from '../../utils/categoryStats'
@@ -65,6 +64,7 @@ const TABS = [
   { key: 'temas', label: 'Temas' },
   { key: 'categorias', label: 'Categorías' },
   { key: 'comentarios', label: 'Comentarios' },
+  { key: 'sin_respuesta', label: 'Sin respuesta' },
 ]
 
 const EMPTY = {
@@ -72,27 +72,18 @@ const EMPTY = {
   temas: { message: 'Todavía no hay temas. Se crean dentro de una categoría.', to: '/explore', label: 'Elegir una categoría' },
   categorias: { message: 'Todavía no hay categorías.', to: '/', label: 'Ir al inicio' },
   comentarios: { message: 'Todavía no hay comentarios.', to: '/', label: 'Escribir el primero' },
+  sin_respuesta: { message: 'No hay comentarios esperando respuesta.', to: '/', label: 'Ir al inicio' },
 }
 
 export function RecentPage() {
   useDocumentTitle()
-  const [tab, setTab] = useState('todos')
-  const queryClient = useQueryClient()
-  const { showToast } = useToast()
+  // ?tab= permite enlazar una pestaña desde otra pantalla (p. ej. Explorar).
+  const [searchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const [tab, setTab] = useState(TABS.some(t => t.key === tabParam) ? tabParam : 'todos')
+  const sinRespuesta = tab === 'sin_respuesta'
 
-  const replyMutation = useMutation({
-    mutationFn: ({ parentId, cuerpo, files, poll }) =>
-      apiPost('/replies/create', buildReplyFormData({ cuerpo, comentario_padre_id: parentId }, files, poll)),
-    onSuccess: (res) => {
-      if (res?.data?.advertencia) showToast(res.data.advertencia, 'error')
-      else showToast('Respuesta publicada', 'success')
-      queryClient.invalidateQueries({ queryKey: ['replies', 'recent'] })
-    },
-    onError: (err) => showToast(err.message || 'Error al publicar', 'error'),
-  })
-
-  const handleReply = (parentId, text, files, poll) =>
-    replyMutation.mutateAsync({ parentId, cuerpo: text, files, poll })
+  const handleReply = useQuickReply(['replies', 'recent'])
 
   const { data: topics = [], isLoading: loadingTopics } = useQuery({
     queryKey: ['topics', 'recent'],
@@ -111,7 +102,15 @@ export function RecentPage() {
     queryFn: () => apiGet('/replies/recent?limit=30').then(r => r.data),
   })
 
-  const isLoading = loadingTopics || loadingCats || loadingComments
+  const { data: unanswered = [], isLoading: loadingUnanswered } = useQuery({
+    queryKey: ['replies', 'recent', 'sin_respuesta'],
+    queryFn: () => apiGet('/replies/recent?sin_respuesta=1&limit=30').then(r => r.data),
+    enabled: sinRespuesta,
+  })
+
+  const isLoading = sinRespuesta
+    ? loadingUnanswered
+    : loadingTopics || loadingCats || loadingComments
 
   const items = (() => {
     const list = []
@@ -123,6 +122,9 @@ export function RecentPage() {
     }
     if (tab === 'todos' || tab === 'comentarios') {
       comments.forEach(c => list.push({ type: 'comentario', data: c, date: new Date(c.fecha_creacion) }))
+    }
+    if (sinRespuesta) {
+      unanswered.forEach(c => list.push({ type: 'comentario', data: c, date: new Date(c.fecha_creacion) }))
     }
     return list.sort((a, b) => b.date - a.date)
   })()

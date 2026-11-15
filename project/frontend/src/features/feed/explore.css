@@ -38,6 +38,18 @@
   color: var(--text-primary);
 }
 
+.explore-section-more {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.explore-section-more:hover {
+  text-decoration: underline;
+}
+
 .explore-empty {
   text-align: center;
   padding: 24px 16px;
