@@ -5,7 +5,7 @@ import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCa
 import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId,
   updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory,
-  getReplyContext, getLikedCommentsByUserId, getRecentReplies, getTrendingThread,
+  getReplyContext, getLikedCommentsByUserId, getRecentReplies, getTrendingThread, getThreadAncestorAuthors,
   pinHomeComment, unpinHomeComment } from '../repositories/reply.repository.js';
 import { getLikesPrivacyById } from '../repositories/user.repository.js';
 import { canViewUserContent } from './access.service.js';
@@ -19,6 +19,9 @@ import { checkImageSafety } from '../utils/checkImageSafety.js';
 import { notifyImagePending } from './pendingImage.service.js';
 import pool from '../config/db.js';
 import { VENTANAS_DIAS } from '../config/trendingConfig.js';
+
+// Tope de avisos por respuesta a quienes escribieron más arriba en el hilo.
+const MAX_AVISOS_HILO = 10;
 
 const ENCUESTA_DUR_MIN = 60;            // 1 minuto
 const ENCUESTA_DUR_MAX = 7 * 24 * 3600; // 1 semana
@@ -135,8 +138,10 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
     es_home: esHome
   });
 
-  // Cada respuesta notifica al autor del padre, nunca a uno mismo.
-  if (comentario_padre_id && padre && padre.autor_id !== autorId) {
+  // Avisados por la respuesta; las menciones de más abajo no los repiten.
+  const avisadosHilo = [];
+
+  if (comentario_padre_id && padre) {
     const url = padre.tema_id
       ? `/topic/${padre.tema_id}?commentId=${created.contenido_id}`
       : padre.categoria_id
@@ -146,14 +151,34 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
           : null;
     const { rows } = await pool.query('SELECT nickname FROM usuario WHERE id = $1', [autorId]);
     const nick = rows[0]?.nickname;
-    await createNotification({
-      usuario_id: padre.autor_id,
-      tipo: 'respuesta_comentario',
-      mensaje: `${nick} respondió a tu comentario`,
-      contenido_id: created.contenido_id,
-      actor_id: autorId,
-      url,
-    });
+
+    // Cada respuesta notifica al autor del padre, nunca a uno mismo.
+    if (padre.autor_id !== autorId) {
+      await createNotification({
+        usuario_id: padre.autor_id,
+        tipo: 'respuesta_comentario',
+        mensaje: `${nick} respondió a tu comentario`,
+        contenido_id: created.contenido_id,
+        actor_id: autorId,
+        url,
+      });
+    }
+
+    // Y a quienes escribieron más arriba en el mismo hilo, una vez por persona.
+    const ancestros = await getThreadAncestorAuthors(
+      comentario_padre_id, autorId, [autorId, padre.autor_id], MAX_AVISOS_HILO
+    );
+    for (const usuarioId of ancestros) {
+      await createNotification({
+        usuario_id: usuarioId,
+        tipo: 'respuesta_hilo',
+        mensaje: `${nick} respondió en un hilo en el que participaste`,
+        contenido_id: created.contenido_id,
+        actor_id: autorId,
+        url,
+      });
+      avisadosHilo.push(usuarioId);
+    }
   }
 
   if (!comentario_padre_id) {
@@ -238,6 +263,7 @@ const createReplyService = async (autorId, { cuerpo, tema_id, categoria_id, come
       const alreadyNotified = new Set();
       alreadyNotified.add(autorId);
       if (comentario_padre_id && padre) alreadyNotified.add(padre.autor_id);
+      for (const usuarioId of avisadosHilo) alreadyNotified.add(usuarioId);
 
       const commentUrl = created.tema_id
         ? `/topic/${created.tema_id}?commentId=${created.contenido_id}`

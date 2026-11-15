@@ -37,7 +37,7 @@ function NotifTypeIcon({ tipo }) {
       </svg>
     )
   }
-  if (tipo === 'respuesta_comentario' || tipo === 'comentario_en_categoria' ||
+  if (tipo === 'respuesta_comentario' || tipo === 'respuesta_hilo' || tipo === 'comentario_en_categoria' ||
       tipo === 'comentario_en_tema' || tipo === 'comentario_en_tema_categoria' ||
       tipo === 'comentario_categoria_seguida') {
     return (

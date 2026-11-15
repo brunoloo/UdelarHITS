@@ -718,7 +718,40 @@ async function getTrendingThread(days = 7, viewerId = null) {
   return rows[0] || null;
 }
 
-export { createReply, getHomeCommentsChrono, getRankedHomeComments,
+// Autores de los comentarios visibles que están por encima de `commentId` en su hilo
+// (él incluido), del más cercano al más lejano. Omite cuentas no activas, los ids de
+// `excludeIds` y a quien tenga un bloqueo con `actorId` en cualquier sentido.
+async function getThreadAncestorAuthors(commentId, actorId, excludeIds = [], limit = 10) {
+  const q = `
+    WITH RECURSIVE cadena AS (
+      SELECT com.contenido_id, com.comentario_padre_id, com.estado, 1 AS nivel
+      FROM comentario com
+      WHERE com.contenido_id = $1
+      UNION ALL
+      SELECT p.contenido_id, p.comentario_padre_id, p.estado, c.nivel + 1
+      FROM cadena c
+      JOIN comentario p ON p.contenido_id = c.comentario_padre_id
+    )
+    SELECT con.autor_id
+    FROM cadena c
+    JOIN contenido con ON con.id = c.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
+    WHERE c.estado = 'visible' AND u.estado = 'activo'
+      AND con.autor_id <> ALL($3::bigint[])
+      AND NOT EXISTS (
+        SELECT 1 FROM bloqueo b
+        WHERE (b.bloqueador_id = $2::bigint AND b.bloqueado_id = con.autor_id)
+           OR (b.bloqueado_id = $2::bigint AND b.bloqueador_id = con.autor_id)
+      )
+    GROUP BY con.autor_id
+    ORDER BY MIN(c.nivel)
+    LIMIT $4
+  `;
+  const { rows } = await pool.query(q, [commentId, actorId, excludeIds, limit]);
+  return rows.map(r => r.autor_id);
+}
+
+export { createReply, getThreadAncestorAuthors, getHomeCommentsChrono, getRankedHomeComments,
   getRecentReplies, getTrendingThread, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
   getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies,
   hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx, getReplyEditHistory,
