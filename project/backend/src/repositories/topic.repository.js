@@ -1,5 +1,5 @@
 import pool from '../config/db.js';
-import { TRENDING } from '../config/trendingConfig.js';
+import { halfLifeHours } from '../config/trendingConfig.js';
 
 const createTopic = async ({ autor_id, categoria_id, titulo, cuerpo }) => {
   const client = await pool.connect();
@@ -246,6 +246,7 @@ const getRecentTopics = async (limit = 20) => {
   return rows;
 };
 
+// days = null cuenta todo el historial.
 const getTrendingTopic = async (days = 7) => {
   const q = `
     WITH tema_actividad AS (
@@ -256,7 +257,7 @@ const getTrendingTopic = async (days = 7) => {
       JOIN categoria cat ON cat.id = t.categoria_id
       JOIN comentario com ON com.tema_id = t.contenido_id AND com.estado = 'visible'
       JOIN contenido con_com ON con_com.id = com.contenido_id
-        AND con_com.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
+        AND ($1::int IS NULL OR con_com.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1::int))
       WHERE t.estado = 'activo' AND cat.estado = 'activa'
       GROUP BY t.contenido_id
     )
@@ -287,7 +288,7 @@ const getTrendingTopic = async (days = 7) => {
     ORDER BY ta.score DESC, ta.comentarios_recientes DESC, con.fecha_creacion DESC
     LIMIT 1
   `;
-  const { rows } = await pool.query(q, [days, TRENDING.HALF_LIFE_HOURS]);
+  const { rows } = await pool.query(q, [days, halfLifeHours(days)]);
   return rows[0] || null;
 };
 

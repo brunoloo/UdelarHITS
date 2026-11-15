@@ -1,5 +1,6 @@
 import pool from '../config/db.js';
 import { encuestaSubquery } from './encuesta.repository.js';
+import { halfLifeHours } from '../config/trendingConfig.js';
 
 const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario_padre_id, es_home = false }) => {
   const client = await pool.connect();
@@ -638,8 +639,79 @@ async function getPinnedHomeComment(viewerId = null) {
   return rows[0] || null;
 }
 
+// Hilo con más respuestas en la ventana (days = null: todo el historial), entre los
+// comentarios de primer nivel de Home y de categorías activas; los de temas ya los
+// cubre el tema en tendencia. Cuenta respuestas a cualquier profundidad.
+async function getTrendingThread(days = 7, viewerId = null) {
+  const q = `
+    WITH RECURSIVE arbol AS (
+      SELECT com.contenido_id AS raiz_id, com.contenido_id AS id
+      FROM comentario com
+      LEFT JOIN categoria cat ON cat.id = com.categoria_id
+      WHERE com.comentario_padre_id IS NULL
+        AND com.tema_id IS NULL
+        AND com.estado = 'visible'
+        AND (com.es_home = TRUE OR cat.estado = 'activa')
+      UNION ALL
+      SELECT a.raiz_id, h.contenido_id
+      FROM arbol a
+      JOIN comentario h ON h.comentario_padre_id = a.id
+      WHERE h.estado = 'visible'
+    ),
+    actividad AS (
+      SELECT a.raiz_id,
+        COUNT(*)::int AS respuestas_recientes,
+        SUM(POWER(0.5, GREATEST(EXTRACT(EPOCH FROM (NOW() - con.fecha_creacion)) / 3600.0, 0) / $2)) AS score
+      FROM arbol a
+      JOIN contenido con ON con.id = a.id
+      WHERE a.id <> a.raiz_id
+        AND ($1::int IS NULL OR con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1::int))
+      GROUP BY a.raiz_id
+    )
+    SELECT com.contenido_id AS id, con.cuerpo, con.fecha_creacion,
+      u.nickname AS autor_nickname, u.url_imagen AS autor_url_imagen, u.estado AS autor_estado, u.facultad AS autor_facultad,
+      CASE WHEN com.categoria_id IS NOT NULL THEN 'categoria' ELSE 'home' END AS tipo,
+      com.categoria_id AS destino_id, cat.titulo AS destino_titulo,
+      act.respuestas_recientes,
+      (SELECT COUNT(*)::int FROM reaccion r WHERE r.contenido_id = com.contenido_id AND r.tipo = 'meGusta') AS likes,
+      EXISTS (SELECT 1 FROM adjunto a WHERE a.contenido_id = com.contenido_id AND a.estado = 'publicado') AS tiene_adjuntos,
+      (
+        SELECT json_agg(preview ORDER BY preview.fecha DESC)
+        FROM (
+          SELECT con2.cuerpo AS texto, u2.nickname AS autor, u2.url_imagen AS autor_imagen,
+            u2.estado AS autor_estado, con2.fecha_creacion AS fecha
+          FROM comentario c2
+          JOIN contenido con2 ON con2.id = c2.contenido_id
+          JOIN usuario u2 ON u2.id = con2.autor_id
+          WHERE c2.comentario_padre_id = com.contenido_id AND c2.estado = 'visible'
+            AND NOT EXISTS (
+              SELECT 1 FROM bloqueo b
+              WHERE (b.bloqueador_id = $3::bigint AND b.bloqueado_id = con2.autor_id)
+                 OR (b.bloqueado_id = $3::bigint AND b.bloqueador_id = con2.autor_id)
+            )
+          ORDER BY con2.fecha_creacion DESC
+          LIMIT 3
+        ) preview
+      ) AS respuestas_preview
+    FROM actividad act
+    JOIN comentario com ON com.contenido_id = act.raiz_id
+    JOIN contenido con ON con.id = com.contenido_id
+    JOIN usuario u ON u.id = con.autor_id
+    LEFT JOIN categoria cat ON cat.id = com.categoria_id
+    WHERE NOT EXISTS (
+      SELECT 1 FROM bloqueo b
+      WHERE (b.bloqueador_id = $3::bigint AND b.bloqueado_id = con.autor_id)
+         OR (b.bloqueado_id = $3::bigint AND b.bloqueador_id = con.autor_id)
+    )
+    ORDER BY act.score DESC, act.respuestas_recientes DESC, con.fecha_creacion DESC
+    LIMIT 1
+  `;
+  const { rows } = await pool.query(q, [days, halfLifeHours(days), viewerId]);
+  return rows[0] || null;
+}
+
 export { createReply, countHomeComments, getHomeCommentsChrono, getRankedHomeComments,
-  getRecentReplies, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
+  getRecentReplies, getTrendingThread, getRepliesByCategoryId, getRepliesByTopicId, deleteReplyById,
   getReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId, updateReplyById, replyHasReplies,
   hideReplyById, getParentComment, moderateHideReply, reactivateReplyTx, hardDeleteReplySubtreeTx, getReplyEditHistory,
   getReplyContext, getLikedCommentsByUserId,

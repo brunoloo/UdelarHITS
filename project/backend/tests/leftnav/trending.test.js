@@ -66,3 +66,53 @@ describe('GET /topics/trending', () => {
     }
   });
 });
+
+describe('GET /topics/trending — ventana progresiva', () => {
+  const envejecer = (contenidoId, dias) => pool.query(
+    `UPDATE contenido SET fecha_creacion = NOW() - MAKE_INTERVAL(days => $2) WHERE id = $1`,
+    [contenidoId, dias]
+  );
+
+  test('con comentarios esta semana informa la ventana de 7 días', async () => {
+    const a = await registerAndLogin();
+    const topic = await createTopic(a.cookie);
+    await comentar(a.cookie, idOf(topic));
+
+    const res = await trending();
+    expect(idOf(res.body.data)).toBe(idOf(topic));
+    expect(res.body.ventana_dias).toBe(7);
+  });
+
+  test('sin comentarios recientes amplía la ventana en vez de quedar vacío', async () => {
+    const a = await registerAndLogin();
+    const topic = await createTopic(a.cookie);
+    const com = await comentar(a.cookie, idOf(topic));
+    await envejecer(com.contenido_id, 20);
+
+    const estricto = await trending('?days=7');
+    expect(estricto.body.data).toBeNull();
+    expect(estricto.body.ventana_dias).toBe(7);
+
+    const res = await trending();
+    expect(idOf(res.body.data)).toBe(idOf(topic));
+    expect(res.body.ventana_dias).toBe(30);
+  });
+
+  test('un comentario muy viejo cae al histórico (ventana_dias null)', async () => {
+    const a = await registerAndLogin();
+    const topic = await createTopic(a.cookie);
+    const com = await comentar(a.cookie, idOf(topic));
+    await envejecer(com.contenido_id, 400);
+
+    const res = await trending();
+    expect(idOf(res.body.data)).toBe(idOf(topic));
+    expect(res.body.ventana_dias).toBeNull();
+  });
+
+  test('un tema sin comentarios no es tendencia', async () => {
+    const a = await registerAndLogin();
+    await createTopic(a.cookie);
+    const res = await trending();
+    expect(res.body.data).toBeNull();
+  });
+});

@@ -226,6 +226,10 @@
   border-radius: 8px;
 }
 
+.trending-comment--root {
+  margin-bottom: 14px;
+}
+
 .trending-comment-body {
   flex: 1;
   min-width: 0;

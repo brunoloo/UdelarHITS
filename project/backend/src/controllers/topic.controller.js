@@ -127,8 +127,8 @@ const getRecentTopicsList = async (req, res, next) => {
 
 const getTrendingTopicItem = async (req, res, next) => {
   try {
-    const topic = await getTrendingTopicService(req.query.days);
-    return res.status(200).json({ ok: true, data: topic });
+    const { topic, ventanaDias } = await getTrendingTopicService(req.query.days);
+    return res.status(200).json({ ok: true, data: topic, ventana_dias: ventanaDias });
   } catch (error) {
     next(error);
   }

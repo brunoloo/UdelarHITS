@@ -5,7 +5,7 @@ import {getCategoryById ,assignParticipantRole, categoryHasContent, hardDeleteCa
 import { createReply, getRepliesByCategoryId, getRepliesByTopicId, getReplyById,
   deleteReplyById, getRepliesByAuthorId, getRepliesByUserId, getRepliesByCommentId,
   updateReplyById, replyHasReplies, hideReplyById, getParentComment, getReplyEditHistory,
-  getReplyContext, getLikedCommentsByUserId, countHomeComments, getRecentReplies,
+  getReplyContext, getLikedCommentsByUserId, countHomeComments, getRecentReplies, getTrendingThread,
   pinHomeComment, unpinHomeComment } from '../repositories/reply.repository.js';
 import { getLikesPrivacyById } from '../repositories/user.repository.js';
 import { canViewUserContent } from './access.service.js';
@@ -18,6 +18,7 @@ import { uploadAttachment, deleteAttachmentFromCloudinary } from '../utils/uploa
 import { checkImageSafety } from '../utils/checkImageSafety.js';
 import { notifyImagePending } from './pendingImage.service.js';
 import pool from '../config/db.js';
+import { VENTANAS_DIAS } from '../config/trendingConfig.js';
 
 const ENCUESTA_DUR_MIN = 60;            // 1 minuto
 const ENCUESTA_DUR_MAX = 7 * 24 * 3600; // 1 semana
@@ -561,6 +562,15 @@ const getHomeCommentCountService = async () => {
   return await countHomeComments();
 };
 
+// La ventana se amplía hasta encontrar un hilo con respuestas.
+const getTrendingThreadService = async (viewerId = null) => {
+  for (const ventana of VENTANAS_DIAS) {
+    const thread = await getTrendingThread(ventana, viewerId);
+    if (thread) return { thread, ventanaDias: ventana };
+  }
+  return { thread: null, ventanaDias: null };
+};
+
 const getRecentRepliesService = async (limit, viewerId = null) => {
   const safeLimit = Math.min(Math.max(parseInt(limit) || 30, 1), 50);
   return redactComments(await getRecentReplies(safeLimit, viewerId));
@@ -636,5 +646,5 @@ const unpinHomeCommentService = async (userRol, commentId) => {
 export { createReplyService, getHomeCommentCountService, getRepliesByCategoryIdService, getRepliesByTopicIdService,
   deleteReplyService, getMyRepliesService, getRepliesByUserIdService, updateReplyService,
   getReplyByIdService, getRepliesByCommentIdService, getReplyEditHistoryService,
-  getReplyContextService, getLikedCommentsByUserIdService, getRecentRepliesService,
+  getReplyContextService, getLikedCommentsByUserIdService, getRecentRepliesService, getTrendingThreadService,
   pinHomeCommentService, unpinHomeCommentService };

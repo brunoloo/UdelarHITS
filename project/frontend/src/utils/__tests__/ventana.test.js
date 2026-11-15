@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ventanaTexto, ventanaSubtitulo, heroLabel } from '../ventana'
+import { ventanaTexto, ventanaSubtitulo, heroLabel, temaLabel, conversacionLabel } from '../ventana'
 
 describe('textos de la ventana del ranking', () => {
   it('nombra la ventana usada', () => {
@@ -11,6 +11,13 @@ describe('textos de la ventana del ranking', () => {
   it('el subtítulo no habla de días en el histórico', () => {
     expect(ventanaSubtitulo(90)).toBe('Las categorías con más actividad en los últimos 90 días')
     expect(ventanaSubtitulo(null)).not.toMatch(/días/)
+  })
+
+  it('"del momento" solo con actividad de esta semana', () => {
+    expect(temaLabel(7)).toBe('Tema del momento')
+    expect(temaLabel(30)).toBe('Tema destacado')
+    expect(conversacionLabel(7)).toBe('Conversación del momento')
+    expect(conversacionLabel(null)).toBe('Conversación destacada')
   })
 
   it('el hero solo dice "de la semana" con ventana semanal', () => {

@@ -21,7 +21,8 @@ const categorias = [
 
 const respuestas = {
   '/categories/popular?limit=1': { data: [], ventana_dias: null },
-  '/topics/trending': { data: null },
+  '/topics/trending': { data: null, ventana_dias: null },
+  '/replies/trending': { data: null, ventana_dias: null },
   '/categories/index': { data: categorias },
   '/users/suggested?limit=12': { data: [] },
   '/categories/me': { data: [] },
@@ -53,6 +54,31 @@ describe('ExplorePage', () => {
     expect(screen.getByText('Categorías por etiqueta')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Crear cuenta' }).getAttribute('href')).toBe('/register')
     expect(apiGet).not.toHaveBeenCalledWith('/categories/me')
+  })
+
+  it('destaca un hilo de comentarios y rotula la ventana real', async () => {
+    session = { user: null, loading: false }
+    apiGet.mockImplementation(path => Promise.resolve(
+      path === '/replies/trending'
+        ? {
+            data: {
+              id: 42, tipo: 'home', destino_id: null, cuerpo: '¿Alguien cursa Física 2?',
+              autor_nickname: 'ana', autor_estado: 'activo',
+              fecha_creacion: new Date().toISOString(), respuestas_recientes: 3,
+              respuestas_preview: [{ texto: 'Yo', autor: 'beto', autor_estado: 'inactivo', fecha: new Date().toISOString() }],
+            },
+            ventana_dias: 30,
+          }
+        : respuestas[path] ?? { data: [] },
+    ))
+    renderPage()
+
+    expect(await screen.findByText('¿Alguien cursa Física 2?')).toBeTruthy()
+    expect(screen.getByText('Conversación destacada')).toBeTruthy()
+    expect(screen.getByText('3 respuestas en los últimos 30 días')).toBeTruthy()
+    expect(screen.getByText('Usuario inactivo')).toBeTruthy()
+    expect(screen.queryByText('beto')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Ver conversación completa →' }).getAttribute('href')).toBe('/comment/42')
   })
 
   it('con sesión mantiene "Categorías para vos" sin el cartel de registro', async () => {

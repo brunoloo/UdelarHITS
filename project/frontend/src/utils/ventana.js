@@ -16,3 +16,12 @@ export function heroLabel(dias) {
   if (dias > 7) return 'Categoría del mes'
   return 'Categoría de la semana'
 }
+
+// "Del momento" solo si la actividad es de esta semana.
+export function temaLabel(dias) {
+  return dias != null && dias <= 7 ? 'Tema del momento' : 'Tema destacado'
+}
+
+export function conversacionLabel(dias) {
+  return dias != null && dias <= 7 ? 'Conversación del momento' : 'Conversación destacada'
+}

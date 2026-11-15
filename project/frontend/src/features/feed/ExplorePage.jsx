@@ -8,7 +8,9 @@ import { CategoryCardMini } from '../../components/shared/CategoryCardMini'
 import { parseEtiquetas } from '../../utils/parseEtiquetas'
 import { timeAgo } from '../../utils/timeAgo'
 import { categoryStats } from '../../utils/categoryStats'
-import { ventanaTexto, heroLabel } from '../../utils/ventana'
+import { ventanaTexto, heroLabel, temaLabel, conversacionLabel } from '../../utils/ventana'
+import { resolveAutor } from '../../utils/resolveAutor'
+import { commentPermalink } from '../../utils/commentPermalink'
 import { useToast } from '../../hooks/useToast'
 import './feed.css'
 import './explore.css'
@@ -49,7 +51,13 @@ function HeroCard({ category, ventanaDias }) {
   )
 }
 
-function TrendingSection({ topic }) {
+// "3 comentarios esta semana"; en el histórico, sin sufijo.
+function conteoEnVentana(n, singular, plural, ventanaDias) {
+  const base = `${n} ${n === 1 ? singular : plural}`
+  return ventanaDias == null ? base : `${base} ${ventanaTexto(ventanaDias)}`
+}
+
+function TrendingSection({ topic, ventanaDias }) {
   const totalComentarios = Number(topic.total_comentarios) || 0
   const previews = topic.comentarios_preview || []
   const topicId = topic.id || topic.contenido_id
@@ -59,7 +67,7 @@ function TrendingSection({ topic }) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
-        <span className="explore-section-title">Tema del momento</span>
+        <span className="explore-section-title">{temaLabel(ventanaDias)}</span>
       </div>
       <div className="trending-card">
         <div className="trending-meta">
@@ -71,7 +79,7 @@ function TrendingSection({ topic }) {
           {topic.categoria_id && <span>·</span>}
           <span>{timeAgo(topic.fecha_creacion)}</span>
           <span>·</span>
-          <span>{totalComentarios} {totalComentarios === 1 ? 'comentario' : 'comentarios'}</span>
+          <span>{conteoEnVentana(totalComentarios, 'comentario', 'comentarios', ventanaDias)}</span>
         </div>
         <div className="trending-title">
           <Link to={`/topic/${encodeURIComponent(topicId)}`}>{topic.titulo}</Link>
@@ -95,6 +103,69 @@ function TrendingSection({ topic }) {
         )}
         <div className="trending-footer">
           <Link to={`/topic/${encodeURIComponent(topicId)}`}>Ver conversación completa →</Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Hilo de comentarios (de Home o de una categoría) con más respuestas en la ventana.
+function ConversationSection({ thread, ventanaDias }) {
+  const autor = resolveAutor(thread)
+  const respuestas = Number(thread.respuestas_recientes) || 0
+  const previews = thread.respuestas_preview || []
+  const url = commentPermalink({ tipo: thread.tipo, id: thread.id, destino_id: thread.destino_id })
+  return (
+    <div className="explore-section">
+      <div className="explore-section-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M17 8h2a2 2 0 0 1 2 2v9l-3-3h-7a2 2 0 0 1-2-2v-1"/>
+          <path d="M15 3H5a2 2 0 0 0-2 2v10l3-3h9a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/>
+        </svg>
+        <span className="explore-section-title">{conversacionLabel(ventanaDias)}</span>
+      </div>
+      <div className="trending-card">
+        <div className="trending-meta">
+          {thread.tipo === 'categoria' ? (
+            <Link to={`/category/${encodeURIComponent(thread.destino_id)}`}>{thread.destino_titulo}</Link>
+          ) : (
+            <span>Inicio</span>
+          )}
+          <span>·</span>
+          <span>{timeAgo(thread.fecha_creacion)}</span>
+          <span>·</span>
+          <span>{conteoEnVentana(respuestas, 'respuesta', 'respuestas', ventanaDias)}</span>
+        </div>
+        <div className="trending-comment trending-comment--root">
+          <UserAvatar url_imagen={autor.url_imagen} nickname={autor.nickname} size={28} inactive={autor.isInactive} />
+          <div className="trending-comment-body">
+            <div className="trending-comment-author">{autor.nickname}</div>
+            <div className="trending-comment-text">
+              {thread.cuerpo?.trim() || (thread.tiene_adjuntos ? '[adjunto]' : '')}
+            </div>
+          </div>
+        </div>
+        {previews.length > 0 && (
+          <>
+            <div className="trending-comments-label">Respuestas recientes</div>
+            <div className="trending-preview">
+              {previews.map((p, i) => {
+                const a = resolveAutor({ nickname: p.autor, url_imagen: p.autor_imagen, estado: p.autor_estado })
+                return (
+                  <div key={i} className="trending-comment">
+                    <UserAvatar url_imagen={a.url_imagen} nickname={a.nickname} size={28} inactive={a.isInactive} />
+                    <div className="trending-comment-body">
+                      <div className="trending-comment-author">{a.nickname}</div>
+                      <div className="trending-comment-text">{p.texto || ''}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+        <div className="trending-footer">
+          <Link to={url}>Ver conversación completa →</Link>
         </div>
       </div>
     </div>
@@ -305,7 +376,15 @@ export function ExplorePage() {
 
   const { data: trending } = useQuery({
     queryKey: ['topics', 'trending'],
-    queryFn: () => apiGet('/topics/trending').then(r => r.data),
+    queryFn: () => apiGet('/topics/trending')
+      .then(r => ({ topic: r.data, ventanaDias: r.ventana_dias ?? null })),
+    staleTime: 2 * 60 * 1000,
+  })
+
+  const { data: conversation } = useQuery({
+    queryKey: ['replies', 'trending'],
+    queryFn: () => apiGet('/replies/trending')
+      .then(r => ({ thread: r.data, ventanaDias: r.ventana_dias ?? null })),
     staleTime: 2 * 60 * 1000,
   })
 
@@ -337,7 +416,11 @@ export function ExplorePage() {
 
       {heroCat && <HeroCard category={heroCat} ventanaDias={popularData.ventanaDias} />}
 
-      {trending && <TrendingSection topic={trending} />}
+      {conversation?.thread && (
+        <ConversationSection thread={conversation.thread} ventanaDias={conversation.ventanaDias} />
+      )}
+
+      {trending?.topic && <TrendingSection topic={trending.topic} ventanaDias={trending.ventanaDias} />}
 
       {suggestedUsers.length > 0 && <SuggestedUsers users={suggestedUsers} />}
 

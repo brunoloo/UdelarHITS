@@ -8,6 +8,7 @@ import { createTopic, findTopicByTituloAndCategoria, getTopics, getTopicById,
 import { createNotification } from '../repositories/notification.repository.js';
 import { canViewUserContent } from './access.service.js';
 import pool from '../config/db.js';
+import { VENTANAS_DIAS } from '../config/trendingConfig.js';
 
 const createTopicService = async (autorId, { categoria_id, titulo, cuerpo }) => {
   if (!categoria_id) {
@@ -256,9 +257,18 @@ const getRecentTopicsService = async (limit) => {
   return await getRecentTopics(safeLimit);
 };
 
+// Con `days` la ventana es estricta; sin él se amplía hasta encontrar un tema con comentarios.
 const getTrendingTopicService = async (days) => {
-  const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 30);
-  return await getTrendingTopic(safeDays);
+  const explicitDays = parseInt(days);
+  if (Number.isInteger(explicitDays)) {
+    const ventanaDias = Math.min(Math.max(explicitDays, 1), 30);
+    return { topic: await getTrendingTopic(ventanaDias), ventanaDias };
+  }
+  for (const ventana of VENTANAS_DIAS) {
+    const topic = await getTrendingTopic(ventana);
+    if (topic) return { topic, ventanaDias: ventana };
+  }
+  return { topic: null, ventanaDias: null };
 };
 
 const getTopicEditHistoryService = async (topicId) => {

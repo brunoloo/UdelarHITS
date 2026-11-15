@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply,
     getMyReplies, getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory,
-    getReplyContext, getLikedReplies, getHomeCommentCount, getRecentReplies,
+    getReplyContext, getLikedReplies, getHomeCommentCount, getRecentReplies, getTrendingThread,
     pinHomeComment, unpinHomeComment } from '../controllers/reply.controller.js';
 import { protect, isAdmin, optionalAuth } from '../middlewares/auth.middleware.js';
 import { uploadAttachments } from '../config/multer.js';
@@ -30,6 +30,8 @@ router.get('/me', protect, getMyReplies);
 router.get('/home/count', getHomeCommentCount);
 
 router.get('/recent', optionalAuth, getRecentReplies);
+
+router.get('/trending', optionalAuth, getTrendingThread);
 
 router.get('/:id/history', getReplyEditHistory);
 

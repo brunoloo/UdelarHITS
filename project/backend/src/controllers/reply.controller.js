@@ -2,7 +2,7 @@ import { createReplyService, getRepliesByCategoryIdService,
   getRepliesByTopicIdService, deleteReplyService, getMyRepliesService,
   getRepliesByUserIdService, updateReplyService, getRepliesByCommentIdService, getReplyByIdService, getReplyEditHistoryService,
   getReplyContextService, getLikedCommentsByUserIdService, getHomeCommentCountService,
-  getRecentRepliesService, pinHomeCommentService, unpinHomeCommentService } from '../services/reply.service.js';
+  getRecentRepliesService, getTrendingThreadService, pinHomeCommentService, unpinHomeCommentService } from '../services/reply.service.js';
 import { detectAttachmentType } from '../utils/validateAttachment.js';
 
 const createReply = async (req, res) => {
@@ -162,6 +162,15 @@ const getRecentReplies = async (req, res) => {
   }
 };
 
+const getTrendingThread = async (req, res, next) => {
+  try {
+    const { thread, ventanaDias } = await getTrendingThreadService(req.user?.id || null);
+    return res.status(200).json({ ok: true, data: thread, ventana_dias: ventanaDias });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getRepliesByComment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -238,5 +247,5 @@ const unpinHomeComment = async (req, res) => {
 
 export { createReply, getRepliesByCategory, getRepliesByTopic, deleteReply, getMyReplies,
   getRepliesByUser, updateReply, getReplyById, getRepliesByComment, getReplyEditHistory,
-  getReplyContext, getLikedReplies, getHomeCommentCount, getRecentReplies,
+  getReplyContext, getLikedReplies, getHomeCommentCount, getRecentReplies, getTrendingThread,
   pinHomeComment, unpinHomeComment };
