@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Donaciones — UdelarHITS</title>
+  <link rel="stylesheet" href="/central/css/central.css" />
+  <style>
+    .dona-options {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 32px 0 40px;
+    }
+
+    .dona-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 24px;
+      border: 1px solid #e8e8e8;
+      border-radius: 10px;
+      text-decoration: none;
+      color: #1a1a1a;
+      transition: background 0.12s, border-color 0.12s;
+      cursor: pointer;
+    }
+
+    .dona-card:hover {
+      background: #f7f7f7;
+      border-color: #d0d0d0;
+    }
+
+    .dona-card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .dona-card-icon--paypal {
+      background: #f0f4ff;
+    }
+
+    .dona-card-icon--mercadopago {
+      background: #e8f6fd;
+    }
+
+    .dona-card-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .dona-card-name {
+      font-size: 16px;
+      font-weight: 600;
+      display: block;
+    }
+
+    .dona-card-desc {
+      font-size: 13px;
+      color: #666;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .dona-card-arrow {
+      color: #bbb;
+      flex-shrink: 0;
+      transition: color 0.12s;
+    }
+
+    .dona-card:hover .dona-card-arrow {
+      color: #666;
+    }
+
+    .dona-card--disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .dona-coming {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #888;
+      background: #f0f0f0;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .dona-transparency {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 24px 0 32px;
+    }
+
+    .dona-stat {
+      padding: 20px;
+      background: #f7f7f7;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .dona-stat-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .dona-stat-label {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 640px) {
+      .dona-card {
+        padding: 16px 18px;
+      }
+
+      .dona-transparency {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="mi-topbar">
+    <a href="/" class="mi-logo">UdelarHITS</a>
+    <span class="mi-topbar-sep">·</span>
+    <span class="mi-topbar-section">Información</span>
+  </div>
+
+  <div class="mi-breadcrumb">
+    <a href="/central/">Inicio</a>
+    <span>›</span>
+    <span>Donaciones</span>
+  </div>
+
+  <div class="mi-content">
+    <h1>Apoyar a UdelarHITS</h1>
+    <hr class="mi-divider" />
+    <p class="ca-updated">Última actualización: julio 2026</p>
+
+    <p class="mi-lead">
+      UdelarHITS es un proyecto independiente, sin publicidad y sin fines comerciales. Las donaciones voluntarias nos ayudan a cubrir los costos de infraestructura y a mantener la plataforma funcionando para toda la comunidad universitaria.
+    </p>
+
+    <h2>A dónde va tu aporte</h2>
+    <p>Cada donación se destina exclusivamente a sostener la plataforma. No hay salarios, no hay intermediarios — todo va a la infraestructura técnica que mantiene el foro en línea.</p>
+
+    <div class="dona-transparency">
+      <div class="dona-stat">
+        <div class="dona-stat-icon">&#x1F5A5;</div>
+        <div class="dona-stat-label">Servidores y hosting</div>
+      </div>
+      <div class="dona-stat">
+        <div class="dona-stat-icon">&#x1F4BE;</div>
+        <div class="dona-stat-label">Base de datos y almacenamiento</div>
+      </div>
+      <div class="dona-stat">
+        <div class="dona-stat-icon">&#x1F310;</div>
+        <div class="dona-stat-label">Dominio y certificados SSL</div>
+      </div>
+      <div class="dona-stat">
+        <div class="dona-stat-icon">&#x2601;</div>
+        <div class="dona-stat-label">Servicios en la nube (archivos, correo)</div>
+      </div>
+    </div>
+
+    <h2>Métodos de donación</h2>
+    <p>Estamos habilitando canales de donación. Por ahora los medios disponibles son los siguientes:</p>
+
+    <!-- TODO: Reemplazar href con los links reales de donación cuando estén listos -->
+    <div class="dona-options">
+      <a class="dona-card dona-card--disabled" href="#" aria-disabled="true">
+        <div class="dona-card-icon dona-card-icon--paypal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#003087" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 21l1.5-9h7c3 0 5.5-2.5 5-5.5S18 2 15.5 2H8L4.5 21H7z"/>
+            <path d="M10 14h5c2.5 0 4.5-2 4-4.5S16.5 6 14.5 6"/>
+          </svg>
+        </div>
+        <div class="dona-card-info">
+          <span class="dona-card-name">PayPal <span class="dona-coming">Próximamente</span></span>
+          <span class="dona-card-desc">Donación internacional con tarjeta o cuenta PayPal</span>
+        </div>
+        <svg class="dona-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </a>
+
+      <a class="dona-card dona-card--disabled" href="#" aria-disabled="true">
+        <div class="dona-card-icon dona-card-icon--mercadopago">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#009ee3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="3"/>
+            <path d="M2 10h20"/>
+            <path d="M6 15h4"/>
+          </svg>
+        </div>
+        <div class="dona-card-info">
+          <span class="dona-card-name">MercadoPago <span class="dona-coming">Próximamente</span></span>
+          <span class="dona-card-desc">Donación local con tarjeta de débito, crédito o saldo MP</span>
+        </div>
+        <svg class="dona-card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </a>
+    </div>
+
+    <div class="ca-note">
+      <p>Las donaciones son completamente voluntarias y no otorgan beneficios especiales dentro de la plataforma. Todos los usuarios tienen las mismas funcionalidades, donen o no.</p>
+    </div>
+
+    <h2>Transparencia</h2>
+    <p>UdelarHITS no muestra publicidad, no vende datos de sus usuarios y no tiene fines comerciales. Es un proyecto mantenido de forma independiente por estudiantes. Podés leer en detalle qué datos se manejan y cómo en la <a href="/central/legal/privacidad.html" target="_blank">política de privacidad</a>, y conocer más sobre el proyecto en <a href="/central/info/about.html" target="_blank">quiénes somos</a>.</p>
+
+    <h2>Contacto</h2>
+    <p>Si tenés dudas sobre las donaciones o querés colaborar de otra forma, escribinos a <a href="mailto:udelarhits@gmail.com">udelarhits@gmail.com</a>.</p>
+
+  </div>
+
+  <footer class="ca-footer">
+    <div class="ca-footer-grid">
+      <div class="ca-footer-col">
+        <h3>Plataforma</h3>
+        <a href="/">Volver al foro</a>
+        <a href="/about">Acerca de UdelarHITS</a>
+      </div>
+      <div class="ca-footer-col">
+        <h3>Centro de ayuda</h3>
+        <a href="/central/moderation/moderation-policy.html">Política de moderación</a>
+        <a href="/central/info/normas.html">Normas de la comunidad</a>
+        <a href="/central/ayuda/faq.html">Preguntas frecuentes</a>
+      </div>
+      <div class="ca-footer-col">
+        <h3>Legal</h3>
+        <a href="/central/legal/terminos.html">Términos de uso</a>
+        <a href="/central/legal/privacidad.html">Política de privacidad</a>
+        <a href="/central/legal/cookies.html">Política de cookies</a>
+        <a href="/central/info/preservacion.html">Preservación de contenido</a>
+      </div>
+      <div class="ca-footer-col">
+        <h3>Contacto</h3>
+        <a href="mailto:udelarhits@gmail.com">udelarhits@gmail.com</a>
+      </div>
+    </div>
+    <div class="ca-footer-bottom">
+      <span>© 2026 UdelarHITS · Hecho por estudiantes, para estudiantes</span>
+      <span>Proyecto independiente sin afiliación oficial con la Universidad de la República</span>
+    </div>
+  </footer>
+</body>
+</html>

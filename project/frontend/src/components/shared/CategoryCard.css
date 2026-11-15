@@ -1,0 +1,163 @@
+/* CATEGORY CARD */
+.category-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  padding: 12px;
+  transition: border-color 0.15s;
+}
+
+.category-card:hover {
+  border-color: var(--border-strong);
+}
+
+.category-pinned-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 8px 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.category-pinned-badge svg { opacity: 0.85; }
+
+/* Las tres zonas son hermanas, no anidadas. */
+.category-head-link,
+.category-foot-link,
+.category-comment-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.category-head-link,
+.category-foot-link {
+  padding: 4px;
+  border-radius: var(--radius);
+}
+
+.category-head-link:hover,
+.category-foot-link:hover {
+  background: var(--surface-2);
+}
+
+.category-head-link:hover .category-title {
+  color: var(--accent);
+}
+
+.category-comment-link {
+  margin: 10px 0;
+}
+
+.category-card .comment-card {
+  margin: 0;
+}
+
+/* Span y no link, para no anidar anchors. */
+.cat-preview-author {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.category-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--accent-light);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.category-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.category-title {
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+  transition: color 0.12s;
+}
+
+.category-stats {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.category-description {
+  overflow-wrap: break-word;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.category-description .bio-link {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+}
+.category-description .bio-link:hover {
+  text-decoration: underline;
+}
+
+.category-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* LAST ACTIVITY */
+.last-activity {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.last-activity-label {
+  color: var(--text-muted);
+}
+
+.last-activity-title {
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.last-activity-meta {
+  color: var(--text-muted);
+}
+
+.no-activity {
+  color: var(--text-muted);
+  font-style: italic;
+}

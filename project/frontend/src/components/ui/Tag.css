@@ -1,0 +1,51 @@
+/* TAG */
+.tag {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* TAG OPTION (selector interactivo) */
+.tag-option {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.tag-option:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tag-option.selected {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-color: var(--accent);
+}
+
+.tag--link {
+  cursor: pointer;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  transition: background .12s, color .12s;
+}
+.tag--link:hover {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.tag--more {
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  font-style: italic;
+}

@@ -1,0 +1,182 @@
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* `manipulation` desactiva el zoom por doble toque; touch-action no se hereda, por eso va en todos los elementos. */
+* {
+  touch-action: manipulation;
+}
+
+/* Sin transiciones durante el cambio de tema. */
+.no-transitions * {
+  transition-duration: 0s !important;
+}
+
+/* @mention links */
+a.mention-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+a.mention-link:hover {
+  text-decoration: underline;
+}
+
+/* Tabs compartidos. Viven en el CSS global: en un chunk lazy, las páginas que no lo cargan los mostrarían sin estilo. */
+.section-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 8px;
+  gap: 4px;
+  margin-bottom: 0;
+}
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 16px;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab:hover { color: var(--text-primary); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.count {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.section-panel { padding: 16px 0; }
+
+/* Cómo se renderiza la descripción de una categoría: lo comparten la página, la vista previa y el editor. */
+.category-description-content,
+.edit-field textarea.category-description-editor {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: normal;
+  word-spacing: normal;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-variant-ligatures: none;
+  -webkit-font-variant-ligatures: none;
+  tab-size: 8;
+  -moz-tab-size: 8;
+}
+.category-description-content { color: var(--text-secondary); }
+.category-description-content .bio-link {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+}
+.category-description-content .bio-link:hover {
+  text-decoration: underline;
+}
+
+/* Mismo criterio para el cuerpo de un tema. */
+.topic-header-body,
+.edit-field textarea.topic-content-editor {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: normal;
+  word-spacing: normal;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-variant-ligatures: none;
+  -webkit-font-variant-ligatures: none;
+  tab-size: 8;
+  -moz-tab-size: 8;
+}
+.topic-header-body {
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.topic-header-body .bio-link {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+}
+.topic-header-body .bio-link:hover {
+  text-decoration: underline;
+}
+
+/* Scrollbar fino de los textarea de descripción; en el CSS global para que aplique en todas las rutas. */
+.edit-field textarea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.edit-field textarea::-webkit-scrollbar { width: 6px; }
+.edit-field textarea::-webkit-scrollbar-track { background: transparent; }
+.edit-field textarea::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius);
+}
+.edit-field textarea::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Píldora del filtro por etiqueta. Toma el color de --pill-color. */
+.search-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  max-width: 170px;
+  padding: 3px 5px 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--pill-color) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pill-color) 42%, transparent);
+}
+
+.search-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pill-color);
+  flex-shrink: 0;
+}
+
+.search-pill-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.2px;
+}
+
+.search-pill--fac .search-pill-label { text-transform: uppercase; }
+
+.search-pill-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.search-pill-remove:hover {
+  background: color-mix(in srgb, var(--pill-color) 26%, transparent);
+  color: var(--text-primary);
+}

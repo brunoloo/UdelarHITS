@@ -1,0 +1,44 @@
+import { Router } from 'express';
+
+import UserRoutes from './user.routes.js';
+import AuthRoutes from './auth.routes.js'
+import CategoryRoutes from './category.routes.js'
+import TopicRoutes from './topic.routes.js'
+import ReplyRoutes from './reply.routes.js'
+import ReportRoutes from './report.routes.js'
+import AppealRoutes from './appeal.routes.js'
+import NotificationRoutes from './notification.routes.js'
+import userReportRoutes from './report-user.routes.js';
+import ReactionRoutes from './reaction.routes.js';
+import SavedRoutes from './saved.routes.js';
+import PollRoutes from './encuesta.routes.js';
+import ChatRoutes from './chat.routes.js';
+import AdminRoutes from './admin.routes.js';
+import SearchRoutes from './search.routes.js';
+
+const router = Router();
+
+router.use('/auth', AuthRoutes);
+router.use('/users', UserRoutes);
+router.use('/categories', CategoryRoutes);
+router.use('/topics', TopicRoutes);
+router.use('/replies', ReplyRoutes);
+router.use('/reports', ReportRoutes);
+router.use('/appeals', AppealRoutes);
+router.use('/notifications',NotificationRoutes);
+router.use('/user-reports', userReportRoutes);
+router.use('/reactions', ReactionRoutes);
+router.use('/saved', SavedRoutes);
+router.use('/polls', PollRoutes);
+router.use('/chat', ChatRoutes);
+router.use('/admin', AdminRoutes);
+router.use('/search', SearchRoutes);
+
+
+router.get('/', (_req, res) => {
+  res.json({ 
+    ok: true,
+    message: 'API OK' });
+});
+
+export default router;

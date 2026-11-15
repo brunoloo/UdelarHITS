@@ -1,0 +1,14 @@
+.preview-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 0 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+.preview-hint-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}

@@ -1,0 +1,10 @@
+{
+  "name": "udelarhits-root",
+  "private": true,
+  "version": "1.7.0",
+  "license": "MIT",
+  "scripts": {
+    "build": "cd frontend && npm install --include=dev && npm run build && cd ../backend && npm install",
+    "start": "cd backend && npm start"
+  }
+}

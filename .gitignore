@@ -1,0 +1,36 @@
+# Dependencias y builds
+node_modules/
+dist/
+build/
+coverage/
+
+# Entorno
+.env
+.env.*
+!.env.example
+!.env.test.example
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Datos locales
+*.sqlite
+*.sqlite3
+*.dump
+*.backup
+*.bak
+*.sql.gz
+cookies*.txt
+
+# Claves y certificados
+*.pem
+*.key
+
+# Editor y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*:Zone.Identifier

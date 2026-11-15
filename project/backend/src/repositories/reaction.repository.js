@@ -1,0 +1,123 @@
+import pool from '../config/db.js';
+import { createNotification, notificationExists } from './notification.repository.js';
+
+const toggleReaction = async (userId, contenidoId, tipo) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Serializa los toggles concurrentes del mismo usuario sobre el mismo contenido (doble clic).
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+      `reaccion:${userId}:${contenidoId}`,
+    ]);
+
+    const { rows: existing } = await client.query(
+      'SELECT id, tipo FROM reaccion WHERE usuario_id = $1 AND contenido_id = $2',
+      [userId, contenidoId]
+    );
+
+    let action;
+    let mi_reaccion = null;
+
+    if (existing.length === 0) {
+      await client.query(
+        'INSERT INTO reaccion (usuario_id, contenido_id, tipo) VALUES ($1, $2, $3)',
+        [userId, contenidoId, tipo]
+      );
+      action = 'created';
+      mi_reaccion = tipo;
+    } else if (existing[0].tipo === tipo) {
+      await client.query('DELETE FROM reaccion WHERE id = $1', [existing[0].id]);
+      action = 'removed';
+      mi_reaccion = null;
+    } else {
+      await client.query('UPDATE reaccion SET tipo = $1 WHERE id = $2', [tipo, existing[0].id]);
+      action = 'changed';
+      mi_reaccion = tipo;
+    }
+
+    // Solo al crear el like, y nunca a uno mismo.
+    if (action === 'created') {
+      const { rows: ownerRows } = await client.query(
+        'SELECT autor_id FROM contenido WHERE id = $1', [contenidoId]
+      );
+      const autorId = ownerRows[0]?.autor_id;
+      if (autorId && autorId !== userId) {
+        const dup = await notificationExists(
+          { tipo: 'reaccion_like', actor_id: userId, contenido_id: contenidoId },
+          client
+        );
+        if (!dup) {
+          const { rows: locRows } = await client.query(
+            'SELECT tema_id, categoria_id, es_home FROM comentario WHERE contenido_id = $1', [contenidoId]
+          );
+          const loc = locRows[0] || {};
+          // Un comentario de Home no tiene tema ni categoría: se enlaza a su permalink.
+          const url = loc.tema_id
+            ? `/topic/${loc.tema_id}?commentId=${contenidoId}`
+            : loc.categoria_id
+              ? `/category/${loc.categoria_id}?tab=comentarios&commentId=${contenidoId}`
+              : loc.es_home
+                ? `/comment/${contenidoId}`
+                : null;
+          const { rows: actorRows } = await client.query(
+            'SELECT nickname FROM usuario WHERE id = $1', [userId]
+          );
+          const nick = actorRows[0]?.nickname;
+          await createNotification({
+            usuario_id: autorId,
+            tipo: 'reaccion_like',
+            mensaje: `${nick} le dio me gusta a tu comentario`,
+            contenido_id: contenidoId,
+            actor_id: userId,
+            url,
+          }, client);
+        }
+      }
+    }
+
+    const { rows: counts } = await client.query(`
+      SELECT COUNT(*) FILTER (WHERE tipo = 'meGusta') AS likes
+      FROM reaccion
+      WHERE contenido_id = $1
+    `, [contenidoId]);
+
+    await client.query('COMMIT');
+
+    return {
+      action,
+      mi_reaccion,
+      likes: parseInt(counts[0].likes),
+    };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+const getReactionsByContentId = async (contenidoId, userId = null) => {
+  const q = `
+    SELECT COUNT(*) FILTER (WHERE tipo = 'meGusta') AS likes
+    FROM reaccion
+    WHERE contenido_id = $1
+  `;
+  const { rows: counts } = await pool.query(q, [contenidoId]);
+
+  let mi_reaccion = null;
+  if (userId) {
+    const { rows } = await pool.query(
+      'SELECT tipo FROM reaccion WHERE contenido_id = $1 AND usuario_id = $2 LIMIT 1',
+      [contenidoId, userId]
+    );
+    mi_reaccion = rows[0]?.tipo || null;
+  }
+
+  return {
+    likes: parseInt(counts[0].likes),
+    mi_reaccion,
+  };
+};
+
+export { toggleReaction, getReactionsByContentId };

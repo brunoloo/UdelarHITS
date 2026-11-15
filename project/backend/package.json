@@ -1,0 +1,51 @@
+{
+  "name": "backend",
+  "version": "1.7.0",
+  "private": true,
+  "description": "API de UdelarHITS: foro para la comunidad de la Universidad de la República.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "build": "cd ../frontend && npm install --include=dev && npm run build",
+    "dev": "nodemon src/server.js",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "db:drop": "psql -h localhost -p 5432 -d postgres -c \"DROP DATABASE IF EXISTS udelarhits;\"",
+    "db:create": "psql -h localhost -p 5432 -d postgres -c \"CREATE DATABASE udelarhits;\"",
+    "db:schema": "psql -h localhost -p 5432 -d udelarhits -v ON_ERROR_STOP=1 -f ../database/schema.sql",
+    "db:reset": "npm run db:drop && npm run db:create && npm run db:schema",
+    "db:migrate": "psql -h localhost -p 5432 -d udelarhits -v ON_ERROR_STOP=1 -f",
+    "db:test:drop": "psql -h localhost -p 5432 -d postgres -c \"DROP DATABASE IF EXISTS udelarhits_test;\"",
+    "db:test:create": "psql -h localhost -p 5432 -d postgres -c \"CREATE DATABASE udelarhits_test;\"",
+    "db:test:schema": "psql -h localhost -p 5432 -d udelarhits_test -v ON_ERROR_STOP=1 -f ../database/schema.sql",
+    "db:test:reset": "npm run db:test:drop && npm run db:test:create && npm run db:test:schema",
+    "admin:create": "node scripts/create-admin.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.10.0",
+    "compression": "^1.8.1",
+    "cookie": "^2.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1",
+    "express-rate-limit": "^7.5.1",
+    "file-type": "^22.0.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.20.0",
+    "resend": "^6.12.4",
+    "socket.io": "^4.8.3",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
+  }
+}

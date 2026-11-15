@@ -1,0 +1,412 @@
+/* HEADER */
+/* Clase propia y no el tag `header`: una regla sobre el tag la heredaría cualquier <header>. */
+.site-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: var(--chrome-bg);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  z-index: 100;
+}
+
+.site-header a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.site-header .search-bar {
+  margin-right: calc(200px / 2);
+}
+
+/* LOGO */
+.logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  color: var(--text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  letter-spacing: -0.3px;
+}
+
+.logo span { color: var(--accent); }
+
+/* Insignia estacional junto al logo; en em para que escale con su tamaño. */
+.logo { position: relative; }
+
+.logo-season-badge {
+  position: absolute;
+  right: -0.85em;
+  bottom: -0.25em;
+  width: 1.15em;
+  height: 1.15em;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+
+/* SEARCH BAR */
+.search-bar {
+  flex: 1;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* El borde y el fondo viven en el contenedor, no en el <input>, para poder ubicar la píldora junto al texto. */
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.search-field:focus-within {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.search-field-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  padding: 2px 0;
+}
+
+.search-field-input::placeholder { color: var(--text-muted); }
+
+.search-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+/* HEADER ACTIONS */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* USER CHIP */
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.15s;
+}
+
+.user-chip:hover { background: var(--bg); }
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--accent-light);
+}
+
+/* USER MENU */
+.user-menu-wrapper {
+  position: relative;
+}
+
+.user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-width: 180px;
+  box-shadow: var(--shadow-2);
+  z-index: 200;
+  overflow: hidden;
+}
+
+.user-menu-item {
+  display: block;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 0.15s;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.user-menu-item:hover { background: var(--bg); }
+
+.user-menu-item--danger { color: var(--danger); }
+
+/* BUTTONS (usados en header para no-autenticados) */
+.btn-ghost {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-ghost:hover { background: var(--bg); border-color: var(--border-strong); }
+
+.btn-primary {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: none;
+  background: var(--accent);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-on-accent);
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.btn-primary:hover { opacity: 0.88; }
+
+/* SEARCH DROPDOWN */
+.search-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-3);
+  z-index: 200;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.search-dropdown.open { display: block; }
+
+.search-dropdown { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.search-dropdown::-webkit-scrollbar { width: 6px; }
+.search-dropdown::-webkit-scrollbar-track { background: transparent; }
+.search-dropdown::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: var(--radius); }
+.search-dropdown::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+.search-section-title {
+  padding: 10px 14px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.search-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  transition: background 0.1s;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.search-item:hover { background: var(--bg); }
+
+.search-item-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--accent-light);
+  flex-shrink: 0;
+}
+
+.search-item-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--accent-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.search-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-item-title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-item-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.search-empty {
+  padding: 20px 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.search-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+.search-see-all {
+  display: block;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s;
+}
+
+.search-see-all:hover { background: var(--bg); }
+
+/* MOBILE SEARCH (lupa + overlay) */
+.mobile-search-btn { display: none; }
+
+.mobile-search-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--modal-overlay);
+  z-index: 300;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.mobile-search-panel {
+  width: 100%;
+  max-height: 100%;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.mobile-search-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+
+.mobile-search-head-icon { color: var(--text-muted); flex-shrink: 0; }
+
+.mobile-search-head input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px; /* 16px evita el auto-zoom de iOS al enfocar el input */
+  color: var(--text-primary);
+}
+
+.mobile-search-head input::placeholder { color: var(--text-muted); }
+
+.mobile-search-close {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+/* El dropdown compartido, dentro del overlay, va estático (no absoluto). */
+.mobile-search-panel .search-dropdown {
+  position: static;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  max-height: none;
+  display: block;
+}
+
+.mobile-search-panel .search-see-all {
+  padding: 14px 16px;
+  font-size: 14px;
+}
+
+@media (max-width: 1024px) {
+  .mobile-search-btn {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+}

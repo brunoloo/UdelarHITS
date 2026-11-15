@@ -1,0 +1,8 @@
+-- Me gusta privados
+
+BEGIN;
+
+ALTER TABLE usuario
+  ADD COLUMN IF NOT EXISTS me_gusta_privado BOOLEAN NOT NULL DEFAULT FALSE;
+
+COMMIT;

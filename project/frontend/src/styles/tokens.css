@@ -1,0 +1,377 @@
+/* Tokens de diseño */
+
+/* Light mode (default) */
+:root {
+  /* Superficies */
+  --bg: #f6f7f8;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --surface-translucent: rgba(255, 255, 255, 0.92);
+  /* Fondo del header y el leftnav; las paletas lo tiñen. */
+  --chrome-bg: #ffffff;
+
+  /* Bordes */
+  --border: #edeff1;
+  --border-strong: #d6d8de;
+  --thread-line: #cfd9de;
+
+  /* Texto */
+  --text-primary: #0f1a2e;
+  --text-secondary: #576069;
+  /* Contraste AA sobre --surface y --bg. */
+  --text-muted: #656d76;
+  --text-on-accent: #ffffff;
+
+  /* Acento */
+  --accent: #2563eb;
+  --accent-light: #e8f0fe;
+  --accent-strong: #1d4ed8;
+  --accent-gradient-end: #5a8cff;
+  --focus-ring: rgba(37, 99, 235, 0.12);
+
+  /* Estados semánticos */
+  --danger: #d93025;
+
+  --status-error-bg: #fef2f2;
+  --status-error-border: #fecaca;
+  --status-error-text: #dc2626;
+
+  --status-success-bg: #f0fdf4;
+  --status-success-border: #bbf7d0;
+  --status-success-text: #166534;
+
+  --status-warning-bg: #fff3e0;
+  --status-warning-border: #fed7aa;
+  --status-warning-text: #c2410c;
+
+  --status-info-bg: #eff6ff;
+  --status-info-border: #bfdbfe;
+  --status-info-text: #1d4ed8;
+
+  /* Color fijo de la reacción, no del tema. */
+  --reaction-like-bg: #fde7ee;
+  --reaction-like-text: #e0245e;
+
+  --badge-new-bg: #1d4ed8;
+  --badge-new-fg: #ffffff;
+
+  /* Sombras */
+  --shadow-1: 0 1px 2px rgba(20, 22, 30, 0.04);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.10);
+  --shadow-3: 0 24px 60px rgba(20, 22, 30, 0.20);
+
+  /* Overlays */
+  --modal-overlay: rgba(15, 17, 24, 0.65);
+
+  /* Sobre imágenes — no cambian entre temas (siempre oscuros) */
+  --overlay-dark-sm: rgba(15, 17, 24, 0.42);
+  --overlay-dark-md: rgba(15, 17, 24, 0.55);
+  --overlay-dark-lg: rgba(15, 17, 24, 0.80);
+
+  /* Skeleton */
+  --skeleton-1: #f0f0f0;
+  --skeleton-2: #e8e8e8;
+
+  /* Temas estacionales (ver config/seasons.js) */
+  /* Fijos por temporada, no por tema. */
+  --season-pumpkin: #e8731a;
+  --season-pumpkin-dark: #b5520c;
+  --season-pumpkin-stem: #4a7a2c;
+  --season-pumpkin-face: #2a1206;
+  --season-web: #1a1a1a;
+  --season-web-opacity: 0.07;
+
+  /* Layout */
+  --radius: 8px;
+  --header-h: 56px;
+}
+
+/* Tokens que comparten el tema oscuro y las paletas oscuras: los que no dependen del matiz.
+   Este bloque va antes de los bloques por tema. */
+:root[data-theme="dark"],
+:root[data-theme="rosa-oscuro"],
+:root[data-theme="verde-oscuro"],
+:root[data-theme="celeste-oscuro"],
+:root[data-theme="lavanda-oscuro"] {
+  /* Estados semánticos (el rojo sigue rojo) */
+  --danger: #ff6b6b;
+
+  --status-error-bg: #2d1515;
+  --status-error-border: #5c2222;
+  --status-error-text: #ff8080;
+
+  --status-success-bg: #0d2318;
+  --status-success-border: #1a4731;
+  --status-success-text: #4ade80;
+
+  --status-warning-bg: #2a1f0a;
+  --status-warning-border: #4a3510;
+  --status-warning-text: #fbbf24;
+
+  --status-info-bg: #0c1929;
+  --status-info-border: #1e3a5f;
+  --status-info-text: #60a5fa;
+
+  --reaction-like-bg: #4a1c28;
+  --reaction-like-text: #f17e9b;
+
+  --badge-new-bg: #7ab0ff;
+  --badge-new-fg: #0b1220;
+
+  --season-web: #ffffff;
+  --season-web-opacity: 0.06;
+  --season-pumpkin-face: #ffe14d;
+
+  /* Sombras (para fondo oscuro) */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.40);
+  --shadow-3: 0 24px 60px rgba(0, 0, 0, 0.50);
+
+  /* Overlay de modales */
+  --modal-overlay: rgba(0, 0, 0, 0.75);
+  /* --overlay-dark-* no se redefine: siempre oscuro sobre imágenes */
+}
+
+:root[data-theme="dark"] {
+  /* Superficies */
+  --bg: #0f1419;
+  --surface: #16202a;
+  --surface-2: #1e2d3d;
+  --surface-translucent: rgba(22, 32, 42, 0.92);
+  --chrome-bg: #16202a;
+
+  /* Bordes */
+  --border: #2a3441;
+  --border-strong: #3d4f60;
+  --thread-line: #2a3441;
+
+  /* Texto */
+  --text-primary: #f0f3f6;
+  --text-secondary: #8899a6;
+  /* Contraste AA sobre --surface y --bg. */
+  --text-muted: #808e9b;
+  --text-on-accent: #ffffff;
+
+  /* Acento */
+  --accent: #4d8fff;
+  --accent-light: #1a2942;
+  --accent-strong: #3b7ae6;
+  --accent-gradient-end: #7ab0ff;
+  --focus-ring: rgba(77, 143, 255, 0.20);
+
+  /* Skeleton */
+  --skeleton-1: #1e2d3d;
+  --skeleton-2: #243547;
+}
+
+/* Paletas de color (ids en src/config/themes.js). Las oscuras heredan los tokens compartidos; las claras, los de :root. */
+
+:root[data-theme="rosa-oscuro"] {
+  --bg: #391320;
+  --surface: #521e2f;
+  --surface-2: #64263b;
+  --surface-translucent: rgba(82, 30, 47, 0.92);
+  --chrome-bg: #2a0e17;
+
+  --border: #6b2e42;
+  --border-strong: #8a425a;
+  --thread-line: #6a2f43;
+
+  --text-primary: #f4f0f2;
+  --text-secondary: #c4b0b7;
+  --text-muted: #bda8af;
+  --text-on-accent: #290f18;
+
+  --accent: #e47d9f;
+  --accent-light: #56152b;
+  --accent-strong: #df5986;
+  --accent-gradient-end: #f1bcce;
+  --focus-ring: rgba(228, 125, 159, 0.75);
+
+  --skeleton-1: #572335;
+  --skeleton-2: #66293d;
+}
+
+:root[data-theme="verde-oscuro"] {
+  --bg: #13391f;
+  --surface: #1e522e;
+  --surface-2: #266438;
+  --surface-translucent: rgba(30, 82, 46, 0.92);
+  --chrome-bg: #0e2a17;
+
+  --border: #2e6b40;
+  --border-strong: #428a58;
+  --thread-line: #2f6a41;
+
+  --text-primary: #f0f4f1;
+  --text-secondary: #b0c4b6;
+  --text-muted: #a8bdae;
+  --text-on-accent: #0f2917;
+
+  --accent: #2bcc5b;
+  --accent-light: #155629;
+  --accent-strong: #21ad4b;
+  --accent-gradient-end: #65de89;
+  --focus-ring: rgba(43, 204, 91, 0.75);
+
+  --skeleton-1: #235733;
+  --skeleton-2: #29663b;
+}
+
+:root[data-theme="celeste-oscuro"] {
+  --bg: #132539;
+  --surface: #1e3652;
+  --surface-2: #264364;
+  --surface-translucent: rgba(30, 54, 82, 0.92);
+  --chrome-bg: #0e1b2a;
+
+  --border: #2e4a6b;
+  --border-strong: #42648a;
+  --thread-line: #2f4b6a;
+
+  --text-primary: #f0f2f4;
+  --text-secondary: #b0b9c4;
+  --text-muted: #a8b2bd;
+  --text-on-accent: #0f1b29;
+
+  --accent: #70a5e1;
+  --accent-light: #153356;
+  --accent-strong: #4b8fdd;
+  --accent-gradient-end: #afccee;
+  --focus-ring: rgba(112, 165, 225, 0.75);
+
+  --skeleton-1: #233b57;
+  --skeleton-2: #294566;
+}
+
+:root[data-theme="lavanda-oscuro"] {
+  --bg: #241339;
+  --surface: #351e52;
+  --surface-2: #412664;
+  --surface-translucent: rgba(53, 30, 82, 0.92);
+  --chrome-bg: #1a0e2a;
+
+  --border: #482e6b;
+  --border-strong: #61428a;
+  --thread-line: #492f6a;
+
+  --text-primary: #f2f0f4;
+  --text-secondary: #b9b0c4;
+  --text-muted: #b1a8bd;
+  --text-on-accent: #1a0f29;
+
+  --accent: #af86e5;
+  --accent-light: #311556;
+  --accent-strong: #9861e1;
+  --accent-gradient-end: #d9c5f3;
+  --focus-ring: rgba(175, 134, 229, 0.75);
+
+  --skeleton-1: #3a2357;
+  --skeleton-2: #432966;
+}
+
+/* ── FAMILIA CLARA (heredan de :root los 17 no-de-matiz) ────────── */
+
+:root[data-theme="rosa-claro"] {
+  --bg: #FCCAE6;
+  --surface: #FAF0F5;
+  --surface-2: #fbe3f0;
+  --surface-translucent: rgba(250, 240, 245, 0.92);
+  --chrome-bg: #fbd9ec;
+
+  --border: #E199C1;
+  --border-strong: #c182a5;
+  --thread-line: #e7afce;
+
+  --text-primary: #391D2D;
+  --text-secondary: #764C64;
+  --text-muted: #755567;
+  --text-on-accent: #ffffff;
+
+  --accent: #C62F85;
+  --accent-light: #f8e2ef;
+  --accent-strong: #a5226d;
+  --accent-gradient-end: #dc6bab;
+  --focus-ring: rgba(198, 47, 133, 0.79);
+
+  --skeleton-1: #f1d2e3;
+  --skeleton-2: #ecc0d8;
+}
+
+:root[data-theme="verde-claro"] {
+  --bg: #D9EDCF;
+  --surface: #F4F7F2;
+  --surface-2: #ebf4e6;
+  --surface-translucent: rgba(244, 247, 242, 0.92);
+  --chrome-bg: #edf5e9;
+
+  --border: #B7CFAB;
+  --border-strong: #9bb48f;
+  --thread-line: #c6d9bd;
+
+  --text-primary: #27391D;
+  --text-secondary: #546E47;
+  --text-muted: #566f49;
+  --text-on-accent: #ffffff;
+
+  --accent: #3F801E;
+  --accent-light: #eaf8e2;
+  --accent-strong: #2c5d13;
+  --accent-gradient-end: #60c22d;
+  --focus-ring: rgba(63, 128, 30, 0.79);
+
+  --skeleton-1: #dfe9d9;
+  --skeleton-2: #d2e1cb;
+}
+
+:root[data-theme="celeste-claro"] {
+  --bg: #C9D8EE;
+  --surface: #F2F4F8;
+  --surface-2: #e4eaf5;
+  --surface-translucent: rgba(242, 244, 248, 0.92);
+  --chrome-bg: #d9e3f2;
+
+  --border: #A8B9D1;
+  --border-strong: #8c9db6;
+  --thread-line: #bbc8db;
+
+  --text-primary: #1D2939;
+  --text-secondary: #4C5D76;
+  --text-muted: #515e71;
+  --text-on-accent: #ffffff;
+
+  --accent: #2F6DCA;
+  --accent-light: #e2ebf8;
+  --accent-strong: #2258a9;
+  --accent-gradient-end: #6d9add;
+  --focus-ring: rgba(47, 109, 202, 0.79);
+
+  --skeleton-1: #d8dfea;
+  --skeleton-2: #c9d4e3;
+}
+
+:root[data-theme="lavanda-claro"] {
+  --bg: #CFB1F1;
+  --surface: #F5F1F9;
+  --surface-2: #e8dbf6;
+  --surface-translucent: rgba(245, 241, 249, 0.92);
+  --chrome-bg: #decbf4;
+
+  --border: #BBA1D9;
+  --border-strong: #9f88bb;
+  --thread-line: #cab5e1;
+
+  --text-primary: #2A1D39;
+  --text-secondary: #56456B;
+  --text-muted: #544862;
+  --text-on-accent: #ffffff;
+
+  --accent: #8541D2;
+  --accent-light: #ede2f8;
+  --accent-strong: #752aca;
+  --accent-gradient-end: #b78fe5;
+  --focus-ring: rgba(141, 77, 213, 0.79);
+
+  --skeleton-1: #e1d5ee;
+  --skeleton-2: #d5c5e7;
+}
