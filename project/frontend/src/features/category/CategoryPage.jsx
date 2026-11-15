@@ -103,7 +103,10 @@ function HistoryModalBody({ catId }) {
   )
 }
 
-function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
+// Referencia estable mientras el catálogo de etiquetas no llegó.
+const NO_TAGS = {}
+
+export function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
   const [desc, setDesc] = useState('')
   const [selectedTags, setSelectedTags] = useState([])
   // Solo un panel abierto a la vez; arranca cerrado.
@@ -112,11 +115,13 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
   const { showToast } = useToast()
   const queryClient = useQueryClient()
 
-  const { data: availableTags = {} } = useQuery({
+  const { data: tagsData } = useQuery({
     queryKey: ['categories', 'etiquetas'],
     queryFn: () => apiGet('/categories/etiquetas').then(r => r.data),
     staleTime: 5 * 60 * 1000,
   })
+
+  const availableTags = tagsData ?? NO_TAGS
 
   const nameToId = useMemo(() => {
     const map = {}
@@ -127,9 +132,10 @@ function EditCategoryModal({ cat, isOpen, onClose, onSaved }) {
   }, [availableTags])
 
   // Al abrir el modal, o al llegar el catálogo de etiquetas, el formulario toma los datos de la categoría.
-  const [seeded, setSeeded] = useState({ isOpen: null, nameToId: null })
-  if (seeded.isOpen !== isOpen || seeded.nameToId !== nameToId) {
-    setSeeded({ isOpen, nameToId })
+  // Se compara contra los datos de la query, que conservan su referencia entre renders.
+  const [seeded, setSeeded] = useState({ isOpen: null, tagsData: undefined })
+  if (seeded.isOpen !== isOpen || seeded.tagsData !== tagsData) {
+    setSeeded({ isOpen, tagsData })
     if (isOpen && cat) {
       setDesc(cat.descripcion || '')
       setOpenField(null)
