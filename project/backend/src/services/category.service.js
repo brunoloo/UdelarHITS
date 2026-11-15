@@ -3,7 +3,7 @@ import { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   updateCategoryById, getActiveCategories, getCategoryIndex, getParticipantsByCategoryId, getEtiquetas,
   getChronoFeed, getRankedCategoryFeed,
   getEtiquetasByIds, searchEtiquetas,
-  hardDeleteCategoryById, categoryHasContent, getPopularCategories, getTrendingTags,
+  hardDeleteCategoryById, categoryHasContent, getPopularCategories,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment,
   pinCategoryTopic, unpinCategoryTopic,
   pinCategoryHome, unpinCategoryHome, getPinnedHomeCategory,
@@ -603,12 +603,6 @@ const getPopularCategoriesService = async (days, limit) => {
   return { categories, ventanaDias };
 };
 
-const getTrendingTagsService = async (days, limit) => {
-  const safeDays = Math.min(Math.max(parseInt(days) || 7, 1), 30);
-  const safeLimit = Math.min(Math.max(parseInt(limit) || 8, 1), 20);
-  return await getTrendingTags(safeDays, safeLimit);
-};
-
 const getCategoryEditHistoryService = async (categoryId) => {
   const id = Number(categoryId);
   if (!Number.isInteger(id) || id < 1) {
@@ -763,7 +757,7 @@ export { createCategoryService, getCategoriesService, getCategoryByIdService, de
   deleteCategoryService, activeCategoryService, getMyCategoriesService, updateCategoryService,
   getActiveCategoriesService, getCategoryIndexService, getCategoryFeedService, getParticipantsByCategoryIdService, getEtiquetasService,
   searchEtiquetasService,
-  getPopularCategoriesService, getTrendingTagsService, getCategoryEditHistoryService,
+  getPopularCategoriesService, getCategoryEditHistoryService,
   pinCategoryItemService, unpinCategoryItemService,
   pinCategoryHomeService, unpinCategoryHomeService,
   subscribeCategoryService, unsubscribeCategoryService, isSubscribedCategoryService,

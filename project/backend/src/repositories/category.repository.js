@@ -637,34 +637,12 @@ const getPopularCategories = async (days = 7, limit = 20) => {
   return rows;
 };
 
-// Actividad de la ventana: temas activos recientes agrupados por las etiquetas de su categoría.
-const getTrendingTags = async (days = 7, limit = 8) => {
-  const q = `
-    SELECT e.nombre AS etiqueta,
-      COUNT(DISTINCT t.contenido_id) AS temas_recientes,
-      COUNT(com.contenido_id) AS comentarios_recientes
-    FROM categoria_etiqueta ce
-    JOIN etiqueta e ON e.id = ce.etiqueta_id
-    JOIN categoria c ON c.id = ce.categoria_id AND c.estado = 'activa'
-    JOIN tema t ON t.categoria_id = ce.categoria_id AND t.estado = 'activo'
-    JOIN contenido con ON con.id = t.contenido_id
-      AND con.fecha_creacion > NOW() - MAKE_INTERVAL(days => $1)
-    LEFT JOIN comentario com ON com.tema_id = t.contenido_id AND com.estado = 'visible'
-    GROUP BY e.nombre
-    HAVING COUNT(DISTINCT t.contenido_id) > 0
-    ORDER BY temas_recientes DESC, comentarios_recientes DESC, e.nombre ASC
-    LIMIT $2
-  `;
-  const { rows } = await pool.query(q, [days, limit]);
-  return rows;
-};
-
 export { createCategory, findCategoryByTitulo, getCategories, getCategoryById,
   getTopicsByCategoryId, deactivateCategoryById, activeCategoryById, getCategoriesByAuthorId,
   updateCategoryById, assignParticipantRole, getActiveCategories, getCategoryIndex, getParticipantsByCategoryId,
   getChronoFeed, getRankedCategoryFeed,
   getEtiquetas, getEtiquetasByIds, searchEtiquetas,
-  categoryHasContent, hardDeleteCategoryById, getPopularCategories, getTrendingTags,
+  categoryHasContent, hardDeleteCategoryById, getPopularCategories,
   getCategoryEditHistory, pinCategoryComment, unpinCategoryComment, pinCategoryTopic, unpinCategoryTopic,
   pinCategoryHome, unpinCategoryHome, getPinnedHomeCategory,
   subscribeCategory, unsubscribeCategory, isSubscribedCategory, getCategorySubscribers };

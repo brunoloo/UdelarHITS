@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createCategory, getCategories, getCategoryById, deleteCategory, activeCategory,
     getMyCategories, updateCategory, getActiveCategories, getCategoryIndexList, getCategoryFeed, getParticipantsByCategory,
-    getEtiquetasList, searchEtiquetas, getPopularCategoriesList, getTrendingTagsList,
+    getEtiquetasList, searchEtiquetas, getPopularCategoriesList,
     getCategoryEditHistory, pinCategoryItem, unpinCategoryItem,
     pinCategoryHome, unpinCategoryHome,
     subscribeCategory, unsubscribeCategory, getCategorySubscription } from '../controllers/category.controller.js';
@@ -19,7 +19,6 @@ router.post('/create', protect, createCategory);
 router.get('/me', protect, getMyCategories);
 
 router.get('/popular', getPopularCategoriesList);
-router.get('/trending-tags', getTrendingTagsList);
 
 router.get('/:id/history', getCategoryEditHistory);
 router.patch('/:id', protect, updateCategory);
