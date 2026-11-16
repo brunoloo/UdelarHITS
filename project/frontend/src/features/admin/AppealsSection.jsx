@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ADMIN_PENDING_KEY } from '../../hooks/useAdminPending'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPatch } from '../../api/client'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
@@ -68,6 +69,7 @@ function AppealsList({ tipo }) {
         'success'
       )
       queryClient.invalidateQueries({ queryKey: ['appeals', 'pending', tipo] })
+      queryClient.invalidateQueries({ queryKey: ADMIN_PENDING_KEY })
     },
     onError: (err, { id }) => {
       setFading(prev => { const next = new Set(prev); next.delete(id); return next })

@@ -3,6 +3,7 @@ import {
   approvePendingImageService,
   rejectPendingImageService,
 } from '../services/pendingImage.service.js';
+import { getPendingCountService, listCommentsService } from '../services/admin.service.js';
 
 const VALID_ORIGENES = new Set(['adjunto', 'avatar', 'banner']);
 
@@ -45,4 +46,28 @@ const rejectPendingImage = async (req, res) => {
   }
 };
 
-export { getPendingImages, approvePendingImage, rejectPendingImage };
+const getPendingCount = async (_req, res, next) => {
+  try {
+    const data = await getPendingCountService();
+    return res.status(200).json({ ok: true, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getComments = async (req, res, next) => {
+  try {
+    const data = await listCommentsService({
+      estado: req.query.estado,
+      q: req.query.q,
+      limit: req.query.limit,
+      offset: req.query.offset,
+    });
+    return res.status(200).json({ ok: true, data });
+  } catch (error) {
+    if (error.code === 'BAD_REQUEST') return res.status(400).json({ ok: false, message: error.message });
+    next(error);
+  }
+};
+
+export { getPendingImages, approvePendingImage, rejectPendingImage, getPendingCount, getComments };

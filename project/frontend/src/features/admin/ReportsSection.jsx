@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ADMIN_PENDING_KEY } from '../../hooks/useAdminPending'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPatch } from '../../api/client'
 import { UserAvatar } from '../../components/shared/UserAvatar'
@@ -29,6 +30,7 @@ export function ReportsSection() {
         'success'
       )
       queryClient.invalidateQueries({ queryKey: ['user-reports', 'pending'] })
+      queryClient.invalidateQueries({ queryKey: ADMIN_PENDING_KEY })
     },
     onError: (err, { id }) => {
       setFading(prev => { const next = new Set(prev); next.delete(id); return next })

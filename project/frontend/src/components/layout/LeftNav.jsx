@@ -8,6 +8,7 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '../../api/client'
 import { useSocket } from '../../hooks/useSocket'
 import { useGoHome } from '../../hooks/useGoHome'
 import { EmptyState } from '../ui/EmptyState'
+import { useAdminPending, formatPending } from '../../hooks/useAdminPending'
 import './LeftNav.css'
 
 // Carga diferida: el panel no se ve en el primer paint y arrastraba su cadena de componentes al chunk inicial.
@@ -83,6 +84,7 @@ export function LeftNav() {
   const socket = useSocket()
   const goHome = useGoHome()
   const isAdmin = user?.rol === 'admin'
+  const { total: adminPending } = useAdminPending()
 
   const [chatUnread, setChatUnread] = useState(0)
   const [notifications, setNotifications] = useState(null)
@@ -376,6 +378,9 @@ export function LeftNav() {
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
               </svg>
               Administración
+              {adminPending > 0 && (
+                <span className="notif-badge" aria-label={`${adminPending} pendientes`}>{formatPending(adminPending)}</span>
+              )}
             </Link>
           </>
         )}

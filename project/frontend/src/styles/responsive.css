@@ -152,6 +152,10 @@
     right: 0;
   }
 
+  .header-admin-link {
+    display: inline-flex;
+  }
+
   /* HIDE DESKTOP LEFT NAV */
   .left-nav {
     display: none !important;

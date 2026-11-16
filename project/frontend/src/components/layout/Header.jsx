@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { useAdminPending, formatPending } from '../../hooks/useAdminPending'
 import { UserAvatar } from '../shared/UserAvatar'
 import { useSiteSearch } from '../../hooks/useSiteSearch'
 import { useGoHome } from '../../hooks/useGoHome'
@@ -14,6 +15,7 @@ import './Header.css'
 
 export function Header() {
   const { user, loading, logout } = useAuth()
+  const { isAdmin, total: adminPending } = useAdminPending()
   const navigate = useNavigate()
   const location = useLocation()
   const goHome = useGoHome()
@@ -144,6 +146,19 @@ export function Header() {
       </div>
 
       <div className="header-actions">
+        {/* En móvil no hay menú lateral fijo: el acceso al panel y su indicador van acá. */}
+        {isAdmin && (
+          <Link
+            to="/admin"
+            className="header-admin-link"
+            aria-label={adminPending > 0 ? `Administración: ${adminPending} pendientes` : 'Administración'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            {adminPending > 0 && <span className="header-admin-badge">{formatPending(adminPending)}</span>}
+          </Link>
+        )}
         {loading ? null : user ? (
           <div className="user-menu-wrapper" ref={menuRef}>
             <button className="user-chip" onClick={() => setMenuOpen(o => !o)}>

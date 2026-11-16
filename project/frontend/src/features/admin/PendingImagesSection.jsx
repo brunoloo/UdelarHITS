@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ADMIN_PENDING_KEY } from '../../hooks/useAdminPending'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPatch } from '../../api/client'
@@ -86,6 +87,7 @@ export function PendingImagesSection() {
     onSuccess: (_, { action }) => {
       showToast(action === 'approve' ? 'Imagen aprobada y publicada' : 'Imagen rechazada', 'success')
       queryClient.invalidateQueries({ queryKey: ['admin', 'pending-images'] })
+      queryClient.invalidateQueries({ queryKey: ADMIN_PENDING_KEY })
     },
     onError: (err, { id, origen }) => {
       setFading(prev => { const next = new Set(prev); next.delete(`${origen}:${id}`); return next })
