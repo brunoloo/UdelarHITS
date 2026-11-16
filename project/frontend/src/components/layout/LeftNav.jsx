@@ -150,6 +150,19 @@ export function LeftNav() {
   // Una vez abierto queda montado, para conservar la animación de cierre.
   const [savedMounted, setSavedMounted] = useState(false)
   if (savedOpen && !savedMounted) setSavedMounted(true)
+
+  // Navegar a otra pantalla cierra el panel: en móvil la barra inferior queda visible
+  // con el panel abierto y se puede cambiar de ruta desde ahí.
+  const [panelPathname, setPanelPathname] = useState(pathname)
+  if (panelPathname !== pathname) {
+    setPanelPathname(pathname)
+    if (activePanel) setActivePanel(null)
+  }
+
+  // La barra inferior marca "Alertas" mientras el panel de notificaciones está abierto.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('panel-change', { detail: activePanel }))
+  }, [activePanel])
   const [notifLoading, setNotifLoading] = useState(false)
   const panelRef = useRef(null)
   const notifBtnRef = useRef(null)
@@ -168,8 +181,14 @@ export function LeftNav() {
   useEffect(() => {
     if (!activePanel) return
     function handleClick(e) {
+      // En la barra inferior, un link navega (aunque sea a la ruta actual) y cierra el panel;
+      // el botón de alertas ya lo alterna con su propio evento.
+      if (e.target.closest?.('.bottom-nav')) {
+        if (e.target.closest('a')) setActivePanel(null)
+        return
+      }
       // Los modales y menús se renderizan fuera del panel pero son parte de la interacción: no deben cerrarlo.
-      if (e.target.closest?.('.modal-backdrop, .comment-dropdown, .comment-menu-wrap, .bottom-nav, .user-menu')) return
+      if (e.target.closest?.('.modal-backdrop, .comment-dropdown, .comment-menu-wrap, .user-menu')) return
       const inNotif = panelRef.current?.contains(e.target) || notifBtnRef.current?.contains(e.target)
       const inSaved = savedPanelRef.current?.contains(e.target) || savedBtnRef.current?.contains(e.target)
       if (!inNotif && !inSaved) setActivePanel(null)

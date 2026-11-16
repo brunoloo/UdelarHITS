@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../hooks/useAuth'
@@ -18,8 +19,18 @@ export function BottomNav() {
     staleTime: 0,
   })
 
+  // LeftNav es dueño de los paneles y avisa cuál está abierto.
+  const [openPanel, setOpenPanel] = useState(null)
+  useEffect(() => {
+    const handlePanel = (e) => setOpenPanel(e.detail ?? null)
+    window.addEventListener('panel-change', handlePanel)
+    return () => window.removeEventListener('panel-change', handlePanel)
+  }, [])
+  const alertsOpen = openPanel === 'notif'
+
+  // Con las alertas abiertas, el ítem marcado es "Alertas" y no la ruta de fondo.
   function navClass(path) {
-    const active = path === '/' ? pathname === '/' : pathname.startsWith(path)
+    const active = !alertsOpen && (path === '/' ? pathname === '/' : pathname.startsWith(path))
     return `bottom-nav-item${active ? ' active' : ''}`
   }
 
@@ -42,7 +53,8 @@ export function BottomNav() {
       </Link>
 
       <button
-        className="bottom-nav-item"
+        className={`bottom-nav-item${alertsOpen ? ' active' : ''}`}
+        aria-pressed={alertsOpen}
         onClick={() => window.dispatchEvent(new CustomEvent('toggle-notif-panel'))}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

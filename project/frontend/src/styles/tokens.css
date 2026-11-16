@@ -84,6 +84,7 @@
   /* Layout */
   --radius: 8px;
   --header-h: 56px;
+  --bottom-nav-h: 56px;
 }
 
 /* Tokens que comparten el tema oscuro y las paletas oscuras: los que no dependen del matiz.
