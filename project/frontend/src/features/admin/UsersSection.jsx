@@ -5,6 +5,7 @@ import { apiGet, apiPatch } from '../../api/client'
 import { UserAvatar } from '../../components/shared/UserAvatar'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { useToast } from '../../hooks/useToast'
+import { timeAgo } from '../../utils/timeAgo'
 
 function formatDate(d) {
   if (!d) return '—'
@@ -36,6 +37,7 @@ function UsersSkeleton() {
           <div className="skeleton" style={{ width: 50, height: 20, borderRadius: 12 }} />
           <div className="skeleton" style={{ width: 70, height: 20, borderRadius: 12 }} />
           <div className="skeleton" style={{ width: '12%', height: 13 }} />
+          <div className="skeleton" style={{ width: '10%', height: 13 }} />
           <div className="skeleton" style={{ width: 80, height: 28, borderRadius: 6, marginLeft: 'auto' }} />
         </div>
       ))}
@@ -116,6 +118,7 @@ export function UsersSection() {
                 <th>Estado</th>
                 <th>Autenticación</th>
                 <th>Creado</th>
+                <th title="Último inicio de sesión o apertura de la app con sesión activa">Último acceso</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -147,6 +150,12 @@ export function UsersSection() {
                     <span className={`admin-status ${authClass(u.auth_provider)}`}>{authLabel(u.auth_provider)}</span>
                   </td>
                   <td data-label="Creado">{formatDate(u.fecha_creacion)}</td>
+                  <td
+                    data-label="Último acceso"
+                    title={u.fecha_ultimo_acceso ? new Date(u.fecha_ultimo_acceso).toLocaleString('es-UY') : undefined}
+                  >
+                    {u.fecha_ultimo_acceso ? timeAgo(u.fecha_ultimo_acceso) : '—'}
+                  </td>
                   <td>
                     <div className="admin-actions-cell">
                       {u.estado === 'activo' && (

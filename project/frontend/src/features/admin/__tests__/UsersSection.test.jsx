@@ -8,8 +8,10 @@ vi.mock('../../../hooks/useToast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }))
 
+const HACE_3_DIAS = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+
 const USERS = [
-  { id: 1, nickname: 'ana', nombre: 'Ana', email: 'ana@x.com', rol: 'user', estado: 'activo', auth_provider: 'google', fecha_creacion: '2024-01-01' },
+  { id: 1, nickname: 'ana', nombre: 'Ana', email: 'ana@x.com', rol: 'user', estado: 'activo', auth_provider: 'google', fecha_creacion: '2024-01-01', fecha_ultimo_acceso: HACE_3_DIAS },
   { id: 2, nickname: 'beto', nombre: 'Beto', email: 'beto@x.com', rol: 'user', estado: 'activo', auth_provider: 'local', fecha_creacion: '2024-01-02' },
   { id: 3, nickname: 'ceci', nombre: 'Ceci', email: 'ceci@x.com', rol: 'admin', estado: 'activo', auth_provider: 'both', fecha_creacion: '2024-01-03' },
 ]
@@ -50,5 +52,13 @@ describe('UsersSection — total y autenticación', () => {
     expect(screen.getByText('Google + Local')).toBeTruthy()
     // El encabezado de la nueva columna
     expect(screen.getByRole('columnheader', { name: 'Autenticación' })).toBeTruthy()
+  })
+
+  it('muestra el último acceso en relativo y un guion para quien no tiene dato', async () => {
+    renderSection()
+    await screen.findByText('@ana')
+    expect(screen.getByRole('columnheader', { name: 'Último acceso' })).toBeTruthy()
+    expect(screen.getByText('hace 3 días')).toBeTruthy()
+    expect(screen.getAllByText('—')).toHaveLength(2)
   })
 })
