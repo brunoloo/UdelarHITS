@@ -139,7 +139,9 @@ CREATE TABLE usuario (
   me_gusta_privado BOOLEAN NOT NULL DEFAULT FALSE,
   -- TRUE por defecto: sin suscripción no se envía nada y la barrera real es el permiso del navegador.
   push_activado BOOLEAN NOT NULL DEFAULT TRUE,
-  fecha_creacion    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+  fecha_creacion    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  -- NULL = sin accesos registrados desde que existe la columna.
+  fecha_ultimo_acceso TIMESTAMPTZ
 );
 
 -- Seguimiento entre usuarios (N:N)

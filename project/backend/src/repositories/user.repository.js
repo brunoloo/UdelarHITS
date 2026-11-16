@@ -86,12 +86,23 @@ const createUser = async ({ nickname, nombre, email, passwordHash, rol = 'user',
 
 const getUsers = async () => {
   const q = `
-    SELECT id, nickname, nombre, email, rol, url_imagen, estado, fecha_creacion, auth_provider
+    SELECT id, nickname, nombre, email, rol, url_imagen, estado, fecha_creacion, fecha_ultimo_acceso, auth_provider
     FROM usuario
     ORDER BY id ASC
   `;
   const { rows } = await pool.query(q);
   return rows;
+};
+
+// A lo sumo una escritura por hora y por usuario.
+const touchLastAccessById = async (userId) => {
+  const q = `
+    UPDATE usuario
+    SET fecha_ultimo_acceso = NOW()
+    WHERE id = $1
+      AND (fecha_ultimo_acceso IS NULL OR fecha_ultimo_acceso < NOW() - INTERVAL '1 hour')
+  `;
+  await pool.query(q, [userId]);
 };
 
 const getUserByNickname = async (nickname) => {
@@ -713,4 +724,4 @@ export { findByEmailOrNickname, createUser, findByEmailOrNicknameForLogin, getUs
   acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById,
   searchUsers, searchMentionCandidates, updateBannerById, deleteBannerById, deleteAvatarById, getSuggestedUsers,
   getMostActiveUsers, getRandomActiveUsers, getPasswordHashById, getAccountAuthById, updatePasswordHashById, deactivateUser, clearFollows, updatePrivacy, getPrivacyById,
-  updateLikesPrivacy, getLikesPrivacyById, countActiveUsers };
+  updateLikesPrivacy, getLikesPrivacyById, countActiveUsers, touchLastAccessById };

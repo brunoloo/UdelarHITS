@@ -29,7 +29,7 @@ import {
   isFollowing, getFollowState, acceptFollowRequest, rejectFollowRequest, acceptAllPendingFollowRequests, updateAvatarById, searchUsers, searchMentionCandidates, updateBannerById,
   deleteBannerById, deleteAvatarById, getSuggestedUsers, getMostActiveUsers, getRandomActiveUsers, getAccountAuthById, getPasswordHashById,
   updatePasswordHashById, deactivateUser, clearFollows, getPrivacyById, updatePrivacy,
-  getLikesPrivacyById, updateLikesPrivacy } from '../repositories/user.repository.js';
+  getLikesPrivacyById, updateLikesPrivacy, touchLastAccessById } from '../repositories/user.repository.js';
 import { createNotification, notificationExists, deleteNotificationsByActorAndType, deleteNotificationsByType } from '../repositories/notification.repository.js';
 import { createPendingImagen, getPendingImagenesByUserTipo, deletePendingImagen } from '../repositories/pendingImage.repository.js';
 import { notifyImagePending } from './pendingImage.service.js';
@@ -179,6 +179,15 @@ const requestRegistrationService = async ({ nickname, nombre, email, password, f
   return { email: normalizedEmail };
 };
 
+// Nunca propaga: un fallo al registrar el acceso no puede romper el login ni /users/me.
+const registerAccess = async (userId) => {
+  try {
+    await touchLastAccessById(userId);
+  } catch (err) {
+    console.error('[ultimo-acceso] No se pudo registrar el acceso:', err.message);
+  }
+};
+
 // La cuenta se crea recién al confirmar el código.
 const verifyRegistrationService = async ({ email, codigo }) => {
   const normalizedEmail = email?.trim().toLowerCase();
@@ -223,6 +232,7 @@ const verifyRegistrationService = async ({ email, codigo }) => {
   });
 
   await markVerificationUsed(pending.id);
+  await registerAccess(user.id);
 
   const token = generateToken(user.id, pending.password_hash);
   return { user, token };
@@ -350,6 +360,8 @@ const loginUserService =  async ({nickname ,email, password}) => {
     nickname_confirmado: existingUser.nickname_confirmado
     };
 
+    await registerAccess(existingUser.id);
+
     return {user, token};
 }
 
@@ -476,7 +488,8 @@ const getUserProfileService = async (nickname, viewerId = null, viewerRol = null
   };
 };
 
-// Único endpoint que expone email y rol, siempre del propio usuario. Una sola query.
+// Único endpoint que expone email y rol, siempre del propio usuario.
+// Una query de lectura más el registro del último acceso (escribe a lo sumo una vez por hora).
 const showMeService = async (userId) => {
   const user = await getUserById(userId);
   if (!user) {
@@ -484,6 +497,8 @@ const showMeService = async (userId) => {
     err.code = 'NOT_FOUND';
     throw err;
   }
+
+  await registerAccess(user.id);
 
   const safeUser = {
     id: user.id,
@@ -907,8 +922,11 @@ const changePasswordService = async (userId, { currentPassword, newPassword }) =
   return { token: generateToken(userId, newHash) };
 };
 
-const createSessionTokenService = async (userId) =>
-  generateToken(userId, await getPasswordHashById(userId));
+const createSessionTokenService = async (userId) => {
+  const token = generateToken(userId, await getPasswordHashById(userId));
+  await registerAccess(userId);
+  return token;
+};
 
 const forgotPasswordService = async (email) => {
   const normalizedEmail = email?.trim().toLowerCase();
