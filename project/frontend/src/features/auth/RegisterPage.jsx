@@ -160,7 +160,7 @@ export function RegisterPage() {
       trackSignUp('email')
       clearPending()
       showToast('¡Cuenta creada exitosamente! Bienvenido/a a UdelarHITS', 'success')
-      navigate('/')
+      navigate('/welcome')
     } catch (err) {
       showToast(err.message || 'No pudimos verificar el código.', 'error')
     } finally {

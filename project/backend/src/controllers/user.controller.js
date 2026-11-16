@@ -112,6 +112,7 @@ const verifyEmail = async (req, res) => {
         email: user.email,
         rol: user.rol,
         biografia: user.biografia ?? null,
+        facultad: user.facultad ?? null,
         url_imagen: user.url_imagen ?? null
       }
     })

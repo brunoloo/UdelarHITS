@@ -33,6 +33,7 @@ const ModerationPage = lazy(() => import('./features/about/ModerationPage').then
 const RedirectPage = lazy(() => import('./features/redirect/RedirectPage').then(m => ({ default: m.RedirectPage })))
 const AdminPage = lazy(() => import('./features/admin/AdminPage').then(m => ({ default: m.AdminPage })))
 const ChatPage = lazy(() => import('./features/chat/ChatPage').then(m => ({ default: m.ChatPage })))
+const OnboardingPage = lazy(() => import('./features/onboarding/OnboardingPage').then(m => ({ default: m.OnboardingPage })))
 const SetupProfilePage = lazy(() => import('./features/auth/SetupProfilePage').then(m => ({ default: m.SetupProfilePage })))
 
 function NotFoundPage() {
@@ -66,6 +67,10 @@ export const router = createBrowserRouter([
           {
             path: 'settings',
             element: <ProtectedRoute><SettingsPage /></ProtectedRoute>,
+          },
+          {
+            path: 'welcome',
+            element: <ProtectedRoute><OnboardingPage /></ProtectedRoute>,
           },
           {
             path: 'admin',

@@ -44,9 +44,9 @@ export function SetupProfilePage() {
       const res = await apiPost('/auth/setup-nickname', { nickname: trimmed, facultad: facultad || null })
       // Confirmar el nickname completa el alta con Google.
       trackSignUp('google')
-      setUser(prev => ({ ...prev, nickname: res.data.nickname, nickname_confirmado: true }))
+      setUser(prev => ({ ...prev, nickname: res.data.nickname, nickname_confirmado: true, facultad: facultad || null }))
       showToast('¡Nickname configurado! Bienvenido/a a UdelarHITS', 'success')
-      navigate('/', { replace: true })
+      navigate('/welcome', { replace: true })
     } catch (err) {
       showToast(err.message || 'No se pudo guardar el nickname.', 'error')
     } finally {

@@ -1,7 +1,7 @@
 import request from 'supertest';
 import app from '../../src/app.js';
 import pool from '../../src/config/db.js';
-import { makeUser, registerAndLogin, getVerificationCode, createTopic } from '../helpers.js';
+import { makeUser, registerAndLogin, registerVerified, getVerificationCode, createTopic } from '../helpers.js';
 
 // El alta es en dos pasos: se prueba que la facultad sobreviva a la espera y al reenvío del código.
 describe('Registro con facultad (opcional)', () => {
@@ -13,6 +13,14 @@ describe('Registro con facultad (opcional)', () => {
     expect(me.status).toBe(200);
     expect(me.body.data.user.facultad).toBe('FING');
     expect(me.body.data.user.facultad_nombre).toBe('Facultad de Ingeniería');
+  });
+
+  test('la respuesta del alta ya trae la facultad, sin esperar a /users/me', async () => {
+    const { res } = await registerVerified({ facultad: 'FING' });
+    expect(res.body.data.facultad).toBe('FING');
+
+    const sin = await registerVerified();
+    expect(sin.res.body.data.facultad).toBeNull();
   });
 
   test('registrarse sin facultad deja el campo vacío', async () => {
