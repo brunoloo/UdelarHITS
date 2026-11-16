@@ -106,6 +106,44 @@ describe('ExplorePage', () => {
     expect(screen.getByRole('link', { name: 'Ver todos' }).getAttribute('href')).toBe('/recent?tab=sin_respuesta')
   })
 
+  it('muestra las encuestas abiertas listas para votar', async () => {
+    session = { user: null, loading: false }
+    apiGet.mockImplementation(path => Promise.resolve(
+      path === '/replies/recent?encuesta_abierta=1&limit=3'
+        ? {
+            data: [{
+              id: 12, tipo: 'home', cuerpo: '¿Turno preferido?',
+              autor_nickname: 'ana', autor_estado: 'activo',
+              fecha_creacion: new Date().toISOString(),
+              likes: 0, contador_respuestas: 0, adjuntos: [],
+              encuesta: {
+                id: 3, cerrada: false, mi_voto: null, total_votos: 0,
+                fecha_cierre: new Date(Date.now() + 3600 * 1000).toISOString(),
+                opciones: [
+                  { id: 1, texto: 'Mañana', orden: 1, votos: 0 },
+                  { id: 2, texto: 'Noche', orden: 2, votos: 0 },
+                ],
+              },
+            }],
+          }
+        : respuestas[path] ?? { data: [] },
+    ))
+    renderPage()
+
+    expect(await screen.findByText('Encuestas abiertas')).toBeTruthy()
+    expect(screen.getByText('¿Turno preferido?')).toBeTruthy()
+    expect(screen.getByText('Mañana')).toBeTruthy()
+    expect(screen.getByText('Noche')).toBeTruthy()
+  })
+
+  it('sin encuestas abiertas la sección no aparece', async () => {
+    session = { user: null, loading: false }
+    renderPage()
+
+    expect(await screen.findByText('Cálculo 1')).toBeTruthy()
+    expect(screen.queryByText('Encuestas abiertas')).toBeNull()
+  })
+
   it('sin comentarios pendientes la sección no aparece', async () => {
     session = { user: null, loading: false }
     renderPage()

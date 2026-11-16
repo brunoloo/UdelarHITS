@@ -115,3 +115,52 @@ describe('Encuestas en comentarios', () => {
     expect(list[0].encuesta.opciones).toHaveLength(2);
   });
 });
+
+describe('GET /replies/recent?encuesta_abierta=1', () => {
+  const abiertas = (cookie = null) => {
+    const req = request(app).get('/api/replies/recent?encuesta_abierta=1');
+    return (cookie ? req.set('Cookie', cookie) : req).then(r => r.body.data);
+  };
+
+  test('solo trae comentarios con una encuesta que todavía admite votos', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const abierta = (await crearConEncuesta(a.cookie, cat.id, encuestaOk, 'abierta')).body.data;
+    const cerrada = (await crearConEncuesta(a.cookie, cat.id, encuestaOk, 'cerrada')).body.data;
+    await request(app).post('/api/replies/create').set('Cookie', a.cookie)
+      .send({ cuerpo: 'sin encuesta', categoria_id: cat.id });
+    await pool.query(
+      `UPDATE encuesta SET fecha_cierre = NOW() - INTERVAL '1 minute' WHERE contenido_id = $1`,
+      [cerrada.contenido_id]
+    );
+
+    const lista = await abiertas();
+    expect(lista.map(c => Number(c.id))).toEqual([Number(abierta.contenido_id)]);
+    expect(lista[0].encuesta.cerrada).toBe(false);
+    expect(lista[0].encuesta.opciones).toHaveLength(2);
+  });
+
+  test('una encuesta ya votada sigue listada, con el voto de quien mira', async () => {
+    const a = await registerAndLogin();
+    const b = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const com = (await crearConEncuesta(a.cookie, cat.id, encuestaOk, 'votá')).body.data;
+    const opcion = com.encuesta.opciones[0].id;
+    await request(app).post(`/api/polls/${com.encuesta.id}/vote`).set('Cookie', b.cookie).send({ opcion_id: opcion });
+
+    const [mia] = await abiertas(b.cookie);
+    expect(Number(mia.encuesta.mi_voto)).toBe(Number(opcion));
+    const [ajena] = await abiertas();
+    expect(ajena.encuesta.mi_voto).toBeNull();
+  });
+
+  test('sin el parámetro el listado no filtra por encuesta', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    await request(app).post('/api/replies/create').set('Cookie', a.cookie)
+      .send({ cuerpo: 'sin encuesta', categoria_id: cat.id });
+
+    const res = await request(app).get('/api/replies/recent');
+    expect(res.body.data).toHaveLength(1);
+  });
+});

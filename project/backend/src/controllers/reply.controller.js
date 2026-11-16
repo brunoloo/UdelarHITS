@@ -148,6 +148,7 @@ const getRecentReplies = async (req, res) => {
     const viewerId = req.user?.id || null;
     const replies = await getRecentRepliesService(req.query.limit, viewerId, {
       sinRespuesta: req.query.sin_respuesta === '1',
+      encuestaAbierta: req.query.encuesta_abierta === '1',
     });
     return res.status(200).json({ ok: true, data: replies });
   } catch (error) {
