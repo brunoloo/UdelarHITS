@@ -22,6 +22,7 @@ import { BookmarkIcon } from './BookmarkIcon'
 import { PinIcon } from './PinIcon'
 import { SearchSnippet } from './SearchSnippet'
 import { useSaved } from '../../hooks/useSaved'
+import { ReplyPreview } from './ReplyPreview'
 import './CommentCard.css'
 
 export function CommentCard({
@@ -353,6 +354,14 @@ export function CommentCard({
                 <BookmarkIcon filled={comentarioGuardado} size={14} />
               </button>
             </div>
+            {/* El comentario abierto como cabecera ya lista sus respuestas completas debajo. */}
+            {role === 'reply' && (
+              <ReplyPreview
+                replies={comment.respuestas_preview}
+                total={replyCount}
+                onOpen={() => (onCardClick ? onCardClick(comment) : onDrillDown?.(comment))}
+              />
+            )}
           </>
         )}
 

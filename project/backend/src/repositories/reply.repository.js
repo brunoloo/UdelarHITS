@@ -2,6 +2,37 @@ import pool from '../config/db.js';
 import { encuestaSubquery } from './encuesta.repository.js';
 import { halfLifeHours } from '../config/trendingConfig.js';
 
+const PREVIEW_MAX_RESPUESTAS = 2;
+const PREVIEW_MAX_CARACTERES = 300;
+
+// Vista previa de las respuestas directas de `com`: las más votadas y, a igualdad, las
+// más antiguas. Solo visibles y sin autores bloqueados con quien mira. El texto va
+// recortado: la tarjeta lo muestra en una o dos líneas. `viewer` es un placeholder.
+const respuestasPreviewSubquery = (viewer) => `
+  (SELECT COALESCE(json_agg(rp ORDER BY rp.likes DESC, rp.fecha_creacion ASC, rp.id ASC), '[]'::json)
+   FROM (
+     SELECT rpc.contenido_id AS id,
+       LEFT(rpcon.cuerpo, ${PREVIEW_MAX_CARACTERES}) AS texto,
+       rpu.nickname AS autor_nickname, rpu.url_imagen AS autor_url_imagen, rpu.estado AS autor_estado,
+       rpcon.fecha_creacion,
+       (SELECT COUNT(*)::int FROM reaccion r WHERE r.contenido_id = rpc.contenido_id AND r.tipo = 'meGusta') AS likes,
+       (SELECT r.tipo FROM reaccion r WHERE r.contenido_id = rpc.contenido_id AND r.usuario_id = ${viewer} LIMIT 1) AS mi_reaccion,
+       EXISTS (SELECT 1 FROM adjunto a WHERE a.contenido_id = rpc.contenido_id AND a.estado = 'publicado' AND a.tipo = 'imagen') AS tiene_imagen,
+       EXISTS (SELECT 1 FROM adjunto a WHERE a.contenido_id = rpc.contenido_id AND a.estado = 'publicado' AND a.tipo <> 'imagen') AS tiene_adjunto,
+       EXISTS (SELECT 1 FROM encuesta e WHERE e.contenido_id = rpc.contenido_id) AS tiene_encuesta
+     FROM comentario rpc
+     JOIN contenido rpcon ON rpcon.id = rpc.contenido_id
+     JOIN usuario rpu ON rpu.id = rpcon.autor_id
+     WHERE rpc.comentario_padre_id = com.contenido_id AND rpc.estado = 'visible'
+       AND NOT EXISTS (
+         SELECT 1 FROM bloqueo b
+         WHERE (b.bloqueador_id = ${viewer}::bigint AND b.bloqueado_id = rpcon.autor_id)
+            OR (b.bloqueado_id = ${viewer}::bigint AND b.bloqueador_id = rpcon.autor_id)
+       )
+     ORDER BY likes DESC, rpcon.fecha_creacion ASC, rpc.contenido_id ASC
+     LIMIT ${PREVIEW_MAX_RESPUESTAS}
+   ) rp) AS respuestas_preview`;
+
 const createReply = async ({ autor_id, cuerpo, tema_id, categoria_id, comentario_padre_id, es_home = false }) => {
   const client = await pool.connect();
   try {
@@ -40,7 +71,8 @@ const getRepliesByCategoryId = async (categoriaId, userId = null) => {
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
       COALESCE(com.contenido_id = c.comentario_fijado_id, false) AS fijado,
       (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano, 'estado', a.estado) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
-      ${encuestaSubquery('$2')} AS encuesta
+      ${encuestaSubquery('$2')} AS encuesta,
+      ${respuestasPreviewSubquery('$2')}
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
@@ -61,7 +93,8 @@ const getRepliesByTopicId = async (topicId, userId = null) => {
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
       COALESCE(com.contenido_id = t.comentario_fijado_id, false) AS fijado,
       (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano, 'estado', a.estado) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
-      ${encuestaSubquery('$2')} AS encuesta
+      ${encuestaSubquery('$2')} AS encuesta,
+      ${respuestasPreviewSubquery('$2')}
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
@@ -305,7 +338,8 @@ const getRepliesByCommentId = async (commentId, userId = null) => {
       (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
       (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = $2 LIMIT 1) AS mi_reaccion,
       (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano, 'estado', a.estado) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
-      ${encuestaSubquery('$2')} AS encuesta
+      ${encuestaSubquery('$2')} AS encuesta,
+      ${respuestasPreviewSubquery('$2')}
     FROM comentario com
     JOIN contenido con ON con.id = com.contenido_id
     JOIN usuario u ON u.id = con.autor_id
@@ -489,7 +523,8 @@ const homeCommentCard = (viewer) => `
   (SELECT COUNT(*) FROM reaccion WHERE contenido_id = com.contenido_id AND tipo = 'meGusta') AS likes,
   (SELECT tipo FROM reaccion WHERE contenido_id = com.contenido_id AND usuario_id = ${viewer} LIMIT 1) AS mi_reaccion,
   (SELECT COALESCE(json_agg(json_build_object('id', a.id, 'url', a.url, 'nombre_original', a.nombre_original, 'tipo', a.tipo, 'tamano', a.tamano, 'estado', a.estado) ORDER BY a.id), '[]'::json) FROM adjunto a WHERE a.contenido_id = com.contenido_id) AS adjuntos,
-  ${encuestaSubquery(viewer)} AS encuesta`;
+  ${encuestaSubquery(viewer)} AS encuesta,
+  ${respuestasPreviewSubquery(viewer)}`;
 
 // Ordenado por última actividad (el comentario o su respuesta directa más reciente):
 // un hilo con respuestas nuevas vuelve arriba. Cursor compuesto (fecha, id) para no

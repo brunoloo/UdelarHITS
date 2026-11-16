@@ -23,6 +23,8 @@ export const redactComment = (row) => {
     if (field in redacted) redacted[field] = null;
   }
   if ('adjuntos' in redacted) redacted.adjuntos = [];
+  // Un comentario oculto no muestra vista previa de sus respuestas.
+  if ('respuestas_preview' in redacted) redacted.respuestas_preview = [];
   return redacted;
 };
 
