@@ -1,45 +1,41 @@
 /* Mini card pegada al comentario, con la línea de hilo hacia cada respuesta. */
 .reply-preview {
+  /* Separación entre filas, igual al aire de arriba y de abajo: una sola fila queda centrada. */
+  --rp-gap: 8px;
+  /* Mitad del alto mínimo de una fila. */
+  --rp-half: 14px;
   margin-top: 10px;
-  padding: 8px 10px 8px 6px;
+  padding: var(--rp-gap) 10px var(--rp-gap) 6px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--rp-gap);
 }
 
 .reply-preview-row {
   position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   padding-left: 18px;
   min-width: 0;
+  min-height: calc(var(--rp-half) * 2);
 }
 
-/* Codo de la línea de hilo. */
+/* Conector de la línea de hilo. Cada fila tiene el suyo, con el mismo largo: sube desde
+   el centro de la fila una distancia fija, sin un tronco común que alargue los de abajo. */
 .reply-preview-row::before {
   content: '';
   position: absolute;
   left: 4px;
-  top: -6px;
+  top: calc(50% - var(--rp-half) - var(--rp-gap));
   width: 10px;
-  height: 16px;
+  height: calc(var(--rp-half) + var(--rp-gap));
   border-left: 2px solid var(--border-strong);
   border-bottom: 2px solid var(--border-strong);
   border-bottom-left-radius: 8px;
-}
-
-/* Tramo vertical que continúa hacia la fila siguiente. */
-.reply-preview-row:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 10px;
-  bottom: -6px;
-  border-left: 2px solid var(--border-strong);
 }
 
 .reply-preview-row .user-avatar-box {
