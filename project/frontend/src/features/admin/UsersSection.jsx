@@ -125,7 +125,7 @@ export function UsersSection() {
                   <td>
                     <UserAvatar url_imagen={u.url_imagen} nickname={u.nickname} size={32} />
                   </td>
-                  <td className="admin-nick">
+                  <td data-label="Usuario" className="admin-nick">
                     <Link
                       to={`/user/${encodeURIComponent(u.nickname)}`}
                       target="_blank"
@@ -135,18 +135,18 @@ export function UsersSection() {
                       @{u.nickname}
                     </Link>
                   </td>
-                  <td>{u.nombre || '—'}</td>
-                  <td>{u.email}</td>
-                  <td>
+                  <td data-label="Nombre">{u.nombre || '—'}</td>
+                  <td data-label="Email">{u.email}</td>
+                  <td data-label="Rol">
                     <span className={`admin-status admin-status--${u.rol}`}>{u.rol}</span>
                   </td>
-                  <td>
+                  <td data-label="Estado">
                     <span className={`admin-status admin-status--${u.estado}`}>{u.estado}</span>
                   </td>
-                  <td>
+                  <td data-label="Acceso">
                     <span className={`admin-status ${authClass(u.auth_provider)}`}>{authLabel(u.auth_provider)}</span>
                   </td>
-                  <td>{formatDate(u.fecha_creacion)}</td>
+                  <td data-label="Creado">{formatDate(u.fecha_creacion)}</td>
                   <td>
                     <div className="admin-actions-cell">
                       {u.estado === 'activo' && (
