@@ -14,6 +14,7 @@ import { commentPermalink } from '../../utils/commentPermalink'
 import { CommentEntry } from '../../components/shared/CommentEntry'
 import { useQuickReply } from '../../hooks/useQuickReply'
 import { useToast } from '../../hooks/useToast'
+import { facultadBySigla } from '../../config/facultades'
 import './feed.css'
 import './explore.css'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
@@ -338,7 +339,9 @@ function SuggestedUsers({ users }) {
   )
 }
 
-function CategorySuggestions({ allCats, myCats, title }) {
+function CategorySuggestions({ allCats, myCats, title, facultad = null }) {
+  const miSigla = facultadBySigla(facultad)?.sigla ?? null
+  const esMiFacultad = (tag) => miSigla != null && facultadBySigla(tag)?.sigla === miSigla
   const myIds = new Set((myCats || []).map(c => c.id))
   const myTags = new Set()
   ;(myCats || []).forEach(c => parseEtiquetas(c.etiquetas).forEach(t => myTags.add(t)))
@@ -356,6 +359,10 @@ function CategorySuggestions({ allCats, myCats, title }) {
 
   const sortedTags = Object.entries(tagGroups)
     .sort((a, b) => {
+      // La facultad del usuario encabeza; después, las etiquetas de sus propias categorías.
+      const aFac = esMiFacultad(a[0]) ? 0 : 1
+      const bFac = esMiFacultad(b[0]) ? 0 : 1
+      if (aFac !== bFac) return aFac - bFac
       const aMatch = myTags.has(a[0]) ? 0 : 1
       const bMatch = myTags.has(b[0]) ? 0 : 1
       if (aMatch !== bMatch) return aMatch - bMatch
@@ -378,7 +385,7 @@ function CategorySuggestions({ allCats, myCats, title }) {
       </div>
       {sortedTags.map(([tag, cats]) => (
         <div key={tag} style={{ marginBottom: 16 }}>
-          <div className="cat-group-label">{tag}</div>
+          <div className="cat-group-label">{esMiFacultad(tag) ? `De tu facultad · ${tag}` : tag}</div>
           <Carousel>
             {cats.slice(0, 8).map(c => (
               <CategoryCardMini key={c.id} category={c} className="category-mini-card--carousel" />
@@ -465,6 +472,7 @@ export function ExplorePage() {
         <CategorySuggestions
           allCats={allCats}
           myCats={user ? myCats : []}
+          facultad={user?.facultad}
           title={user ? 'Categorías para vos' : 'Categorías por etiqueta'}
         />
       )}

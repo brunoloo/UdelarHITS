@@ -420,6 +420,8 @@ const getRankedCategoryFeed = async (viewerId, { limit, t0, seed, p, afin = {}, 
     afin !== null, afin?.s ?? null, afin?.id ?? null,          // $17 $18 $19
     explora !== null, explora?.s ?? null, explora?.id ?? null, // $20 $21 $22
     p.VENTANA_H,                                // $23
+    p.W_HIST ?? 0,                              // $24
+    FEED.W_FAC,                                 // $25
   ];
   const q = `
     WITH prm AS (SELECT to_timestamp($2::float8) AS t0),
@@ -430,6 +432,8 @@ const getRankedCategoryFeed = async (viewerId, { limit, t0, seed, p, afin = {}, 
         MAX(x.fecha) AS ultima,
         COUNT(*) FILTER (WHERE x.es_tema AND x.fecha > prm.t0 - MAKE_INTERVAL(days => $15::int)) AS temas_7d,
         COUNT(*) FILTER (WHERE NOT x.es_tema AND x.fecha > prm.t0 - MAKE_INTERVAL(days => $15::int)) AS coms_7d,
+        COUNT(*) FILTER (WHERE x.es_tema) AS temas_total,
+        COUNT(*) FILTER (WHERE NOT x.es_tema) AS coms_total,
         MAX(x.fecha) FILTER (WHERE x.autor_id = $1::bigint) AS mi_ultima
       FROM (
         SELECT t.categoria_id AS cat_id, con.fecha_creacion AS fecha, con.autor_id, TRUE AS es_tema
@@ -467,6 +471,14 @@ const getRankedCategoryFeed = async (viewerId, { limit, t0, seed, p, afin = {}, 
       JOIN afin_etq a ON a.etiqueta_id = ce.etiqueta_id
       GROUP BY ce.categoria_id
     ),
+    fac_cat AS (
+      -- Categorías con la etiqueta de la facultad del viewer (vacío si no la cargó).
+      SELECT DISTINCT ce.categoria_id
+      FROM usuario me
+      JOIN etiqueta ef ON ef.grupo = 'Facultades' AND LOWER(ef.nombre) = LOWER(me.facultad)
+      JOIN categoria_etiqueta ce ON ce.etiqueta_id = ef.id
+      WHERE me.id = $1::bigint
+    ),
     base AS (
       SELECT c.id,
         (pc.usuario_id IS NULL AND sc.usuario_id IS NULL) AS explora,
@@ -477,8 +489,11 @@ const getRankedCategoryFeed = async (viewerId, { limit, t0, seed, p, afin = {}, 
         END AS part,
         CASE WHEN sc.usuario_id IS NULL THEN 0::float8 ELSE 1::float8 END AS susc,
         COALESCE(ac.tag, 0)::float8 AS tag,
+        CASE WHEN fc.categoria_id IS NULL THEN 0::float8 ELSE 1::float8 END AS fac,
         COALESCE(a.temas_7d, 0)::float8 AS temas_7d,
         COALESCE(a.coms_7d, 0)::float8 AS coms_7d,
+        COALESCE(a.temas_total, 0)::float8 AS temas_total,
+        COALESCE(a.coms_total, 0)::float8 AS coms_total,
         GREATEST(0::float8,
           EXTRACT(EPOCH FROM (prm.t0 - GREATEST(c.fecha_creacion, a.ultima)))::float8 / 3600
         ) AS edad_h,
@@ -489,14 +504,16 @@ const getRankedCategoryFeed = async (viewerId, { limit, t0, seed, p, afin = {}, 
       LEFT JOIN participacion_categoria pc ON pc.categoria_id = c.id AND pc.usuario_id = $1::bigint
       LEFT JOIN suscripcion_categoria sc ON sc.categoria_id = c.id AND sc.usuario_id = $1::bigint
       LEFT JOIN afin_cat ac ON ac.categoria_id = c.id
+      LEFT JOIN fac_cat fc ON fc.categoria_id = c.id
       WHERE c.estado = 'activa'
         AND (c.fijada_hasta IS NULL OR c.fijada_hasta <= NOW())
     ),
     scored AS (
       SELECT id, explora,
         ROUND(1e6 * (
-            ln(1 + $5::float8 * LEAST($8::float8, $9::float8 * part + $10::float8 * susc + $11::float8 * tag))
+            ln(1 + $5::float8 * LEAST($8::float8, $9::float8 * part + $10::float8 * susc + $11::float8 * tag + $25::float8 * fac))
           + $7::float8 * ln(1 + 3 * temas_7d + coms_7d)
+          + $24::float8 * ln(1 + 3 * temas_total + coms_total)
           - $4::float8 * ln(LEAST(edad_h, $23::float8) + 2)
           + ln(1 + $6::float8 * (2 * h - 1))
         ))::bigint AS score

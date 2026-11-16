@@ -59,6 +59,7 @@ export const perfilDesdeIntensidad = (w) => {
     K: lerp(PERFIL_CHICO.K, PERFIL_GRANDE.K, t),
     J: lerp(PERFIL_CHICO.J, PERFIL_GRANDE.J, t),
     W_POP: lerp(PERFIL_CHICO.W_POP, PERFIL_GRANDE.W_POP, t),
+    W_HIST: lerp(PERFIL_CHICO.W_HIST, PERFIL_GRANDE.W_HIST, t),
     EXPLORA_CADA: Math.max(1, Math.round(lerp(PERFIL_CHICO.EXPLORA_CADA, PERFIL_GRANDE.EXPLORA_CADA, t))),
     VENTANA_H: glerp(PERFIL_CHICO.VENTANA_H, PERFIL_GRANDE.VENTANA_H, t),
   };

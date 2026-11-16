@@ -1,5 +1,6 @@
 // Ranking del Home para usuarios logueados, en escala logarítmica por stream:
-// L = ln(1 + K·afinidad) + W_POP·ln(1 + popularidad) − G·ln(edad_h + 2) + ln(1 + J·(2h − 1))
+// L = ln(1 + K·afinidad) + W_POP·ln(1 + popularidad) + W_HIST·ln(1 + historial)
+//     − G·ln(edad_h + 2) + ln(1 + J·(2h − 1))
 // h es un hash determinístico por visita (rotación) y edad_h se topea en VENTANA_H.
 // Los perfiles CHICO y GRANDE se interpolan según la cantidad de cuentas activas.
 
@@ -33,6 +34,7 @@ export const FEED = {
   W_PART: 1,
   W_SUSC: 0.8,
   W_TAG: 0.6,
+  W_FAC: 0.5,                 // la categoría lleva la etiqueta de la facultad del usuario
   AFINIDAD_CAP_ETIQUETA: 10,  // máx. de likes que cuenta una misma etiqueta
   AFINIDAD_VENTANA_DIAS: 90,  // likes más viejos no cuentan
   VIDA_MEDIA_PART_DIAS: 21,   // decay de la participación
@@ -43,8 +45,11 @@ export const FEED = {
 
 // En el perfil chico K es bajo y J alto: con poca actividad, la categoría donde
 // participaste encabezaba casi todas las visitas.
-export const PERFIL_CHICO = { G: 1.6, K: 0.3, J: 0.7, EXPLORA_CADA: 3, W_POP: 0.3, VENTANA_H: 7 * 24 };
-export const PERFIL_GRANDE = { G: 1.2, K: 2.0, J: 0.2, EXPLORA_CADA: 5, W_POP: 0.3, VENTANA_H: 3650 * 24 };
+// W_HIST pesa el contenido acumulado: en un foro chico, una semana quieta deja la
+// popularidad en cero para todas y sin él no se distingue una categoría con conversación
+// de una vacía. En uno grande casi no cuenta, para no premiar siempre a las mismas.
+export const PERFIL_CHICO = { G: 1.6, K: 0.3, J: 0.7, EXPLORA_CADA: 3, W_POP: 0.3, W_HIST: 0.25, VENTANA_H: 7 * 24 };
+export const PERFIL_GRANDE = { G: 1.2, K: 2.0, J: 0.2, EXPLORA_CADA: 5, W_POP: 0.3, W_HIST: 0.05, VENTANA_H: 3650 * 24 };
 
 // Categorías y comentarios se ordenan por separado y se intercalan con esta
 // cadencia; si un stream se agota, el otro completa.

@@ -114,6 +114,15 @@ describe('ExplorePage', () => {
     expect(screen.queryByText('Esperan respuesta')).toBeNull()
   })
 
+  it('con facultad cargada, sus categorías encabezan las sugerencias', async () => {
+    session = { user: { id: 7, nickname: 'yo', facultad: 'FMED' }, loading: false }
+    const { container } = renderPage()
+
+    expect(await screen.findByText('De tu facultad · FMED')).toBeTruthy()
+    const grupos = [...container.querySelectorAll('.cat-group-label')].map(n => n.textContent)
+    expect(grupos).toEqual(['De tu facultad · FMED', 'FING'])
+  })
+
   it('con sesión mantiene "Categorías para vos" sin el cartel de registro', async () => {
     session = { user: { id: 7, nickname: 'yo' }, loading: false }
     renderPage()

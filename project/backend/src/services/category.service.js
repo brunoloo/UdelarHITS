@@ -476,7 +476,10 @@ const getRankedHomeFeed = async (user, pageSize, cur, visita) => {
   }
   const perfil = perfilDesdeIntensidad(w);
   const N = perfil.EXPLORA_CADA;
-  const p = { G: perfil.G, K: perfil.K, J: perfil.J, W_POP: perfil.W_POP, VENTANA_H: perfil.VENTANA_H };
+  const p = {
+    G: perfil.G, K: perfil.K, J: perfil.J,
+    W_POP: perfil.W_POP, W_HIST: perfil.W_HIST, VENTANA_H: perfil.VENTANA_H,
+  };
 
   const fetchN = pageSize + 1;
   const fresh = { k: 0, a: {}, e: {} };
