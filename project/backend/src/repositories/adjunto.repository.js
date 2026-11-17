@@ -29,4 +29,14 @@ const getAttachmentsForDeletion = async (contenidoId) => {
   return rows;
 };
 
-export { createAttachment, getAttachmentsByContenidoId, getAttachmentsForDeletion };
+// Todos los documentos, para auditarlos con las reglas de inspección vigentes.
+const getDocumentAttachments = async () => {
+  const q = `
+    SELECT id, contenido_id, url, nombre_original, tamano, fecha_creacion
+    FROM adjunto WHERE tipo = 'documento' ORDER BY id
+  `;
+  const { rows } = await pool.query(q);
+  return rows;
+};
+
+export { createAttachment, getAttachmentsByContenidoId, getAttachmentsForDeletion, getDocumentAttachments };

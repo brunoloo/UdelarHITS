@@ -3,6 +3,7 @@ import app from '../../src/app.js';
 import pool from '../../src/config/db.js';
 import { registerAndLogin, createCategory } from '../helpers.js';
 import { makeZip, makeDocx } from './zip-fixture.js';
+import { getDocumentAttachments } from '../../src/repositories/adjunto.repository.js';
 
 // PNG real de 1x1: la firma sola no alcanza para que se reconozca el tipo.
 const png = Buffer.from(
@@ -191,6 +192,26 @@ describe('Adjuntos en comentarios', () => {
     expect(res.body.message).toBe('activo.pdf: el PDF contiene contenido activo');
     const list = await request(app).get(`/api/replies/category/${cat.id}`).set('Cookie', a.cookie).then(r => r.body.data);
     expect(list).toHaveLength(0);
+  });
+
+  test('la auditoría recorre solo los documentos, en orden', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const create = await request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('cuerpo', 'varios')
+      .field('categoria_id', String(cat.id))
+      .attach('archivos', png, { filename: 'foto.png', contentType: 'image/png' })
+      .attach('archivos', pdf, { filename: 'doc.pdf', contentType: 'application/pdf' })
+      .attach('archivos', zip, { filename: 'apuntes.zip', contentType: 'application/zip' });
+    expect(create.status).toBe(201);
+
+    const documentos = await getDocumentAttachments();
+    expect(documentos.map(d => d.nombre_original)).toEqual(['doc.pdf', 'apuntes.zip']);
+    expect(Number(documentos[0].contenido_id)).toBe(Number(create.body.data.contenido_id));
+    expect(documentos[0].url).toBeTruthy();
+    expect(documentos[0].tamano).toBe(pdf.length);
+    expect(documentos[0].fecha_creacion).toBeInstanceOf(Date);
   });
 
   test('archivo que excede 10 MB → 400', async () => {

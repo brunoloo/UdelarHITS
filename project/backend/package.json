@@ -19,7 +19,8 @@
     "db:test:create": "psql -h localhost -p 5432 -d postgres -c \"CREATE DATABASE udelarhits_test;\"",
     "db:test:schema": "psql -h localhost -p 5432 -d udelarhits_test -v ON_ERROR_STOP=1 -f ../database/schema.sql",
     "db:test:reset": "npm run db:test:drop && npm run db:test:create && npm run db:test:schema",
-    "admin:create": "node scripts/create-admin.js"
+    "admin:create": "node scripts/create-admin.js",
+    "attachments:audit": "node scripts/audit-attachments.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
