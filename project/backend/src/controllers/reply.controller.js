@@ -4,6 +4,7 @@ import { createReplyService, getRepliesByCategoryIdService,
   getReplyContextService, getLikedCommentsByUserIdService,
   getRecentRepliesService, getTrendingThreadService, pinHomeCommentService, unpinHomeCommentService } from '../services/reply.service.js';
 import { detectAttachmentType } from '../utils/validateAttachment.js';
+import { inspectDocument } from '../utils/inspectDocument.js';
 
 const createReply = async (req, res) => {
   try {
@@ -34,13 +35,20 @@ const createReply = async (req, res) => {
       encuesta,
     };
 
-    // El tipo se valida por contenido, no por el mimetype declarado.
+    // El tipo se valida por contenido, no por el mimetype declarado; los documentos
+    // además se inspeccionan antes de publicarse.
     const files = req.files || [];
     const validados = [];
     for (const f of files) {
       const tipo = await detectAttachmentType(f.buffer, f.originalname);
       if (!tipo) {
         return res.status(400).json({ ok: false, message: `Tipo de archivo no permitido: ${f.originalname}` });
+      }
+      if (tipo === 'documento') {
+        const inspeccion = await inspectDocument(f.buffer, f.originalname);
+        if (!inspeccion.ok) {
+          return res.status(400).json({ ok: false, message: `${f.originalname}: ${inspeccion.motivo}` });
+        }
       }
       validados.push({ buffer: f.buffer, originalname: f.originalname, size: f.size, tipo });
     }

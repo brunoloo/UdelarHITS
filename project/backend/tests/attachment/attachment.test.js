@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../../src/app.js';
 import pool from '../../src/config/db.js';
 import { registerAndLogin, createCategory } from '../helpers.js';
+import { makeZip, makeDocx } from './zip-fixture.js';
 
 // PNG real de 1x1: la firma sola no alcanza para que se reconozca el tipo.
 const png = Buffer.from(
@@ -9,7 +10,11 @@ const png = Buffer.from(
   'base64'
 );
 const pdf = Buffer.from('%PDF-1.4\n%binarycontent\n', 'binary');
-const zip = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
+// ZIP real: los documentos se inspeccionan y uno ilegible se rechaza.
+const zip = makeZip([
+  { name: 'apuntes/parcial.pdf', data: pdf },
+  { name: 'apuntes/notas.txt', data: 'notas' },
+]);
 const exe = Buffer.from([0x4d, 0x5a, 0x90, 0, 0, 0, 0, 0]);
 
 const adjuntosEnBD = async (contenidoId) => {
@@ -90,6 +95,102 @@ describe('Adjuntos en comentarios', () => {
         .attach('archivos', buffer, { filename, contentType: 'application/octet-stream' });
       expect(res.status).toBe(400);
     }
+  });
+
+  test('ZIP limpio → 201', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const res = await request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('cuerpo', 'apuntes')
+      .field('categoria_id', String(cat.id))
+      .attach('archivos', zip, { filename: 'apuntes.zip', contentType: 'application/zip' });
+    expect(res.status).toBe(201);
+    expect(res.body.data.adjuntos).toHaveLength(1);
+    expect(res.body.data.adjuntos[0].tipo).toBe('documento');
+    expect(res.body.data.adjuntos[0].nombre_original).toBe('apuntes.zip');
+  });
+
+  test('ZIP con un .exe adentro → 400 con el motivo', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const conExe = makeZip([
+      { name: 'apuntes/notas.txt', data: 'notas' },
+      { name: 'apuntes/instalar.exe', data: exe },
+    ]);
+    const res = await request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('cuerpo', 'apuntes')
+      .field('categoria_id', String(cat.id))
+      .attach('archivos', conExe, { filename: 'apuntes.zip', contentType: 'application/zip' });
+    expect(res.status).toBe(400);
+    expect(res.body.ok).toBe(false);
+    expect(res.body.message).toBe('apuntes.zip: el ZIP contiene archivos ejecutables');
+    // No se publicó nada.
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM adjunto');
+    expect(rows[0].n).toBe(0);
+  });
+
+  test('ZIP ilegible → 400', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const res = await request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('cuerpo', 'roto')
+      .field('categoria_id', String(cat.id))
+      .attach('archivos', Buffer.from([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]), { filename: 'roto.zip', contentType: 'application/zip' });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('roto.zip: el archivo comprimido no se pudo leer');
+  });
+
+  test('un .rar ya no se admite → 400', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const rar = Buffer.from([0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00, 0, 0, 0, 0]);
+    const res = await request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('cuerpo', 'comprimido')
+      .field('categoria_id', String(cat.id))
+      .attach('archivos', rar, { filename: 'apuntes.rar', contentType: 'application/vnd.rar' });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Tipo de archivo no permitido: apuntes.rar');
+  });
+
+  test('docx válido → 201; docx con vbaProject.bin → 400', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const docxMime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+    const ok = await request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('cuerpo', 'informe')
+      .field('categoria_id', String(cat.id))
+      .attach('archivos', makeDocx(), { filename: 'informe.docx', contentType: docxMime });
+    expect(ok.status).toBe(201);
+
+    const conMacros = makeDocx([{ name: 'word/vbaProject.bin', data: 'vba' }]);
+    const res = await request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('cuerpo', 'informe')
+      .field('categoria_id', String(cat.id))
+      .attach('archivos', conMacros, { filename: 'informe.docx', contentType: docxMime });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('informe.docx: el documento contiene macros');
+  });
+
+  test('un documento rechazado descarta el comentario entero', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const res = await request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('cuerpo', 'mezcla')
+      .field('categoria_id', String(cat.id))
+      .attach('archivos', png, { filename: 'foto.png', contentType: 'image/png' })
+      .attach('archivos', Buffer.from('%PDF-1.4\n<< /S /JavaScript /JS (app.alert(1)) >>\n', 'binary'), { filename: 'activo.pdf', contentType: 'application/pdf' });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('activo.pdf: el PDF contiene contenido activo');
+    const list = await request(app).get(`/api/replies/category/${cat.id}`).set('Cookie', a.cookie).then(r => r.body.data);
+    expect(list).toHaveLength(0);
   });
 
   test('archivo que excede 10 MB → 400', async () => {

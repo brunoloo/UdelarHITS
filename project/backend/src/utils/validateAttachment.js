@@ -7,11 +7,10 @@ const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const DOCUMENT_EXTENSIONS = {
   pdf: ['pdf'],
   zip: ['docx', 'xlsx', 'pptx', 'zip'],
-  rar: ['rar'],
   ole2: ['doc', 'xls', 'ppt'],
 };
 
-const extensionOf = (name = '') => {
+export const extensionOf = (name = '') => {
   const dot = name.lastIndexOf('.');
   return dot > 0 ? name.slice(dot + 1).toLowerCase() : '';
 };
@@ -19,7 +18,6 @@ const extensionOf = (name = '') => {
 const documentFormat = (buffer, mime) => {
   if (mime === 'application/pdf') return 'pdf';
   if (buffer[0] === 0x50 && buffer[1] === 0x4b) return 'zip';
-  if (buffer[0] === 0x52 && buffer[1] === 0x61 && buffer[2] === 0x72) return 'rar';
   if (buffer[0] === 0xd0 && buffer[1] === 0xcf && buffer[2] === 0x11 && buffer[3] === 0xe0) return 'ole2';
   return null;
 };
