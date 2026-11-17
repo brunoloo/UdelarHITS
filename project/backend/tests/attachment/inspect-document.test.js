@@ -16,6 +16,19 @@ const ole2 = (...directorios) => Buffer.concat([
   Buffer.alloc(64),
 ]);
 
+// Corre `n` bytes todos los desplazamientos de un ZIP de makeZip, como si llevara
+// otro contenido delante.
+const desplazar = (zip, n) => {
+  const out = Buffer.from(zip);
+  const eocd = out.length - 22;
+  const inicio = out.readUInt32LE(eocd + 16);
+  for (let pos = inicio; pos < eocd; pos += 46 + out.readUInt16LE(pos + 28)) {
+    out.writeUInt32LE(out.readUInt32LE(pos + 42) + n, pos + 42);
+  }
+  out.writeUInt32LE(inicio + n, eocd + 16);
+  return out;
+};
+
 const limpio = [
   { name: 'apuntes/', data: '' },
   { name: 'apuntes/parcial.pdf', data: '%PDF-1.4' },
@@ -51,7 +64,8 @@ describe('inspectDocument: ZIP', () => {
 
   test('todas las extensiones ejecutables están bloqueadas', async () => {
     const exts = ['exe', 'scr', 'com', 'pif', 'bat', 'cmd', 'msi', 'dll', 'cpl', 'jar', 'js', 'jse',
-      'vbs', 'vbe', 'wsf', 'wsh', 'hta', 'ps1', 'lnk', 'reg', 'chm', 'scf'];
+      'vbs', 'vbe', 'wsf', 'wsh', 'hta', 'ps1', 'lnk', 'reg', 'chm', 'scf',
+      'msp', 'msc', 'msix', 'appx', 'psm1', 'xll', 'url', 'one', 'apk'];
     for (const ext of exts) {
       await rechaza(makeZip([{ name: `archivo.${ext}`, data: 'x' }]), 'a.zip', 'el ZIP contiene archivos ejecutables');
     }
@@ -62,6 +76,9 @@ describe('inspectDocument: ZIP', () => {
     await rechaza(makeZip([{ name: 'carpeta/.Bat', data: 'x' }]), 'a.zip', 'el ZIP contiene archivos ejecutables');
     // Los puntos y espacios finales se pierden al extraer en Windows.
     await rechaza(makeZip([{ name: 'foto.exe. ', data: 'x' }]), 'a.zip', 'el ZIP contiene archivos ejecutables');
+    await rechaza(makeZip([{ name: 'foto.exe\u00a0', data: 'x' }]), 'a.zip', 'el ZIP contiene archivos ejecutables');
+    // Lo que sigue a ":" es un flujo alternativo del mismo archivo.
+    await rechaza(makeZip([{ name: 'foto.exe:datos.txt', data: 'x' }]), 'a.zip', 'el ZIP contiene archivos ejecutables');
     // Una extensión bloqueada que no es la última no cuenta.
     await acepta(makeZip([{ name: 'resumen.exe.txt', data: 'x' }]), 'a.zip');
   });
@@ -71,9 +88,44 @@ describe('inspectDocument: ZIP', () => {
   });
 
   test('con un Office con macros adentro → rechazado', async () => {
-    for (const ext of ['docm', 'xlsm', 'pptm', 'dotm', 'xlam']) {
+    for (const ext of ['docm', 'xlsm', 'pptm', 'dotm', 'xlam', 'xlsb', 'xltm', 'potm', 'ppsm', 'ppam', 'sldm']) {
       await rechaza(makeZip([{ name: `planilla.${ext}`, data: 'x' }]), 'a.zip', 'el ZIP contiene documentos con macros');
     }
+  });
+
+  test('un Office con macros renombrado a .zip → rechazado', async () => {
+    await rechaza(
+      makeDocx([{ name: 'word/vbaProject.bin', data: 'x' }]),
+      'informe.zip', 'el ZIP contiene documentos con macros'
+    );
+  });
+
+  test('ZIP vacío → rechazado', async () => {
+    await rechaza(makeZip([]), 'a.zip', 'el archivo comprimido está vacío');
+  });
+
+  test('con otro ZIP pegado delante → rechazado', async () => {
+    const malicioso = makeZip([{ name: 'instalar.exe', data: 'MZ' }]);
+    // Tal cual: el índice del segundo ya no apunta a sus entradas.
+    expect((await inspectDocument(Buffer.concat([malicioso, makeZip(limpio)]), 'a.zip')).ok).toBe(false);
+    // Con los desplazamientos corregidos se lee bien, pero no empieza en su primera entrada.
+    await rechaza(
+      Buffer.concat([malicioso, desplazar(makeZip(limpio), malicioso.length)]),
+      'a.zip', 'el archivo comprimido tiene una estructura inesperada'
+    );
+    // Un ZIP vacío al final no esconde al primero.
+    expect((await inspectDocument(Buffer.concat([malicioso, makeZip([])]), 'a.zip')).ok).toBe(false);
+  });
+
+  test('con un índice que no termina en el cierre del archivo → rechazado', async () => {
+    // El índice real queda huérfano: el cierre apunta a una copia plantada antes.
+    const zip = makeZip(limpio);
+    const eocd = zip.length - 22;
+    const inicio = zip.readUInt32LE(eocd + 16);
+    const indice = zip.subarray(inicio, eocd);
+    const relleno = Buffer.alloc(64);
+    const armado = Buffer.concat([zip.subarray(0, inicio), indice, relleno, zip.subarray(eocd)]);
+    await rechaza(armado, 'a.zip', 'el archivo comprimido tiene una estructura inesperada');
   });
 
   test('con otro contenedor adentro → rechazado', async () => {
@@ -177,6 +229,7 @@ describe('inspectDocument: OLE2', () => {
   test('.doc con _VBA_PROJECT en UTF-16LE → rechazado', async () => {
     await rechaza(ole2('Root Entry', 'WordDocument', '_VBA_PROJECT'), 'informe.doc', 'el documento contiene macros');
     await rechaza(ole2('Root Entry', '_VBA_PROJECT_CUR'), 'planilla.xls', 'el documento contiene macros');
+    await rechaza(ole2('Root Entry', 'PowerPoint Document', '_VBA_PROJECT'), 'clase.ppt', 'el documento contiene macros');
   });
 
   test('el nombre en ASCII no es una entrada de directorio', async () => {

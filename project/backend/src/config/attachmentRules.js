@@ -5,10 +5,14 @@
 export const EXT_EJECUTABLES = new Set([
   'exe', 'scr', 'com', 'pif', 'bat', 'cmd', 'msi', 'dll', 'cpl', 'jar',
   'js', 'jse', 'vbs', 'vbe', 'wsf', 'wsh', 'hta', 'ps1', 'lnk', 'reg', 'chm', 'scf',
+  'msp', 'msc', 'msix', 'appx', 'psm1', 'xll', 'url', 'one', 'apk',
 ]);
 
 // Formatos de Office que admiten macros.
-export const EXT_OFFICE_MACROS = new Set(['docm', 'xlsm', 'pptm', 'dotm', 'xlam']);
+export const EXT_OFFICE_MACROS = new Set([
+  'docm', 'xlsm', 'pptm', 'dotm', 'xlam',
+  'xlsb', 'xltm', 'potm', 'ppsm', 'ppam', 'sldm',
+]);
 
 // Contenedores anidados: esconderían su contenido de la inspección.
 export const EXT_CONTENEDORES = new Set([
