@@ -5,10 +5,10 @@ export const MAX_TAMANO = 10 * 1024 * 1024 // 10 MB
 
 // La validación real es por contenido, en el backend.
 const EXT_IMAGEN = ['jpg', 'jpeg', 'png', 'gif', 'webp']
-const EXT_DOC = ['pdf', 'doc', 'docx', 'zip', 'rar', 'xlsx', 'xls', 'pptx']
+const EXT_DOC = ['pdf', 'doc', 'docx', 'zip', 'xlsx', 'xls', 'pptx']
 const EXT_PERMITIDAS = [...EXT_IMAGEN, ...EXT_DOC]
 
-export const ACCEPT_ATTR = 'image/*,.pdf,.doc,.docx,.zip,.rar,.xlsx,.xls,.pptx'
+export const ACCEPT_ATTR = 'image/*,.pdf,.doc,.docx,.zip,.xlsx,.xls,.pptx'
 
 function extOf(name) {
   const i = name.lastIndexOf('.')
