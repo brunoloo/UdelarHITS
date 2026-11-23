@@ -1,7 +1,11 @@
 import { buildPollPayload } from './poll'
 
-export const MAX_ARCHIVOS = 3
+export const MAX_ARCHIVOS = 10
 export const MAX_TAMANO = 10 * 1024 * 1024 // 10 MB
+export const MAX_TOTAL = 50 * 1024 * 1024 // 50 MB por comentario
+
+const MB = 1024 * 1024
+export const MENSAJE_TOTAL = `Los archivos pueden pesar hasta ${MAX_TOTAL / MB} MB en total por comentario`
 
 // La validación real es por contenido, en el backend.
 const EXT_IMAGEN = ['jpg', 'jpeg', 'png', 'gif', 'webp']
@@ -27,9 +31,15 @@ export function validarArchivo(file) {
     return { ok: false, error: `Tipo de archivo no permitido: ${file.name}` }
   }
   if (file.size > MAX_TAMANO) {
-    return { ok: false, error: `${file.name} supera el límite de 10 MB` }
+    return { ok: false, error: `${file.name} supera el límite de ${MAX_TAMANO / MB} MB` }
   }
   return { ok: true }
+}
+
+// true si sumar `nuevo` a `files` pasa el tope total del comentario.
+export function excedeTotal(files, nuevo) {
+  const total = files.reduce((suma, f) => suma + f.size, 0)
+  return total + nuevo.size > MAX_TOTAL
 }
 
 // `poll` es el estado del editor; se convierte al payload del backend.

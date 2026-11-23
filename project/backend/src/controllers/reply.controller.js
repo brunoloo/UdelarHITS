@@ -5,6 +5,7 @@ import { createReplyService, getRepliesByCategoryIdService,
   getRecentRepliesService, getTrendingThreadService, pinHomeCommentService, unpinHomeCommentService } from '../services/reply.service.js';
 import { detectAttachmentType } from '../utils/validateAttachment.js';
 import { inspectDocument } from '../utils/inspectDocument.js';
+import { ATTACHMENT_LIMITS, MENSAJES_ADJUNTOS } from '../config/attachmentRules.js';
 
 const createReply = async (req, res) => {
   try {
@@ -38,6 +39,10 @@ const createReply = async (req, res) => {
     // El tipo se valida por contenido, no por el mimetype declarado; los documentos
     // además se inspeccionan antes de publicarse.
     const files = req.files || [];
+    const total = files.reduce((suma, f) => suma + f.size, 0);
+    if (total > ATTACHMENT_LIMITS.MAX_TOTAL) {
+      return res.status(400).json({ ok: false, message: MENSAJES_ADJUNTOS.TOTAL });
+    }
     const validados = [];
     for (const f of files) {
       const tipo = await detectAttachmentType(f.buffer, f.originalname);

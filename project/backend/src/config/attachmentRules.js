@@ -42,3 +42,18 @@ export const OLE2_VBA = '_VBA_PROJECT';
 
 // Nombres PDF que indican contenido activo o archivos embebidos.
 export const PDF_NOMBRES_BLOQUEADOS = ['/Launch', '/JavaScript', '/EmbeddedFile'];
+
+// Los archivos se cargan enteros en memoria: el tope total acota la RAM por comentario.
+export const ATTACHMENT_LIMITS = {
+  MAX_ARCHIVOS: 10,
+  MAX_TAMANO: 10 * 1024 * 1024,
+  MAX_TOTAL: 50 * 1024 * 1024,
+};
+
+const MB = 1024 * 1024;
+
+export const MENSAJES_ADJUNTOS = {
+  TAMANO: `Cada archivo debe pesar máximo ${ATTACHMENT_LIMITS.MAX_TAMANO / MB} MB`,
+  CANTIDAD: `Máximo ${ATTACHMENT_LIMITS.MAX_ARCHIVOS} archivos por comentario`,
+  TOTAL: `Los archivos pueden pesar hasta ${ATTACHMENT_LIMITS.MAX_TOTAL / MB} MB en total por comentario`,
+};

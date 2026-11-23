@@ -4,7 +4,9 @@ import { useToast } from '../../hooks/useToast'
 import {
   ACCEPT_ATTR,
   MAX_ARCHIVOS,
+  MENSAJE_TOTAL,
   esImagen,
+  excedeTotal,
   validarArchivo,
 } from '../../utils/attachments'
 import { formatBytes } from '../../utils/formatBytes'
@@ -36,6 +38,10 @@ export function AttachmentButton({ files, onChange, disabled = false, className 
       const v = validarArchivo(f)
       if (!v.ok) {
         showToast(v.error, 'error')
+        continue
+      }
+      if (excedeTotal(next, f)) {
+        showToast(MENSAJE_TOTAL, 'error')
         continue
       }
       next.push(f)

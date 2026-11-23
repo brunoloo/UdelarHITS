@@ -4,6 +4,8 @@ import pool from '../../src/config/db.js';
 import { registerAndLogin, createCategory } from '../helpers.js';
 import { makeZip, makeDocx } from './zip-fixture.js';
 import { getDocumentAttachments } from '../../src/repositories/adjunto.repository.js';
+import { createReply } from '../../src/controllers/reply.controller.js';
+import { ATTACHMENT_LIMITS } from '../../src/config/attachmentRules.js';
 
 // PNG real de 1x1: la firma sola no alcanza para que se reconozca el tipo.
 const png = Buffer.from(
@@ -226,18 +228,67 @@ describe('Adjuntos en comentarios', () => {
     expect(res.status).toBe(400);
   });
 
-  test('más de 3 archivos → 400', async () => {
+  test('más de 10 archivos → 400', async () => {
     const a = await registerAndLogin();
     const cat = await createCategory(a.cookie);
     let req = request(app).post('/api/replies/create')
       .set('Cookie', a.cookie)
       .field('cuerpo', 'demasiados')
       .field('categoria_id', String(cat.id));
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 11; i++) {
       req = req.attach('archivos', png, { filename: `f${i}.png`, contentType: 'image/png' });
     }
     const res = await req;
     expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Máximo 10 archivos por comentario');
+  });
+
+  test('10 archivos → 201', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    let req = request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('cuerpo', 'justo el máximo')
+      .field('categoria_id', String(cat.id));
+    for (let i = 0; i < 10; i++) {
+      req = req.attach('archivos', png, { filename: `f${i}.png`, contentType: 'image/png' });
+    }
+    const res = await req;
+    expect(res.status).toBe(201);
+    expect(res.body.data.adjuntos).toHaveLength(10);
+    expect(await adjuntosEnBD(res.body.data.contenido_id)).toBe(10);
+  });
+
+  test('más de 50 MB en total → 400', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const casiTope = Buffer.concat([png, Buffer.alloc(9 * 1024 * 1024)]);
+    let req = request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('cuerpo', 'muy pesado')
+      .field('categoria_id', String(cat.id));
+    for (let i = 0; i < 6; i++) {
+      req = req.attach('archivos', casiTope, { filename: `g${i}.png`, contentType: 'image/png' });
+    }
+    const res = await req;
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Los archivos pueden pesar hasta 50 MB en total por comentario');
+  });
+
+  test('sin Content-Length, el controller también aplica el tope total', async () => {
+    // Simula lo que deja multer en un envío chunked: la suma real supera el tope.
+    const req = {
+      body: { cuerpo: 'chunked', categoria_id: '1' },
+      user: { id: 1 },
+      files: Array.from({ length: 6 }, (_, i) => ({
+        buffer: png, originalname: `c${i}.png`, size: 9 * 1024 * 1024,
+      })),
+    };
+    expect(6 * 9 * 1024 * 1024).toBeGreaterThan(ATTACHMENT_LIMITS.MAX_TOTAL);
+    const res = { status(code) { this.statusCode = code; return this; }, json(body) { this.body = body; return this; } };
+    await createReply(req, res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe('Los archivos pueden pesar hasta 50 MB en total por comentario');
   });
 
   test('el hard delete del comentario borra sus adjuntos de la BD', async () => {

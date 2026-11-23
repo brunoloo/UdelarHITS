@@ -1,4 +1,5 @@
 import multer from 'multer';
+import { ATTACHMENT_LIMITS } from './attachmentRules.js';
 
 const storage = multer.memoryStorage();
 
@@ -27,5 +28,5 @@ export const uploadBanner = multer({
 // El tipo real se valida por contenido en el controller.
 export const uploadAttachments = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024, files: 3 },
+  limits: { fileSize: ATTACHMENT_LIMITS.MAX_TAMANO, files: ATTACHMENT_LIMITS.MAX_ARCHIVOS },
 });
