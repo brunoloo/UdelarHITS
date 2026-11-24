@@ -26,7 +26,9 @@ export const uploadBanner = multer({
 });
 
 // El tipo real se valida por contenido en el controller.
+// Los navegadores mandan el nombre en UTF-8; multer lo lee como latin1 por defecto.
 export const uploadAttachments = multer({
   storage,
+  defParamCharset: 'utf8',
   limits: { fileSize: ATTACHMENT_LIMITS.MAX_TAMANO, files: ATTACHMENT_LIMITS.MAX_ARCHIVOS },
 });

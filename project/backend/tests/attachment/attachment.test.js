@@ -50,6 +50,25 @@ describe('Adjuntos en comentarios', () => {
     expect(await adjuntosEnBD(res.body.data.contenido_id)).toBe(2);
   });
 
+  test('conserva tildes, ñ y emojis en el nombre original', async () => {
+    const a = await registerAndLogin();
+    const cat = await createCategory(a.cookie);
+    const nombre = 'Apuntes de teórico – año 1 📘.pdf';
+
+    const res = await request(app).post('/api/replies/create')
+      .set('Cookie', a.cookie)
+      .field('cuerpo', 'nombre con tildes')
+      .field('categoria_id', String(cat.id))
+      .attach('archivos', pdf, { filename: nombre, contentType: 'application/pdf' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.adjuntos[0].nombre_original).toBe(nombre);
+    const { rows } = await pool.query(
+      'SELECT nombre_original FROM adjunto WHERE contenido_id = $1', [res.body.data.contenido_id]
+    );
+    expect(rows[0].nombre_original).toBe(nombre);
+  });
+
   test('permite publicar solo con adjunto, sin texto → 201', async () => {
     const a = await registerAndLogin();
     const cat = await createCategory(a.cookie);
