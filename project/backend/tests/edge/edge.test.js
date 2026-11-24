@@ -95,6 +95,17 @@ describe('con EDGE_SECRET y EDGE_ENFORCE=true', () => {
     expect(res.status).toBe(200);
   });
 
+  test('tolera espacios o saltos de línea al cargar la variable', async () => {
+    configurar({ secreto: `  ${SECRETO}\n`, enforce: 'true' });
+    const res = await request(appIp).get('/ip').set('x-edge-auth', SECRETO);
+    expect(res.status).toBe(200);
+  });
+
+  test('un secreto de solo espacios equivale a no tenerlo', async () => {
+    configurar({ secreto: '   ', enforce: 'true' });
+    expect((await request(appIp).get('/ip')).status).toBe(200);
+  });
+
   test('/health sigue respondiendo sin el header', async () => {
     const res = await request(appIp).get('/health');
     expect(res.status).toBe(200);

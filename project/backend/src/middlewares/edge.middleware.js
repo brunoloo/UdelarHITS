@@ -5,8 +5,11 @@ import net from 'net';
 const HEADER_SECRETO = 'x-edge-auth';
 const HEADER_IP = 'cf-connecting-ip';
 
+// Recortado: un espacio o salto de línea pegado al cargar la variable dejaría todo en 403.
+const secreto = () => process.env.EDGE_SECRET?.trim() || '';
+
 function secretoValido(headers) {
-  const esperado = process.env.EDGE_SECRET;
+  const esperado = secreto();
   const recibido = headers[HEADER_SECRETO];
   if (!esperado || typeof recibido !== 'string') return false;
   const a = Buffer.from(recibido);
@@ -17,12 +20,12 @@ function secretoValido(headers) {
 // Con EDGE_ENFORCE=true se rechaza lo que llegue sin pasar por el borde.
 // Sin esa variable se deja pasar todo, para poder activar el proxy sin cortar el sitio.
 export function permitidoPorBorde(headers) {
-  if (process.env.EDGE_ENFORCE !== 'true' || !process.env.EDGE_SECRET) return true;
+  if (process.env.EDGE_ENFORCE !== 'true' || !secreto()) return true;
   return secretoValido(headers);
 }
 
 export default function edgeMiddleware(req, res, next) {
-  if (!process.env.EDGE_SECRET) return next();
+  if (!secreto()) return next();
 
   if (secretoValido(req.headers)) {
     // El borde pisa este header, así que solo se le cree si trae el secreto.
