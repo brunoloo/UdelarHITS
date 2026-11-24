@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { FileText, FileSpreadsheet, Archive, File, Clock, ShieldAlert } from 'lucide-react'
 import { formatBytes } from '../../utils/formatBytes'
-import { documentDownloadUrl } from '../../utils/attachments'
+import { documentDownloadUrl, descargarConNombre } from '../../utils/attachments'
 import { cloudinaryResize } from '../../utils/cloudinaryUrl'
 import { ImageLightbox } from './ImageLightbox'
 import './CommentAttachments.css'
@@ -19,6 +19,7 @@ function iconForName(name = '') {
 // candidata a LCP.
 export function CommentAttachments({ adjuntos, maxWidth = 1200, priority = false }) {
   const [lightbox, setLightbox] = useState(null)
+  const [descargandoId, setDescargandoId] = useState(null)
 
   if (!adjuntos || adjuntos.length === 0) return null
 
@@ -72,18 +73,34 @@ export function CommentAttachments({ adjuntos, maxWidth = 1200, priority = false
 
       {documentos.map(a => {
         const Icon = iconForName(a.nombre_original)
+        const href = documentDownloadUrl(a.url)
+        const descargando = descargandoId === a.id
+        const handleClick = async (e) => {
+          // Con modificadores (nueva pestaña, etc.) o sin nombre, el enlace se comporta como siempre.
+          if (!a.nombre_original || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+          e.preventDefault()
+          if (descargandoId) return
+          setDescargandoId(a.id)
+          try {
+            await descargarConNombre(href, a.nombre_original)
+          } finally {
+            setDescargandoId(null)
+          }
+        }
         return (
           <a
             key={a.id}
-            href={documentDownloadUrl(a.url)}
+            href={href}
             rel="noopener noreferrer"
             download={a.nombre_original}
-            className="ca-doc"
+            className={`ca-doc${descargando ? ' ca-doc--loading' : ''}`}
+            aria-busy={descargando || undefined}
+            onClick={handleClick}
           >
             <span className="ca-doc-icon"><Icon size={20} /></span>
             <span className="ca-doc-info">
               <span className="ca-doc-name">{a.nombre_original}</span>
-              <span className="ca-doc-size">{formatBytes(a.tamano)}</span>
+              <span className="ca-doc-size">{descargando ? 'Descargando…' : formatBytes(a.tamano)}</span>
             </span>
           </a>
         )

@@ -53,6 +53,8 @@ app.use(helmet({
       ],
       'connect-src': [
         "'self'",
+        // Descarga de adjuntos con su nombre original.
+        'https://res.cloudinary.com',
         'https://www.google-analytics.com',
         'https://*.google-analytics.com',
         'https://*.analytics.google.com',

@@ -81,6 +81,11 @@
   background: var(--bg);
 }
 
+.ca-doc--loading {
+  cursor: progress;
+  opacity: .7;
+}
+
 .ca-doc-icon {
   display: inline-flex;
   align-items: center;
