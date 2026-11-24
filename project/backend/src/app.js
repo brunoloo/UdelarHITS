@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 import passport from './config/passport.js';
 import pool from './config/db.js';
 import maintenanceMiddleware from './middlewares/maintenance.middleware.js';
+import edgeMiddleware from './middlewares/edge.middleware.js';
 
 import API from './routes/API.js';
 import SEORoutes from './routes/seo.routes.js';
@@ -22,6 +23,9 @@ app.set('trust proxy', 1);
 
 // Va primero: en mantenimiento no se tocan Helmet, los estáticos ni la base.
 app.use(maintenanceMiddleware);
+
+// Antes que todo lo demás: fija la IP real y bloquea lo que no pasó por el borde.
+app.use(edgeMiddleware);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

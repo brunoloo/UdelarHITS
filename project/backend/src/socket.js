@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import pool from './config/db.js';
 import { isTokenCurrent } from './utils/generateToken.js';
 import { releaseUserConversations } from './utils/chatLoad.js';
+import { permitidoPorBorde } from './middlewares/edge.middleware.js';
 import { noteConnection, noteDisconnection, setModeNotifier, isRealtimeEnabled } from './utils/realtimeMode.js';
 
 let ioInstance = null;
@@ -17,6 +18,7 @@ export function initSocket(httpServer, app) {
 
   // Misma allowlist que el CORS de Express.
   const io = new Server(httpServer, {
+    allowRequest: (req, cb) => cb(null, permitidoPorBorde(req.headers)),
     cors: {
       origin: (origin, cb) => {
         if (!origin) return cb(null, true);
